@@ -1,0 +1,19 @@
+-- NELAIA v0.3 Example: Factorial
+-- Calculate factorial(5) = 120
+
+SET .n 5
+SET .result 1
+SET .i 1
+
+:loop
+GT .cmp .i .n
+JIF .cmp :done
+
+MUL .result .result .i
+ADD .i .i 1
+JMP :loop
+
+:done
+CHK .result 120       -- Verify 5! = 120
+PUT OUT .result
+END

@@ -1,0 +1,7 @@
+-- NELAIA v0.4 Test: Undefined Reference
+-- This should fail with undefined reference error
+
+.a: 10
+.b: ADD .a .undefined
+
+!

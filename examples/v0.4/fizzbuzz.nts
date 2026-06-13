@@ -1,0 +1,21 @@
+-- NELAIA v0.4 Example: FizzBuzz
+-- Classic problem, graph style
+
+-- Transformation for each number
+.fizzbuzz: {
+  IN .i
+  .d15: EQ (MOD .i 15) 0
+  .d3:  EQ (MOD .i 3) 0
+  .d5:  EQ (MOD .i 5) 0
+  
+  -- Chain of branches (evaluated bottom-up by dependency)
+  .r1: BRN .d5 "Buzz" .i
+  .r2: BRN .d3 "Fizz" .r1
+  .r3: BRN .d15 "FizzBuzz" .r2
+  
+  OUT .r3
+}
+
+-- Generate 1-15, transform each, print each
+SEQ 1 15 > MAP .fizzbuzz > MAP PRT
+!

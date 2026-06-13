@@ -1,0 +1,29 @@
+-- NELAIA v0.7 Test: TCP Client
+-- Connects to localhost:8080
+
+-- Create TCP socket
+.sock: TCP
+
+-- Connect to localhost:8080
+.conn: CON .sock "127.0.0.1" 8080
+
+"Connected to server!" > PRT
+
+-- Allocate buffer for receiving
+.buf: ALC 256
+
+-- Receive data (simplified - would need proper buffer handling)
+-- For now just send a message
+.sent: XMT .sock "Hello from NELAIA client!\n"
+
+"Message sent!" > PRT
+
+-- Close socket
+.c1: CLS .sock
+
+-- Free buffer
+.f1: FRE .buf
+
+"Client closed." > PRT
+
+!

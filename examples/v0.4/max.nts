@@ -1,0 +1,20 @@
+-- NELAIA v0.4 Example: Max of Collection
+-- Find maximum using fold
+
+-- Transformation: return larger of two
+.max2: {
+  IN .a .b
+  .is_a_larger: GT .a .b
+  .result: BRN .is_a_larger .a .b
+  OUT .result
+}
+
+-- Sample data
+.data: SEQ 1 100
+
+-- Fold to find max (start with first element conceptually)
+-- Using 0 as initial since all values are positive
+FLD .max2 0 .data > PRT
+!
+
+-- Result: 100

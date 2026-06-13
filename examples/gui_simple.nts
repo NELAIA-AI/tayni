@@ -1,0 +1,22 @@
+-- NELAIA v0.12 - Simple GUI Window
+-- Creates a basic window with a label, textbox, and button
+-- When button is clicked, shows an alert dialog
+
+-- Create main window
+.win: WIN 400 200 "NELAIA GUI"
+.show: SHW .win
+
+-- Create controls
+.lbl: LBL .win 20 20 150 25 "Enter your text:"
+.txt: TXB .win 20 50 350 25
+.btn: BTN .win 20 90 120 30 "Click Me!"
+
+-- Simple event loop - poll until quit
+.evt: EVT .win
+.is_quit: EQ .evt 1
+.is_btn: EQ .evt 2
+
+-- Show dialog on button click
+.dlg: DLG "Alert" "Button was clicked!"
+
+!

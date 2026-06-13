@@ -1,0 +1,35 @@
+-- NELAIA v0.4.1 - Fibonacci Example
+-- Demonstrates arithmetic and output
+
+.n1: 0
+.n2: 1
+
+"Fibonacci sequence:" > PRT
+.n1 > PRT
+.n2 > PRT
+
+.n3: ADD .n1 .n2
+.n3 > PRT
+
+.n4: ADD .n2 .n3
+.n4 > PRT
+
+.n5: ADD .n3 .n4
+.n5 > PRT
+
+.n6: ADD .n4 .n5
+.n6 > PRT
+
+.n7: ADD .n5 .n6
+.n7 > PRT
+
+.n8: ADD .n6 .n7
+.n8 > PRT
+
+.n9: ADD .n7 .n8
+.n9 > PRT
+
+.n10: ADD .n8 .n9
+.n10 > PRT
+
+!

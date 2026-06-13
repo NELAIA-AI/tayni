@@ -1,0 +1,34 @@
+-- NELAIA v0.4.1 - Arithmetic Operations
+-- Demonstrates all arithmetic operations
+
+.a: 100
+.b: 7
+
+"a = 100, b = 7" > PRT
+"" > PRT
+
+"ADD: a + b = " > PRT
+.sum: ADD .a .b
+.sum > PRT
+
+"SUB: a - b = " > PRT
+.diff: SUB .a .b
+.diff > PRT
+
+"MUL: a * b = " > PRT
+.prod: MUL .a .b
+.prod > PRT
+
+"DIV: a / b = " > PRT
+.quot: DIV .a .b
+.quot > PRT
+
+"MOD: a % b = " > PRT
+.rem: MOD .a .b
+.rem > PRT
+
+"NEG: -a = " > PRT
+.neg: NEG .a
+.neg > PRT
+
+!

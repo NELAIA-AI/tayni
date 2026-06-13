@@ -1,0 +1,50 @@
+-- NELAIA v0.3 Example: FizzBuzz
+-- Classic FizzBuzz from 1 to 15
+
+SET .i 1
+SET .max 15
+
+:loop
+GT .cmp .i .max
+JIF .cmp :done
+
+-- Check divisible by 15 (FizzBuzz)
+MOD .mod15 .i 15
+EQ .is15 .mod15 0
+JIF .is15 :fizzbuzz
+
+-- Check divisible by 3 (Fizz)
+MOD .mod3 .i 3
+EQ .is3 .mod3 0
+JIF .is3 :fizz
+
+-- Check divisible by 5 (Buzz)
+MOD .mod5 .i 5
+EQ .is5 .mod5 0
+JIF .is5 :buzz
+
+-- Just the number
+PUT OUT .i
+JMP :next
+
+:fizzbuzz
+SET .msg "FizzBuzz"
+PUT OUT .msg
+JMP :next
+
+:fizz
+SET .msg "Fizz"
+PUT OUT .msg
+JMP :next
+
+:buzz
+SET .msg "Buzz"
+PUT OUT .msg
+JMP :next
+
+:next
+ADD .i .i 1
+JMP :loop
+
+:done
+END

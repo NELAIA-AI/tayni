@@ -1,0 +1,19 @@
+-- NELAIA v0.4 Example: HTTP Server
+-- Minimal server using infinite stream
+
+.port: 8080
+.response: "HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nOK"
+
+-- Handler for each connection
+.handler: {
+  IN .conn
+  PUT .conn .response
+  CLS .conn
+}
+
+-- Open socket
+.sock: OPN NET .port
+
+-- Infinite loop: accept connections, handle each
+LOOP (ACC .sock) > MAP .handler
+!

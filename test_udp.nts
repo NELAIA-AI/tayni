@@ -1,0 +1,9 @@
+-- NELAIA v0.8 Test: UDP Socket
+-- Creates a UDP socket
+
+.sock: UDP
+"UDP socket created" > PRT
+.c1: CLS .sock
+"UDP socket closed" > PRT
+
+!

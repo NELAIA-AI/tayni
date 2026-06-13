@@ -1,0 +1,31 @@
+-- NELAIA v0.7 Test: TCP Server
+-- Creates a simple TCP server on port 8080
+
+-- Create TCP socket
+.sock: TCP
+
+-- Bind to port 8080
+.bind_result: BND .sock 8080
+
+-- Listen with backlog 5
+.listen_result: LST .sock 5
+
+"TCP Server listening on port 8080..." > PRT
+
+-- Accept one connection
+.client: ACC .sock
+
+"Client connected!" > PRT
+
+-- Send response
+.sent: XMT .client "Hello from NELAIA TCP Server!\n"
+
+-- Close client
+.c1: CLS .client
+
+-- Close server
+.c2: CLS .sock
+
+"Server closed." > PRT
+
+!

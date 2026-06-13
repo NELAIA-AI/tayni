@@ -1,0 +1,5 @@
+-- NELAIA v0.4 Example: Hello World
+-- The simplest possible graph
+
+"Hello World" > PRT
+!

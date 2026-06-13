@@ -1,0 +1,11 @@
+-- NELAIA v0.3 Example: Arithmetic
+-- Calculate (42 + 8) * 2 = 100
+
+SET .a 42
+SET .b 8
+ADD .sum .a .b
+CHK .sum 50           -- Verify intermediate result
+MUL .result .sum 2
+CHK .result 100       -- Verify final result
+PUT OUT .result
+END

@@ -1,0 +1,15 @@
+-- NELAIA v0.4 Example: Absolute Value
+-- Using branch for conditional
+
+.abs: {
+  IN .x
+  .is_neg: LT .x 0
+  .result: BRN .is_neg (NEG .x) .x
+  OUT .result
+}
+
+-- Test with negative number
+.abs -42 > PRT
+!
+
+-- Result: 42

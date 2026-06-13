@@ -1,0 +1,40 @@
+-- NELAIA v0.12 - Interactive GUI Demo
+-- Formulario con textbox, boton y dialogo de alerta
+
+-- Crear ventana principal
+.win: WIN 400 180 "NELAIA GUI Demo"
+.show: SHW .win
+
+-- Crear label
+.lbl: LBL .win 20 20 200 25 "Enter your text:"
+
+-- Crear textbox para entrada de texto
+.txt: TXB .win 20 50 350 25
+
+-- Crear boton
+.btn: BTN .win 140 100 120 35 "Show Message"
+
+-- Buffer para leer el texto del textbox
+.buf: ALC 512
+
+-- Event loop - procesar eventos hasta cerrar
+.loop: EVT .win
+
+-- Verificar si es click de boton (evento tipo 2)
+.is_click: EQ .loop 2
+
+-- Si es click, mostrar dialogo
+.on_click: BRN .is_click .show_dlg .check_quit
+
+.show_dlg: DLG "Your Message" "You clicked the button!"
+
+-- Verificar si es quit (evento tipo 1)
+.check_quit: EQ .loop 1
+.do_quit: BRN .check_quit .done .loop
+
+-- Continuar el loop
+.loop >> .loop
+
+.done: HID .win
+
+!

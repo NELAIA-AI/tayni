@@ -1,0 +1,39 @@
+-- NELAIA v0.10 Optimized Web Server
+-- SO_REUSEADDR, cyclic flow
+
+-- Response
+.html: "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: 347\r\nConnection: close\r\n\r\n<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>NELAIA</title><style>body{font-family:system-ui;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;background:#0a0a0a;color:#0f0}h1{font-size:3em}</style></head><body><h1>NELAIA v0.10</h1></body></html>"
+
+-- sockaddr_in
+.addr: ALC 16
+.a0: PUT .addr 0 2
+.a1: PUT .addr 1 0
+.a2: PUT .addr 2 31
+.a3: PUT .addr 3 144
+.a4: PUT .addr 4 0
+.a5: PUT .addr 5 0
+.a6: PUT .addr 6 0
+.a7: PUT .addr 7 0
+.a8: PUT .addr 8 0
+.a9: PUT .addr 9 0
+.a10: PUT .addr 10 0
+.a11: PUT .addr 11 0
+.a12: PUT .addr 12 0
+.a13: PUT .addr 13 0
+.a14: PUT .addr 14 0
+.a15: PUT .addr 15 0
+
+-- Socket (SO_REUSEADDR auto)
+.sock: TCP
+.bind: BND .sock .addr
+.listen: LST .sock 128
+.buf: ALC 512
+
+-- Graph
+.client: ACC .sock
+.recv: RCV .client .buf 512
+.send: XMT .client .html 444
+.close: CLS .client
+.close >> .client
+
+!

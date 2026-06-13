@@ -1,0 +1,8 @@
+-- NELAIA v0.4 Test: Cycle Detection
+-- This should fail with cycle error
+
+.a: .b
+.b: .c
+.c: .a
+
+!

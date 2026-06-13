@@ -1,0 +1,39 @@
+-- NELAIA v0.4.1 - Comparison Operations
+-- Demonstrates comparison operations
+
+.x: 10
+.y: 20
+.z: 10
+
+"x = 10, y = 20, z = 10" > PRT
+"" > PRT
+
+"EQ: x == z (expect 1) = " > PRT
+.eq1: EQ .x .z
+.eq1 > PRT
+
+"EQ: x == y (expect 0) = " > PRT
+.eq2: EQ .x .y
+.eq2 > PRT
+
+"NE: x != y (expect 1) = " > PRT
+.ne1: NE .x .y
+.ne1 > PRT
+
+"LT: x less than y (expect 1) = " > PRT
+.lt1: LT .x .y
+.lt1 > PRT
+
+"GT: y greater than x (expect 1) = " > PRT
+.gt1: GT .y .x
+.gt1 > PRT
+
+"LE: x less-or-equal z (expect 1) = " > PRT
+.le1: LE .x .z
+.le1 > PRT
+
+"GE: y greater-or-equal x (expect 1) = " > PRT
+.ge1: GE .y .x
+.ge1 > PRT
+
+!

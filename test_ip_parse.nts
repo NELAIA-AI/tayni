@@ -1,0 +1,18 @@
+-- NELAIA v0.8 Test: IP Address Parsing
+-- Tests connecting to a specific IP address
+
+.sock: TCP
+"TCP socket created" > PRT
+
+-- Try to connect to 192.168.1.1:80 (will fail but tests IP parsing)
+.conn: CON .sock "192.168.1.1" 80
+
+-- Check result (negative = error)
+.check: CHK .conn -1
+
+"Connection attempted (expected to fail)" > PRT
+
+.c1: CLS .sock
+"Socket closed" > PRT
+
+!

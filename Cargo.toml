@@ -1,7 +1,11 @@
 [package]
 name = "nelaia-c"
-version = "0.1.0"
+version = "0.13.0"
 edition = "2021"
-description = "NELAIA Compiler Toolchain"
+description = "NELAIA Compiler - Optimized Multi-threading"
 
 [dependencies]
+
+[[bin]]
+name = "nelaia-c"
+path = "src/main.rs"

@@ -1,0 +1,18 @@
+-- NELAIA v0.12 - Interactive GUI
+-- Ventana con textbox y boton
+-- Al presionar el boton muestra un dialogo con OK
+
+-- Crear ventana
+.win: WIN 400 180 "NELAIA Demo"
+.show: SHW .win
+
+-- Crear controles
+.lbl: LBL .win 20 20 200 25 "Enter your text:"
+.txt: TXB .win 20 50 350 25
+.btn: BTN .win 140 100 120 35 "Show Message"
+
+-- Ejecutar loop de mensajes
+-- RUN ventana "titulo_dialogo" "mensaje_dialogo"
+.run: RUN .win "Message" "You clicked the button!"
+
+!

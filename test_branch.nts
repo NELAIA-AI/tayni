@@ -1,0 +1,26 @@
+-- NELAIA v0.6 Test: Branch (BRN)
+-- Conditional selection
+
+.x: 10
+.y: 20
+
+-- BRN condition then_value else_value
+-- If x greater than 5, result is 100, else 0
+.cond1: GT .x 5
+.result1: BRN .cond1 100 0
+"x GT 5 ? 100 : 0 = " > PRT
+.result1 > PRT
+
+-- If x greater than y, result is x, else y (max function)
+.cond2: GT .x .y
+.max: BRN .cond2 .x .y
+"max(10, 20) = " > PRT
+.max > PRT
+
+-- If x == 10, result is 1, else 0
+.cond3: EQ .x 10
+.is_ten: BRN .cond3 1 0
+"x == 10 ? 1 : 0 = " > PRT
+.is_ten > PRT
+
+!

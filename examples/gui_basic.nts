@@ -1,0 +1,13 @@
+-- NELAIA v0.12 - Simple Interactive GUI
+-- Ventana con textbox y boton que muestra dialogo al hacer click
+
+-- Crear ventana
+.win: WIN 400 180 "NELAIA Demo"
+.show: SHW .win
+
+-- Crear controles
+.lbl: LBL .win 20 20 200 25 "Enter your text:"
+.txt: TXB .win 20 50 350 25
+.btn: BTN .win 140 100 120 35 "Show Message"
+
+!

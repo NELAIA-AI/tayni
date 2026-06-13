@@ -1,0 +1,11 @@
+-- NELAIA v0.4 Example: Factorial(5)
+-- Multiply all numbers from 1 to n
+
+.n: 5
+SEQ 1 .n > FLD MUL 1 > PRT
+!
+
+-- Explanation:
+-- SEQ 1 5     generates [1, 2, 3, 4, 5]
+-- FLD MUL 1   folds with multiplication, starting at 1
+-- Result: 1 * 1 * 2 * 3 * 4 * 5 = 120

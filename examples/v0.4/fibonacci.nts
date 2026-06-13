@@ -1,0 +1,20 @@
+-- NELAIA v0.4 Example: Fibonacci(10)
+-- Using fold with pair transformation
+
+-- Transformation: (a, b) -> (b, a+b)
+.fib: {
+  IN .a .b
+  .na: .b
+  .nb: ADD .a .b
+  OUT .na .nb
+}
+
+-- Apply 10 times starting with (0, 1)
+.seq: SEQ 1 10
+.result: FLD .fib (0 1) .seq
+
+-- Extract first element (the fibonacci number)
+FST .result > PRT
+!
+
+-- Result: 55

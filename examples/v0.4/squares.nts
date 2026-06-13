@@ -1,0 +1,15 @@
+-- NELAIA v0.4 Example: Square Numbers
+-- Map a transformation over a sequence
+
+-- Transformation: square a number
+.square: {
+  IN .x
+  .result: MUL .x .x
+  OUT .result
+}
+
+-- Generate 1-10, square each, print each
+SEQ 1 10 > MAP .square > MAP PRT
+!
+
+-- Output: 1, 4, 9, 16, 25, 36, 49, 64, 81, 100

@@ -1,0 +1,6 @@
+-- NELAIA v0.3 Example: Hello World
+-- The simplest possible program
+
+SET .msg "Hello World"
+PUT OUT .msg
+END

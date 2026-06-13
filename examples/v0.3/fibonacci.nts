@@ -1,0 +1,24 @@
+-- NELAIA v0.3 Example: Fibonacci
+-- Calculate fibonacci(10) = 55
+
+SET .n 10
+SET .a 0
+SET .b 1
+SET .i 0
+
+:loop
+LT .cmp .i .n
+JIF .cmp :body
+JMP :done
+
+:body
+ADD .tmp .a .b
+CPY .a .b
+CPY .b .tmp
+ADD .i .i 1
+JMP :loop
+
+:done
+CHK .a 55             -- Verify result
+PUT OUT .a
+END

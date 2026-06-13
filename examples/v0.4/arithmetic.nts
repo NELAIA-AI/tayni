@@ -1,0 +1,14 @@
+-- NELAIA v0.4 Example: Arithmetic
+-- Calculate (42 + 8) * 2 = 100
+
+-- Explicit nodes
+.a: 42
+.b: 8
+.sum: ADD .a .b
+.result: MUL .sum 2
+.result > PRT
+!
+
+-- Or with pipes (equivalent):
+-- MUL (ADD 42 8) 2 > PRT
+-- !

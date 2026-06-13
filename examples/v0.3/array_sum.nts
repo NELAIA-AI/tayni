@@ -1,0 +1,29 @@
+-- NELAIA v0.3 Example: Array Sum
+-- Create array [10,20,30,40,50] and sum all elements = 150
+
+ARR .arr 5
+STO .arr 0 10
+STO .arr 1 20
+STO .arr 2 30
+STO .arr 3 40
+STO .arr 4 50
+
+SET .sum 0
+SET .i 0
+LEN .len .arr
+
+:loop
+LT .cmp .i .len
+JIF .cmp :body
+JMP :done
+
+:body
+IDX .val .arr .i
+ADD .sum .sum .val
+ADD .i .i 1
+JMP :loop
+
+:done
+CHK .sum 150          -- Verify result
+PUT OUT .sum
+END

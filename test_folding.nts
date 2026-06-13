@@ -1,0 +1,24 @@
+-- NELAIA v0.5 Test: Constant Folding
+-- These operations should be computed at compile time
+
+.a: 10
+.b: 20
+.c: 5
+
+-- These should be folded to constants
+.sum: ADD .a .b       -- Should fold to 30
+.diff: SUB .b .a      -- Should fold to 10
+.prod: MUL .a .c      -- Should fold to 50
+.quot: DIV .b .a      -- Should fold to 2
+
+"Constant folding test:" > PRT
+.sum > PRT
+.diff > PRT
+.prod > PRT
+.quot > PRT
+
+-- Chained folding
+.x: ADD .sum .prod    -- 30 + 50 = 80
+.x > PRT
+
+!

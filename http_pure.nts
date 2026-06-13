@@ -1,0 +1,61 @@
+-- NELAIA v0.9 Pure HTTP Server
+-- Builds sockaddr_in manually, no embedded helpers
+
+-- Response string (40 chars)
+.response: "HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nOK"
+
+-- Allocate 16 bytes for sockaddr_in
+.addr: ALC 16
+
+-- Build sockaddr_in structure:
+-- sin_family = AF_INET = 2 (bytes 0-1, little-endian on x86)
+.s0: PUT .addr 0 2
+.s1: PUT .addr 1 0
+
+-- sin_port = 8080 = 0x1F90 (big-endian: 0x1F, 0x90)
+-- 8080 >> 8 = 31 (0x1F)
+-- 8080 & 255 = 144 (0x90)
+.s2: PUT .addr 2 31
+.s3: PUT .addr 3 144
+
+-- sin_addr = INADDR_ANY = 0.0.0.0
+.s4: PUT .addr 4 0
+.s5: PUT .addr 5 0
+.s6: PUT .addr 6 0
+.s7: PUT .addr 7 0
+
+-- padding (zeros)
+.s8: PUT .addr 8 0
+.s9: PUT .addr 9 0
+.s10: PUT .addr 10 0
+.s11: PUT .addr 11 0
+.s12: PUT .addr 12 0
+.s13: PUT .addr 13 0
+.s14: PUT .addr 14 0
+.s15: PUT .addr 15 0
+
+-- Create TCP socket
+.sock: TCP
+
+-- Bind to address
+.bind_r: BND .sock .addr
+
+-- Listen with backlog 5
+.listen_r: LST .sock 5
+
+-- Accept connection
+.client: ACC .sock
+
+-- Send response (40 bytes)
+.send_r: XMT .client .response 40
+
+-- Close client
+.close_c: CLS .client
+
+-- Close server socket
+.close_s: CLS .sock
+
+-- Free sockaddr memory
+.free_r: FRE .addr
+
+!

@@ -1,0 +1,13 @@
+.port: 8080
+.response: "HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nOK"
+
+.sock: TCP
+.b: BND .sock .port
+.l: LST .sock 5
+
+.client: ACC .sock
+.s: XMT .client .response
+.c: CLS .client
+.c2: CLS .sock
+
+!

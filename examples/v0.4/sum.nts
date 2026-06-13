@@ -1,0 +1,10 @@
+-- NELAIA v0.4 Example: Sum 1 to 100
+-- No loop, no variable, just flow
+
+SEQ 1 100 > FLD ADD 0 > PRT
+!
+
+-- Explanation:
+-- SEQ 1 100    generates [1, 2, 3, ..., 100]
+-- FLD ADD 0    folds with addition, starting at 0
+-- > PRT       prints result (5050)

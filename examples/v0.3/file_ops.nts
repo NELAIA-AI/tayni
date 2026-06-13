@@ -1,0 +1,26 @@
+-- NELAIA v0.3 Example: File Operations
+-- Read file, append line, write back
+
+SET .path "test.txt"
+
+OPN .file DSK .path
+ERR .err
+JIF .err :create_new
+
+-- File exists, read content
+GET .content .file
+CAT .new_content .content "\nnew_line=true"
+JMP :write
+
+:create_new
+-- File doesn't exist, create with initial content
+SET .new_content "config=default\nnew_line=true"
+
+:write
+OPN .file DSK .path
+PUT .file .new_content
+CLS .file
+
+SET .msg "File updated"
+PUT OUT .msg
+END

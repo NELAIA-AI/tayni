@@ -1,0 +1,13 @@
+-- NELAIA v0.8 Test: Loop
+-- Tests LOOP opcode with counter
+
+"Starting loop test..." > PRT
+
+-- Loop 5 times
+.i: LOOP 5
+
+"Loop iteration" > PRT
+
+"Loop complete!" > PRT
+
+!

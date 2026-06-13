@@ -1,0 +1,27 @@
+-- NELAIA v0.3 Example: HTTP Server
+-- Minimal server on port 8080 responding "OK" to all requests
+
+SET .port 8080
+SET .response "HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nOK"
+
+OPN .sock NET .port
+ERR .err
+JIF .err :error
+
+:accept_loop
+ACC .conn .sock
+ERR .err
+JIF .err :accept_error
+
+PUT .conn .response
+CLS .conn
+JMP :accept_loop
+
+:accept_error
+-- Connection error, continue accepting
+JMP :accept_loop
+
+:error
+SET .msg "Failed to open socket"
+PUT OUT .msg
+END

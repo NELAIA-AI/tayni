@@ -1,0 +1,14 @@
+-- NELAIA v0.7 Test: Memory Allocation
+-- Tests ALC (allocate) and FRE (free) operations
+
+-- Allocate 1024 bytes
+.buf: ALC 1024
+
+"Memory allocated: 1024 bytes" > PRT
+
+-- Free the memory
+.freed: FRE .buf
+
+"Memory freed" > PRT
+
+!

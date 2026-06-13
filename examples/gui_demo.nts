@@ -1,0 +1,45 @@
+-- NELAIA v0.12 - GUI Demo
+-- Demonstrates window creation with controls
+-- Creates a window with: label, textbox, button, and alert dialog
+
+-- Create main window (400x200 pixels)
+.win: WIN 400 200 "NELAIA GUI Demo"
+
+-- Show the window
+.show: SHW .win
+
+-- Create a label "Enter your text:"
+.label: LBL .win 20 20 150 25 "Enter your text:"
+
+-- Create a textbox for input
+.input: TXB .win 20 50 350 25
+
+-- Create a button "Show Message"
+.btn: BTN .win 20 90 150 30 "Show Message"
+
+-- Allocate buffer for reading textbox value
+.buf: ALC 512
+
+-- Event loop
+.evt: EVT .win
+
+-- Check if button was clicked (event type 2)
+.is_click: EQ .evt 2
+
+-- Branch on button click
+.check: BRN .is_click .on_click .continue
+
+-- Handle button click - show dialog with textbox content
+.on_click: GVL .input .buf 256
+.dialog: DLG "Message" "You entered some text!"
+
+-- Continue event loop (check for quit)
+.continue: EQ .evt 1
+.quit_check: BRN .continue .done .evt
+
+-- Loop back to event polling
+.evt >> .evt
+
+.done: HID .win
+
+!

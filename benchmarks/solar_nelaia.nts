@@ -1,0 +1,34 @@
+-- NELAIA v0.10 Solar System Server
+
+.html: "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: 1200\r\nConnection: close\r\n\r\n<!DOCTYPE html><html><head><title>Solar</title><style>body{background:#000;margin:0;display:flex;justify-content:center;align-items:center;height:100vh}.c{position:relative;width:600px;height:600px}.sun{position:absolute;top:50%;left:50%;width:50px;height:50px;margin:-25px;background:#ff0;border-radius:50%;box-shadow:0 0 30px #ff0}.p{position:absolute;top:50%;left:50%;border-radius:50%}.m{width:6px;height:6px;background:#888;animation:r 2s linear infinite;--d:40px}.v{width:10px;height:10px;background:#da6;animation:r 3s linear infinite;--d:70px}.e{width:12px;height:12px;background:#48f;animation:r 4s linear infinite;--d:100px}.x{width:8px;height:8px;background:#f42;animation:r 6s linear infinite;--d:130px}.j{width:22px;height:22px;background:#db8;animation:r 10s linear infinite;--d:180px}@keyframes r{to{transform:rotate(1turn) translateX(var(--d))}}</style></head><body><div class=c><div class=sun></div><div class=\"p m\"></div><div class=\"p v\"></div><div class=\"p e\"></div><div class=\"p x\"></div><div class=\"p j\"></div></div></body></html>"
+
+.addr: ALC 16
+.a0: PUT .addr 0 2
+.a1: PUT .addr 1 0
+.a2: PUT .addr 2 31
+.a3: PUT .addr 3 144
+.a4: PUT .addr 4 0
+.a5: PUT .addr 5 0
+.a6: PUT .addr 6 0
+.a7: PUT .addr 7 0
+.a8: PUT .addr 8 0
+.a9: PUT .addr 9 0
+.a10: PUT .addr 10 0
+.a11: PUT .addr 11 0
+.a12: PUT .addr 12 0
+.a13: PUT .addr 13 0
+.a14: PUT .addr 14 0
+.a15: PUT .addr 15 0
+
+.sock: TCP
+.bind: BND .sock .addr
+.listen: LST .sock 128
+.buf: ALC 512
+
+.client: ACC .sock
+.recv: RCV .client .buf 512
+.send: XMT .client .html 1294
+.close: CLS .client
+.close >> .client
+
+!

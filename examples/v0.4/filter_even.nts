@@ -1,0 +1,15 @@
+-- NELAIA v0.4 Example: Filter Even Numbers
+-- Using predicate and filter
+
+-- Predicate: is number even?
+.is_even: {
+  IN .n
+  .result: EQ (MOD .n 2) 0
+  OUT .result
+}
+
+-- Generate 1-20, filter evens, print each
+SEQ 1 20 > FLT .is_even > MAP PRT
+!
+
+-- Output: 2, 4, 6, 8, 10, 12, 14, 16, 18, 20
