@@ -1,115 +1,383 @@
-# NELAIA Comprehensive Architecture Specification
-**Version:** 1.1 (Absolute Purity Edition)
-**Status:** Foundational Baseline
-**Paradigm:** Declarative Resource Intent Model (DRIM)
-**Backend:** Pure LLVM Intermediate Representation (IR)
+# NELAIA Architecture v2.0
+
+## Design Principles
+
+### AI-Native First
+This architecture is designed for AI agents to:
+1. Generate code with minimal tokens
+2. Understand the system without human documentation
+3. Extend without breaking existing functionality
+4. Target any platform from a single source
+
+### Core Invariants
+- **IR is sacred**: The Intermediate Representation never changes structure
+- **Backends are isolated**: Each target platform is independent
+- **Domains are additive**: New opcodes extend, never modify
+- **Compatibility is mandatory**: Old .nts files always work
 
 ---
 
-## 1. Executive Summary & Context
-If this document is being read after a total loss of context, start here.
+## Layer Architecture
 
-**The Problem:** Modern Artificial Intelligence (LLMs) is forced to generate code in languages designed for human cognitive limitations (e.g., Python, C++, Rust). These languages require complex Abstract Syntax Trees (AST), nested curly braces, indentation rules, and procedural loops. For an AI, this causes "Inference Bottlenecks": excessive token usage, high hallucination rates on formatting, and massive latency.
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         LAYER 0: IR                             │
+│                    (Immutable Foundation)                       │
+├─────────────────────────────────────────────────────────────────┤
+│  nelaia-ir/                                                     │
+│  ├── graph.rs      Graph { nodes, edges, entry }               │
+│  ├── node.rs       Node { id, op, inputs, outputs }            │
+│  ├── op.rs         trait OpCode + core ops (ADD, SUB, etc)     │
+│  └── types.rs      Type system (I32, I64, PTR, etc)            │
+│                                                                 │
+│  RULE: This crate has ZERO dependencies except std              │
+│  RULE: All other crates depend on this                          │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                       LAYER 1: PARSER                           │
+│                    (Text → IR Transform)                        │
+├─────────────────────────────────────────────────────────────────┤
+│  nelaia-parser/                                                 │
+│  ├── lexer.rs      Tokenize .nts files                         │
+│  ├── parser.rs     Build IR Graph from tokens                  │
+│  └── error.rs      Parse error handling                        │
+│                                                                 │
+│  INPUT:  .nts text file                                         │
+│  OUTPUT: nelaia_ir::Graph                                       │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                      LAYER 2: OPTIMIZER                         │
+│                   (IR → Optimized IR)                           │
+├─────────────────────────────────────────────────────────────────┤
+│  nelaia-optimizer/                                              │
+│  ├── dce.rs        Dead Code Elimination                       │
+│  ├── inline.rs     Function Inlining                           │
+│  ├── fold.rs       Constant Folding                            │
+│  └── usage.rs      Usage Analysis                              │
+│                                                                 │
+│  INPUT:  nelaia_ir::Graph                                       │
+│  OUTPUT: nelaia_ir::Graph (optimized)                           │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+              ┌───────────────┼───────────────┐
+              ▼               ▼               ▼
+┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐
+│  LAYER 3A:      │ │  LAYER 3B:      │ │  LAYER 3C:      │
+│  BACKEND-NATIVE │ │  BACKEND-WASM   │ │  BACKEND-*      │
+├─────────────────┤ ├─────────────────┤ ├─────────────────┤
+│ nelaia-backend- │ │ nelaia-backend- │ │ Future backends │
+│ native/         │ │ wasm/           │ │                 │
+│ ├── llvm.rs     │ │ ├── wasm.rs     │ │ • Android       │
+│ ├── windows.rs  │ │ ├── memory.rs   │ │ • iOS           │
+│ └── linux.rs    │ │ └── imports.rs  │ │ • RISC-V        │
+│                 │ │                 │ │ • GPU/CUDA      │
+│ OUTPUT: .exe    │ │ OUTPUT: .wasm   │ │                 │
+└─────────────────┘ └─────────────────┘ └─────────────────┘
 
-**The Solution:** NELAIA is an AI-Native Metalanguage and Compiler. It is not designed for humans to write. It is designed for LLMs to generate instantly. It uses a "Zero-Syntax" approach: no brackets, no nesting, just a linear stream of compressed tokens. The NELAIA compiler (written in Rust) ingests these tokens in O(n) time and emits highly optimized LLVM Intermediate Representation (IR) that compiles directly to native machine code (`.exe` / `.elf`).
+┌─────────────────────────────────────────────────────────────────┐
+│                       LAYER 4: DOMAINS                          │
+│                   (Opcode Extensions)                           │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  nelaia-domain-core/    (always included)                       │
+│  └── ADD, SUB, MUL, DIV, CMP, JMP, CAL, RET, etc               │
+│                                                                 │
+│  nelaia-domain-net/     (network applications)                  │
+│  └── TCP, UDP, BND, LST, ACC, CON, XMT, RCV, EPL, etc          │
+│                                                                 │
+│  nelaia-domain-ui/      (user interfaces) [NEW]                 │
+│  └── BOX, TXT, BTN, INP, IMG, EVT, STY, LAY, etc               │
+│                                                                 │
+│  nelaia-domain-db/      (databases) [FUTURE]                    │
+│  └── QRY, INS, UPD, DEL, TXN, IDX, etc                         │
+│                                                                 │
+│  nelaia-domain-ml/      (machine learning) [FUTURE]             │
+│  └── TEN, MAT, CNV, RNN, ATT, etc                              │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
 
----
+┌─────────────────────────────────────────────────────────────────┐
+│                      LAYER 5: RUNTIMES                          │
+│                 (Interpreted Execution)                         │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  nelaia-runtime-wasm/   (runs in browser)                       │
+│  ├── interpreter.rs    Execute IR directly                     │
+│  ├── renderer.rs       Canvas/WebGL rendering                  │
+│  └── bridge.rs         JS interop                              │
+│                                                                 │
+│  Compiled to WASM, loaded by browser, interprets .nts graphs   │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
 
-## 2. Core Architectural Philosophies
-
-### 2.1 The Principle of Absolute Purity
-NELAIA must never use "crutches". It does not transpile to Rust or C. It does not use external C libraries to fake complex behavior. The compiler emits raw LLVM IR instructions natively. If an operation requires interacting with the Operating System, NELAIA natively links to the OS's base `libc` (e.g., `msvcrt.dll` on Windows) via low-level Foreign Function Interfaces (FFI).
-
-### 2.2 The Law of Lexical Compression
-LLMs bill and process by "tokens". A word like `STATIC_LOAD` splits into three tokens for an LLM. To optimize generation speed and cost, NELAIA enforces the **3-Letter Lexicon Rule**. All operational commands are compressed into a single token (e.g., `STR`, `OUT`, `EXE`).
-
----
-
-## 3. The NELAIA Token Stream (NTS) Language Spec
-
-NTS files (`.nts`) are parsed linearly by spaces. The language is structured around mathematical reference IDs (e.g., `#1`, `#2`) to track data without human variable names.
-
-### Current v1.1 Lexicon (Purist Core)
-
-1. **`STR <ref_id> <string_literal>`**
-   - **Purpose:** Allocates a static string in memory.
-   - **Example:** `STR #1 "Hello AI"`
-   - **Internal Mapping:** Maps to LLVM `private unnamed_addr constant`.
-
-2. **`OUT <buffer_ref>`**
-   - **Purpose:** Prints the referenced buffer to standard output.
-   - **Example:** `OUT #1`
-   - **Internal Mapping:** Maps to a native call to `puts` from the OS `libc`.
-
-3. **`EXE`**
-   - **Purpose:** Marks the end of the execution graph and triggers the build.
-   - **Example:** `EXE`
-
----
-
-## 4. Compiler Codebase Architecture (Rust)
-
-The compiler `nelaia-c` is written in Rust for memory safety during parsing. It is divided into 4 tightly coupled modules:
-
-### 4.1 `main.rs` (The Orchestrator)
-- Reads the `.nts` file from the disk.
-- Invokes the Parser.
-- Invokes the Emitter to generate the `.ll` file.
-- Handles standard I/O logging for the compilation process.
-
-### 4.2 `ir.rs` (Intermediate Representation)
-- Defines the `Opcode` Enum representing the 3-letter lexicon (`STR`, `OUT`, `EXE`).
-- Defines the `NelaiaGraph` struct, which holds a linear `Vec<Opcode>`. This graph replaces complex nested ASTs used by traditional compilers.
-
-### 4.3 `parser.rs` (The Zero-Syntax Ingestor)
-- Reads the file line by line.
-- Splits tokens by the `"` character to safely extract string literals.
-- Extracts mathematical references by parsing `#` (e.g., `#1` -> `1`).
-- Instantly matches the 3-letter tokens and pushes them to the `NelaiaGraph`.
-- **Complexity:** O(n). Fastest possible ingestion.
-
-### 4.4 `emitter.rs` (The LLVM Backend & Optimizer)
-This is the heart of the "Absolute Purity" engine.
-1. **IR Generation:** It iterates over the `NelaiaGraph` and constructs a `.ll` string.
-2. **Global String Allocation:** For every `STR`, it calculates the length (including the null terminator `\00`) and declares a global constant (e.g., `@str.1 = private unnamed_addr constant [9 x i8] c"Hello AI\00"`).
-3. **Native Invocation:** For every `OUT`, it calls `@puts(ptr @str.1)`.
-4. **Assembly (Clang):** It invokes the system's `clang` as an assembler.
-   - **CRITICAL:** It passes the `-O3` flag. This engages the LLVM V8 Optimization engine, performing loop unrolling, vectorization, and dead-code elimination.
-   - It passes `-w` to silence warnings, keeping the AI's output clean.
-
----
-
-## 5. End-to-End Pipeline Example
-
-**Input (`pureza_opt.nts`):**
-```text
-STR #1 "NELAIA Optimizacion Extrema"
-OUT #1
-EXE
+┌─────────────────────────────────────────────────────────────────┐
+│                       LAYER 6: TOOLS                            │
+│                    (User Interfaces)                            │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  nelaia-cli/            Command-line compiler                   │
+│  nelaia-lsp/            Language Server Protocol [FUTURE]       │
+│  nelaia-playground/     Web-based editor [FUTURE]               │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-**Intermediate LLVM IR Generated (`nelaia_temp_emit.ll`):**
-```llvm
-; NELAIA AUTO-GENERATED LLVM IR (V8 OPTIMIZED)
-declare i32 @puts(ptr)
-@str.1 = private unnamed_addr constant [28 x i8] c"NELAIA Optimizacion Extrema\00"
+---
 
-define i32 @main() {
-entry:
-  %call1 = call i32 @puts(ptr @str.1)
-  ret i32 0
+## Directory Structure
+
+```
+nelaia/
+├── Cargo.toml                    # Workspace definition
+├── ARCHITECTURE.md               # This document
+├── README.md
+│
+├── crates/
+│   ├── nelaia-ir/                # Layer 0: Core IR
+│   ├── nelaia-parser/            # Layer 1: Parser
+│   ├── nelaia-optimizer/         # Layer 2: Optimizer
+│   ├── nelaia-backend-native/    # Layer 3: Native backend
+│   ├── nelaia-backend-wasm/      # Layer 3: WASM backend
+│   ├── nelaia-domain-core/       # Layer 4: Core opcodes
+│   ├── nelaia-domain-net/        # Layer 4: Network opcodes
+│   ├── nelaia-domain-ui/         # Layer 4: UI opcodes
+│   ├── nelaia-runtime-wasm/      # Layer 5: Browser runtime
+│   └── nelaia-cli/               # Layer 6: CLI tool
+│
+├── examples/
+│   ├── server/                   # Network examples
+│   ├── ui/                       # UI examples
+│   └── hybrid/                   # Full-stack examples
+│
+└── tests/
+    ├── regression/               # Compatibility tests
+    └── benchmarks/               # Performance tests
+```
+
+---
+
+## Opcode Extension System
+
+### Current (Monolithic)
+```rust
+// ir.rs - all ops in one enum
+pub enum Op {
+    ADD, SUB, MUL, DIV,           // Core
+    TCP, UDP, BND, LST,           // Net
+    // Adding UI here would bloat this enum
 }
 ```
 
-**Final Output:**
-A heavily optimized `nelaia_artifact.exe` that natively executes the code at peak CPU efficiency.
+### Proposed (Modular)
+```rust
+// nelaia-ir/src/op.rs
+pub trait OpCode: Clone + Debug {
+    fn domain(&self) -> &'static str;
+    fn mnemonic(&self) -> &'static str;
+    fn arity(&self) -> (usize, usize);  // (inputs, outputs)
+}
+
+// nelaia-domain-core/src/lib.rs
+#[derive(Clone, Debug)]
+pub enum CoreOp { ADD, SUB, MUL, DIV, CMP, JMP, CAL, RET }
+impl OpCode for CoreOp { ... }
+
+// nelaia-domain-net/src/lib.rs  
+#[derive(Clone, Debug)]
+pub enum NetOp { TCP, UDP, BND, LST, ACC, CON, XMT, RCV }
+impl OpCode for NetOp { ... }
+
+// nelaia-domain-ui/src/lib.rs
+#[derive(Clone, Debug)]
+pub enum UiOp { BOX, TXT, BTN, INP, IMG, EVT, STY }
+impl OpCode for UiOp { ... }
+```
+
+### Dynamic Op Resolution
+```rust
+// nelaia-ir/src/registry.rs
+pub struct OpRegistry {
+    domains: HashMap<&'static str, Box<dyn OpDomain>>,
+}
+
+impl OpRegistry {
+    pub fn resolve(&self, mnemonic: &str) -> Option<Box<dyn OpCode>> {
+        for domain in self.domains.values() {
+            if let Some(op) = domain.lookup(mnemonic) {
+                return Some(op);
+            }
+        }
+        None
+    }
+}
+```
 
 ---
 
-## 6. Future Roadmap: The Path to v2.0
+## Backend Interface
 
-If reconstructing this project, the immediate next architectural phases are:
+All backends implement the same trait:
 
-1. **Basic Arithmetic (ALU Integration):** Add 3-letter tokens for math (`ADD`, `SUB`, `MUL`, `DIV`) mapping directly to LLVM's `add`, `sub`, etc.
-2. **Conditional Branching (Mathematical Jumps):** Implement zero-syntax branching using reference evaluation (e.g., `JMP #target #condition`).
-3. **The Bootstrapping Phase (Direct Syscalls):** Once NELAIA is Turing complete via basic math and pointers, write the Standard Library (Network, File I/O) purely in NTS using raw LLVM IR `syscall` instructions, completely deprecating the reliance on `libc`'s `puts`.
+```rust
+// nelaia-ir/src/backend.rs
+pub trait Backend {
+    type Output;
+    type Error;
+    
+    fn name(&self) -> &'static str;
+    fn supported_domains(&self) -> &[&'static str];
+    fn compile(&self, graph: &Graph) -> Result<Self::Output, Self::Error>;
+}
+
+// nelaia-backend-native/src/lib.rs
+pub struct NativeBackend {
+    target: Target,  // Windows, Linux, MacOS
+}
+impl Backend for NativeBackend {
+    type Output = Vec<u8>;  // Binary
+    type Error = CompileError;
+    fn compile(&self, graph: &Graph) -> Result<Vec<u8>, CompileError> { ... }
+}
+
+// nelaia-backend-wasm/src/lib.rs
+pub struct WasmBackend;
+impl Backend for WasmBackend {
+    type Output = Vec<u8>;  // .wasm bytes
+    type Error = CompileError;
+    fn compile(&self, graph: &Graph) -> Result<Vec<u8>, CompileError> { ... }
+}
+```
+
+---
+
+## Migration Path
+
+### Phase 0: Document (NOW)
+- [x] Create ARCHITECTURE.md
+- [ ] Consortium review and approval
+
+### Phase 1: Extract IR (When needed)
+- [ ] Create workspace Cargo.toml
+- [ ] Extract nelaia-ir from ir.rs
+- [ ] Extract nelaia-parser from parser.rs
+- [ ] Regression tests pass
+
+### Phase 2: Modularize Backend
+- [ ] Extract nelaia-backend-native from emitter_pure.rs
+- [ ] Same binary output verified
+
+### Phase 3: Add WASM Backend
+- [ ] Create nelaia-backend-wasm
+- [ ] Create nelaia-runtime-wasm
+- [ ] POC: Calculator app
+
+### Phase 4: Add UI Domain
+- [ ] Create nelaia-domain-ui
+- [ ] Define UI opcodes
+- [ ] Integrate with WASM runtime
+
+---
+
+## Compatibility Guarantees
+
+1. **Source Compatibility**: All .nts files that compile today will compile forever
+2. **Binary Compatibility**: Same .nts produces same binary (bit-for-bit when possible)
+3. **API Stability**: Public traits and structs follow semver
+4. **Deprecation Policy**: Old features deprecated for 2 major versions before removal
+
+---
+
+## AI Generation Guidelines
+
+When an AI generates NELAIA code:
+
+1. **Detect target platform** from user request
+2. **Select minimal domains** needed (don't include UI for CLI tools)
+3. **Generate graph** in .nts format
+4. **Specify backend** in compilation command
+
+Example:
+```
+User: "Create a web calculator"
+AI detects: UI needed, WASM target
+AI generates: calculator.nts using domain-ui ops
+AI compiles: nelaia compile calculator.nts --backend=wasm --domains=core,ui
+Output: calculator.wasm (5KB) + runtime.wasm (300KB cached)
+```
+
+---
+
+---
+
+## Consortium Review (v2.1 Revisions)
+
+### Changes from v2.0 to v2.1
+
+Based on AI-native reasoning, the following simplifications were approved:
+
+1. **Unified Op Enum**: Instead of separate domain crates, all opcodes live in one enum with a `domain()` method. This reduces complexity while maintaining organization.
+
+2. **Fewer Crates**: Reduced from 10+ crates to 4:
+   - `nelaia-core` (IR + Parser + Optimizer)
+   - `nelaia-native` (Windows/Linux/Mac backend)
+   - `nelaia-wasm` (Web backend + runtime)
+   - `nelaia-cli` (Command-line tool)
+
+3. **Bytecode Format**: Added `.nelaia.bin` intermediate format for faster loading in runtime scenarios.
+
+4. **JIT Deferred**: Runtime JIT compilation deferred to POC evaluation phase.
+
+### Simplified Structure (v2.1)
+
+```
+nelaia/
+├── Cargo.toml                    # Workspace
+├── crates/
+│   ├── nelaia-core/              # IR, Parser, Optimizer, Bytecode
+│   ├── nelaia-native/            # LLVM backend for native targets
+│   ├── nelaia-wasm/              # WASM backend + browser runtime
+│   └── nelaia-cli/               # CLI tool
+├── examples/
+└── tests/
+```
+
+### Unified Op Enum (v2.1)
+
+```rust
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum Op {
+    // === CORE ===
+    ADD, SUB, MUL, DIV, MOD,
+    AND, OR, XOR, NOT, SHL, SHR,
+    CMP, JMP, JEQ, JNE, JLT, JGT,
+    CAL, RET, PUT, GET, LOD, STO,
+    
+    // === NET ===
+    TCP, UDP, BND, LST, ACC, CON, CLS,
+    XMT, RCV, EPL, ECT, EWA,
+    NDL, QCK, SBF, KAL,
+    THR, JON, MTX, LCK, ULK,
+    QUE, PSH, POP,
+    
+    // === UI ===
+    BOX, TXT, BTN, INP, IMG, EVT, STY, LAY,
+}
+
+impl Op {
+    pub const fn domain(&self) -> Domain { ... }
+}
+```
+
+---
+
+## Version History
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 2.1 | 2026-06-13 | Consortium review: simplified to 4 crates, unified Op enum |
+| 2.0 | 2026-06-13 | Initial modular architecture proposal |
+| 1.x | 2026-06-xx | Monolithic nelaia-core |
