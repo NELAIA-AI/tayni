@@ -1,14 +1,156 @@
-mod core;
+//! NELAIA Compiler v0.9
+//! Pure Syscalls Only - No Embedded Programs
+
+mod ir;
+mod parser;
 mod emitter_pure;
-use core::{parse,G,U};
-use emitter_pure::{PureEmitter,TargetPlatform};
-use std::{env,fs,process::Command};
-fn main(){let a:Vec<String>=env::args().collect();let q=a.contains(&"-q".into())||a.contains(&"--quiet".into());if a.len()<2{if!q{eprintln!("nelaia 1.0");}return;}let f=&a[1];let eo=a.contains(&"--emit-llvm".into());let t=if a.iter().any(|x|x=="--target=linux"){TargetPlatform::Linux}else if a.iter().any(|x|x=="--target=windows"){TargetPlatform::Windows}else{#[cfg(target_os="windows")]{TargetPlatform::Windows}#[cfg(not(target_os="windows"))]{TargetPlatform::Linux}};let o=if a.len()>2&&!a[2].starts_with("--"){a[2].clone()}else{f.replace(".nts","")};let c=match fs::read_to_string(f){Ok(x)=>x,Err(e)=>{eprintln!("E:R:{}",e);std::process::exit(1);}};let g=match parse(&c){Ok(x)=>x,Err(e)=>{eprintln!("E:P:{}",e);std::process::exit(1);}};let ir=match emit_compat(&g,t){Ok(x)=>x,Err(e)=>{eprintln!("E:E:{}",e);std::process::exit(1);}};let ll=format!("{}.ll",o);if let Err(e)=fs::write(&ll,&ir){eprintln!("E:W:{}",e);std::process::exit(1);}if eo{return;}let r=match t{TargetPlatform::Linux=>Command::new("clang").args(&["-nostdlib","-static","-O2","-o",&o,&ll]).output(),TargetPlatform::Windows=>{let exe=format!("{}.exe",o);let ss=if a.contains(&"--gui".into()){"/SUBSYSTEM:WINDOWS"}else{"/SUBSYSTEM:CONSOLE"};Command::new("clang").args(&["-O2","-Wl,/ENTRY:mainCRTStartup",&format!("-Wl,{}",ss),"-lkernel32","-lws2_32","-luser32","-lgdi32","-o",&exe,&ll]).output()}};match r{Ok(x)if x.status.success()=>{}Ok(x)=>{eprintln!("E:C:{}",x.status);std::process::exit(1);}Err(e)=>{eprintln!("E:C:{}",e);std::process::exit(1);}}}
-fn emit_compat(g:&G,t:TargetPlatform)->Result<String,String>{use crate::ir::*;let mut og=Graph::new();for n in&g.n{og.add_node(conv_node(n));}PureEmitter::emit(&og,t)}
-fn conv_node(n:&core::N)->crate::ir::Node{match n{core::N::L{i,v}=>crate::ir::Node::Literal{id:i.clone(),value:conv_val(v)},core::N::R{i,t}=>crate::ir::Node::Reference{id:i.clone(),target:t.clone()},core::N::O{i,o,a}=>crate::ir::Node::Operation{id:i.clone(),op:conv_op(o),args:a.iter().map(conv_arg).collect()},core::N::F{i,p,b}=>crate::ir::Node::Function{id:i.clone(),params:p.clone(),body:b.iter().map(conv_node).collect()},core::N::W{s,d}=>crate::ir::Node::Flow{source:conv_arg(s),dest:conv_dst(d)},core::N::S{i,n}=>crate::ir::Node::SubGraph{id:i.clone(),inputs:vec![],outputs:vec![],nodes:n.iter().map(conv_node).collect()},core::N::B(s)=>crate::ir::Node::Label(s.clone())}}
-fn conv_val(v:&core::V)->crate::ir::Value{match v{core::V::I(n)=>crate::ir::Value::Int(*n),core::V::F(f)=>crate::ir::Value::Float(*f),core::V::S(s)=>crate::ir::Value::String(s.clone()),core::V::P(a,b)=>crate::ir::Value::Pair(Box::new(conv_val(a)),Box::new(conv_val(b)))}}
-fn conv_arg(a:&core::A)->crate::ir::Arg{match a{core::A::R(s)=>crate::ir::Arg::Ref(s.clone()),core::A::L(v)=>crate::ir::Arg::Lit(conv_val(v)),core::A::E(o,args)=>crate::ir::Arg::Expr(conv_op(o),args.iter().map(conv_arg).collect())}}
-fn conv_dst(d:&core::D)->crate::ir::FlowDest{match d{core::D::N(s)=>crate::ir::FlowDest::Node(s.clone()),core::D::C(s)=>crate::ir::FlowDest::CyclicNode(s.clone()),core::D::E(e)=>crate::ir::FlowDest::Effect(conv_eff(e))}}
-fn conv_eff(e:&core::E)->crate::ir::Effect{match e{core::E::Prt=>crate::ir::Effect::Print,core::E::Net(p)=>crate::ir::Effect::OpenNet(*p),core::E::Dsk(s)=>crate::ir::Effect::OpenDsk(s.clone()),core::E::Acc=>crate::ir::Effect::Accept,core::E::Get=>crate::ir::Effect::Get,core::E::Put=>crate::ir::Effect::Put,core::E::Cls=>crate::ir::Effect::Close}}
-fn conv_op(o:&core::O)->crate::ir::Op{match o{core::O::Add=>crate::ir::Op::Add,core::O::Sub=>crate::ir::Op::Sub,core::O::Mul=>crate::ir::Op::Mul,core::O::Div=>crate::ir::Op::Div,core::O::Mod=>crate::ir::Op::Mod,core::O::Neg=>crate::ir::Op::Neg,core::O::Eq=>crate::ir::Op::Eq,core::O::Ne=>crate::ir::Op::Ne,core::O::Lt=>crate::ir::Op::Lt,core::O::Gt=>crate::ir::Op::Gt,core::O::Le=>crate::ir::Op::Le,core::O::Ge=>crate::ir::Op::Ge,core::O::And=>crate::ir::Op::And,core::O::Or=>crate::ir::Op::Or,core::O::Not=>crate::ir::Op::Not,core::O::Seq=>crate::ir::Op::Seq,core::O::Map=>crate::ir::Op::Map,core::O::Fld=>crate::ir::Op::Fld,core::O::Flt=>crate::ir::Op::Flt,core::O::Len=>crate::ir::Op::Len,core::O::Fst=>crate::ir::Op::Fst,core::O::Snd=>crate::ir::Op::Snd,core::O::Brn=>crate::ir::Op::Brn,core::O::Prt=>crate::ir::Op::Prt,core::O::Inp=>crate::ir::Op::Inp,core::O::Opn=>crate::ir::Op::Opn,core::O::Acc=>crate::ir::Op::Acc,core::O::Get=>crate::ir::Op::Get,core::O::Put=>crate::ir::Op::Put,core::O::Cls=>crate::ir::Op::Cls,core::O::Err=>crate::ir::Op::Err,core::O::Tcp=>crate::ir::Op::Tcp,core::O::Udp=>crate::ir::Op::Udp,core::O::Bnd=>crate::ir::Op::Bnd,core::O::Lst=>crate::ir::Op::Lst,core::O::Con=>crate::ir::Op::Con,core::O::Xmt=>crate::ir::Op::Xmt,core::O::Rcv=>crate::ir::Op::Rcv,core::O::Sel=>crate::ir::Op::Sel,core::O::Rdy=>crate::ir::Op::Rdy,core::O::Nbk=>crate::ir::Op::Nbk,core::O::Ndl=>crate::ir::Op::Ndl,core::O::Qck=>crate::ir::Op::Qck,core::O::Sbf=>crate::ir::Op::Sbf,core::O::Kal=>crate::ir::Op::Kal,core::O::Epl=>crate::ir::Op::Epl,core::O::Ewa=>crate::ir::Op::Ewa,core::O::Ect=>crate::ir::Op::Ect,core::O::Thr=>crate::ir::Op::Thr,core::O::Jon=>crate::ir::Op::Jon,core::O::Mtx=>crate::ir::Op::Mtx,core::O::Lck=>crate::ir::Op::Lck,core::O::Ulk=>crate::ir::Op::Ulk,core::O::Que=>crate::ir::Op::Que,core::O::Psh=>crate::ir::Op::Psh,core::O::Pop=>crate::ir::Op::Pop,core::O::Ret=>crate::ir::Op::Ret,core::O::Alc=>crate::ir::Op::Alc,core::O::Fre=>crate::ir::Op::Fre,core::O::Chk=>crate::ir::Op::Chk,core::O::Win=>crate::ir::Op::Win,core::O::Shw=>crate::ir::Op::Shw,core::O::Hid=>crate::ir::Op::Hid,core::O::Evt=>crate::ir::Op::Evt,core::O::Run=>crate::ir::Op::Run,core::O::Lbl=>crate::ir::Op::Lbl,core::O::Txb=>crate::ir::Op::Txb,core::O::Btn=>crate::ir::Op::Btn,core::O::Dlg=>crate::ir::Op::Dlg,core::O::Gvl=>crate::ir::Op::Gvl,core::O::Svl=>crate::ir::Op::Svl,core::O::Cal(s)=>crate::ir::Op::Call(s.clone())}}
-mod ir;mod parser;
+
+use parser::Parser;
+use emitter_pure::{PureEmitter, TargetPlatform};
+use std::env;
+use std::fs;
+use std::process::Command;
+
+fn main() {
+    let args: Vec<String> = env::args().collect();
+    
+    let quiet = args.contains(&"--quiet".to_string()) || args.contains(&"-q".to_string());
+    
+    if args.len() < 2 {
+        if !quiet {
+            eprintln!("nelaia-c 0.9 pure");
+            eprintln!("usage: nelaia-c <file> [output] [options]");
+        }
+        return;
+    }
+    
+    let nts_file = &args[1];
+    let emit_only = args.contains(&"--emit-llvm".to_string());
+    let no_warn = args.contains(&"--no-warn".to_string());
+    
+    // Parse target platform
+    let target = if args.iter().any(|a| a == "--target=linux") {
+        TargetPlatform::Linux
+    } else if args.iter().any(|a| a == "--target=windows") {
+        TargetPlatform::Windows
+    } else {
+        #[cfg(target_os = "windows")]
+        { TargetPlatform::Windows }
+        #[cfg(not(target_os = "windows"))]
+        { TargetPlatform::Linux }
+    };
+    
+    let output_name = if args.len() > 2 && !args[2].starts_with("--") {
+        args[2].clone()
+    } else {
+        nts_file.replace(".nts", "")
+    };
+    
+    // Read source file
+    let content = match fs::read_to_string(nts_file) {
+        Ok(c) => c,
+        Err(e) => {
+            eprintln!("E:READ:{}", e);
+            std::process::exit(1);
+        }
+    };
+    
+    // Phase 1: Parse
+    let graph = match Parser::parse(&content) {
+        Ok(g) => g,
+        Err(e) => {
+            eprintln!("E:PARSE:{}", e);
+            std::process::exit(1);
+        }
+    };
+    
+    // Phase 1.5: Analyze graph
+    let analysis = graph.analyze();
+    
+    // Report cycles (errors)
+    if !analysis.cycles.is_empty() {
+        eprintln!("E:CYCLE:{}", analysis.cycles.iter().map(|c| c.join(">")).collect::<Vec<_>>().join(","));
+        std::process::exit(1);
+    }
+    
+    // Report undefined references (errors)
+    if !analysis.undefined_refs.is_empty() {
+        eprintln!("E:UNDEF:{}", analysis.undefined_refs.join(","));
+        std::process::exit(1);
+    }
+    
+    // Report dead nodes (warnings) - only if not quiet and not suppressed
+    if !quiet && !no_warn && !analysis.dead_nodes.is_empty() {
+        eprintln!("W:DEAD:{}", analysis.dead_nodes.join(","));
+    }
+    
+    // Phase 2: Emit LLVM IR
+    let llvm_ir = match PureEmitter::emit(&graph, target) {
+        Ok(ir) => ir,
+        Err(e) => {
+            eprintln!("E:EMIT:{}", e);
+            std::process::exit(1);
+        }
+    };
+    
+    // Write LLVM IR
+    let ll_file = format!("{}.ll", output_name);
+    if let Err(e) = fs::write(&ll_file, &llvm_ir) {
+        eprintln!("E:WRITE:{}", e);
+        std::process::exit(1);
+    }
+    
+    if emit_only {
+        return;
+    }
+    
+    // Phase 3: Compile with clang
+    let compile_result = match target {
+        TargetPlatform::Linux => {
+            Command::new("clang")
+                .args(&[
+                    "-nostdlib",
+                    "-static",
+                    "-O2",
+                    "-o", &output_name,
+                    &ll_file,
+                ])
+                .output()
+        }
+        TargetPlatform::Windows => {
+            let exe_name = format!("{}.exe", output_name);
+            let subsystem = if args.contains(&"--gui".to_string()) {
+                "/SUBSYSTEM:WINDOWS"
+            } else {
+                "/SUBSYSTEM:CONSOLE"
+            };
+            Command::new("clang")
+                .args(&[
+                    "-O2",
+                    "-Wl,/ENTRY:mainCRTStartup",
+                    &format!("-Wl,{}", subsystem),
+                    "-lkernel32",
+                    "-lws2_32",
+                    "-luser32",
+                    "-lgdi32",
+                    "-o", &exe_name,
+                    &ll_file,
+                ])
+                .output()
+        }
+    };
+    
+    match compile_result {
+        Ok(output) if output.status.success() => {
+            // Success - silent
+        }
+        Ok(output) => {
+            eprintln!("E:CLANG:{}", output.status);
+            std::process::exit(1);
+        }
+        Err(e) => {
+            eprintln!("E:CLANG:{}", e);
+            std::process::exit(1);
+        }
+    }
+}
