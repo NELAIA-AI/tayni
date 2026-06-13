@@ -1,0 +1,20 @@
+-- NELAIA Example: Dynamic Vector Test
+-- Creates vector, pushes values, reads them back
+
+.vec: VEC 10
+
+.p1: VPH .vec 100
+.p2: VPH .vec 200
+.p3: VPH .vec 300
+
+.len: VLN .vec
+.cap: VCP .vec
+
+.v0: VGT .vec 0
+.v1: VGT .vec 1
+.v2: VGT .vec 2
+
+.set: VST .vec 1 999
+.v1b: VGT .vec 1
+
+!

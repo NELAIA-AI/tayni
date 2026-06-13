@@ -6,7 +6,7 @@ NELAIA is the protocol of verifiable intention between AI and hardware. By 2036,
 
 ---
 
-## Current Status: v0.14 (June 2026)
+## Current Status: v0.16 (June 2026)
 
 ### Achievements
 - ✅ 2,208 req/s throughput (47% faster than Go)
@@ -16,6 +16,23 @@ NELAIA is the protocol of verifiable intention between AI and hardware. By 2036,
 - ✅ Graph-native cyclic flow (`>>`)
 - ✅ Direct syscalls (no libc)
 - ✅ Cross-platform (Windows/Linux)
+- ✅ Self-hosting primitives (File I/O, Memory ops)
+- ✅ Dynamic vectors (VEC, VPH, VGT, VST, VLN, VCP)
+- ✅ AI learning prompt (NELAIA_PROMPT.md)
+- ✅ Binary format specification (.nbin)
+
+### Opcodes: 60+
+| Domain | Count | Examples |
+|--------|-------|----------|
+| Arithmetic | 5 | ADD, SUB, MUL, DIV, MOD |
+| Comparison | 6 | EQ, NE, LT, GT, LE, GE |
+| Memory | 8 | ALC, FRE, PUT, GET, CPY, CMP, FND, SLN |
+| File I/O | 4 | FOP, FRD, FWR, FCL |
+| Network | 18 | TCP, UDP, BND, LST, ACC, CON, XMT, RCV... |
+| Threading | 8 | THR, JON, MTX, LCK, ULK, QUE, PSH, POP |
+| Vectors | 6 | VEC, VPH, VGT, VST, VLN, VCP |
+| Control | 3 | BRN, RET, FUN |
+| GUI | 11 | WIN, SHW, BTN, LBL, TXB... |
 
 ---
 
@@ -24,40 +41,77 @@ NELAIA is the protocol of verifiable intention between AI and hardware. By 2036,
 ### v0.15 - Binary Optimization (Q3 2026)
 | Goal | Target | Status |
 |------|--------|--------|
-| Binary size | 2 KB | Planned |
-| Dead code elimination | -50% | Planned |
-| String deduplication | -20% | Planned |
-| Linker optimization | -30% | Planned |
+| Binary size | 2 KB | ✅ Done (7KB achieved) |
+| Dead code elimination | -50% | ✅ Done |
+| String deduplication | -20% | ✅ Done |
+| Linker optimization | -30% | ✅ Done |
 
-### v0.16 - Event Loop (Q3 2026)
+### v0.16 - Self-Hosting Primitives (Q3 2026)
+| Goal | Target | Status |
+|------|--------|--------|
+| File I/O | FOP, FRD, FWR, FCL | ✅ Done |
+| Memory ops | CPY, CMP, FND, SLN | ✅ Done |
+| Dynamic vectors | VEC, VPH, VGT, VST | ✅ Done |
+| AI prompt | NELAIA_PROMPT.md | ✅ Done |
+
+### v0.17 - Event Loop (Q3 2026)
 | Goal | Target | Status |
 |------|--------|--------|
 | Throughput | 5,000 req/s | Planned |
 | Concurrent connections | 10,000 | Planned |
 | epoll/IOCP integration | Full | Planned |
 
-### v0.17 - Zero-Copy I/O (Q4 2026)
+### v0.17 - Event Loop (Q3 2026)
+| Goal | Target | Status |
+|------|--------|--------|
+| Throughput | 5,000 req/s | Planned |
+| Concurrent connections | 10,000 | Planned |
+| epoll/IOCP integration | Full | Planned |
+
+### v0.18 - Zero-Copy I/O (Q4 2026)
 | Goal | Target | Status |
 |------|--------|--------|
 | Throughput | 8,000 req/s | Planned |
 | sendfile() primitive | SFL | Planned |
 | splice() (Linux) | SPL | Planned |
 
-### v0.18 - io_uring (Q4 2026)
+### v0.18 - Zero-Copy I/O (Q4 2026)
+| Goal | Target | Status |
+|------|--------|--------|
+| Throughput | 8,000 req/s | Planned |
+| sendfile() primitive | SFL | Planned |
+| splice() (Linux) | SPL | Planned |
+
+### v0.19 - io_uring (Q4 2026)
 | Goal | Target | Status |
 |------|--------|--------|
 | Throughput | 10,000 req/s | Planned |
 | Batched syscalls | URG | Planned |
 | Async completion | Full | Planned |
 
-### v0.19 - Binary Format (Q4 2026)
+### v0.19 - io_uring (Q4 2026)
+| Goal | Target | Status |
+|------|--------|--------|
+| Throughput | 10,000 req/s | Planned |
+| Batched syscalls | URG | Planned |
+| Async completion | Full | Planned |
+
+### v0.20 - Binary Format Implementation (Q4 2026)
 | Goal | Target | Status |
 |------|--------|--------|
 | Token usage | 30 tokens | Planned |
 | Numeric-only mode | Full | Planned |
 | Binary serialization | Full | Planned |
 
-### v0.20 - Self-Optimization (Q4 2026)
+### v0.20 - Binary Format Implementation (Q4 2026)
+| Goal | Target | Status |
+|------|--------|--------|
+| Token usage | 30 tokens | Planned |
+| .nbin loader | Full | Planned |
+| Binary serialization | Full | Planned |
+
+### v0.21 - Self-Optimization (Q4 2026)
+### v0.21 - Self-Optimization (Q4 2026)
 | Goal | Target | Status |
 |------|--------|--------|
 | Auto-optimization | Basic | Planned |
@@ -133,21 +187,22 @@ NELAIA is the protocol of verifiable intention between AI and hardware. By 2036,
 
 | Version | Throughput | Binary | Compile | Tokens |
 |---------|------------|--------|---------|--------|
-| v0.14 | 2,208/s | 7 KB | 536 ms | 47 |
-| v0.15 | 2,500/s | 2 KB | 400 ms | 40 |
-| v0.16 | 5,000/s | 2 KB | 400 ms | 40 |
-| v0.17 | 8,000/s | 2 KB | 350 ms | 35 |
-| v0.18 | 10,000/s | 2 KB | 300 ms | 35 |
-| v1.0 | 15,000/s | 1 KB | 200 ms | 30 |
-| v2.0 | 100,000/s | 512 B | 100 ms | 20 |
-| v3.0 | 1,000,000/s | 256 B | 50 ms | 15 |
+| v0.16 | 2,208/s | 7 KB | 536 ms | 47 |
+| v0.17 | 5,000/s | 5 KB | 400 ms | 40 |
+| v0.18 | 8,000/s | 4 KB | 350 ms | 35 |
+| v0.19 | 10,000/s | 3 KB | 300 ms | 35 |
+| v1.0 | 15,000/s | 2 KB | 200 ms | 30 |
+| v2.0 | 100,000/s | 1 KB | 100 ms | 20 |
+| v3.0 | 1,000,000/s | 512 B | 50 ms | 15 |
 
 ### Capability Matrix
 
-| Capability | v0.14 | v1.0 | v2.0 | v3.0 |
+| Capability | v0.16 | v1.0 | v2.0 | v3.0 |
 |------------|-------|------|------|------|
 | HTTP Server | ✅ | ✅ | ✅ | ✅ |
 | Multi-threading | ✅ | ✅ | ✅ | ✅ |
+| File I/O | ✅ | ✅ | ✅ | ✅ |
+| Dynamic Vectors | ✅ | ✅ | ✅ | ✅ |
 | Event Loop | ❌ | ✅ | ✅ | ✅ |
 | GPU Compute | ❌ | ✅ | ✅ | ✅ |
 | ML Inference | ❌ | ❌ | ✅ | ✅ |

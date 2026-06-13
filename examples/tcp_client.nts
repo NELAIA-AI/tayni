@@ -1,0 +1,31 @@
+-- NELAIA Example: TCP Client
+-- Connects to server and sends message
+
+.msg: "GET / HTTP/1.0\r\n\r\n"
+
+.sock: TCP
+
+-- Server address: 127.0.0.1:8080
+.addr: ALC 16
+PUT .addr 0 2
+PUT .addr 2 0x1F
+PUT .addr 3 0x90
+PUT .addr 4 127
+PUT .addr 5 0
+PUT .addr 6 0
+PUT .addr 7 1
+
+.connect: CON .sock .addr
+
+-- Send request
+.send: XMT .sock .msg 18
+
+-- Receive response
+.buf: ALC 4096
+.recv: RCV .sock .buf 4096
+
+-- Print response
+.out: PRT .buf .recv
+
+.close: CLS .sock
+!

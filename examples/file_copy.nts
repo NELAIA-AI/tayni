@@ -1,0 +1,21 @@
+-- NELAIA Example: File Copy
+-- Copies input.txt to output.txt
+
+.src_path: "input.txt"
+.dst_path: "output.txt"
+
+.src: FOP .src_path 0
+.dst: FOP .dst_path 1
+
+.buf: ALC 4096
+
+.loop: FRD .src .buf 4096
+.check: GT .loop 0
+.branch: BRN .check .write .done
+
+.write: FWR .dst .buf .loop
+.write >> .loop
+
+.done: FCL .src
+.close2: FCL .dst
+!

@@ -1,0 +1,23 @@
+-- NELAIA Example: Memory Buffer Operations
+-- Demonstrates CPY, CMP, FND, SLN
+
+.str1: "Hello World"
+.str2: "Hello NELAIA"
+
+.buf: ALC 64
+
+-- Copy str1 to buffer
+.len1: SLN .str1
+.copy: CPY .str1 .buf .len1
+
+-- Compare strings
+.cmp: CMP .str1 .str2 5
+-- cmp = 0 (first 5 chars "Hello" are equal)
+
+-- Find 'W' in str1
+.pos: FND .str1 11 87
+-- pos = 6 (position of 'W')
+
+-- Print buffer
+.out: PRT .buf .len1
+!

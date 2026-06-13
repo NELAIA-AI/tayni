@@ -261,6 +261,13 @@ impl Parser {
             "FRD" => Ok(Op::Frd),
             "FWR" => Ok(Op::Fwr),
             "FCL" => Ok(Op::Fcl),
+            // Dynamic Vectors
+            "VEC" => Ok(Op::Vec),
+            "VPH" => Ok(Op::Vph),
+            "VGT" => Ok(Op::Vgt),
+            "VST" => Ok(Op::Vst),
+            "VLN" => Ok(Op::Vln),
+            "VCP" => Ok(Op::Vcp),
             // BRK/CNT deprecated - use cyclic flow >> instead
             // Error handling
             "CHK" => Ok(Op::Chk),

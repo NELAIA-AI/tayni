@@ -341,6 +341,14 @@ impl PureEmitter {
             Op::Fwr => self.emit_file_write(id, args),
             Op::Fcl => self.emit_file_close(id, args),
             
+            // Dynamic Vectors
+            Op::Vec => self.emit_vec_create(id, args),
+            Op::Vph => self.emit_vec_push(id, args),
+            Op::Vgt => self.emit_vec_get(id, args),
+            Op::Vst => self.emit_vec_set(id, args),
+            Op::Vln => self.emit_vec_len(id, args),
+            Op::Vcp => self.emit_vec_cap(id, args),
+            
             _ => Ok(format!("  ; TODO: {:?}\n", op)),
         }
     }
@@ -2590,5 +2598,94 @@ end:
                 ))
             }
         }
+    }
+    
+    // ============================================================
+    // DYNAMIC VECTORS (AI-native data structures)
+    // Vector layout: [capacity: i64][length: i64][data: i64*]
+    // ============================================================
+    
+    fn emit_vec_create(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        // VEC capacity -> vec_ptr
+        let cap = if args.is_empty() { "16".to_string() } else { self.emit_arg(&args[0])? };
+        // Allocate: 16 bytes header + capacity * 8 bytes data
+        match self.target {
+            TargetPlatform::Linux => {
+                Ok(format!(
+                    "  %{}_size = mul i64 {}, 8\n  %{}_total = add i64 %{}_size, 16\n  %{} = call i64 @sys_mmap(i64 0, i64 %{}_total, i64 3, i64 34, i64 -1, i64 0)\n  %{}_cap_ptr = inttoptr i64 %{} to i64*\n  store i64 {}, i64* %{}_cap_ptr\n  %{}_len_ptr = getelementptr i64, i64* %{}_cap_ptr, i32 1\n  store i64 0, i64* %{}_len_ptr\n",
+                    id, cap, id, id, id, id, id, id, cap, id, id, id, id
+                ))
+            }
+            TargetPlatform::Windows => {
+                Ok(format!(
+                    "  %{}_size = mul i64 {}, 8\n  %{}_total = add i64 %{}_size, 16\n  %{}_ptr = call i8* @VirtualAlloc(i8* null, i64 %{}_total, i32 12288, i32 4)\n  %{} = ptrtoint i8* %{}_ptr to i64\n  %{}_cap_ptr = inttoptr i64 %{} to i64*\n  store i64 {}, i64* %{}_cap_ptr\n  %{}_len_ptr = getelementptr i64, i64* %{}_cap_ptr, i32 1\n  store i64 0, i64* %{}_len_ptr\n",
+                    id, cap, id, id, id, id, id, id, id, id, cap, id, id, id, id
+                ))
+            }
+        }
+    }
+    
+    fn emit_vec_push(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        // VPH vec value -> new_length
+        if args.len() < 2 {
+            return Err("VPH requires vec, value".to_string());
+        }
+        let vec = self.emit_arg(&args[0])?;
+        let value = self.emit_arg(&args[1])?;
+        Ok(format!(
+            "  %{}_base = inttoptr i64 {} to i64*\n  %{}_len_ptr = getelementptr i64, i64* %{}_base, i32 1\n  %{}_len = load i64, i64* %{}_len_ptr\n  %{}_data_base = getelementptr i64, i64* %{}_base, i32 2\n  %{}_slot = getelementptr i64, i64* %{}_data_base, i64 %{}_len\n  store i64 {}, i64* %{}_slot\n  %{}_newlen = add i64 %{}_len, 1\n  store i64 %{}_newlen, i64* %{}_len_ptr\n  %{} = add i64 0, %{}_newlen\n",
+            id, vec, id, id, id, id, id, id, id, id, id, value, id, id, id, id, id, id, id
+        ))
+    }
+    
+    fn emit_vec_get(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        // VGT vec index -> value
+        if args.len() < 2 {
+            return Err("VGT requires vec, index".to_string());
+        }
+        let vec = self.emit_arg(&args[0])?;
+        let index = self.emit_arg(&args[1])?;
+        Ok(format!(
+            "  %{}_base = inttoptr i64 {} to i64*\n  %{}_data_base = getelementptr i64, i64* %{}_base, i32 2\n  %{}_slot = getelementptr i64, i64* %{}_data_base, i64 {}\n  %{} = load i64, i64* %{}_slot\n",
+            id, vec, id, id, id, id, index, id, id
+        ))
+    }
+    
+    fn emit_vec_set(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        // VST vec index value -> 0
+        if args.len() < 3 {
+            return Err("VST requires vec, index, value".to_string());
+        }
+        let vec = self.emit_arg(&args[0])?;
+        let index = self.emit_arg(&args[1])?;
+        let value = self.emit_arg(&args[2])?;
+        Ok(format!(
+            "  %{}_base = inttoptr i64 {} to i64*\n  %{}_data_base = getelementptr i64, i64* %{}_base, i32 2\n  %{}_slot = getelementptr i64, i64* %{}_data_base, i64 {}\n  store i64 {}, i64* %{}_slot\n  %{} = add i64 0, 0\n",
+            id, vec, id, id, id, id, index, value, id, id
+        ))
+    }
+    
+    fn emit_vec_len(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        // VLN vec -> length
+        if args.is_empty() {
+            return Err("VLN requires vec".to_string());
+        }
+        let vec = self.emit_arg(&args[0])?;
+        Ok(format!(
+            "  %{}_base = inttoptr i64 {} to i64*\n  %{}_len_ptr = getelementptr i64, i64* %{}_base, i32 1\n  %{} = load i64, i64* %{}_len_ptr\n",
+            id, vec, id, id, id, id
+        ))
+    }
+    
+    fn emit_vec_cap(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        // VCP vec -> capacity
+        if args.is_empty() {
+            return Err("VCP requires vec".to_string());
+        }
+        let vec = self.emit_arg(&args[0])?;
+        Ok(format!(
+            "  %{}_base = inttoptr i64 {} to i64*\n  %{} = load i64, i64* %{}_base\n",
+            id, vec, id, id
+        ))
     }
 }

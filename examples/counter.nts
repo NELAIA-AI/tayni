@@ -1,0 +1,21 @@
+-- NELAIA Example: Counter (demonstrates loop and arithmetic)
+-- Counts from 1 to 10, prints each number
+
+.counter: ALC 8
+PUT .counter 0 0
+
+.loop: GET .counter 0
+.inc: ADD .loop 1
+PUT .counter 0 .inc
+
+.digit: ADD .inc 48
+.char: ALC 2
+PUT .char 0 .digit
+PUT .char 1 10
+.print: PRT .char 2
+
+.check: LT .inc 10
+.branch: BRN .check .loop .done
+
+.done: RET 0
+!

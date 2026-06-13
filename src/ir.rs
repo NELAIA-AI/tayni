@@ -91,6 +91,13 @@ pub enum Op {
     Frd,  // FRD handle buf len -> bytes_read
     Fwr,  // FWR handle buf len -> bytes_written
     Fcl,  // FCL handle -> close file
+    // Dynamic Vectors (AI-native data structures)
+    Vec,  // VEC capacity -> vec_ptr (creates growable vector)
+    Vph,  // VPH vec value -> push value to vector
+    Vgt,  // VGT vec index -> value at index
+    Vst,  // VST vec index value -> set value at index
+    Vln,  // VLN vec -> current length
+    Vcp,  // VCP vec -> capacity
     // Error handling
     Chk,
     // GUI - Window Management
@@ -368,6 +375,10 @@ impl UsageAnalysis {
             // File I/O
             Op::Fop | Op::Frd | Op::Fwr | Op::Fcl => {
                 self.uses_file_io = true;
+            }
+            // Dynamic Vectors
+            Op::Vec | Op::Vph | Op::Vgt | Op::Vst | Op::Vln | Op::Vcp => {
+                self.uses_file_io = true;  // Uses memory allocation
             }
             // Console I/O
             Op::Prt | Op::Inp | Op::Err => {
