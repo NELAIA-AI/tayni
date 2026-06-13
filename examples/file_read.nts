@@ -1,0 +1,20 @@
+-- NELAIA v0.16 Test: File Read
+-- Reads a file and prints its contents
+
+-- Open file for reading (mode 0)
+.path: "test_input.txt"
+.file: FOP .path 0
+
+-- Allocate buffer
+.buf: ALC 1024
+
+-- Read file
+.bytes: FRD .file .buf 1024
+
+-- Print buffer (need to use sys_write with handle 1)
+.print: PRT .buf .bytes
+
+-- Close file
+.close: FCL .file
+
+!

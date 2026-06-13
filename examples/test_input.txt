@@ -1,0 +1,3 @@
+Hello from NELAIA!
+This file was read using the new FOP/FRD primitives.
+Self-hosting is getting closer!

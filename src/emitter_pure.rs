@@ -329,6 +329,18 @@ impl PureEmitter {
             Op::Gvl => self.emit_get_value(id, args),
             Op::Svl => self.emit_set_value(id, args),
             
+            // Memory operations (self-hosting)
+            Op::Cpy => self.emit_memcpy(id, args),
+            Op::Cmp => self.emit_memcmp(id, args),
+            Op::Fnd => self.emit_memfind(id, args),
+            Op::Sln => self.emit_strlen(id, args),
+            
+            // File I/O (self-hosting)
+            Op::Fop => self.emit_file_open(id, args),
+            Op::Frd => self.emit_file_read(id, args),
+            Op::Fwr => self.emit_file_write(id, args),
+            Op::Fcl => self.emit_file_close(id, args),
+            
             _ => Ok(format!("  ; TODO: {:?}\n", op)),
         }
     }
@@ -447,7 +459,8 @@ impl PureEmitter {
                 }
                 let ptr = self.emit_arg(&args[0])?;
                 let len = self.emit_arg(&args[1])?;
-                Ok(format!("  %{} = call i64 @sys_write(i32 1, i8* {}, i64 {})\n", id, ptr, len))
+                // Convert i64 to i8* if needed
+                Ok(format!("  %{}_ptr = inttoptr i64 {} to i8*\n  %{} = call i64 @sys_write(i32 1, i8* %{}_ptr, i64 {})\n", id, ptr, id, id, len))
             }
         }
     }
@@ -2233,6 +2246,21 @@ declare dllimport i32 @SendMessageW(i8*, i32, i64, i64)
 "#);
         }
         
+        // File I/O declarations (only if used)
+        if usage.uses_file_io {
+            ir.push_str(r#"
+; File I/O - kernel32.dll
+declare dllimport i8* @CreateFileA(i8*, i32, i32, i8*, i32, i32, i8*)
+declare dllimport i32 @ReadFile(i8*, i8*, i32, i32*, i8*)
+declare dllimport i32 @CloseHandle(i8*)
+; Memory functions - msvcrt
+declare i32 @memcmp(i8*, i8*, i64)
+declare i8* @memchr(i8*, i32, i64)
+declare i64 @strlen(i8*)
+declare void @llvm.memcpy.p0i8.p0i8.i64(i8*, i8*, i64, i1)
+"#);
+        }
+        
         // Globals (only what's needed)
         ir.push_str("\n@.one = private global i32 1\n");
         ir.push_str("@.stdout = private global i8* null\n");
@@ -2389,5 +2417,178 @@ end:
   ret void
 }
 "#.to_string()
+    }
+    
+    // ============================================================
+    // SELF-HOSTING PRIMITIVES: Memory Operations
+    // ============================================================
+    
+    fn emit_memcpy(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        // CPY src dst len -> copies len bytes from src to dst
+        if args.len() < 3 {
+            return Err("CPY requires src, dst, len".to_string());
+        }
+        let src = self.emit_arg(&args[0])?;
+        let dst = self.emit_arg(&args[1])?;
+        let len = self.emit_arg(&args[2])?;
+        Ok(format!(
+            "  %{}_src = inttoptr i64 {} to i8*\n  %{}_dst = inttoptr i64 {} to i8*\n  call void @llvm.memcpy.p0i8.p0i8.i64(i8* %{}_dst, i8* %{}_src, i64 {}, i1 false)\n  %{} = add i64 0, {}\n",
+            id, src, id, dst, id, id, len, id, len
+        ))
+    }
+    
+    fn emit_memcmp(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        // CMP a b len -> -1/0/1
+        if args.len() < 3 {
+            return Err("CMP requires a, b, len".to_string());
+        }
+        let a = self.emit_arg(&args[0])?;
+        let b = self.emit_arg(&args[1])?;
+        let len = self.emit_arg(&args[2])?;
+        match self.target {
+            TargetPlatform::Linux => {
+                Ok(format!(
+                    "  %{}_a = inttoptr i64 {} to i8*\n  %{}_b = inttoptr i64 {} to i8*\n  %{}_r = call i32 @memcmp(i8* %{}_a, i8* %{}_b, i64 {})\n  %{} = sext i32 %{}_r to i64\n",
+                    id, a, id, b, id, id, id, len, id, id
+                ))
+            }
+            TargetPlatform::Windows => {
+                Ok(format!(
+                    "  %{}_a = inttoptr i64 {} to i8*\n  %{}_b = inttoptr i64 {} to i8*\n  %{}_r = call i32 @memcmp(i8* %{}_a, i8* %{}_b, i64 {})\n  %{} = sext i32 %{}_r to i64\n",
+                    id, a, id, b, id, id, id, len, id, id
+                ))
+            }
+        }
+    }
+    
+    fn emit_memfind(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        // FND buf len byte -> position or -1
+        if args.len() < 3 {
+            return Err("FND requires buf, len, byte".to_string());
+        }
+        let buf = self.emit_arg(&args[0])?;
+        let len = self.emit_arg(&args[1])?;
+        let byte = self.emit_arg(&args[2])?;
+        Ok(format!(
+            "  %{}_buf = inttoptr i64 {} to i8*\n  %{}_byte = trunc i64 {} to i32\n  %{}_found = call i8* @memchr(i8* %{}_buf, i32 %{}_byte, i64 {})\n  %{}_isnull = icmp eq i8* %{}_found, null\n  %{}_pos = ptrtoint i8* %{}_found to i64\n  %{}_base = ptrtoint i8* %{}_buf to i64\n  %{}_offset = sub i64 %{}_pos, %{}_base\n  %{} = select i1 %{}_isnull, i64 -1, i64 %{}_offset\n",
+            id, buf, id, byte, id, id, id, len, id, id, id, id, id, id, id, id, id, id, id, id
+        ))
+    }
+    
+    fn emit_strlen(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        // SLN ptr -> length until \0
+        if args.is_empty() {
+            return Err("SLN requires ptr".to_string());
+        }
+        let ptr = self.emit_arg(&args[0])?;
+        Ok(format!(
+            "  %{}_ptr = inttoptr i64 {} to i8*\n  %{}_len = call i64 @strlen(i8* %{}_ptr)\n  %{} = add i64 0, %{}_len\n",
+            id, ptr, id, id, id, id
+        ))
+    }
+    
+    // ============================================================
+    // SELF-HOSTING PRIMITIVES: File I/O
+    // ============================================================
+    
+    fn emit_file_open(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        // FOP path mode -> handle (mode: 0=read, 1=write, 2=append)
+        if args.len() < 2 {
+            return Err("FOP requires path, mode".to_string());
+        }
+        let path = self.emit_arg(&args[0])?;
+        let mode = self.emit_arg(&args[1])?;
+        match self.target {
+            TargetPlatform::Linux => {
+                // open(path, flags, mode) - flags: 0=O_RDONLY, 1=O_WRONLY|O_CREAT|O_TRUNC, 2=O_WRONLY|O_CREAT|O_APPEND
+                Ok(format!(
+                    "  %{}_path = inttoptr i64 {} to i8*\n  %{}_isread = icmp eq i64 {}, 0\n  %{}_iswrite = icmp eq i64 {}, 1\n  %{}_flags_w = select i1 %{}_iswrite, i64 577, i64 1089\n  %{}_flags = select i1 %{}_isread, i64 0, i64 %{}_flags_w\n  %{} = call i64 @sys_open(i8* %{}_path, i64 %{}_flags, i64 420)\n",
+                    id, path, id, mode, id, mode, id, id, id, id, id, id, id, id
+                ))
+            }
+            TargetPlatform::Windows => {
+                // CreateFileA(path, access, share, security, creation, flags, template)
+                // path might be a getelementptr (pointer) or i64, handle both
+                let path_conv = if path.starts_with("getelementptr") || path.starts_with("%") {
+                    format!("  %{}_path = bitcast i8* {} to i8*\n", id, path)
+                } else {
+                    format!("  %{}_path = inttoptr i64 {} to i8*\n", id, path)
+                };
+                Ok(format!(
+                    "{}  %{}_isread = icmp eq i64 {}, 0\n  %{}_access = select i1 %{}_isread, i32 -2147483648, i32 1073741824\n  %{}_creation = select i1 %{}_isread, i32 3, i32 2\n  %{}_h = call i8* @CreateFileA(i8* %{}_path, i32 %{}_access, i32 0, i8* null, i32 %{}_creation, i32 128, i8* null)\n  %{} = ptrtoint i8* %{}_h to i64\n",
+                    path_conv, id, mode, id, id, id, id, id, id, id, id, id, id
+                ))
+            }
+        }
+    }
+    
+    fn emit_file_read(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        // FRD handle buf len -> bytes_read
+        if args.len() < 3 {
+            return Err("FRD requires handle, buf, len".to_string());
+        }
+        let handle = self.emit_arg(&args[0])?;
+        let buf = self.emit_arg(&args[1])?;
+        let len = self.emit_arg(&args[2])?;
+        match self.target {
+            TargetPlatform::Linux => {
+                Ok(format!(
+                    "  %{}_buf = inttoptr i64 {} to i8*\n  %{} = call i64 @sys_read(i64 {}, i8* %{}_buf, i64 {})\n",
+                    id, buf, id, handle, id, len
+                ))
+            }
+            TargetPlatform::Windows => {
+                Ok(format!(
+                    "  %{}_h = inttoptr i64 {} to i8*\n  %{}_buf = inttoptr i64 {} to i8*\n  %{}_read = alloca i32\n  call i32 @ReadFile(i8* %{}_h, i8* %{}_buf, i32 {}, i32* %{}_read, i8* null)\n  %{}_r = load i32, i32* %{}_read\n  %{} = zext i32 %{}_r to i64\n",
+                    id, handle, id, buf, id, id, id, len, id, id, id, id, id
+                ))
+            }
+        }
+    }
+    
+    fn emit_file_write(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        // FWR handle buf len -> bytes_written
+        if args.len() < 3 {
+            return Err("FWR requires handle, buf, len".to_string());
+        }
+        let handle = self.emit_arg(&args[0])?;
+        let buf = self.emit_arg(&args[1])?;
+        let len = self.emit_arg(&args[2])?;
+        match self.target {
+            TargetPlatform::Linux => {
+                Ok(format!(
+                    "  %{}_buf = inttoptr i64 {} to i8*\n  %{} = call i64 @sys_write(i32 {}, i8* %{}_buf, i64 {})\n",
+                    id, buf, id, handle, id, len
+                ))
+            }
+            TargetPlatform::Windows => {
+                Ok(format!(
+                    "  %{}_h = inttoptr i64 {} to i8*\n  %{}_buf = inttoptr i64 {} to i8*\n  %{}_written = alloca i32\n  call i32 @WriteFile(i8* %{}_h, i8* %{}_buf, i32 {}, i32* %{}_written, i8* null)\n  %{}_r = load i32, i32* %{}_written\n  %{} = zext i32 %{}_r to i64\n",
+                    id, handle, id, buf, id, id, id, len, id, id, id, id, id
+                ))
+            }
+        }
+    }
+    
+    fn emit_file_close(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        // FCL handle -> 0
+        if args.is_empty() {
+            return Err("FCL requires handle".to_string());
+        }
+        let handle = self.emit_arg(&args[0])?;
+        match self.target {
+            TargetPlatform::Linux => {
+                Ok(format!(
+                    "  %{} = call i64 @sys_close(i64 {})\n",
+                    id, handle
+                ))
+            }
+            TargetPlatform::Windows => {
+                Ok(format!(
+                    "  %{}_h = inttoptr i64 {} to i8*\n  %{}_r = call i32 @CloseHandle(i8* %{}_h)\n  %{} = zext i32 %{}_r to i64\n",
+                    id, handle, id, id, id, id
+                ))
+            }
+        }
     }
 }

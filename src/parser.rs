@@ -251,6 +251,16 @@ impl Parser {
             // Memory
             "ALC" => Ok(Op::Alc),
             "FRE" => Ok(Op::Fre),
+            // Memory operations (self-hosting)
+            "CPY" => Ok(Op::Cpy),
+            "CMP" => Ok(Op::Cmp),
+            "FND" => Ok(Op::Fnd),
+            "SLN" => Ok(Op::Sln),
+            // File I/O (self-hosting)
+            "FOP" => Ok(Op::Fop),
+            "FRD" => Ok(Op::Frd),
+            "FWR" => Ok(Op::Fwr),
+            "FCL" => Ok(Op::Fcl),
             // BRK/CNT deprecated - use cyclic flow >> instead
             // Error handling
             "CHK" => Ok(Op::Chk),

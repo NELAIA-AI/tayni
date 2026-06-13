@@ -81,6 +81,16 @@ pub enum Op {
     Ret,
     // Memory
     Alc, Fre,
+    // Memory operations (self-hosting)
+    Cpy,  // CPY src dst len -> copy bytes
+    Cmp,  // CMP a b len -> -1/0/1 comparison
+    Fnd,  // FND buf len byte -> position or -1
+    Sln,  // SLN ptr -> string length (until \0)
+    // File I/O (self-hosting)
+    Fop,  // FOP path mode -> file_handle (mode: 0=read, 1=write, 2=append)
+    Frd,  // FRD handle buf len -> bytes_read
+    Fwr,  // FWR handle buf len -> bytes_written
+    Fcl,  // FCL handle -> close file
     // Error handling
     Chk,
     // GUI - Window Management
@@ -351,8 +361,12 @@ impl UsageAnalysis {
             Op::Lbl | Op::Txb | Op::Btn | Op::Dlg | Op::Gvl | Op::Svl => {
                 self.uses_gui = true;
             }
+            // Memory operations
+            Op::Alc | Op::Fre | Op::Cpy | Op::Cmp | Op::Fnd | Op::Sln => {
+                self.uses_file_io = true;  // Uses memory syscalls
+            }
             // File I/O
-            Op::Opn | Op::Get | Op::Put | Op::Cls => {
+            Op::Fop | Op::Frd | Op::Fwr | Op::Fcl => {
                 self.uses_file_io = true;
             }
             // Console I/O
