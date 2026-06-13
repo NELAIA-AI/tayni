@@ -1,0 +1,5 @@
+# NELAIA NTS Modular Extension Test
+LOAD_EXTENSION "nelaia_net"
+STATIC_LOAD #1 "Iniciando el servidor Modular de NELAIA..."
+CALL_EXTENSION "nelaia_net" "tcp_listen" 8080
+BUILD_STANDALONE native_exe

@@ -1,0 +1,4 @@
+# La IA intenta alucinar un puntero raw (peligroso)
+SAFE_PRINT "Voy a intentar romper el sistema..."
+RAW_MEM_ALLOC #99 100000000
+BUILD_STANDALONE

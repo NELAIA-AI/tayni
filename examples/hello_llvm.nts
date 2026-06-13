@@ -1,0 +1,4 @@
+# NELAIA NTS LLVM Test
+STATIC_LOAD #1 "Hola Mundo compilado puramente desde LLVM IR por NELAIA"
+SYS_ECHO #1
+BUILD_STANDALONE native_exe

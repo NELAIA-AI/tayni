@@ -1,0 +1,4 @@
+# Flujo de tokens seguro
+SAFE_PRINT "Hola Humano! Soy un binario 100% seguro y nativo."
+SAFE_PRINT "He pasado el Firewall de NELAIA."
+BUILD_STANDALONE

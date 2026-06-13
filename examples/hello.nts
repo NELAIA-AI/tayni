@@ -1,0 +1,6 @@
+# NELAIA PURE TOKEN STREAM
+LOAD_CRATE #1 "std.io"
+NATIVE_ALLOC #2 STRING
+STATIC_LOAD #2 "Hola desde el primer ejecutable generado por NELAIA!"
+DIRECT_CALL #1 "print" #2
+BUILD_STANDALONE "windows_exe"
