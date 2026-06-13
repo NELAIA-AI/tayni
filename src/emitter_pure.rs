@@ -1,5 +1,6 @@
-//! NELAIA v0.9 Pure Emitter
+//! NELAIA v0.15 Pure Emitter
 //! Only syscall wrappers - NO embedded programs
+//! Dead code elimination enabled
 
 use crate::ir::*;
 
@@ -14,6 +15,7 @@ pub struct PureEmitter {
     string_ids: Vec<(String, String)>,  // Maps node ID to global string ID
     counter: usize,
     target: TargetPlatform,
+    usage: Option<UsageAnalysis>,  // Usage analysis for dead code elimination
 }
 
 impl PureEmitter {
@@ -23,6 +25,7 @@ impl PureEmitter {
             string_ids: Vec::new(),
             counter: 0,
             target,
+            usage: None,
         }
     }
     
@@ -33,6 +36,8 @@ impl PureEmitter {
     
     pub fn emit(graph: &Graph, target: TargetPlatform) -> Result<String, String> {
         let mut emitter = PureEmitter::new(target);
+        // Analyze usage for dead code elimination
+        emitter.usage = Some(UsageAnalysis::analyze(graph));
         emitter.emit_graph(graph)
     }
     
@@ -40,7 +45,7 @@ impl PureEmitter {
         let mut ir = String::new();
         
         // Header
-        ir.push_str("; NELAIA v0.12 Pure - Functions Support\n");
+        ir.push_str("; NELAIA v0.15 Pure - Dead Code Elimination\n");
         match self.target {
             TargetPlatform::Linux => ir.push_str("target triple = \"x86_64-pc-linux-gnu\"\n\n"),
             TargetPlatform::Windows => ir.push_str("target triple = \"x86_64-pc-windows-msvc\"\n\n"),
@@ -77,10 +82,10 @@ impl PureEmitter {
         }
         ir.push_str("\n");
         
-        // Emit syscall layer
+        // Emit syscall layer (only what's needed)
         match self.target {
             TargetPlatform::Linux => ir.push_str(&self.emit_linux_syscalls()),
-            TargetPlatform::Windows => ir.push_str(&self.emit_windows_syscalls()),
+            TargetPlatform::Windows => ir.push_str(&self.emit_windows_syscalls_optimized()),
         }
         
         // Emit user-defined functions first
@@ -2140,5 +2145,249 @@ define void @mainCRTStartup() {
 }
 "#.to_string(),
         }
+    }
+    
+    /// Optimized Windows syscalls - only emit what's needed
+    fn emit_windows_syscalls_optimized(&self) -> String {
+        let usage = self.usage.as_ref().unwrap();
+        let mut ir = String::new();
+        
+        ir.push_str(r#"
+; ============================================================================
+; WINDOWS x64 - Optimized (Dead Code Eliminated)
+; ============================================================================
+
+"#);
+        
+        // Always needed: basic I/O and exit
+        ir.push_str(r#"declare dllimport i8* @GetStdHandle(i32)
+declare dllimport i32 @WriteFile(i8*, i8*, i32, i32*, i8*)
+declare dllimport void @ExitProcess(i32)
+"#);
+        
+        // Network declarations (only if used)
+        if usage.uses_network {
+            ir.push_str(r#"declare dllimport i64 @socket(i32, i32, i32)
+declare dllimport i32 @setsockopt(i64, i32, i32, i8*, i32)
+declare dllimport i32 @bind(i64, i8*, i32)
+declare dllimport i32 @listen(i64, i32)
+declare dllimport i64 @accept(i64, i8*, i32*)
+declare dllimport i32 @send(i64, i8*, i32, i32)
+declare dllimport i32 @recv(i64, i8*, i32, i32)
+declare dllimport i32 @closesocket(i64)
+declare dllimport i32 @WSAStartup(i16, i8*)
+"#);
+            // Select/poll only if specifically used
+            if usage.used_ops.contains(&Op::Sel) || usage.used_ops.contains(&Op::Rdy) {
+                ir.push_str("declare dllimport i32 @select(i32, i8*, i8*, i8*, i8*)\n");
+            }
+            if usage.used_ops.contains(&Op::Nbk) {
+                ir.push_str("declare dllimport i32 @ioctlsocket(i64, i32, i32*)\n");
+            }
+            if usage.used_ops.contains(&Op::Epl) || usage.used_ops.contains(&Op::Ewa) {
+                ir.push_str(r#"declare dllimport i8* @CreateIoCompletionPort(i8*, i8*, i64, i32)
+declare dllimport i32 @GetQueuedCompletionStatus(i8*, i32*, i64*, i8**, i32)
+"#);
+            }
+        }
+        
+        // Threading declarations (only if used)
+        if usage.uses_threading {
+            ir.push_str(r#"declare dllimport i8* @VirtualAlloc(i8*, i64, i32, i32)
+declare dllimport i32 @VirtualFree(i8*, i64, i32)
+declare dllimport i8* @CreateThread(i8*, i64, i8*, i8*, i32, i32*)
+declare dllimport i32 @WaitForSingleObject(i8*, i32)
+"#);
+            if usage.used_ops.contains(&Op::Mtx) || usage.used_ops.contains(&Op::Lck) {
+                ir.push_str(r#"declare dllimport i8* @CreateMutexA(i8*, i32, i8*)
+declare dllimport i32 @ReleaseMutex(i8*)
+"#);
+            }
+        } else {
+            // Memory allocation might still be needed
+            ir.push_str(r#"declare dllimport i8* @VirtualAlloc(i8*, i64, i32, i32)
+"#);
+        }
+        
+        // GUI declarations (only if used)
+        if usage.uses_gui {
+            ir.push_str(r#"
+; GUI - user32.dll
+declare dllimport i16 @RegisterClassExW(i8*)
+declare dllimport i8* @CreateWindowExW(i32, i8*, i8*, i32, i32, i32, i32, i32, i8*, i8*, i8*, i8*)
+declare dllimport i32 @ShowWindow(i8*, i32)
+declare dllimport i32 @UpdateWindow(i8*)
+declare dllimport i32 @GetMessageW(i8*, i8*, i32, i32)
+declare dllimport i32 @PeekMessageW(i8*, i8*, i32, i32, i32)
+declare dllimport i32 @TranslateMessage(i8*)
+declare dllimport i64 @DispatchMessageW(i8*)
+declare dllimport i64 @DefWindowProcW(i8*, i32, i64, i64)
+declare dllimport i32 @PostQuitMessage(i32)
+declare dllimport i32 @DestroyWindow(i8*)
+declare dllimport i32 @MessageBoxW(i8*, i8*, i8*, i32)
+declare dllimport i32 @GetWindowTextW(i8*, i8*, i32)
+declare dllimport i32 @SetWindowTextW(i8*, i8*)
+declare dllimport i8* @GetModuleHandleW(i8*)
+declare dllimport i8* @LoadCursorW(i8*, i64)
+declare dllimport i32 @SendMessageW(i8*, i32, i64, i64)
+"#);
+        }
+        
+        // Globals (only what's needed)
+        ir.push_str("\n@.one = private global i32 1\n");
+        ir.push_str("@.stdout = private global i8* null\n");
+        
+        if usage.uses_network {
+            ir.push_str("@.wsa_data = private global [512 x i8] zeroinitializer\n");
+            ir.push_str("@.wsa_init = private global i32 0\n");
+        }
+        
+        if usage.uses_gui {
+            ir.push_str(r#"
+; GUI globals
+@.gui_init = private global i32 0
+@.hinstance = private global i8* null
+@.wndclass_name = private constant [8 x i16] [i16 78, i16 69, i16 76, i16 65, i16 73, i16 65, i16 0, i16 0]
+@.btn_class = private constant [14 x i16] [i16 66, i16 85, i16 84, i16 84, i16 79, i16 78, i16 0, i16 0, i16 0, i16 0, i16 0, i16 0, i16 0, i16 0]
+@.edit_class = private constant [10 x i16] [i16 69, i16 68, i16 73, i16 84, i16 0, i16 0, i16 0, i16 0, i16 0, i16 0]
+@.static_class = private constant [14 x i16] [i16 83, i16 84, i16 65, i16 84, i16 73, i16 67, i16 0, i16 0, i16 0, i16 0, i16 0, i16 0, i16 0, i16 0]
+@.btn_click_handler = private global i8* null
+@.last_btn_clicked = private global i64 0
+"#);
+        }
+        
+        // Core functions (always needed)
+        ir.push_str(r#"
+define void @_init_io() {
+  %h = call i8* @GetStdHandle(i32 -11)
+  store i8* %h, i8** @.stdout
+  ret void
+}
+
+define i64 @sys_write(i32 %fd, i8* %buf, i64 %count) {
+  %h = load i8*, i8** @.stdout
+  %c32 = trunc i64 %count to i32
+  %written = alloca i32
+  store i32 0, i32* %written
+  call i32 @WriteFile(i8* %h, i8* %buf, i32 %c32, i32* %written, i8* null)
+  %w = load i32, i32* %written
+  %r = sext i32 %w to i64
+  ret i64 %r
+}
+
+define void @sys_exit(i32 %code) {
+  call void @ExitProcess(i32 %code)
+  unreachable
+}
+"#);
+        
+        // WSA init (only if network used)
+        if usage.uses_network {
+            ir.push_str(r#"
+define void @_wsa_init() {
+  %done = load i32, i32* @.wsa_init
+  %need = icmp eq i32 %done, 0
+  br i1 %need, label %init, label %end
+init:
+  %buf = getelementptr [512 x i8], [512 x i8]* @.wsa_data, i32 0, i32 0
+  call i32 @WSAStartup(i16 514, i8* %buf)
+  store i32 1, i32* @.wsa_init
+  br label %end
+end:
+  ret void
+}
+"#);
+        }
+        
+        // GUI init (only if GUI used)
+        if usage.uses_gui {
+            ir.push_str(&self.emit_gui_init());
+        }
+        
+        ir
+    }
+    
+    fn emit_gui_init(&self) -> String {
+        r#"
+; GUI Window Procedure
+define i64 @_nelaia_wndproc(i8* %hwnd, i32 %msg, i64 %wparam, i64 %lparam) {
+entry:
+  %is_destroy = icmp eq i32 %msg, 2
+  br i1 %is_destroy, label %destroy, label %check_command
+destroy:
+  call i32 @PostQuitMessage(i32 0)
+  ret i64 0
+check_command:
+  %is_command = icmp eq i32 %msg, 273
+  br i1 %is_command, label %handle_command, label %default
+handle_command:
+  %hiword = lshr i64 %wparam, 16
+  %hiword32 = trunc i64 %hiword to i32
+  %is_click = icmp eq i32 %hiword32, 0
+  br i1 %is_click, label %store_click, label %default
+store_click:
+  %loword = and i64 %wparam, 65535
+  store i64 %loword, i64* @.last_btn_clicked
+  ret i64 0
+default:
+  %r = call i64 @DefWindowProcW(i8* %hwnd, i32 %msg, i64 %wparam, i64 %lparam)
+  ret i64 %r
+}
+
+define void @_gui_init() {
+entry:
+  %done = load i32, i32* @.gui_init
+  %need = icmp eq i32 %done, 0
+  br i1 %need, label %init, label %end
+init:
+  %hinst = call i8* @GetModuleHandleW(i8* null)
+  store i8* %hinst, i8** @.hinstance
+  %wc = alloca [80 x i8]
+  %wcptr = getelementptr [80 x i8], [80 x i8]* %wc, i32 0, i32 0
+  %cbsize_ptr = bitcast i8* %wcptr to i32*
+  store i32 80, i32* %cbsize_ptr
+  %style_ptr = getelementptr [80 x i8], [80 x i8]* %wc, i32 0, i32 4
+  %style_cast = bitcast i8* %style_ptr to i32*
+  store i32 3, i32* %style_cast
+  %wndproc_ptr = getelementptr [80 x i8], [80 x i8]* %wc, i32 0, i32 8
+  %wndproc_cast = bitcast i8* %wndproc_ptr to i64*
+  %wndproc_fn = ptrtoint i64 (i8*, i32, i64, i64)* @_nelaia_wndproc to i64
+  store i64 %wndproc_fn, i64* %wndproc_cast
+  %clsextra_ptr = getelementptr [80 x i8], [80 x i8]* %wc, i32 0, i32 16
+  %clsextra_cast = bitcast i8* %clsextra_ptr to i32*
+  store i32 0, i32* %clsextra_cast
+  %wndextra_ptr = getelementptr [80 x i8], [80 x i8]* %wc, i32 0, i32 20
+  %wndextra_cast = bitcast i8* %wndextra_ptr to i32*
+  store i32 0, i32* %wndextra_cast
+  %hinst_ptr = getelementptr [80 x i8], [80 x i8]* %wc, i32 0, i32 24
+  %hinst_cast = bitcast i8* %hinst_ptr to i8**
+  store i8* %hinst, i8** %hinst_cast
+  %hicon_ptr = getelementptr [80 x i8], [80 x i8]* %wc, i32 0, i32 32
+  %hicon_cast = bitcast i8* %hicon_ptr to i8**
+  store i8* null, i8** %hicon_cast
+  %cursor = call i8* @LoadCursorW(i8* null, i64 32512)
+  %hcursor_ptr = getelementptr [80 x i8], [80 x i8]* %wc, i32 0, i32 40
+  %hcursor_cast = bitcast i8* %hcursor_ptr to i8**
+  store i8* %cursor, i8** %hcursor_cast
+  %hbr_ptr = getelementptr [80 x i8], [80 x i8]* %wc, i32 0, i32 48
+  %hbr_cast = bitcast i8* %hbr_ptr to i64*
+  store i64 6, i64* %hbr_cast
+  %menu_ptr = getelementptr [80 x i8], [80 x i8]* %wc, i32 0, i32 56
+  %menu_cast = bitcast i8* %menu_ptr to i8**
+  store i8* null, i8** %menu_cast
+  %classname = getelementptr [8 x i16], [8 x i16]* @.wndclass_name, i32 0, i32 0
+  %classname_ptr = getelementptr [80 x i8], [80 x i8]* %wc, i32 0, i32 64
+  %classname_cast = bitcast i8* %classname_ptr to i16**
+  store i16* %classname, i16** %classname_cast
+  %hiconsm_ptr = getelementptr [80 x i8], [80 x i8]* %wc, i32 0, i32 72
+  %hiconsm_cast = bitcast i8* %hiconsm_ptr to i8**
+  store i8* null, i8** %hiconsm_cast
+  call i16 @RegisterClassExW(i8* %wcptr)
+  store i32 1, i32* @.gui_init
+  br label %end
+end:
+  ret void
+}
+"#.to_string()
     }
 }

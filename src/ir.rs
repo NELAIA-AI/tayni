@@ -49,7 +49,7 @@ pub enum Arg {
 }
 
 /// Operations
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Op {
     // Arithmetic
     Add, Sub, Mul, Div, Mod, Neg,
@@ -292,5 +292,74 @@ impl Graph {
         rec_stack.remove(node);
         path.pop();
         false
+    }
+}
+
+/// Usage analysis for dead code elimination
+#[derive(Debug, Default)]
+pub struct UsageAnalysis {
+    pub used_ops: HashSet<Op>,
+    pub uses_gui: bool,
+    pub uses_network: bool,
+    pub uses_threading: bool,
+    pub uses_file_io: bool,
+    pub uses_console: bool,
+}
+
+impl UsageAnalysis {
+    pub fn analyze(graph: &Graph) -> Self {
+        let mut analysis = UsageAnalysis::default();
+        
+        for node in &graph.nodes {
+            analysis.visit_node(node);
+        }
+        
+        analysis
+    }
+    
+    fn visit_node(&mut self, node: &Node) {
+        match node {
+            Node::Operation { op, args: _, id: _ } => {
+                self.used_ops.insert(op.clone());
+                self.categorize_op(op);
+            }
+            Node::Function { body, .. } => {
+                for body_node in body {
+                    self.visit_node(body_node);
+                }
+            }
+            _ => {}
+        }
+    }
+    
+    fn categorize_op(&mut self, op: &Op) {
+        match op {
+            // Network operations
+            Op::Tcp | Op::Udp | Op::Bnd | Op::Lst | Op::Acc | 
+            Op::Con | Op::Xmt | Op::Rcv | Op::Sel | Op::Rdy | 
+            Op::Nbk | Op::Ndl | Op::Qck | Op::Sbf | Op::Kal |
+            Op::Epl | Op::Ewa | Op::Ect => {
+                self.uses_network = true;
+            }
+            // Threading operations
+            Op::Thr | Op::Jon | Op::Mtx | Op::Lck | Op::Ulk |
+            Op::Que | Op::Psh | Op::Pop => {
+                self.uses_threading = true;
+            }
+            // GUI operations
+            Op::Win | Op::Shw | Op::Hid | Op::Evt | Op::Run |
+            Op::Lbl | Op::Txb | Op::Btn | Op::Dlg | Op::Gvl | Op::Svl => {
+                self.uses_gui = true;
+            }
+            // File I/O
+            Op::Opn | Op::Get | Op::Put | Op::Cls => {
+                self.uses_file_io = true;
+            }
+            // Console I/O
+            Op::Prt | Op::Inp | Op::Err => {
+                self.uses_console = true;
+            }
+            _ => {}
+        }
     }
 }
