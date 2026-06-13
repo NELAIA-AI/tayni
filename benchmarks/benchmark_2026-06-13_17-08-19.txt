@@ -1,0 +1,12 @@
+NELAIA Benchmark Results
+========================
+Date: 06/13/2026 17:08:19
+Requests: 5000
+Concurrent: 100
+Rounds: 3
+
+RESULTS:
+NELAIA v0.14: 2362 req/s, 7 KB
+Go HTTP: 1799 req/s, 8196 KB
+Rust Optimized: 1644 req/s, 158 KB
+C Optimized: 1073 req/s, 110.5 KB

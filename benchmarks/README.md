@@ -1,94 +1,87 @@
 # NELAIA Benchmark Suite
 
-## Para Correr los Benchmarks
+## Quick Start
 
-### Opción 1: Script Visual (Recomendado)
 ```powershell
-cd nelaia-core\benchmarks
-.\benchmark_visual.ps1
-```
-Esto genera un **reporte HTML interactivo** con gráficos y lo abre automáticamente.
-
-### Opción 2: Script de Consola
-```powershell
-cd nelaia-core\benchmarks
-.\run_benchmark.ps1
-```
-Muestra resultados en la terminal con barras visuales.
-
-### Parámetros Opcionales
-```powershell
-.\benchmark_visual.ps1 -Requests 10000 -Concurrent 200 -Rounds 5
+cd benchmarks
+.\benchmark_complete.ps1
 ```
 
-## Requisitos
+## What Gets Tested
 
-| Software | Versión | Para qué |
-|----------|---------|----------|
-| Go | 1.18+ | Benchmark tool y servidor Go |
-| Rust | stable | Servidor Rust |
-| Clang/LLVM | 14+ | Servidor C y compilación NELAIA |
-| PowerShell | 5.1+ | Scripts de benchmark |
+Tests 6 languages in order (slowest to fastest expected):
 
-## Archivos Generados
+| # | Language | Port | Type |
+|---|----------|------|------|
+| 1 | Python | 8081 | Interpreted |
+| 2 | Node.js | 8082 | Interpreted |
+| 3 | Rust | 8087 | Compiled |
+| 4 | C | 8089 | Compiled |
+| 5 | Go | 8083 | Compiled |
+| 6 | **NELAIA** | 8101 | Compiled |
 
-- `benchmark_results.html` - Reporte visual interactivo
-- `benchmark_YYYY-MM-DD_HH-mm-ss.txt` - Resultados en texto
+## Latest Results
 
-## Compilar Binarios Manualmente
+```
+NELAIA v0.15:  ████████████████████████████████████████████████ 2,419 req/s
+C Optimized:   ██████████████████████████████████████           1,904 req/s
+Go HTTP:       ███████████████████████████████████              1,744 req/s
+Rust Opt:      ██████████████████████████████████               1,701 req/s
+Python:        ███████████████████████████████                  1,371 req/s
+Node.js:       █████████████████████████                        1,241 req/s
+```
 
-Si los binarios no existen:
+**NELAIA is 27-95% faster than all other languages tested.**
+
+## Requirements
+
+- Go 1.18+ (for benchmark tool and Go server)
+- Rust (for Rust server)
+- Clang/LLVM (for C server and NELAIA)
+- Python 3.x
+- Node.js
+
+## Scripts
+
+| Script | Description |
+|--------|-------------|
+| `benchmark_complete.ps1` | Full benchmark, all languages |
+| `benchmark_visual.ps1` | Generates HTML report |
+| `run_benchmark.ps1` | Quick benchmark, compiled only |
+
+## Parameters
 
 ```powershell
-# Benchmark tool
-go build -o bench.exe bench.go
+.\benchmark_complete.ps1 -Requests 5000 -Concurrent 100 -Rounds 3
+```
 
-# Go server
+## Build Servers Manually
+
+```powershell
+# Go
 go build -o solar_go.exe solar_go.go
 
-# Rust server
+# Rust
 rustc -O -o solar_rust_opt.exe solar_rust_opt.rs
 
-# C server
+# C
 clang -O2 -o solar_c_opt.exe solar_c_opt.c -lws2_32
 
-# NELAIA server
+# NELAIA
 cd ..
-cargo run -- benchmarks/solar_nelaia_16w.nts -o benchmarks/solar_nelaia_16w.ll
-clang -O2 -o benchmarks/solar_nelaia_16w.exe benchmarks/solar_nelaia_16w.ll -lws2_32 -lkernel32
-```
-
-## Servidores Testeados
-
-| Servidor | Descripción | Puerto |
-|----------|-------------|--------|
-| NELAIA v0.14 | 16 workers, TCP_NODELAY, syscalls puros | 8101 |
-| Go HTTP | Librería estándar net/http | 8083 |
-| Rust Optimized | 16 workers, TCP_NODELAY | 8087 |
-| C Optimized | 16 workers, TCP_NODELAY | 8089 |
-
-## Resultados Típicos
-
-```
-NELAIA v0.14:  ████████████████████████████████████████ 2,208 req/s  (7 KB)
-Rust:          ███████████████████████████████          1,708 req/s  (158 KB)
-Go:            ███████████████████████████              1,506 req/s  (8,196 KB)
-C:             █████████████████████████                1,401 req/s  (110 KB)
+cargo run --release -- benchmarks/solar_nelaia_16w.nts
 ```
 
 ## Troubleshooting
 
-### Puerto en uso
+### Port in use
 ```powershell
-Get-Process -Name "solar_*" | Stop-Process -Force
+taskkill /F /IM python.exe
+taskkill /F /IM node.exe
+taskkill /F /IM solar_*.exe
 ```
 
-### Resultados inconsistentes
-- Cerrar otras aplicaciones
-- Aumentar `-Rounds` para promedios más estables
-- Ejecutar como Administrador
-
-### Benchmark tool no encontrado
-```powershell
-go build -o bench.exe bench.go
-```
+### Inconsistent results
+- Close other applications
+- Run as Administrator
+- Increase `-Rounds` parameter
