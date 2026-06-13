@@ -3,11 +3,16 @@
 ## Syntax (5 rules)
 ```
 .id: VALUE          -- literal (number or "string")
-.id: OP args        -- operation with arguments
+.id: OP args        -- operation (EVERY line needs .id:)
 .id: .other         -- reference to another node
 .a > .b             -- data flow (execute a, then b)
 .a >> .b            -- cyclic flow (loop back to b)
 ```
+
+## Important
+- Every operation MUST have `.id:` prefix
+- Numbers are decimal only (no 0x hex)
+- Port 8080 = bytes 31, 144 (0x1F, 0x90)
 
 ## Core Opcodes
 ```
@@ -44,15 +49,15 @@ THR func arg          -- create thread running func(arg)
 
 ## Address Format (for BND)
 ```
--- Build sockaddr_in at ptr:
+-- Build sockaddr_in at ptr (port 8080 = 0x1F90):
 .addr: ALC 16
-PUT .addr 0 2         -- AF_INET (family)
-PUT .addr 2 0x1F      -- port high byte (8080 = 0x1F90)
-PUT .addr 3 0x90      -- port low byte
-PUT .addr 4 0         -- IP: 0.0.0.0 (4 bytes)
-PUT .addr 5 0
-PUT .addr 6 0
-PUT .addr 7 0
+.a0: PUT .addr 0 2         -- AF_INET (family)
+.a1: PUT .addr 2 31        -- port high byte (8080 >> 8 = 31)
+.a2: PUT .addr 3 144       -- port low byte (8080 & 255 = 144)
+.a3: PUT .addr 4 0         -- IP: 0.0.0.0 (4 bytes)
+.a4: PUT .addr 5 0
+.a5: PUT .addr 6 0
+.a6: PUT .addr 7 0
 ```
 
 ## Example 1: Hello World
@@ -73,17 +78,17 @@ PUT .addr 7 0
 !
 ```
 
-## Example 3: TCP Echo Server
+## Example 3: TCP Echo Server (port 8080)
 ```
 .sock: TCP
 .addr: ALC 16
-PUT .addr 0 2
-PUT .addr 2 0x1F
-PUT .addr 3 0x90
-PUT .addr 4 0
-PUT .addr 5 0
-PUT .addr 6 0
-PUT .addr 7 0
+.a0: PUT .addr 0 2
+.a1: PUT .addr 2 31
+.a2: PUT .addr 3 144
+.a3: PUT .addr 4 0
+.a4: PUT .addr 5 0
+.a5: PUT .addr 6 0
+.a6: PUT .addr 7 0
 .bind: BND .sock .addr
 .listen: LST .sock 10
 .loop: ACC .sock

@@ -1,0 +1,19 @@
+-- NELAIA: UDP Echo Server
+-- Port 8888 (0x22B8)
+
+.sock: UDP
+.addr: ALC 16
+.p0: PUT .addr 0 2
+.p1: PUT .addr 2 34
+.p2: PUT .addr 3 184
+.p3: PUT .addr 4 0
+.p4: PUT .addr 5 0
+.p5: PUT .addr 6 0
+.p6: PUT .addr 7 0
+.bind: BND .sock .addr
+
+.buf: ALC 1024
+.loop: RCV .sock .buf 1024
+.send: XMT .sock .buf .loop
+.loop >> .loop
+!
