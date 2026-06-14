@@ -1,3 +1,2 @@
 .msg: "Hello NELAIA!\n"
 .out: PRT .msg 14
-!

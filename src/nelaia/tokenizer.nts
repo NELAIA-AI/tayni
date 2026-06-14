@@ -1,71 +1,280 @@
--- NELAIA Self-Hosted Tokenizer v0.3
--- Simple loop using >> only
+-- NELAIA Self-Hosted Tokenizer v0.1
+-- Reads a .nts file and counts token characters
 
--- Source buffer
-.src: ALC 4096
-.src_len: ALC 8
+-- Constants
+.dot_char: 46
+.colon_char: 58
+.newline_char: 10
 
--- Read source file
-.path: "input.nts"
-.file: FOP .path 0
-.read: FRD .file .src 4096
-.store_len: PUT .src_len 0 .read
+-- Read input file
+.input_path: "src/nelaia/input.nts"
+.file: FOP .input_path 0
+.src_buf: ALC 4096
+.src_len: FRD .file .src_buf 4096
 .close: FCL .file
 
 -- Counters
-.pos: ALC 8
-.p0: PUT .pos 0 0
-.dots: ALC 8
-.d0: PUT .dots 0 0
+.zero: 0
+.dots: 0
+.colons: 0
+.newlines: 0
 
--- Process each character (unrolled for first 100 chars)
--- This is a workaround until proper loops work
+-- Process chars 0-39 (covers input.nts which is ~35 chars)
+.c0: GET .src_buf 0
+.d0: EQ .c0 .dot_char
+.k0: EQ .c0 .colon_char
+.n0: EQ .c0 .newline_char
+.dots0: ADD .dots .d0
+.colons0: ADD .colons .k0
+.newlines0: ADD .newlines .n0
 
-.c0: CHR .src 0
-.d0_is: EQ .c0 46
-.d0_add: BRN .d0_is 1 0
-.d0_cnt: GET .dots 0
-.d0_new: ADD .d0_cnt .d0_add
-.d0_sav: PUT .dots 0 .d0_new
+.c1: GET .src_buf 1
+.d1: EQ .c1 .dot_char
+.k1: EQ .c1 .colon_char
+.n1: EQ .c1 .newline_char
+.dots1: ADD .dots0 .d1
+.colons1: ADD .colons0 .k1
+.newlines1: ADD .newlines0 .n1
 
-.c1: CHR .src 1
-.d1_is: EQ .c1 46
-.d1_add: BRN .d1_is 1 0
-.d1_cnt: GET .dots 0
-.d1_new: ADD .d1_cnt .d1_add
-.d1_sav: PUT .dots 0 .d1_new
+.c2: GET .src_buf 2
+.d2: EQ .c2 .dot_char
+.k2: EQ .c2 .colon_char
+.n2: EQ .c2 .newline_char
+.dots2: ADD .dots1 .d2
+.colons2: ADD .colons1 .k2
+.newlines2: ADD .newlines1 .n2
 
-.c2: CHR .src 2
-.d2_is: EQ .c2 46
-.d2_add: BRN .d2_is 1 0
-.d2_cnt: GET .dots 0
-.d2_new: ADD .d2_cnt .d2_add
-.d2_sav: PUT .dots 0 .d2_new
+.c3: GET .src_buf 3
+.d3: EQ .c3 .dot_char
+.k3: EQ .c3 .colon_char
+.n3: EQ .c3 .newline_char
+.dots3: ADD .dots2 .d3
+.colons3: ADD .colons2 .k3
+.newlines3: ADD .newlines2 .n3
 
-.c3: CHR .src 3
-.d3_is: EQ .c3 46
-.d3_add: BRN .d3_is 1 0
-.d3_cnt: GET .dots 0
-.d3_new: ADD .d3_cnt .d3_add
-.d3_sav: PUT .dots 0 .d3_new
+.c4: GET .src_buf 4
+.d4: EQ .c4 .dot_char
+.k4: EQ .c4 .colon_char
+.n4: EQ .c4 .newline_char
+.dots4: ADD .dots3 .d4
+.colons4: ADD .colons3 .k4
+.newlines4: ADD .newlines3 .n4
 
-.c4: CHR .src 4
-.d4_is: EQ .c4 46
-.d4_add: BRN .d4_is 1 0
-.d4_cnt: GET .dots 0
-.d4_new: ADD .d4_cnt .d4_add
-.d4_sav: PUT .dots 0 .d4_new
+.c5: GET .src_buf 5
+.d5: EQ .c5 .dot_char
+.k5: EQ .c5 .colon_char
+.n5: EQ .c5 .newline_char
+.dots5: ADD .dots4 .d5
+.colons5: ADD .colons4 .k5
+.newlines5: ADD .newlines4 .n5
 
--- Print results
-.msg: "Dots in first 5 chars: "
-.out1: PRT .msg 23
-.buf: ALC 16
-.final: GET .dots 0
-.len: ITS .final .buf
-.out2: PRT .buf .len
-.nl: "\n"
-.out3: PRT .nl 1
+.c6: GET .src_buf 6
+.d6: EQ .c6 .dot_char
+.k6: EQ .c6 .colon_char
+.dots6: ADD .dots5 .d6
+.colons6: ADD .colons5 .k6
 
-.end: "Done!\n"
-.out4: PRT .end 6
-!
+.c7: GET .src_buf 7
+.d7: EQ .c7 .dot_char
+.k7: EQ .c7 .colon_char
+.dots7: ADD .dots6 .d7
+.colons7: ADD .colons6 .k7
+
+.c8: GET .src_buf 8
+.d8: EQ .c8 .dot_char
+.k8: EQ .c8 .colon_char
+.dots8: ADD .dots7 .d8
+.colons8: ADD .colons7 .k8
+
+.c9: GET .src_buf 9
+.d9: EQ .c9 .dot_char
+.k9: EQ .c9 .colon_char
+.dots9: ADD .dots8 .d9
+.colons9: ADD .colons8 .k9
+
+.c10: GET .src_buf 10
+.d10: EQ .c10 .dot_char
+.k10: EQ .c10 .colon_char
+.dots10: ADD .dots9 .d10
+.colons10: ADD .colons9 .k10
+
+.c11: GET .src_buf 11
+.d11: EQ .c11 .dot_char
+.k11: EQ .c11 .colon_char
+.dots11: ADD .dots10 .d11
+.colons11: ADD .colons10 .k11
+
+.c12: GET .src_buf 12
+.d12: EQ .c12 .dot_char
+.k12: EQ .c12 .colon_char
+.dots12: ADD .dots11 .d12
+.colons12: ADD .colons11 .k12
+
+.c13: GET .src_buf 13
+.d13: EQ .c13 .dot_char
+.k13: EQ .c13 .colon_char
+.dots13: ADD .dots12 .d13
+.colons13: ADD .colons12 .k13
+
+.c14: GET .src_buf 14
+.d14: EQ .c14 .dot_char
+.k14: EQ .c14 .colon_char
+.dots14: ADD .dots13 .d14
+.colons14: ADD .colons13 .k14
+
+.c15: GET .src_buf 15
+.d15: EQ .c15 .dot_char
+.k15: EQ .c15 .colon_char
+.dots15: ADD .dots14 .d15
+.colons15: ADD .colons14 .k15
+
+.c16: GET .src_buf 16
+.d16: EQ .c16 .dot_char
+.k16: EQ .c16 .colon_char
+.n16: EQ .c16 .newline_char
+.dots16: ADD .dots15 .d16
+.colons16: ADD .colons15 .k16
+.newlines16: ADD .newlines5 .n16
+
+.c17: GET .src_buf 17
+.d17: EQ .c17 .dot_char
+.k17: EQ .c17 .colon_char
+.dots17: ADD .dots16 .d17
+.colons17: ADD .colons16 .k17
+
+.c18: GET .src_buf 18
+.d18: EQ .c18 .dot_char
+.k18: EQ .c18 .colon_char
+.dots18: ADD .dots17 .d18
+.colons18: ADD .colons17 .k18
+
+.c19: GET .src_buf 19
+.d19: EQ .c19 .dot_char
+.k19: EQ .c19 .colon_char
+.dots19: ADD .dots18 .d19
+.colons19: ADD .colons18 .k19
+
+.c20: GET .src_buf 20
+.d20: EQ .c20 .dot_char
+.k20: EQ .c20 .colon_char
+.dots20: ADD .dots19 .d20
+.colons20: ADD .colons19 .k20
+
+.c21: GET .src_buf 21
+.d21: EQ .c21 .dot_char
+.k21: EQ .c21 .colon_char
+.dots21: ADD .dots20 .d21
+.colons21: ADD .colons20 .k21
+
+.c22: GET .src_buf 22
+.d22: EQ .c22 .dot_char
+.k22: EQ .c22 .colon_char
+.dots22: ADD .dots21 .d22
+.colons22: ADD .colons21 .k22
+
+.c23: GET .src_buf 23
+.d23: EQ .c23 .dot_char
+.k23: EQ .c23 .colon_char
+.dots23: ADD .dots22 .d23
+.colons23: ADD .colons22 .k23
+
+.c24: GET .src_buf 24
+.d24: EQ .c24 .dot_char
+.k24: EQ .c24 .colon_char
+.dots24: ADD .dots23 .d24
+.colons24: ADD .colons23 .k24
+
+.c25: GET .src_buf 25
+.d25: EQ .c25 .dot_char
+.k25: EQ .c25 .colon_char
+.dots25: ADD .dots24 .d25
+.colons25: ADD .colons24 .k25
+
+.c26: GET .src_buf 26
+.d26: EQ .c26 .dot_char
+.k26: EQ .c26 .colon_char
+.dots26: ADD .dots25 .d26
+.colons26: ADD .colons25 .k26
+
+.c27: GET .src_buf 27
+.d27: EQ .c27 .dot_char
+.k27: EQ .c27 .colon_char
+.dots27: ADD .dots26 .d27
+.colons27: ADD .colons26 .k27
+
+.c28: GET .src_buf 28
+.d28: EQ .c28 .dot_char
+.k28: EQ .c28 .colon_char
+.dots28: ADD .dots27 .d28
+.colons28: ADD .colons27 .k28
+
+.c29: GET .src_buf 29
+.d29: EQ .c29 .dot_char
+.k29: EQ .c29 .colon_char
+.dots29: ADD .dots28 .d29
+.colons29: ADD .colons28 .k29
+
+.c30: GET .src_buf 30
+.d30: EQ .c30 .dot_char
+.k30: EQ .c30 .colon_char
+.n30: EQ .c30 .newline_char
+.dots30: ADD .dots29 .d30
+.colons30: ADD .colons29 .k30
+.newlines30: ADD .newlines16 .n30
+
+.c31: GET .src_buf 31
+.d31: EQ .c31 .dot_char
+.k31: EQ .c31 .colon_char
+.dots31: ADD .dots30 .d31
+.colons31: ADD .colons30 .k31
+
+.c32: GET .src_buf 32
+.d32: EQ .c32 .dot_char
+.k32: EQ .c32 .colon_char
+.dots32: ADD .dots31 .d32
+.colons32: ADD .colons31 .k32
+
+.c33: GET .src_buf 33
+.d33: EQ .c33 .dot_char
+.k33: EQ .c33 .colon_char
+.dots33: ADD .dots32 .d33
+.colons33: ADD .colons32 .k33
+
+.c34: GET .src_buf 34
+.d34: EQ .c34 .dot_char
+.k34: EQ .c34 .colon_char
+.dots34: ADD .dots33 .d34
+.colons34: ADD .colons33 .k34
+
+-- Output results
+.msg1: "NELAIA Tokenizer v0.1\n"
+.out1: PRT .msg1 22
+
+.msg2: "Dots: "
+.out2: PRT .msg2 6
+.dot_digit: ADD .dots34 48
+.dot_buf: ALC 4
+.put_dot: PUT .dot_buf 0 .dot_digit
+.put_nl: PUT .dot_buf 1 10
+.out3: PRT .dot_buf 2
+
+.msg3: "Colons: "
+.out3b: PRT .msg3 8
+.colon_digit: ADD .colons34 48
+.colon_buf: ALC 4
+.put_colon: PUT .colon_buf 0 .colon_digit
+.put_nl2: PUT .colon_buf 1 10
+.out4: PRT .colon_buf 2
+
+.msg4: "Newlines: "
+.out4b: PRT .msg4 10
+.nl_digit: ADD .newlines30 48
+.nl_buf: ALC 4
+.put_nlc: PUT .nl_buf 0 .nl_digit
+.put_nl3: PUT .nl_buf 1 10
+.out5: PRT .nl_buf 2
+
+.done: "Self-hosted tokenizer OK!\n"
+.out_done: PRT .done 26
+
+.result: ADD .out1 .out2 .out3 .out3b .out4 .out4b .out5 .out_done .close
