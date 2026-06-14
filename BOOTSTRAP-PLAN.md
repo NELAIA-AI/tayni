@@ -409,17 +409,26 @@ The AI Consortium evaluated the documentation and requested improvements:
 
 ---
 
-## Next Steps (Optional - Future)
+## Strategic Planning Documents
 
-### PHASE 12: Multi-file Compiler
+| Document | Purpose |
+|----------|---------|
+| `ROADMAP.md` | Complete product roadmap (Phases 12-17+) |
+| `LAUNCH-CHECKLIST.md` | Pre-launch checklist and launch day plan |
 
-| Task | Status | Description |
-|------|--------|-------------|
-| 12.1 Compile multiple .nts | 🔮 | `nelaia-c build *.nts` |
-| 12.2 Graph linking | 🔮 | Combine graphs from multiple files |
+### Roadmap Summary (See ROADMAP.md for details)
+
+| Phase | Name | Status | Description |
+|-------|------|--------|-------------|
+| 12 | Functional Product | 🔄 CURRENT | Standalone product, no dependencies |
+| 13 | Self-Hosting | 🔮 | NELAIA compiles NELAIA |
+| 14 | Multi-Target | 🔮 | x86, ARM, WASM from one source |
+| 15 | Web Platform | 🔮 | NELAIA for web development |
+| 16 | Intent-to-Code | 🔮 | Natural language → Executable |
+| 17+ | Zeqron Integration | 🔮 BACKLOG | Distributed execution on Zeqron/Zaxon |
 
 ---
 
 *Updated: 2026-06-14*
-*Version: 8.2 - AI Documentation Completed (Consortium Approved)*
+*Version: 8.3 - Strategic Planning Added*
 *Compiler: nelaia-c v0.22*
