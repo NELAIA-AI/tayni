@@ -295,6 +295,7 @@ impl PureEmitter {
             // Control flow
             Op::Brn => self.emit_branch(id, args),
             Op::Jmp => self.emit_jump(id, args),
+            Op::Whl => self.emit_while(id, args),
             
             // Threading
             Op::Thr => self.emit_thread_create(id, args),
@@ -1283,6 +1284,27 @@ impl PureEmitter {
         code.push_str(&format!("  %{}_cond = icmp ne i64 {}, 0\n", id, cond));
         code.push_str(&format!("  br i1 %{}_cond, label %cycle_{}, label %lbl_{}\n", id, label_true, label_false));
         code.push_str(&format!("lbl_{}:\n", label_false));
+        code.push_str(&format!("  %{} = add i64 0, 0\n", id));
+        Ok(code)
+    }
+    
+    fn emit_while(&mut self, id: &str, args: &[Arg]) -> Result<String, String> {
+        // WHL cond_ref body_ref -> while loop
+        // Generates: check condition, if true jump to body (cycle), else continue
+        if args.len() < 2 {
+            return Err("WHL requires 2 arguments: condition, body_label".to_string());
+        }
+        let cond = self.emit_arg(&args[0])?;
+        
+        let body_label = match &args[1] {
+            Arg::Ref(name) => name.clone(),
+            _ => return Err("WHL body must be a reference".to_string()),
+        };
+        
+        let mut code = String::new();
+        code.push_str(&format!("  %{}_cond = icmp ne i64 {}, 0\n", id, cond));
+        code.push_str(&format!("  br i1 %{}_cond, label %cycle_{}, label %whl_end_{}\n", id, body_label, id));
+        code.push_str(&format!("whl_end_{}:\n", id));
         code.push_str(&format!("  %{} = add i64 0, 0\n", id));
         Ok(code)
     }

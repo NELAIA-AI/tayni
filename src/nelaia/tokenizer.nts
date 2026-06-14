@@ -1,0 +1,71 @@
+-- NELAIA Self-Hosted Tokenizer v0.3
+-- Simple loop using >> only
+
+-- Source buffer
+.src: ALC 4096
+.src_len: ALC 8
+
+-- Read source file
+.path: "input.nts"
+.file: FOP .path 0
+.read: FRD .file .src 4096
+.store_len: PUT .src_len 0 .read
+.close: FCL .file
+
+-- Counters
+.pos: ALC 8
+.p0: PUT .pos 0 0
+.dots: ALC 8
+.d0: PUT .dots 0 0
+
+-- Process each character (unrolled for first 100 chars)
+-- This is a workaround until proper loops work
+
+.c0: CHR .src 0
+.d0_is: EQ .c0 46
+.d0_add: BRN .d0_is 1 0
+.d0_cnt: GET .dots 0
+.d0_new: ADD .d0_cnt .d0_add
+.d0_sav: PUT .dots 0 .d0_new
+
+.c1: CHR .src 1
+.d1_is: EQ .c1 46
+.d1_add: BRN .d1_is 1 0
+.d1_cnt: GET .dots 0
+.d1_new: ADD .d1_cnt .d1_add
+.d1_sav: PUT .dots 0 .d1_new
+
+.c2: CHR .src 2
+.d2_is: EQ .c2 46
+.d2_add: BRN .d2_is 1 0
+.d2_cnt: GET .dots 0
+.d2_new: ADD .d2_cnt .d2_add
+.d2_sav: PUT .dots 0 .d2_new
+
+.c3: CHR .src 3
+.d3_is: EQ .c3 46
+.d3_add: BRN .d3_is 1 0
+.d3_cnt: GET .dots 0
+.d3_new: ADD .d3_cnt .d3_add
+.d3_sav: PUT .dots 0 .d3_new
+
+.c4: CHR .src 4
+.d4_is: EQ .c4 46
+.d4_add: BRN .d4_is 1 0
+.d4_cnt: GET .dots 0
+.d4_new: ADD .d4_cnt .d4_add
+.d4_sav: PUT .dots 0 .d4_new
+
+-- Print results
+.msg: "Dots in first 5 chars: "
+.out1: PRT .msg 23
+.buf: ALC 16
+.final: GET .dots 0
+.len: ITS .final .buf
+.out2: PRT .buf .len
+.nl: "\n"
+.out3: PRT .nl 1
+
+.end: "Done!\n"
+.out4: PRT .end 6
+!

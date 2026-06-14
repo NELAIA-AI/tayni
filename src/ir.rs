@@ -63,6 +63,8 @@ pub enum Op {
     Brn,
     // Conditional Jump (for real loops)
     Jmp,  // JMP cond label_true label_false -> conditional branch
+    // While loop
+    Whl,  // WHL cond body_label -> while loop
     // Effects (I/O)
     Prt, Inp, Opn, Acc, Get, Put, Cls, Err,
     // Network
