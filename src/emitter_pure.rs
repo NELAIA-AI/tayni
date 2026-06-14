@@ -365,6 +365,8 @@ impl PureEmitter {
             Op::Its => self.emit_int_to_str(id, args),
             Op::Chr => self.emit_char_at(id, args),
             Op::Sbs => self.emit_substring(id, args),
+            Op::Scm => self.emit_str_compare(id, args),
+            Op::Wrt => self.emit_write_string(id, args),
             
             _ => Ok(format!("  ; TODO: {:?}\n", op)),
         }
@@ -3243,5 +3245,110 @@ end:
             "  %{}_dst = inttoptr i64 {} to i8*\n{}  %{}_srcoff = getelementptr i8, i8* %{}_src, i64 {}\n  call void @llvm.memcpy.p0i8.p0i8.i64(i8* %{}_dst, i8* %{}_srcoff, i64 {}, i1 false)\n  %{}_term = getelementptr i8, i8* %{}_dst, i64 {}\n  store i8 0, i8* %{}_term\n  %{} = add i64 0, {}\n",
             id, dst, src_conv, id, id, start, id, id, len, id, id, len, id, id, len
         ))
+    }
+    
+    fn emit_str_compare(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        // SCM str1 str2 len -> 0 if equal, non-zero if different
+        // Pure implementation using loop (no libc)
+        if args.len() < 3 {
+            return Err("SCM requires str1, str2, len".to_string());
+        }
+        let str1 = self.emit_arg(&args[0])?;
+        let str2 = self.emit_arg(&args[1])?;
+        let len = self.emit_arg(&args[2])?;
+        
+        // Handle string literals (getelementptr) vs i64 pointers
+        let s1_conv = if str1.contains("getelementptr") {
+            format!("  %{}_s1 = ptrtoint i8* {} to i64\n", id, str1)
+        } else {
+            format!("  %{}_s1 = add i64 {}, 0\n", id, str1)
+        };
+        let s2_conv = if str2.contains("getelementptr") {
+            format!("  %{}_s2 = ptrtoint i8* {} to i64\n", id, str2)
+        } else {
+            format!("  %{}_s2 = add i64 {}, 0\n", id, str2)
+        };
+        
+        let mut code = String::new();
+        code.push_str(&s1_conv);
+        code.push_str(&s2_conv);
+        
+        // Entry point for this SCM
+        code.push_str(&format!("  br label %scm_e_{}\n", id));
+        code.push_str(&format!("scm_e_{}:\n", id));
+        
+        // Loop to compare bytes
+        code.push_str(&format!("  br label %scm_{}\n", id));
+        code.push_str(&format!("scm_{}:\n", id));
+        code.push_str(&format!("  %{}_i = phi i64 [0, %scm_e_{}], [%{}_ni, %scm_n_{}]\n", id, id, id, id));
+        code.push_str(&format!("  %{}_dn = icmp uge i64 %{}_i, {}\n", id, id, len));
+        code.push_str(&format!("  br i1 %{}_dn, label %scm_eq_{}, label %scm_b_{}\n", id, id, id));
+        
+        // Body: compare bytes
+        code.push_str(&format!("scm_b_{}:\n", id));
+        code.push_str(&format!("  %{}_o1 = add i64 %{}_s1, %{}_i\n", id, id, id));
+        code.push_str(&format!("  %{}_p1 = inttoptr i64 %{}_o1 to i8*\n", id, id));
+        code.push_str(&format!("  %{}_c1 = load i8, i8* %{}_p1\n", id, id));
+        code.push_str(&format!("  %{}_o2 = add i64 %{}_s2, %{}_i\n", id, id, id));
+        code.push_str(&format!("  %{}_p2 = inttoptr i64 %{}_o2 to i8*\n", id, id));
+        code.push_str(&format!("  %{}_c2 = load i8, i8* %{}_p2\n", id, id));
+        code.push_str(&format!("  %{}_neq = icmp ne i8 %{}_c1, %{}_c2\n", id, id, id));
+        code.push_str(&format!("  br i1 %{}_neq, label %scm_df_{}, label %scm_n_{}\n", id, id, id));
+        
+        // Different
+        code.push_str(&format!("scm_df_{}:\n", id));
+        code.push_str(&format!("  %{}_df = sub i8 %{}_c1, %{}_c2\n", id, id, id));
+        code.push_str(&format!("  %{}_dfs = sext i8 %{}_df to i64\n", id, id));
+        code.push_str(&format!("  br label %scm_x_{}\n", id));
+        
+        // Next
+        code.push_str(&format!("scm_n_{}:\n", id));
+        code.push_str(&format!("  %{}_ni = add i64 %{}_i, 1\n", id, id));
+        code.push_str(&format!("  br label %scm_{}\n", id));
+        
+        // Equal (all bytes matched)
+        code.push_str(&format!("scm_eq_{}:\n", id));
+        code.push_str(&format!("  br label %scm_x_{}\n", id));
+        
+        // Exit
+        code.push_str(&format!("scm_x_{}:\n", id));
+        code.push_str(&format!("  %{} = phi i64 [%{}_dfs, %scm_df_{}], [0, %scm_eq_{}]\n", id, id, id, id));
+        
+        Ok(code)
+    }
+    
+    fn emit_write_string(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        // WRT dst pos src len -> write src to dst at pos, returns pos+len
+        // This is the key primitive for building strings efficiently
+        if args.len() < 4 {
+            return Err("WRT requires dst, pos, src, len".to_string());
+        }
+        let dst = self.emit_arg(&args[0])?;
+        let pos = self.emit_arg(&args[1])?;
+        let src = self.emit_arg(&args[2])?;
+        let len = self.emit_arg(&args[3])?;
+        
+        // Handle string literals (getelementptr) vs i64 pointers
+        let src_conv = if src.contains("getelementptr") {
+            format!("  %{}_src = ptrtoint i8* {} to i64\n", id, src)
+        } else {
+            format!("  %{}_src = add i64 {}, 0\n", id, src)
+        };
+        
+        let mut code = String::new();
+        code.push_str(&src_conv);
+        
+        // Calculate destination offset
+        code.push_str(&format!("  %{}_dstoff = add i64 {}, {}\n", id, dst, pos));
+        code.push_str(&format!("  %{}_dstp = inttoptr i64 %{}_dstoff to i8*\n", id, id));
+        code.push_str(&format!("  %{}_srcp = inttoptr i64 %{}_src to i8*\n", id, id));
+        
+        // Copy using memcpy
+        code.push_str(&format!("  call void @llvm.memcpy.p0i8.p0i8.i64(i8* %{}_dstp, i8* %{}_srcp, i64 {}, i1 false)\n", id, id, len));
+        
+        // Return new position (pos + len)
+        code.push_str(&format!("  %{} = add i64 {}, {}\n", id, pos, len));
+        
+        Ok(code)
     }
 }

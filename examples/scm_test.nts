@@ -1,0 +1,44 @@
+-- Test SCM (String Compare)
+
+.s1: "ADD"
+.s2: "ADD"
+.s3: "SUB"
+.len: 3
+
+-- Compare equal strings
+.eq: SCM .s1 .s2 .len
+
+-- Compare different strings
+.ne: SCM .s1 .s3 .len
+
+-- Output
+.msg1: "SCM Test\n"
+.out1: PRT .msg1 9
+
+.msg2: "s1='ADD' s2='ADD' s3='SUB'\n"
+.out2: PRT .msg2 28
+
+.msg3: "SCM s1 s2 = "
+.out3: PRT .msg3 12
+.buf: ALC 8
+.eq_d: ADD .eq 48
+.peq: PUT .buf 0 .eq_d
+.pnl: PUT .buf 1 10
+.out3b: PRT .buf 2
+
+.msg4: "SCM s1 s3 = "
+.out4: PRT .msg4 12
+-- ne will be non-zero (negative), show as 'X'
+.ne_nz: ADD .ne 0
+.is_nz: SUB .ne_nz 0
+.nz_ch: 88
+.pne: PUT .buf 0 .nz_ch
+.out4b: PRT .buf 2
+
+.msg5: "Expected: 0 (equal), X (not equal)\n"
+.out5: PRT .msg5 35
+
+.done: "SCM works!\n"
+.od: PRT .done 11
+
+.result: ADD .out1 .out2 .out3 .out3b .out4 .out4b .out5 .od

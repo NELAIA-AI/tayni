@@ -1,0 +1,121 @@
+-- NELAIA Self-Hosted Compiler v0.3
+-- Compiles: .a: 3\n.b: ADD .a 2
+
+.zero: 0
+.three: 3
+
+-- Source code
+.src: ".a: 3\n.b: ADD .a 2"
+.slen: 18
+
+-- Tokenize
+.tokens: FSM .src .slen
+.tptr: ADD .tokens .zero
+
+-- Parse Line 1: .a: 3
+-- Tokens: DOT(0) ID(1) COLON(2) NUM(3) NL(4)
+.t1: ADD .tptr 12
+.t1_st: GET .t1 1
+.t3: ADD .tptr 20
+.t3_st: GET .t3 1
+
+.n1_ch: CHR .src .t1_st
+.v1_ch: CHR .src .t3_st
+
+-- Parse Line 2: .b: ADD .a 2
+-- Tokens: DOT(5) ID(6) COLON(7) ID(8) DOT(9) ID(10) NUM(11)
+.t6: ADD .tptr 32
+.t6_st: GET .t6 1
+
+.t8: ADD .tptr 40
+.t8_st: GET .t8 1
+.t8_ln: GET .t8 2
+
+.t10: ADD .tptr 48
+.t10_st: GET .t10 1
+
+.t11: ADD .tptr 52
+.t11_st: GET .t11 1
+
+.n2_ch: CHR .src .t6_st
+.arg1_ch: CHR .src .t10_st
+.arg2_ch: CHR .src .t11_st
+
+-- Check if op is ADD
+.op_add: "ADD"
+.op_buf: ALC 4
+.oc0: CHR .src .t8_st
+.op0: PUT .op_buf 0 .oc0
+.os1: ADD .t8_st 1
+.oc1: CHR .src .os1
+.op1: PUT .op_buf 1 .oc1
+.os2: ADD .t8_st 2
+.oc2: CHR .src .os2
+.op2: PUT .op_buf 2 .oc2
+
+.is_add: SCM .op_buf .op_add .three
+
+-- Emit LLVM IR
+.out: ALC 512
+
+-- Header
+.hdr: "define i64 @main() {\nentry:\n"
+.p0: WRT .out .zero .hdr 28
+
+-- Line 1: "  %a = add i64 3, 0\n"
+.ln1a: "  %"
+.p1: WRT .out .p0 .ln1a 3
+.nbuf: ALC 4
+.pn1: PUT .nbuf 0 .n1_ch
+.p2: WRT .out .p1 .nbuf 1
+.ln1b: " = add i64 "
+.p3: WRT .out .p2 .ln1b 11
+.vbuf: ALC 4
+.pv1: PUT .vbuf 0 .v1_ch
+.p4: WRT .out .p3 .vbuf 1
+.ln1c: ", 0\n"
+.p5: WRT .out .p4 .ln1c 4
+
+-- Line 2: "  %b = add i64 %a, 2\n"
+.ln2a: "  %"
+.p6: WRT .out .p5 .ln2a 3
+.pn2: PUT .nbuf 0 .n2_ch
+.p7: WRT .out .p6 .nbuf 1
+.ln2b: " = add i64 %"
+.p8: WRT .out .p7 .ln2b 12
+.pa1: PUT .nbuf 0 .arg1_ch
+.p9: WRT .out .p8 .nbuf 1
+.ln2c: ", "
+.p10: WRT .out .p9 .ln2c 2
+.pa2: PUT .nbuf 0 .arg2_ch
+.p11: WRT .out .p10 .nbuf 1
+.ln2d: "\n"
+.p12: WRT .out .p11 .ln2d 1
+
+-- Footer: "  ret i64 %b\n}\n"
+.ftr1: "  ret i64 %"
+.p13: WRT .out .p12 .ftr1 11
+.retbuf: ALC 4
+.pret: PUT .retbuf 0 .n2_ch
+.p14: WRT .out .p13 .retbuf 1
+.ftr2: "\n}\n"
+.p15: WRT .out .p14 .ftr2 3
+
+-- Output
+.title: "=== NELAIA Compiler v0.3 (Multi-node) ===\n\n"
+.ot: PRT .title 43
+
+.src_msg: "Source:\n"
+.os: PRT .src_msg 8
+.osc: PRT .src .slen
+.nl: "\n\n"
+.onl: PRT .nl 2
+
+.ir_msg: "Generated LLVM IR:\n"
+.oir: PRT .ir_msg 19
+.oout: PRT .out .p15
+
+.done: "\nCompilation successful!\n"
+.od: PRT .done 25
+
+.result: ADD .ot .os .osc .onl .oir .oout .od

@@ -1,0 +1,38 @@
+-- Test WRT (Write String to buffer)
+
+.buf: ALC 64
+.zero: 0
+
+-- Write "Hello" at pos 0
+.s1: "Hello"
+.p1: WRT .buf .zero .s1 5
+
+-- Write " " at pos 5
+.s2: " "
+.p2: WRT .buf .p1 .s2 1
+
+-- Write "World" at pos 6
+.s3: "World"
+.p3: WRT .buf .p2 .s3 5
+
+-- Write "!" at pos 11
+.s4: "!"
+.p4: WRT .buf .p3 .s4 1
+
+-- Output
+.msg: "WRT Test - Building strings\n"
+.out1: PRT .msg 28
+
+.msg2: "Result: "
+.out2: PRT .msg2 8
+.out3: PRT .buf 12
+.nl: "\n"
+.out4: PRT .nl 1
+
+.msg3: "Expected: Hello World!\n"
+.out5: PRT .msg3 23
+
+.done: "WRT works!\n"
+.od: PRT .done 11
+
+.result: ADD .out1 .out2 .out3 .out4 .out5 .od

@@ -118,6 +118,8 @@ pub enum Op {
     Its,  // ITS num buf -> int to string, returns length
     Chr,  // CHR str index -> char code at index
     Sbs,  // SBS dst src start len -> substring
+    Scm,  // SCM str1 str2 len -> 0 if equal, non-zero if different
+    Wrt,  // WRT dst pos src len -> write src to dst at pos, returns pos+len
     // Error handling
     Chk,
     // GUI - Window Management

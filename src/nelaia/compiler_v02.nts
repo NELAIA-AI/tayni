@@ -1,0 +1,73 @@
+-- NELAIA Self-Hosted Compiler v0.2
+-- Uses WRT for efficient string building
+-- Compiles: .x: 5 -> LLVM IR
+
+.zero: 0
+
+-- Source code
+.src: ".x: 5"
+.slen: 5
+
+-- Tokenize
+.tokens: FSM .src .slen
+.tptr: ADD .tokens .zero
+
+-- Parse: extract name and value from tokens
+.t1: ADD .tptr 12
+.t1_st: GET .t1 1
+.t3: ADD .tptr 20
+.t3_st: GET .t3 1
+
+.name_ch: CHR .src .t1_st
+.val_ch: CHR .src .t3_st
+
+-- Emit LLVM IR using WRT
+.out: ALC 256
+
+-- Header: "define i64 @main() {\nentry:\n  %"
+.hdr: "define i64 @main() {\nentry:\n  %"
+.p0: WRT .out .zero .hdr 31
+
+-- Variable name (1 char)
+.nbuf: ALC 4
+.pn: PUT .nbuf 0 .name_ch
+.p1: WRT .out .p0 .nbuf 1
+
+-- " = add i64 "
+.mid1: " = add i64 "
+.p2: WRT .out .p1 .mid1 11
+
+-- Value (1 char)
+.vbuf: ALC 4
+.pv: PUT .vbuf 0 .val_ch
+.p3: WRT .out .p2 .vbuf 1
+
+-- ", 0\n  ret i64 %"
+.mid2: ", 0\n  ret i64 %"
+.p4: WRT .out .p3 .mid2 15
+
+-- Return var name
+.p5: WRT .out .p4 .nbuf 1
+
+-- "\n}\n"
+.ftr: "\n}\n"
+.p6: WRT .out .p5 .ftr 3
+
+-- Output
+.title: "=== NELAIA Compiler v0.2 (WRT) ===\n\n"
+.ot: PRT .title 36
+
+.src_msg: "Source: "
+.os: PRT .src_msg 8
+.osc: PRT .src .slen
+.nl: "\n\n"
+.onl: PRT .nl 2
+
+.ir_msg: "Generated LLVM IR:\n"
+.oir: PRT .ir_msg 19
+.oout: PRT .out .p6
+
+.done: "\nCompilation successful!\n"
+.od: PRT .done 25
+
+.result: ADD .ot .os .osc .onl .oir .oout .od
