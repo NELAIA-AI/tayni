@@ -296,6 +296,7 @@ impl PureEmitter {
             Op::Brn => self.emit_branch(id, args),
             Op::Jmp => self.emit_jump(id, args),
             Op::Whl => self.emit_while(id, args),
+            Op::End => self.emit_end(id, args),
             
             // Threading
             Op::Thr => self.emit_thread_create(id, args),
@@ -1306,6 +1307,24 @@ impl PureEmitter {
         code.push_str(&format!("  br i1 %{}_cond, label %cycle_{}, label %whl_end_{}\n", id, body_label, id));
         code.push_str(&format!("whl_end_{}:\n", id));
         code.push_str(&format!("  %{} = add i64 0, 0\n", id));
+        Ok(code)
+    }
+    
+    fn emit_end(&mut self, id: &str, args: &[Arg]) -> Result<String, String> {
+        // END cond -> terminate if cond == 0, continue if != 0
+        // Hardware-optimal: single conditional branch
+        if args.is_empty() {
+            return Err("END requires condition argument".to_string());
+        }
+        let cond = self.emit_arg(&args[0])?;
+        
+        let mut code = String::new();
+        code.push_str(&format!("  %{}_cond = icmp ne i64 {}, 0\n", id, cond));
+        code.push_str(&format!("  br i1 %{}_cond, label %end_cont_{}, label %end_exit_{}\n", id, id, id));
+        code.push_str(&format!("end_exit_{}:\n", id));
+        code.push_str("  ret i32 0\n");
+        code.push_str(&format!("end_cont_{}:\n", id));
+        code.push_str(&format!("  %{} = add i64 {}, 0\n", id, cond));
         Ok(code)
     }
     

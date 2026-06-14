@@ -1,0 +1,118 @@
+warning: unused imports: `Cursor`, `Read`, and `Write`
+ --> src\binary.rs:6:15
+  |
+6 | use std::io::{Read, Write, Cursor};
+  |               ^^^^  ^^^^^  ^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `ref_name`
+   --> src\emitter_pure.rs:472:22
+    |
+472 |             Arg::Ref(ref_name) => {
+    |                      ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_ref_name`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `ref_name`
+   --> src\emitter_pure.rs:574:22
+    |
+574 |             Arg::Ref(ref_name) => {
+    |                      ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_ref_name`
+
+warning: fields `inputs`, `outputs`, and `nodes` are never read
+  --> src\ir.rs:19:28
+   |
+19 |     SubGraph { id: String, inputs: Vec<String>, outputs: Vec<String>, nodes: Vec<Node> },
+   |     --------               ^^^^^^               ^^^^^^^               ^^^^^
+   |     |
+   |     fields in this variant
+   |
+   = note: `Node` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: field `0` is never read
+  --> src\ir.rs:25:11
+   |
+25 |     Label(String),
+   |     ----- ^^^^^^
+   |     |
+   |     field in this variant
+   |
+   = note: `Node` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+help: consider changing the field to be of unit type to suppress this warning while preserving the field numbering, or remove the field
+   |
+25 -     Label(String),
+25 +     Label(()),
+   |
+
+warning: fields `0` and `1` are never read
+  --> src\ir.rs:37:10
+   |
+37 |     Pair(Box<Value>, Box<Value>),
+   |     ---- ^^^^^^^^^^  ^^^^^^^^^^
+   |     |
+   |     fields in this variant
+   |
+   = note: `Value` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+help: consider changing the fields to be of unit type to suppress this warning while preserving the field numbering, or remove the fields
+   |
+37 -     Pair(Box<Value>, Box<Value>),
+37 +     Pair((), ()),
+   |
+
+warning: field `0` is never read
+  --> src\ir.rs:48:10
+   |
+48 |     Expr(Op, Vec<Arg>),
+   |     ---- ^^
+   |     |
+   |     field in this variant
+   |
+   = note: `Arg` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+help: consider changing the field to be of unit type to suppress this warning while preserving the field numbering, or remove the field
+   |
+48 -     Expr(Op, Vec<Arg>),
+48 +     Expr((), Vec<Arg>),
+   |
+
+warning: variants `OpenNet`, `OpenDsk`, `Accept`, `Get`, `Put`, and `Close` are never constructed
+   --> src\ir.rs:153:5
+    |
+151 | pub enum Effect {
+    |          ------ variants in this enum
+152 |     Print,
+153 |     OpenNet(i32),
+    |     ^^^^^^^
+154 |     OpenDsk(String),
+    |     ^^^^^^^
+155 |     Accept,
+    |     ^^^^^^
+156 |     Get,
+    |     ^^^
+157 |     Put,
+    |     ^^^
+158 |     Close,
+    |     ^^^^^
+    |
+    = note: `Effect` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: enum `ResourceType` is never used
+   --> src\ir.rs:163:10
+    |
+163 | pub enum ResourceType {
+    |          ^^^^^^^^^^^^
+
+warning: method `emit_windows_syscalls` is never used
+    --> src\emitter_pure.rs:2020:8
+     |
+  21 | impl PureEmitter {
+     | ---------------- method in this implementation
+...
+2020 |     fn emit_windows_syscalls(&self) -> String {
+     |        ^^^^^^^^^^^^^^^^^^^^^
+
+warning: `nelaia-c` (bin "nelaia-c") generated 10 warnings (run `cargo fix --bin "nelaia-c" -p nelaia-c` to apply 3 suggestions)
+    Finished `release` profile [optimized] target(s) in 0.44s
+     Running `target\release\nelaia-c.exe examples\end_test.nts --emit-ir`
+W:DEAD:out

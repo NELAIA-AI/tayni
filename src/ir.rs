@@ -65,6 +65,8 @@ pub enum Op {
     Jmp,  // JMP cond label_true label_false -> conditional branch
     // While loop
     Whl,  // WHL cond body_label -> while loop
+    // Conditional termination
+    End,  // END cond -> terminate if cond == 0, continue if != 0
     // Effects (I/O)
     Prt, Inp, Opn, Acc, Get, Put, Cls, Err,
     // Network

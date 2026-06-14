@@ -1,0 +1,7 @@
+.msg: "Testing END\n"
+.zero: 0
+
+.print: PRT .msg 12
+.check: END .zero
+.done: PRT "Should NOT print!\n" 18
+.out: ADD .print .check .done
