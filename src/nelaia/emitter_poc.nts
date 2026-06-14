@@ -1,0 +1,157 @@
+-- NELAIA Self-Hosted Emitter PoC v0.1
+-- Generate LLVM IR from parsed nodes
+-- Input: .x: 5 -> Output: %x = add i64 5, 0
+
+.zero: 0
+.nl: 10
+.sp: 32
+
+-- Output buffer for LLVM IR
+.out: ALC 512
+.pos: 0
+
+-- LLVM IR header
+.hdr: "define i64 @main() {\nentry:\n"
+.hlen: 28
+
+-- Copy header to output
+.h0: CHR .hdr 0
+.p0: PUT .out 0 .h0
+.h1: CHR .hdr 1
+.p1: PUT .out 1 .h1
+.h2: CHR .hdr 2
+.p2: PUT .out 2 .h2
+.h3: CHR .hdr 3
+.p3: PUT .out 3 .h3
+.h4: CHR .hdr 4
+.p4: PUT .out 4 .h4
+.h5: CHR .hdr 5
+.p5: PUT .out 5 .h5
+.h6: CHR .hdr 6
+.p6: PUT .out 6 .h6
+.h7: CHR .hdr 7
+.p7: PUT .out 7 .h7
+.h8: CHR .hdr 8
+.p8: PUT .out 8 .h8
+.h9: CHR .hdr 9
+.p9: PUT .out 9 .h9
+.h10: CHR .hdr 10
+.p10: PUT .out 10 .h10
+.h11: CHR .hdr 11
+.p11: PUT .out 11 .h11
+.h12: CHR .hdr 12
+.p12: PUT .out 12 .h12
+.h13: CHR .hdr 13
+.p13: PUT .out 13 .h13
+.h14: CHR .hdr 14
+.p14: PUT .out 14 .h14
+.h15: CHR .hdr 15
+.p15: PUT .out 15 .h15
+.h16: CHR .hdr 16
+.p16: PUT .out 16 .h16
+.h17: CHR .hdr 17
+.p17: PUT .out 17 .h17
+.h18: CHR .hdr 18
+.p18: PUT .out 18 .h18
+.h19: CHR .hdr 19
+.p19: PUT .out 19 .h19
+.h20: CHR .hdr 20
+.p20: PUT .out 20 .h20
+.h21: CHR .hdr 21
+.p21: PUT .out 21 .h21
+.h22: CHR .hdr 22
+.p22: PUT .out 22 .h22
+.h23: CHR .hdr 23
+.p23: PUT .out 23 .h23
+.h24: CHR .hdr 24
+.p24: PUT .out 24 .h24
+.h25: CHR .hdr 25
+.p25: PUT .out 25 .h25
+.h26: CHR .hdr 26
+.p26: PUT .out 26 .h26
+.h27: CHR .hdr 27
+.p27: PUT .out 27 .h27
+
+-- Emit: "  %x = add i64 5, 0\n" (20 chars) at pos 28
+.ln1: "  %x = add i64 5, 0\n"
+.l0: CHR .ln1 0
+.q0: PUT .out 28 .l0
+.l1: CHR .ln1 1
+.q1: PUT .out 29 .l1
+.l2: CHR .ln1 2
+.q2: PUT .out 30 .l2
+.l3: CHR .ln1 3
+.q3: PUT .out 31 .l3
+.l4: CHR .ln1 4
+.q4: PUT .out 32 .l4
+.l5: CHR .ln1 5
+.q5: PUT .out 33 .l5
+.l6: CHR .ln1 6
+.q6: PUT .out 34 .l6
+.l7: CHR .ln1 7
+.q7: PUT .out 35 .l7
+.l8: CHR .ln1 8
+.q8: PUT .out 36 .l8
+.l9: CHR .ln1 9
+.q9: PUT .out 37 .l9
+.l10: CHR .ln1 10
+.q10: PUT .out 38 .l10
+.l11: CHR .ln1 11
+.q11: PUT .out 39 .l11
+.l12: CHR .ln1 12
+.q12: PUT .out 40 .l12
+.l13: CHR .ln1 13
+.q13: PUT .out 41 .l13
+.l14: CHR .ln1 14
+.q14: PUT .out 42 .l14
+.l15: CHR .ln1 15
+.q15: PUT .out 43 .l15
+.l16: CHR .ln1 16
+.q16: PUT .out 44 .l16
+.l17: CHR .ln1 17
+.q17: PUT .out 45 .l17
+.l18: CHR .ln1 18
+.q18: PUT .out 46 .l18
+.l19: CHR .ln1 19
+.q19: PUT .out 47 .l19
+
+-- Footer: "  ret i64 0\n}\n" (14 chars) at pos 48
+.ftr: "  ret i64 0\n}\n"
+.f0: CHR .ftr 0
+.r0: PUT .out 48 .f0
+.f1: CHR .ftr 1
+.r1: PUT .out 49 .f1
+.f2: CHR .ftr 2
+.r2: PUT .out 50 .f2
+.f3: CHR .ftr 3
+.r3: PUT .out 51 .f3
+.f4: CHR .ftr 4
+.r4: PUT .out 52 .f4
+.f5: CHR .ftr 5
+.r5: PUT .out 53 .f5
+.f6: CHR .ftr 6
+.r6: PUT .out 54 .f6
+.f7: CHR .ftr 7
+.r7: PUT .out 55 .f7
+.f8: CHR .ftr 8
+.r8: PUT .out 56 .f8
+.f9: CHR .ftr 9
+.r9: PUT .out 57 .f9
+.f10: CHR .ftr 10
+.r10: PUT .out 58 .f10
+.f11: CHR .ftr 11
+.r11: PUT .out 59 .f11
+.f12: CHR .ftr 12
+.r12: PUT .out 60 .f12
+.f13: CHR .ftr 13
+.r13: PUT .out 61 .f13
+
+-- Print generated LLVM IR
+.msg: "=== NELAIA Emitter PoC ===\n\nGenerated LLVM IR:\n"
+.om: PRT .msg 48
+.oir: PRT .out 62
+
+.done: "\nEmitter works!\n"
+.od: PRT .done 16
+
+.result: ADD .om .oir .od

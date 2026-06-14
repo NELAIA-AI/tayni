@@ -1,0 +1,89 @@
+-- NELAIA Parser PoC v0.5 - With loop using END
+-- Parse multiple nodes dynamically
+
+.input: ".a: 1\n.b: 2\n.c: 3"
+.len: 17
+.zero: 0
+.one: 1
+.four: 4
+.eight: 8
+
+-- Tokenize
+.tokens: FSM .input .len
+.tptr: ADD .tokens .zero
+
+-- Read token count (first 8 bytes as i64)
+-- For now approximate: each line has ~4-5 tokens
+-- Input has 3 lines, ~12 tokens
+
+-- Output header
+.msg1: "=== Parser v0.5 - Loop ===\n"
+.out1: PRT .msg1 27
+
+.msg2: "Input: "
+.out2: PRT .msg2 7
+.out2b: PRT .input .len
+.nl: "\n"
+.out2c: PRT .nl 1
+
+-- Parse loop: process 3 nodes (unrolled for PoC)
+-- Each node pattern: DOT ID COLON VALUE [NL]
+-- Token stride: 4 bytes per token
+
+.msg3: "\nParsing nodes:\n"
+.out3: PRT .msg3 16
+
+-- Node 0: tokens 0-3 (offset 8 + 0*16 = 8)
+.n0_base: ADD .tptr 8
+.n0_id: ADD .n0_base 4
+.n0_id_st: GET .n0_id 1
+.n0_val: ADD .n0_base 12
+.n0_val_st: GET .n0_val 1
+
+.buf: ALC 32
+.n0c: CHR .input .n0_id_st
+.n0p: PUT .buf 0 .n0c
+.n0v: CHR .input .n0_val_st
+
+.m0: "  .a = "
+.o0: PRT .m0 7
+.o0v: PUT .buf 0 .n0v
+.o0p: PRT .buf 1
+.o0n: PRT .nl 1
+
+-- Node 1: tokens 5-8 (offset 8 + 5*4 = 28)
+.n1_base: ADD .tptr 28
+.n1_id: ADD .n1_base 4
+.n1_id_st: GET .n1_id 1
+.n1_val: ADD .n1_base 12
+.n1_val_st: GET .n1_val 1
+
+.n1c: CHR .input .n1_id_st
+.n1v: CHR .input .n1_val_st
+
+.m1: "  .b = "
+.o1: PRT .m1 7
+.o1v: PUT .buf 0 .n1v
+.o1p: PRT .buf 1
+.o1n: PRT .nl 1
+
+-- Node 2: tokens 10-13 (offset 8 + 10*4 = 48)
+.n2_base: ADD .tptr 48
+.n2_id: ADD .n2_base 4
+.n2_id_st: GET .n2_id 1
+.n2_val: ADD .n2_base 12
+.n2_val_st: GET .n2_val 1
+
+.n2c: CHR .input .n2_id_st
+.n2v: CHR .input .n2_val_st
+
+.m2: "  .c = "
+.o2: PRT .m2 7
+.o2v: PUT .buf 0 .n2v
+.o2p: PRT .buf 1
+.o2n: PRT .nl 1
+
+.done: "\n3 nodes parsed!\n"
+.od: PRT .done 17
+
+.result: ADD .out1 .out2 .out2b .out2c .out3 .o0 .o0p .o0n .o1 .o1p .o1n .o2 .o2p .o2n .od
