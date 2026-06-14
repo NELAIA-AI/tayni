@@ -1,9 +1,10 @@
-//! NELAIA Compiler v0.9
-//! Pure Syscalls Only - No Embedded Programs
+//! NELAIA Compiler v0.17
+//! Pure Syscalls Only - Self-Hosting Ready
 
 mod ir;
 mod parser;
 mod emitter_pure;
+mod binary;
 
 use parser::Parser;
 use emitter_pure::{PureEmitter, TargetPlatform};
@@ -18,14 +19,19 @@ fn main() {
     
     if args.len() < 2 {
         if !quiet {
-            eprintln!("nelaia-c 0.9 pure");
-            eprintln!("usage: nelaia-c <file> [output] [options]");
+            eprintln!("nelaia-c 0.17");
+            eprintln!("usage: nelaia-c <file.nts|file.nbin> [output] [options]");
+            eprintln!("options:");
+            eprintln!("  --emit-llvm    Output LLVM IR only");
+            eprintln!("  --emit-bin     Output binary format (.nbin)");
+            eprintln!("  --target=linux/windows");
         }
         return;
     }
     
-    let nts_file = &args[1];
+    let input_file = &args[1];
     let emit_only = args.contains(&"--emit-llvm".to_string());
+    let emit_bin = args.contains(&"--emit-bin".to_string());
     let no_warn = args.contains(&"--no-warn".to_string());
     
     // Parse target platform
@@ -43,26 +49,64 @@ fn main() {
     let output_name = if args.len() > 2 && !args[2].starts_with("--") {
         args[2].clone()
     } else {
-        nts_file.replace(".nts", "")
+        input_file.replace(".nts", "").replace(".nbin", "")
     };
     
-    // Read source file
-    let content = match fs::read_to_string(nts_file) {
-        Ok(c) => c,
-        Err(e) => {
-            eprintln!("E:READ:{}", e);
+    // Read input file (text or binary)
+    let graph = if input_file.ends_with(".nbin") {
+        // Load binary format
+        let data = match fs::read(input_file) {
+            Ok(d) => d,
+            Err(e) => {
+                eprintln!("E:READ:{}", e);
+                std::process::exit(1);
+            }
+        };
+        
+        if !binary::is_binary(&data) {
+            eprintln!("E:FORMAT:Not a valid .nbin file");
             std::process::exit(1);
+        }
+        
+        match binary::deserialize(&data) {
+            Ok(g) => g,
+            Err(e) => {
+                eprintln!("E:BINARY:{}", e);
+                std::process::exit(1);
+            }
+        }
+    } else {
+        // Parse text format
+        let content = match fs::read_to_string(input_file) {
+            Ok(c) => c,
+            Err(e) => {
+                eprintln!("E:READ:{}", e);
+                std::process::exit(1);
+            }
+        };
+        
+        match Parser::parse(&content) {
+            Ok(g) => g,
+            Err(e) => {
+                eprintln!("E:PARSE:{}", e);
+                std::process::exit(1);
+            }
         }
     };
     
-    // Phase 1: Parse
-    let graph = match Parser::parse(&content) {
-        Ok(g) => g,
-        Err(e) => {
-            eprintln!("E:PARSE:{}", e);
+    // Emit binary format if requested
+    if emit_bin {
+        let bin_data = binary::serialize(&graph);
+        let bin_file = format!("{}.nbin", output_name);
+        if let Err(e) = fs::write(&bin_file, &bin_data) {
+            eprintln!("E:WRITE:{}", e);
             std::process::exit(1);
         }
-    };
+        if !quiet {
+            eprintln!("OK:BIN:{}:{} bytes", bin_file, bin_data.len());
+        }
+        return;
+    }
     
     // Phase 1.5: Analyze graph
     let analysis = graph.analyze();

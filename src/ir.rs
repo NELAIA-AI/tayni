@@ -61,6 +61,8 @@ pub enum Op {
     Seq, Map, Fld, Flt, Len, Fst, Snd,
     // Control (BRN only - LOOP/BRK/CNT deprecated per Consortium 2026-06-13)
     Brn,
+    // Conditional Jump (for real loops)
+    Jmp,  // JMP cond label_true label_false -> conditional branch
     // Effects (I/O)
     Prt, Inp, Opn, Acc, Get, Put, Cls, Err,
     // Network

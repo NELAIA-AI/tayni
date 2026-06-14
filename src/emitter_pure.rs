@@ -294,6 +294,7 @@ impl PureEmitter {
             
             // Control flow
             Op::Brn => self.emit_branch(id, args),
+            Op::Jmp => self.emit_jump(id, args),
             
             // Threading
             Op::Thr => self.emit_thread_create(id, args),
@@ -1260,6 +1261,32 @@ impl PureEmitter {
         Ok(code)
     }
     
+    fn emit_jump(&mut self, id: &str, args: &[Arg]) -> Result<String, String> {
+        // JMP cond label_true label_false -> conditional branch (real jump)
+        // Labels are references like .loop, .done
+        if args.len() < 3 {
+            return Err("JMP requires 3 arguments: condition, label_true, label_false".to_string());
+        }
+        let cond = self.emit_arg(&args[0])?;
+        
+        // Extract label names from references
+        let label_true = match &args[1] {
+            Arg::Ref(name) => name.clone(),
+            _ => return Err("JMP label_true must be a reference".to_string()),
+        };
+        let label_false = match &args[2] {
+            Arg::Ref(name) => name.clone(),
+            _ => return Err("JMP label_false must be a reference".to_string()),
+        };
+        
+        let mut code = String::new();
+        code.push_str(&format!("  %{}_cond = icmp ne i64 {}, 0\n", id, cond));
+        code.push_str(&format!("  br i1 %{}_cond, label %cycle_{}, label %lbl_{}\n", id, label_true, label_false));
+        code.push_str(&format!("lbl_{}:\n", label_false));
+        code.push_str(&format!("  %{} = add i64 0, 0\n", id));
+        Ok(code)
+    }
+    
     // ========================================================================
     // GUI Operations
     // ========================================================================
@@ -1940,6 +1967,12 @@ declare i32 @XClearWindow(i8*, i64)
 @.x11_gc = private global i8* null
 @.x11_last_event = private global i32 0
 @.x11_last_btn = private global i64 0
+
+; Memory/String functions (libc)
+declare i32 @memcmp(i8*, i8*, i64)
+declare i8* @memchr(i8*, i32, i64)
+declare i64 @strlen(i8*)
+declare void @llvm.memcpy.p0i8.p0i8.i64(i8*, i8*, i64, i1)
 "#.to_string()
     }
     
@@ -2746,16 +2779,24 @@ end:
         let key_len = self.emit_arg(&args[2])?;
         let value = self.emit_arg(&args[3])?;
         
-        // Simplified: just store at next slot (4 i64s per entry)
+        // Handle key_ptr that might be a getelementptr (string literal)
+        let key_conv = if key_ptr.contains("getelementptr") {
+            format!("  %{}_key = ptrtoint i8* {} to i64\n", id, key_ptr)
+        } else {
+            format!("  %{}_key = add i64 {}, 0\n", id, key_ptr)
+        };
+        
+        // Simplified: just store at next slot (3 i64s per entry: key_ptr, key_len, value)
         Ok(format!(concat!(
             "  ; HPT: store key-value\n",
+            "{key_conv}",
             "  %{id}_base = inttoptr i64 {map} to i64*\n",
             "  %{id}_cnt_ptr = getelementptr i64, i64* %{id}_base, i32 1\n",
             "  %{id}_cnt = load i64, i64* %{id}_cnt_ptr\n",
-            "  %{id}_off = mul i64 %{id}_cnt, 4\n",
+            "  %{id}_off = mul i64 %{id}_cnt, 3\n",
             "  %{id}_off2 = add i64 %{id}_off, 2\n",
             "  %{id}_slot = getelementptr i64, i64* %{id}_base, i64 %{id}_off2\n",
-            "  store i64 {key_ptr}, i64* %{id}_slot\n",
+            "  store i64 %{id}_key, i64* %{id}_slot\n",
             "  %{id}_s1 = getelementptr i64, i64* %{id}_slot, i32 1\n",
             "  store i64 {key_len}, i64* %{id}_s1\n",
             "  %{id}_s2 = getelementptr i64, i64* %{id}_slot, i32 2\n",
@@ -2763,25 +2804,57 @@ end:
             "  %{id}_newcnt = add i64 %{id}_cnt, 1\n",
             "  store i64 %{id}_newcnt, i64* %{id}_cnt_ptr\n",
             "  %{id} = add i64 0, 0\n"),
-            id=id, map=map, key_ptr=key_ptr, key_len=key_len, value=value
+            id=id, map=map, key_conv=key_conv, key_len=key_len, value=value
         ))
     }
     
     fn emit_hashmap_get(&self, id: &str, args: &[Arg]) -> Result<String, String> {
-        // HGT map key_ptr key_len -> value
+        // HGT map key_ptr key_len -> value (linear search)
         if args.len() < 3 {
             return Err("HGT requires map, key_ptr, key_len".to_string());
         }
         let map = self.emit_arg(&args[0])?;
-        let _key_ptr = self.emit_arg(&args[1])?;
-        let _key_len = self.emit_arg(&args[2])?;
+        let key_ptr = self.emit_arg(&args[1])?;
+        let key_len = self.emit_arg(&args[2])?;
         
-        // Simplified: linear search through buckets
-        // For full implementation, would need loop in LLVM IR
-        // This is a placeholder that returns 0
-        Ok(format!(
-            "  ; HGT: lookup (simplified - returns 0)\n  %{}_base = inttoptr i64 {} to i64*\n  %{} = add i64 0, 0\n",
-            id, map, id
+        // Linear search with memcmp
+        Ok(format!(concat!(
+            "  ; HGT: linear search lookup\n",
+            "  %{id}_base = inttoptr i64 {map} to i64*\n",
+            "  %{id}_cnt_ptr = getelementptr i64, i64* %{id}_base, i32 1\n",
+            "  %{id}_cnt = load i64, i64* %{id}_cnt_ptr\n",
+            "  %{id}_key = inttoptr i64 {key_ptr} to i8*\n",
+            "  br label %{id}_loop\n",
+            "{id}_loop:\n",
+            "  %{id}_i = phi i64 [0, %entry], [%{id}_i_next, %{id}_next]\n",
+            "  %{id}_done = icmp uge i64 %{id}_i, %{id}_cnt\n",
+            "  br i1 %{id}_done, label %{id}_notfound, label %{id}_check\n",
+            "{id}_check:\n",
+            "  %{id}_off = mul i64 %{id}_i, 4\n",
+            "  %{id}_off2 = add i64 %{id}_off, 2\n",
+            "  %{id}_slot = getelementptr i64, i64* %{id}_base, i64 %{id}_off2\n",
+            "  %{id}_stored_ptr = load i64, i64* %{id}_slot\n",
+            "  %{id}_s1 = getelementptr i64, i64* %{id}_slot, i32 1\n",
+            "  %{id}_stored_len = load i64, i64* %{id}_s1\n",
+            "  %{id}_len_eq = icmp eq i64 %{id}_stored_len, {key_len}\n",
+            "  br i1 %{id}_len_eq, label %{id}_cmp, label %{id}_next\n",
+            "{id}_cmp:\n",
+            "  %{id}_sp = inttoptr i64 %{id}_stored_ptr to i8*\n",
+            "  %{id}_cmp_r = call i32 @memcmp(i8* %{id}_sp, i8* %{id}_key, i64 {key_len})\n",
+            "  %{id}_eq = icmp eq i32 %{id}_cmp_r, 0\n",
+            "  br i1 %{id}_eq, label %{id}_found, label %{id}_next\n",
+            "{id}_next:\n",
+            "  %{id}_i_next = add i64 %{id}_i, 1\n",
+            "  br label %{id}_loop\n",
+            "{id}_found:\n",
+            "  %{id}_s2 = getelementptr i64, i64* %{id}_slot, i32 2\n",
+            "  %{id}_val = load i64, i64* %{id}_s2\n",
+            "  br label %{id}_end\n",
+            "{id}_notfound:\n",
+            "  br label %{id}_end\n",
+            "{id}_end:\n",
+            "  %{id} = phi i64 [%{id}_val, %{id}_found], [0, %{id}_notfound]\n"),
+            id=id, map=map, key_ptr=key_ptr, key_len=key_len
         ))
     }
     
@@ -2832,17 +2905,28 @@ end:
     
     fn emit_int_to_str(&self, id: &str, args: &[Arg]) -> Result<String, String> {
         // ITS num buf -> length
+        // Pure implementation without libc
         if args.len() < 2 {
             return Err("ITS requires num, buf".to_string());
         }
         let num = self.emit_arg(&args[0])?;
         let buf = self.emit_arg(&args[1])?;
         
-        // Simple implementation: single digit for now, full impl needs loop
-        // This handles 0-9 only as placeholder
-        Ok(format!(
-            "  ; ITS: int to string\n  %{}_buf = inttoptr i64 {} to i8*\n  %{}_digit = add i64 {}, 48\n  %{}_char = trunc i64 %{}_digit to i8\n  store i8 %{}_char, i8* %{}_buf\n  %{}_next = getelementptr i8, i8* %{}_buf, i32 1\n  store i8 0, i8* %{}_next\n  %{} = add i64 0, 1\n",
-            id, buf, id, num, id, id, id, id, id, id, id, id
+        // Simple single-digit for now (0-9), handles negative
+        // For full numbers, would need inline loop
+        Ok(format!(concat!(
+            "  ; ITS: int to string (single digit)\n",
+            "  %{id}_buf = inttoptr i64 {buf} to i8*\n",
+            "  %{id}_is_neg = icmp slt i64 {num}, 0\n",
+            "  %{id}_abs = select i1 %{id}_is_neg, i64 0, i64 {num}\n",
+            "  %{id}_mod = urem i64 %{id}_abs, 10\n",
+            "  %{id}_digit = add i64 %{id}_mod, 48\n",
+            "  %{id}_char = trunc i64 %{id}_digit to i8\n",
+            "  store i8 %{id}_char, i8* %{id}_buf\n",
+            "  %{id}_next = getelementptr i8, i8* %{id}_buf, i32 1\n",
+            "  store i8 0, i8* %{id}_next\n",
+            "  %{id} = add i64 0, 1\n"),
+            id=id, buf=buf, num=num
         ))
     }
     

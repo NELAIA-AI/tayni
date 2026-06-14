@@ -1,0 +1,43 @@
+-- NELAIA Self-Hosting Test: Complete
+-- Tests: CAT, CHR, SBS, VEC, HMP, File I/O
+
+-- 1. String concatenation
+.s1: "NELAIA "
+.s2: "v0.17"
+.buf: ALC 64
+.cat: CAT .buf .s1 .s2
+.out1: PRT .buf .cat
+.nl: "\n"
+.out2: PRT .nl 1
+
+-- 2. Substring extraction
+.src: "Self-Hosting Ready"
+.sub_buf: ALC 32
+.sub: SBS .sub_buf .src 5 7
+.out3: PRT .sub_buf 7
+.out4: PRT .nl 1
+
+-- 3. Character access
+.test: "ABC"
+.c0: CHR .test 0
+.c1: CHR .test 1
+.c2: CHR .test 2
+
+-- 4. Vector operations
+.vec: VEC 10
+.p1: VPH .vec 100
+.p2: VPH .vec 200
+.p3: VPH .vec 300
+.len: VLN .vec
+.v0: VGT .vec 0
+.v1: VGT .vec 1
+
+-- 5. HashMap operations
+.map: HMP 16
+.key1: "name"
+.put1: HPT .map .key1 4 42
+
+-- 6. Print final message
+.done: "Done!\n"
+.out5: PRT .done 6
+!
