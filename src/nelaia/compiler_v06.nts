@@ -1,0 +1,140 @@
+-- NELAIA Self-Hosted Compiler v0.6
+-- Compiles: .msg: "Hello NELAIA!"\n.out: PRT .msg 13
+
+.zero: 0
+.three: 3
+
+-- Source code
+.src: ".msg: \"Hello NELAIA!\"\n.out: PRT .msg 13"
+.slen: 39
+
+-- Tokenize
+.tokens: FSM .src .slen
+.tptr: ADD .tokens .zero
+
+-- Parse Line 1: .msg: "Hello NELAIA!"
+-- Tokens: DOT ID COLON STR NL
+.t1: ADD .tptr 12
+.t1_st: GET .t1 1
+.n1_ch: CHR .src .t1_st
+
+.t3: ADD .tptr 20
+.t3_st: GET .t3 1
+.t3_ln: GET .t3 2
+
+-- String content (skip opening quote, length-2 for quotes)
+.str_start: ADD .t3_st 1
+.str_len: SUB .t3_ln 2
+
+-- Extract string chars (13 chars: Hello NELAIA!)
+.strbuf: ALC 20
+.sc0: CHR .src .str_start
+.sp0: PUT .strbuf 0 .sc0
+.ss1: ADD .str_start 1
+.sc1: CHR .src .ss1
+.sp1: PUT .strbuf 1 .sc1
+.ss2: ADD .str_start 2
+.sc2: CHR .src .ss2
+.sp2: PUT .strbuf 2 .sc2
+.ss3: ADD .str_start 3
+.sc3: CHR .src .ss3
+.sp3: PUT .strbuf 3 .sc3
+.ss4: ADD .str_start 4
+.sc4: CHR .src .ss4
+.sp4: PUT .strbuf 4 .sc4
+.ss5: ADD .str_start 5
+.sc5: CHR .src .ss5
+.sp5: PUT .strbuf 5 .sc5
+.ss6: ADD .str_start 6
+.sc6: CHR .src .ss6
+.sp6: PUT .strbuf 6 .sc6
+.ss7: ADD .str_start 7
+.sc7: CHR .src .ss7
+.sp7: PUT .strbuf 7 .sc7
+.ss8: ADD .str_start 8
+.sc8: CHR .src .ss8
+.sp8: PUT .strbuf 8 .sc8
+.ss9: ADD .str_start 9
+.sc9: CHR .src .ss9
+.sp9: PUT .strbuf 9 .sc9
+.ss10: ADD .str_start 10
+.sc10: CHR .src .ss10
+.sp10: PUT .strbuf 10 .sc10
+.ss11: ADD .str_start 11
+.sc11: CHR .src .ss11
+.sp11: PUT .strbuf 11 .sc11
+.ss12: ADD .str_start 12
+.sc12: CHR .src .ss12
+.sp12: PUT .strbuf 12 .sc12
+
+-- Emit LLVM IR
+.out: ALC 2048
+
+-- Target triple first
+.triple: "target triple = \"x86_64-pc-windows-msvc\"\n\n"
+.p0: WRT .out .zero .triple 43
+
+-- String constant: @str_1 = private constant [14 x i8] c"Hello NELAIA!\00"
+.str_hdr: "@str_1 = private constant [14 x i8] c\""
+.p1: WRT .out .p0 .str_hdr 38
+.p2: WRT .out .p1 .strbuf 13
+-- Escape sequence \00"
+.esc: ALC 8
+.bs: 92
+.ch0: 48
+.qt: 34
+.nln: 10
+.pe0: PUT .esc 0 .bs
+.pe1: PUT .esc 1 .ch0
+.pe2: PUT .esc 2 .ch0
+.pe3: PUT .esc 3 .qt
+.pe4: PUT .esc 4 .nln
+.pe5: PUT .esc 5 .nln
+.p3: WRT .out .p2 .esc 6
+
+-- Declarations
+.decl: "declare i64 @GetStdHandle(i32)\ndeclare i32 @WriteFile(i64, i8*, i32, i32*, i64)\n\n"
+.p4: WRT .out .p3 .decl 82
+
+-- Main function
+.hdr: "define i64 @main() {\nentry:\n"
+.p5: WRT .out .p4 .hdr 28
+
+-- Get stdout
+.ln1: "  %stdout = call i64 @GetStdHandle(i32 -11)\n"
+.p6: WRT .out .p5 .ln1 45
+
+-- Get string pointer
+.ln2: "  %msg = getelementptr [14 x i8], [14 x i8]* @str_1, i32 0, i32 0\n"
+.p7: WRT .out .p6 .ln2 66
+
+-- WriteFile
+.ln3: "  %out = call i32 @WriteFile(i64 %stdout, i8* %msg, i32 13, i32* null, i64 0)\n"
+.p8: WRT .out .p7 .ln3 78
+
+-- Return
+.ln4: "  ret i64 0\n}\n\n"
+.p9: WRT .out .p8 .ln4 15
+
+-- Entry point
+.entry: "define i64 @mainCRTStartup() {\n  %r = call i64 @main()\n  ret i64 %r\n}\n"
+.p10: WRT .out .p9 .entry 72
+
+-- Output
+.title: "=== NELAIA Self-Hosted Compiler v0.6 ===\n"
+.ot: PRT .title 41
+
+.src_msg: "\nSource (hello_simple.nts):\n"
+.os: PRT .src_msg 28
+.osc: PRT .src .slen
+.nl: "\n\n"
+.onl: PRT .nl 2
+
+.ir_msg: "Generated LLVM IR:\n"
+.oir: PRT .ir_msg 19
+.oout: PRT .out .p10
+
+.done: "\n=== Compilation Complete ===\n"
+.od: PRT .done 30
+
+.result: ADD .ot .os .osc .onl .oir .oout .od

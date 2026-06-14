@@ -1,0 +1,5 @@
+-- Hello World for NELAIA Self-Hosted Compiler
+-- Simple format: .id: value or .id: OP args
+
+.msg: "Hello NELAIA!"
+.out: PRT .msg 13
