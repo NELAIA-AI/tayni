@@ -1,0 +1,172 @@
+-- NELAIA Compiler Module: String Literals (Bootstrap Version)
+-- Handles: .name: "string"
+-- Output: .name: "string"
+-- Uses fixed input size for bootstrap
+
+.zero: 0
+.one: 1
+.bufsize: 64
+.inputlen: 13
+
+-- Read source (use fixed length for bootstrap)
+.path: "input.nts"
+.handle: FOP .path .zero
+.srcbuf: ALC .bufsize
+.dummy: FRD .handle .srcbuf .bufsize
+.closed: FCL .handle
+
+-- Tokenize with fixed length
+.tokens: FSM .srcbuf .inputlen
+.tcnt: GET .tokens 0
+
+-- Token structure: 4 bytes each [type, start, len, 0]
+-- Token 0 (offset 8): DOT
+-- Token 1 (offset 12): ID (name)
+-- Token 2 (offset 16): COLON
+-- Token 3 (offset 20): STR (string with quotes)
+
+-- Get name token info
+.t1_off: ADD .tokens 12
+.t1_start: GET .t1_off 1
+.t1_len: GET .t1_off 2
+
+-- Get string token info (add 1 to len to include closing quote)
+.t3_off: ADD .tokens 20
+.t3_start: GET .t3_off 1
+.t3_len_raw: GET .t3_off 2
+.t3_len: ADD .t3_len_raw 1
+
+-- Output buffer
+.out: ALC 256
+.pos: 0
+
+-- Emit: "."
+.dot: 46
+.w0: PUT .out 0 .dot
+
+-- Emit name (copy from source)
+.n0: CHR .srcbuf .t1_start
+.w1: PUT .out 1 .n0
+
+-- Handle multi-char names
+.n1p: ADD .t1_start 1
+.n1: CHR .srcbuf .n1p
+.n2p: ADD .t1_start 2
+.n2: CHR .srcbuf .n2p
+.n3p: ADD .t1_start 3
+.n3: CHR .srcbuf .n3p
+
+-- Write additional name chars if len > 1
+.nlen1: SUB .t1_len 1
+.nlen2: SUB .t1_len 2
+.nlen3: SUB .t1_len 3
+
+.wn1: IFZ .nlen1 .zero .n1
+.wn2: IFZ .nlen2 .zero .n2
+.wn3: IFZ .nlen3 .zero .n3
+
+.w2: PUT .out 2 .wn1
+.w3: PUT .out 3 .wn2
+.w4: PUT .out 4 .wn3
+
+-- Calculate position after name
+.pos_colon: ADD 1 .t1_len
+
+-- Emit ": "
+.colon: 58
+.space: 32
+.wc: PUT .out .pos_colon .colon
+.pos_sp: ADD .pos_colon 1
+.ws: PUT .out .pos_sp .space
+
+-- Emit string (copy from source including quotes)
+.pos_str: ADD .pos_sp 1
+.s0: CHR .srcbuf .t3_start
+.ws0: PUT .out .pos_str .s0
+
+-- Copy rest of string char by char
+.s1p: ADD .t3_start 1
+.s1: CHR .srcbuf .s1p
+.ps1: ADD .pos_str 1
+.ws1: PUT .out .ps1 .s1
+
+.s2p: ADD .t3_start 2
+.s2: CHR .srcbuf .s2p
+.ps2: ADD .pos_str 2
+.ws2: PUT .out .ps2 .s2
+
+.s3p: ADD .t3_start 3
+.s3: CHR .srcbuf .s3p
+.ps3: ADD .pos_str 3
+.ws3: PUT .out .ps3 .s3
+
+.s4p: ADD .t3_start 4
+.s4: CHR .srcbuf .s4p
+.ps4: ADD .pos_str 4
+.ws4: PUT .out .ps4 .s4
+
+.s5p: ADD .t3_start 5
+.s5: CHR .srcbuf .s5p
+.ps5: ADD .pos_str 5
+.ws5: PUT .out .ps5 .s5
+
+.s6p: ADD .t3_start 6
+.s6: CHR .srcbuf .s6p
+.ps6: ADD .pos_str 6
+.ws6: PUT .out .ps6 .s6
+
+.s7p: ADD .t3_start 7
+.s7: CHR .srcbuf .s7p
+.ps7: ADD .pos_str 7
+.ws7: PUT .out .ps7 .s7
+
+.s8p: ADD .t3_start 8
+.s8: CHR .srcbuf .s8p
+.ps8: ADD .pos_str 8
+.ws8: PUT .out .ps8 .s8
+
+.s9p: ADD .t3_start 9
+.s9: CHR .srcbuf .s9p
+.ps9: ADD .pos_str 9
+.ws9: PUT .out .ps9 .s9
+
+.s10p: ADD .t3_start 10
+.s10: CHR .srcbuf .s10p
+.ps10: ADD .pos_str 10
+.ws10: PUT .out .ps10 .s10
+
+.s11p: ADD .t3_start 11
+.s11: CHR .srcbuf .s11p
+.ps11: ADD .pos_str 11
+.ws11: PUT .out .ps11 .s11
+
+.s12p: ADD .t3_start 12
+.s12: CHR .srcbuf .s12p
+.ps12: ADD .pos_str 12
+.ws12: PUT .out .ps12 .s12
+
+.s13p: ADD .t3_start 13
+.s13: CHR .srcbuf .s13p
+.ps13: ADD .pos_str 13
+.ws13: PUT .out .ps13 .s13
+
+.s14p: ADD .t3_start 14
+.s14: CHR .srcbuf .s14p
+.ps14: ADD .pos_str 14
+.ws14: PUT .out .ps14 .s14
+
+.s15p: ADD .t3_start 15
+.s15: CHR .srcbuf .s15p
+.ps15: ADD .pos_str 15
+.ws15: PUT .out .ps15 .s15
+
+-- Emit newline
+.pos_end: ADD .pos_str .t3_len
+.newline: 10
+.wend: PUT .out .pos_end .newline
+
+-- Total length
+.total: ADD .pos_end 1
+
+-- Print output
+.result: PRT .out .total

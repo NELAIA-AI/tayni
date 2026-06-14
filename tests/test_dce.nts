@@ -1,0 +1,10 @@
+-- NELAIA Test: Dead Code Elimination for Capabilities
+-- Declares capabilities but only uses some
+
+-- Declare many capabilities (http, sql, json, threading)
+.caps: REQUIRES { http, sql, json, threading }
+
+-- Only use IO (PRT)
+.msg: "DCE test: OK\n"
+.len: 13
+.out: PRT .msg .len

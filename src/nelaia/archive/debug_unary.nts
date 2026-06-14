@@ -1,0 +1,47 @@
+-- Debug: check unary tokens
+.zero: 0
+.bufsize: 64
+
+.path: "boot.nts"
+.handle: FOP .path .zero
+.srcbuf: ALC .bufsize
+.dummy: FRD .handle .srcbuf .bufsize
+.closed: FCL .handle
+
+.nl: 10
+.c6: CHR .srcbuf 6
+.d6: SUB .c6 .nl
+.nl1: IFZ .d6 6 99
+
+.l2_start: ADD .nl1 1
+.inputlen: 18
+.l2_len: SUB .inputlen .l2_start
+
+.l2_ptr: ADD .srcbuf .l2_start
+.tok2: FSM .l2_ptr .l2_len
+
+.tok2_cnt: GET .tok2 0
+
+-- Token 3 (OP)
+.t2_3: ADD .tok2 20
+.t2_op_st: GET .t2_3 1
+.t2_op_len: GET .t2_3 2
+
+-- Token 4 (ARG)
+.t2_4: ADD .tok2 24
+.t2_arg_st: GET .t2_4 1
+.t2_arg_len: GET .t2_4 2
+
+-- Read arg from l2_ptr
+.arg0: CHR .l2_ptr .t2_arg_st
+
+-- Output
+.out: ALC 64
+.w0: PUT .out 0 .tok2_cnt
+.w1: PUT .out 1 .t2_op_st
+.w2: PUT .out 2 .t2_op_len
+.w3: PUT .out 3 .t2_arg_st
+.w4: PUT .out 4 .t2_arg_len
+.w5: PUT .out 5 .arg0
+
+.result: PRT .out 6

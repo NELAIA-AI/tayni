@@ -1,0 +1,34 @@
+-- NELAIA Test: Contracts & Negotiation (IA-first)
+-- Tests Phase 8-10 operators
+
+-- Create a resource contract
+.contract: CONTRACT 0
+
+-- Set guarantees
+.g1: GUARANTEE 1 0
+
+-- Set limits
+.limit: LIMIT 1 1000000
+
+-- Create capability offer
+.offer: PROVIDES 0
+
+-- Negotiate
+.binding: NEGOTIATE .offer 0
+
+-- Define custom capability
+.my_cap: DEFCAP 0
+
+-- Property-based testing
+.prop: PROPERTY 0
+
+-- Generate tests
+.tests: GENTESTS .prop 100
+
+-- Verify
+.result: VERIFY .prop
+
+-- Print result
+.msg: "Contracts test: OK\n"
+.len: 19
+.out: PRT .msg .len

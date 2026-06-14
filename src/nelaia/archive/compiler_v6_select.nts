@@ -1,0 +1,197 @@
+-- NELAIA Compiler v6 - Conditional Selection
+-- Supports all types via IFZ selection
+-- 4 tokens = literal, 5 = unary, 7 = binary, 8 = ternary
+
+.zero: 0
+.bufsize: 64
+
+.path: "boot.nts"
+.handle: FOP .path .zero
+.srcbuf: ALC .bufsize
+.dummy: FRD .handle .srcbuf .bufsize
+.closed: FCL .handle
+
+.nl: 10
+.dot: 46
+.colon: 58
+.space: 32
+
+-- Find newline (scan first 10 positions)
+.c0: CHR .srcbuf 0
+.c1: CHR .srcbuf 1
+.c2: CHR .srcbuf 2
+.c3: CHR .srcbuf 3
+.c4: CHR .srcbuf 4
+.c5: CHR .srcbuf 5
+.c6: CHR .srcbuf 6
+.c7: CHR .srcbuf 7
+.c8: CHR .srcbuf 8
+.c9: CHR .srcbuf 9
+
+.d0: SUB .c0 .nl
+.d1: SUB .c1 .nl
+.d2: SUB .c2 .nl
+.d3: SUB .c3 .nl
+.d4: SUB .c4 .nl
+.d5: SUB .c5 .nl
+.d6: SUB .c6 .nl
+.d7: SUB .c7 .nl
+.d8: SUB .c8 .nl
+.d9: SUB .c9 .nl
+
+.p0: IFZ .d0 0 99
+.p1: IFZ .d1 1 .p0
+.p2: IFZ .d2 2 .p1
+.p3: IFZ .d3 3 .p2
+.p4: IFZ .d4 4 .p3
+.p5: IFZ .d5 5 .p4
+.p6: IFZ .d6 6 .p5
+.p7: IFZ .d7 7 .p6
+.p8: IFZ .d8 8 .p7
+.nl1: IFZ .d9 9 .p8
+
+.l2_start: ADD .nl1 1
+.inputlen: 18
+.l2_len: SUB .inputlen .l2_start
+
+-- Tokenize
+.tok1: FSM .srcbuf .nl1
+.l2_ptr: ADD .srcbuf .l2_start
+.tok2: FSM .l2_ptr .l2_len
+
+.tok2_cnt: GET .tok2 0
+
+-- Line 1 tokens
+.t1_1: ADD .tok1 12
+.t1_name_st: GET .t1_1 1
+.t1_name_len: GET .t1_1 2
+
+.t1_3: ADD .tok1 20
+.t1_val_st: GET .t1_3 1
+.t1_val_len: GET .t1_3 2
+
+-- Line 2 tokens (common)
+.t2_1: ADD .tok2 12
+.t2_name_st: GET .t2_1 1
+.t2_name_len: GET .t2_1 2
+
+.t2_3: ADD .tok2 20
+.t2_3_st: GET .t2_3 1
+.t2_3_len: GET .t2_3 2
+
+.t2_4: ADD .tok2 24
+.t2_4_st: GET .t2_4 1
+.t2_4_len: GET .t2_4 2
+
+.t2_5: ADD .tok2 28
+.t2_5_st: GET .t2_5 1
+.t2_5_len: GET .t2_5 2
+
+.t2_6: ADD .tok2 32
+.t2_6_st: GET .t2_6 1
+.t2_6_len: GET .t2_6 2
+
+.t2_7: ADD .tok2 36
+.t2_7_st: GET .t2_7 1
+.t2_7_len: GET .t2_7 2
+
+-- Detect type
+.four: 4
+.five: 5
+.seven: 7
+.is_lit: SUB .tok2_cnt .four
+.is_un: SUB .tok2_cnt .five
+.is_bin: SUB .tok2_cnt .seven
+
+-- Output
+.out: ALC 128
+
+-- === LINE 1 (always literal) ===
+.w0: PUT .out 0 .dot
+.n1: CHR .srcbuf .t1_name_st
+.w1: PUT .out 1 .n1
+.w2: PUT .out 2 .colon
+.w3: PUT .out 3 .space
+.v1: CHR .srcbuf .t1_val_st
+.w4: PUT .out 4 .v1
+.v1_1p: ADD .t1_val_st 1
+.v1_1: CHR .srcbuf .v1_1p
+.w5: PUT .out 5 .v1_1
+.w6: PUT .out 6 .nl
+
+-- === LINE 2 ===
+.w7: PUT .out 7 .dot
+.n2: CHR .l2_ptr .t2_name_st
+.w8: PUT .out 8 .n2
+.w9: PUT .out 9 .colon
+.w10: PUT .out 10 .space
+
+-- Position 11: start of value/op
+-- Literal: value char 0
+-- Unary/Binary/Ternary: op char 0
+.lit_c0: CHR .l2_ptr .t2_3_st
+.w11: PUT .out 11 .lit_c0
+
+-- Position 12
+.lit_c1p: ADD .t2_3_st 1
+.lit_c1: CHR .l2_ptr .lit_c1p
+.w12: PUT .out 12 .lit_c1
+
+-- Position 13 (for ops: char 2)
+.lit_c2p: ADD .t2_3_st 2
+.lit_c2: CHR .l2_ptr .lit_c2p
+.w13_op: PUT .out 13 .lit_c2
+
+-- For literal: newline at pos 13
+-- For unary: space at pos 14, then arg
+-- For binary: space at pos 14, dot, ref, space, arg
+-- For ternary: space at pos 14, dot, ref, space, arg1, space, arg2
+
+-- Literal end position
+.lit_end: ADD 11 .t2_3_len
+
+-- Unary: space + arg
+.un_sp: PUT .out 14 .space
+.un_arg0: CHR .l2_ptr .t2_4_st
+.un_w15: PUT .out 15 .un_arg0
+.un_arg1p: ADD .t2_4_st 1
+.un_arg1: CHR .l2_ptr .un_arg1p
+.un_w16: PUT .out 16 .un_arg1
+.un_arg2p: ADD .t2_4_st 2
+.un_arg2: CHR .l2_ptr .un_arg2p
+.un_w17: PUT .out 17 .un_arg2
+.un_end: ADD 15 .t2_4_len
+
+-- Binary: space + dot + ref + space + arg
+.bin_sp: PUT .out 14 .space
+.bin_dot: PUT .out 15 .dot
+.bin_ref0: CHR .l2_ptr .t2_5_st
+.bin_w16: PUT .out 16 .bin_ref0
+.bin_sp2: PUT .out 17 .space
+.bin_arg0: CHR .l2_ptr .t2_6_st
+.bin_w18: PUT .out 18 .bin_arg0
+.bin_end: ADD 18 .t2_6_len
+
+-- Ternary: space + dot + ref + space + arg1 + space + arg2
+.ter_sp: PUT .out 14 .space
+.ter_dot: PUT .out 15 .dot
+.ter_ref0: CHR .l2_ptr .t2_5_st
+.ter_w16: PUT .out 16 .ter_ref0
+.ter_sp2: PUT .out 17 .space
+.ter_arg1_0: CHR .l2_ptr .t2_6_st
+.ter_w18: PUT .out 18 .ter_arg1_0
+.ter_sp3: PUT .out 19 .space
+.ter_arg2_0: CHR .l2_ptr .t2_7_st
+.ter_w20: PUT .out 20 .ter_arg2_0
+.ter_end: ADD 20 .t2_7_len
+
+-- Select end position
+.end_bt: IFZ .is_bin .bin_end .ter_end
+.end_ubt: IFZ .is_un .un_end .end_bt
+.end_pos: IFZ .is_lit .lit_end .end_ubt
+
+-- Newline at end
+.wnl: PUT .out .end_pos .nl
+.total: ADD .end_pos 1
+
+.result: PRT .out .total

@@ -1,0 +1,7 @@
+.size: 16
+.buf: ALC .size
+.w0: PUT .buf 0 72
+.w1: PUT .buf 1 105
+.w2: PUT .buf 2 33
+.w3: PUT .buf 3 10
+.out: PRT .buf 4

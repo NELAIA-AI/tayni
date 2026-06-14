@@ -1,0 +1,780 @@
+-- NELAIA Boot Compiler
+-- Compiles boot.nts (9 lines, 182 bytes)
+
+.zero: 0
+.bufsize: 256
+
+.path: "boot.nts"
+.handle: FOP .path .zero
+.srcbuf: ALC .bufsize
+.dummy: FRD .handle .srcbuf .bufsize
+.closed: FCL .handle
+
+.nl: 10
+.dot: 46
+.colon: 58
+.space: 32
+
+-- Fixed positions from boot.nts
+.nl1: 8
+.nl2: 22
+.nl3: 40
+.nl4: 65
+.nl5: 87
+.nl6: 124
+.nl7: 145
+.nl8: 155
+.nl9: 181
+
+-- Line lengths
+.l1_len: 8
+.l2_start: 9
+.l2_len: 13
+.l3_start: 23
+.l3_len: 17
+.l4_start: 41
+.l4_len: 24
+.l5_start: 66
+.l5_len: 21
+.l6_start: 88
+.l6_len: 36
+.l7_start: 125
+.l7_len: 20
+.l8_start: 146
+.l8_len: 9
+.l9_start: 156
+.l9_len: 25
+
+-- Tokenize all lines
+.tok1: FSM .srcbuf .l1_len
+
+.l2_ptr: ADD .srcbuf .l2_start
+.tok2: FSM .l2_ptr .l2_len
+
+.l3_ptr: ADD .srcbuf .l3_start
+.tok3: FSM .l3_ptr .l3_len
+
+.l4_ptr: ADD .srcbuf .l4_start
+.tok4: FSM .l4_ptr .l4_len
+
+.l5_ptr: ADD .srcbuf .l5_start
+.tok5: FSM .l5_ptr .l5_len
+
+.l6_ptr: ADD .srcbuf .l6_start
+.tok6: FSM .l6_ptr .l6_len
+
+.l7_ptr: ADD .srcbuf .l7_start
+.tok7: FSM .l7_ptr .l7_len
+
+.l8_ptr: ADD .srcbuf .l8_start
+.tok8: FSM .l8_ptr .l8_len
+
+.l9_ptr: ADD .srcbuf .l9_start
+.tok9: FSM .l9_ptr .l9_len
+
+-- Output buffer
+.out: ALC 256
+
+-- === LINE 1: .zero: 0 (literal) ===
+.t1_1: ADD .tok1 12
+.t1_name_st: GET .t1_1 1
+.t1_name_len: GET .t1_1 2
+.t1_3: ADD .tok1 20
+.t1_val_st: GET .t1_3 1
+.t1_val_len: GET .t1_3 2
+
+.w1_0: PUT .out 0 .dot
+.n1_0: CHR .srcbuf .t1_name_st
+.w1_1: PUT .out 1 .n1_0
+.n1_1p: ADD .t1_name_st 1
+.n1_1: CHR .srcbuf .n1_1p
+.w1_2: PUT .out 2 .n1_1
+.n1_2p: ADD .t1_name_st 2
+.n1_2: CHR .srcbuf .n1_2p
+.w1_3: PUT .out 3 .n1_2
+.n1_3p: ADD .t1_name_st 3
+.n1_3: CHR .srcbuf .n1_3p
+.w1_4: PUT .out 4 .n1_3
+.pos1_c: ADD 1 .t1_name_len
+.wc1: PUT .out .pos1_c .colon
+.pos1_s: ADD .pos1_c 1
+.ws1: PUT .out .pos1_s .space
+.pos1_v: ADD .pos1_s 1
+.v1_0: CHR .srcbuf .t1_val_st
+.wv1_0: PUT .out .pos1_v .v1_0
+.pos1_end: ADD .pos1_v .t1_val_len
+.wnl1: PUT .out .pos1_end .nl
+
+-- === LINE 2: .bufsize: 256 (literal) ===
+.t2_1: ADD .tok2 12
+.t2_name_st: GET .t2_1 1
+.t2_name_len: GET .t2_1 2
+.t2_3: ADD .tok2 20
+.t2_val_st: GET .t2_3 1
+.t2_val_len: GET .t2_3 2
+
+.pos2_start: ADD .pos1_end 1
+.w2_0: PUT .out .pos2_start .dot
+.n2_0: CHR .l2_ptr .t2_name_st
+.pos2_n: ADD .pos2_start 1
+.w2_1: PUT .out .pos2_n .n2_0
+.n2_1p: ADD .t2_name_st 1
+.n2_1: CHR .l2_ptr .n2_1p
+.pos2_n1: ADD .pos2_n 1
+.w2_2: PUT .out .pos2_n1 .n2_1
+.n2_2p: ADD .t2_name_st 2
+.n2_2: CHR .l2_ptr .n2_2p
+.pos2_n2: ADD .pos2_n 2
+.w2_3: PUT .out .pos2_n2 .n2_2
+.n2_3p: ADD .t2_name_st 3
+.n2_3: CHR .l2_ptr .n2_3p
+.pos2_n3: ADD .pos2_n 3
+.w2_4: PUT .out .pos2_n3 .n2_3
+.n2_4p: ADD .t2_name_st 4
+.n2_4: CHR .l2_ptr .n2_4p
+.pos2_n4: ADD .pos2_n 4
+.w2_5: PUT .out .pos2_n4 .n2_4
+.n2_5p: ADD .t2_name_st 5
+.n2_5: CHR .l2_ptr .n2_5p
+.pos2_n5: ADD .pos2_n 5
+.w2_6: PUT .out .pos2_n5 .n2_5
+.n2_6p: ADD .t2_name_st 6
+.n2_6: CHR .l2_ptr .n2_6p
+.pos2_n6: ADD .pos2_n 6
+.w2_7: PUT .out .pos2_n6 .n2_6
+.pos2_c: ADD .pos2_start 1
+.pos2_c2: ADD .pos2_c .t2_name_len
+.wc2: PUT .out .pos2_c2 .colon
+.pos2_s: ADD .pos2_c2 1
+.ws2: PUT .out .pos2_s .space
+.pos2_v: ADD .pos2_s 1
+.v2_0: CHR .l2_ptr .t2_val_st
+.wv2_0: PUT .out .pos2_v .v2_0
+.v2_1p: ADD .t2_val_st 1
+.v2_1: CHR .l2_ptr .v2_1p
+.pos2_v1: ADD .pos2_v 1
+.wv2_1: PUT .out .pos2_v1 .v2_1
+.v2_2p: ADD .t2_val_st 2
+.v2_2: CHR .l2_ptr .v2_2p
+.pos2_v2: ADD .pos2_v 2
+.wv2_2: PUT .out .pos2_v2 .v2_2
+.pos2_end: ADD .pos2_v .t2_val_len
+.wnl2: PUT .out .pos2_end .nl
+
+-- === LINE 3: .path: "boot.nts" (string) ===
+.t3_1: ADD .tok3 12
+.t3_name_st: GET .t3_1 1
+.t3_name_len: GET .t3_1 2
+.t3_3: ADD .tok3 20
+.t3_str_st: GET .t3_3 1
+.t3_str_len_raw: GET .t3_3 2
+.t3_str_len: ADD .t3_str_len_raw 1
+
+.pos3_start: ADD .pos2_end 1
+.w3_0: PUT .out .pos3_start .dot
+.n3_0: CHR .l3_ptr .t3_name_st
+.pos3_n: ADD .pos3_start 1
+.w3_1: PUT .out .pos3_n .n3_0
+.n3_1p: ADD .t3_name_st 1
+.n3_1: CHR .l3_ptr .n3_1p
+.pos3_n1: ADD .pos3_n 1
+.w3_2: PUT .out .pos3_n1 .n3_1
+.n3_2p: ADD .t3_name_st 2
+.n3_2: CHR .l3_ptr .n3_2p
+.pos3_n2: ADD .pos3_n 2
+.w3_3: PUT .out .pos3_n2 .n3_2
+.n3_3p: ADD .t3_name_st 3
+.n3_3: CHR .l3_ptr .n3_3p
+.pos3_n3: ADD .pos3_n 3
+.w3_4: PUT .out .pos3_n3 .n3_3
+.pos3_c: ADD .pos3_start 1
+.pos3_c2: ADD .pos3_c .t3_name_len
+.wc3: PUT .out .pos3_c2 .colon
+.pos3_s: ADD .pos3_c2 1
+.ws3: PUT .out .pos3_s .space
+.pos3_str: ADD .pos3_s 1
+.s3_0: CHR .l3_ptr .t3_str_st
+.ws3_0: PUT .out .pos3_str .s3_0
+.s3_1p: ADD .t3_str_st 1
+.s3_1: CHR .l3_ptr .s3_1p
+.ps3_1: ADD .pos3_str 1
+.ws3_1: PUT .out .ps3_1 .s3_1
+.s3_2p: ADD .t3_str_st 2
+.s3_2: CHR .l3_ptr .s3_2p
+.ps3_2: ADD .pos3_str 2
+.ws3_2: PUT .out .ps3_2 .s3_2
+.s3_3p: ADD .t3_str_st 3
+.s3_3: CHR .l3_ptr .s3_3p
+.ps3_3: ADD .pos3_str 3
+.ws3_3: PUT .out .ps3_3 .s3_3
+.s3_4p: ADD .t3_str_st 4
+.s3_4: CHR .l3_ptr .s3_4p
+.ps3_4: ADD .pos3_str 4
+.ws3_4: PUT .out .ps3_4 .s3_4
+.s3_5p: ADD .t3_str_st 5
+.s3_5: CHR .l3_ptr .s3_5p
+.ps3_5: ADD .pos3_str 5
+.ws3_5: PUT .out .ps3_5 .s3_5
+.s3_6p: ADD .t3_str_st 6
+.s3_6: CHR .l3_ptr .s3_6p
+.ps3_6: ADD .pos3_str 6
+.ws3_6: PUT .out .ps3_6 .s3_6
+.s3_7p: ADD .t3_str_st 7
+.s3_7: CHR .l3_ptr .s3_7p
+.ps3_7: ADD .pos3_str 7
+.ws3_7: PUT .out .ps3_7 .s3_7
+.s3_8p: ADD .t3_str_st 8
+.s3_8: CHR .l3_ptr .s3_8p
+.ps3_8: ADD .pos3_str 8
+.ws3_8: PUT .out .ps3_8 .s3_8
+.s3_9p: ADD .t3_str_st 9
+.s3_9: CHR .l3_ptr .s3_9p
+.ps3_9: ADD .pos3_str 9
+.ws3_9: PUT .out .ps3_9 .s3_9
+.pos3_end: ADD .pos3_str .t3_str_len
+.wnl3: PUT .out .pos3_end .nl
+
+-- === LINE 4: .handle: FOP .path .zero (binary OP REF REF) ===
+.t4_1: ADD .tok4 12
+.t4_name_st: GET .t4_1 1
+.t4_name_len: GET .t4_1 2
+.t4_3: ADD .tok4 20
+.t4_op_st: GET .t4_3 1
+.t4_5: ADD .tok4 28
+.t4_ref1_st: GET .t4_5 1
+.t4_ref1_len: GET .t4_5 2
+.t4_7: ADD .tok4 36
+.t4_ref2_st: GET .t4_7 1
+.t4_ref2_len: GET .t4_7 2
+
+.pos4_start: ADD .pos3_end 1
+.w4_0: PUT .out .pos4_start .dot
+.n4_0: CHR .l4_ptr .t4_name_st
+.pos4_n: ADD .pos4_start 1
+.w4_1: PUT .out .pos4_n .n4_0
+.n4_1p: ADD .t4_name_st 1
+.n4_1: CHR .l4_ptr .n4_1p
+.pos4_n1: ADD .pos4_n 1
+.w4_2: PUT .out .pos4_n1 .n4_1
+.n4_2p: ADD .t4_name_st 2
+.n4_2: CHR .l4_ptr .n4_2p
+.pos4_n2: ADD .pos4_n 2
+.w4_3: PUT .out .pos4_n2 .n4_2
+.n4_3p: ADD .t4_name_st 3
+.n4_3: CHR .l4_ptr .n4_3p
+.pos4_n3: ADD .pos4_n 3
+.w4_4: PUT .out .pos4_n3 .n4_3
+.n4_4p: ADD .t4_name_st 4
+.n4_4: CHR .l4_ptr .n4_4p
+.pos4_n4: ADD .pos4_n 4
+.w4_5: PUT .out .pos4_n4 .n4_4
+.n4_5p: ADD .t4_name_st 5
+.n4_5: CHR .l4_ptr .n4_5p
+.pos4_n5: ADD .pos4_n 5
+.w4_6: PUT .out .pos4_n5 .n4_5
+.pos4_c: ADD .pos4_start 1
+.pos4_c2: ADD .pos4_c .t4_name_len
+.wc4: PUT .out .pos4_c2 .colon
+.pos4_s: ADD .pos4_c2 1
+.ws4: PUT .out .pos4_s .space
+.pos4_op: ADD .pos4_s 1
+.op4_0: CHR .l4_ptr .t4_op_st
+.wop4_0: PUT .out .pos4_op .op4_0
+.op4_1p: ADD .t4_op_st 1
+.op4_1: CHR .l4_ptr .op4_1p
+.pos4_op1: ADD .pos4_op 1
+.wop4_1: PUT .out .pos4_op1 .op4_1
+.op4_2p: ADD .t4_op_st 2
+.op4_2: CHR .l4_ptr .op4_2p
+.pos4_op2: ADD .pos4_op 2
+.wop4_2: PUT .out .pos4_op2 .op4_2
+.pos4_ops: ADD .pos4_op 3
+.wops4: PUT .out .pos4_ops .space
+.pos4_dot1: ADD .pos4_ops 1
+.wdot4_1: PUT .out .pos4_dot1 .dot
+.ref4_1_0: CHR .l4_ptr .t4_ref1_st
+.pos4_ref1: ADD .pos4_dot1 1
+.wref4_1_0: PUT .out .pos4_ref1 .ref4_1_0
+.ref4_1_1p: ADD .t4_ref1_st 1
+.ref4_1_1: CHR .l4_ptr .ref4_1_1p
+.pos4_ref1_1: ADD .pos4_ref1 1
+.wref4_1_1: PUT .out .pos4_ref1_1 .ref4_1_1
+.ref4_1_2p: ADD .t4_ref1_st 2
+.ref4_1_2: CHR .l4_ptr .ref4_1_2p
+.pos4_ref1_2: ADD .pos4_ref1 2
+.wref4_1_2: PUT .out .pos4_ref1_2 .ref4_1_2
+.ref4_1_3p: ADD .t4_ref1_st 3
+.ref4_1_3: CHR .l4_ptr .ref4_1_3p
+.pos4_ref1_3: ADD .pos4_ref1 3
+.wref4_1_3: PUT .out .pos4_ref1_3 .ref4_1_3
+.pos4_ref1s: ADD .pos4_ref1 .t4_ref1_len
+.wref4_1s: PUT .out .pos4_ref1s .space
+.pos4_dot2: ADD .pos4_ref1s 1
+.wdot4_2: PUT .out .pos4_dot2 .dot
+.ref4_2_0: CHR .l4_ptr .t4_ref2_st
+.pos4_ref2: ADD .pos4_dot2 1
+.wref4_2_0: PUT .out .pos4_ref2 .ref4_2_0
+.ref4_2_1p: ADD .t4_ref2_st 1
+.ref4_2_1: CHR .l4_ptr .ref4_2_1p
+.pos4_ref2_1: ADD .pos4_ref2 1
+.wref4_2_1: PUT .out .pos4_ref2_1 .ref4_2_1
+.ref4_2_2p: ADD .t4_ref2_st 2
+.ref4_2_2: CHR .l4_ptr .ref4_2_2p
+.pos4_ref2_2: ADD .pos4_ref2 2
+.wref4_2_2: PUT .out .pos4_ref2_2 .ref4_2_2
+.ref4_2_3p: ADD .t4_ref2_st 3
+.ref4_2_3: CHR .l4_ptr .ref4_2_3p
+.pos4_ref2_3: ADD .pos4_ref2 3
+.wref4_2_3: PUT .out .pos4_ref2_3 .ref4_2_3
+.pos4_end: ADD .pos4_ref2 .t4_ref2_len
+.wnl4: PUT .out .pos4_end .nl
+
+-- === LINE 5: .srcbuf: ALC .bufsize (unary OP REF) ===
+.t5_1: ADD .tok5 12
+.t5_name_st: GET .t5_1 1
+.t5_name_len: GET .t5_1 2
+.t5_3: ADD .tok5 20
+.t5_op_st: GET .t5_3 1
+.t5_5: ADD .tok5 28
+.t5_ref_st: GET .t5_5 1
+.t5_ref_len: GET .t5_5 2
+
+.pos5_start: ADD .pos4_end 1
+.w5_0: PUT .out .pos5_start .dot
+.n5_0: CHR .l5_ptr .t5_name_st
+.pos5_n: ADD .pos5_start 1
+.w5_1: PUT .out .pos5_n .n5_0
+.n5_1p: ADD .t5_name_st 1
+.n5_1: CHR .l5_ptr .n5_1p
+.pos5_n1: ADD .pos5_n 1
+.w5_2: PUT .out .pos5_n1 .n5_1
+.n5_2p: ADD .t5_name_st 2
+.n5_2: CHR .l5_ptr .n5_2p
+.pos5_n2: ADD .pos5_n 2
+.w5_3: PUT .out .pos5_n2 .n5_2
+.n5_3p: ADD .t5_name_st 3
+.n5_3: CHR .l5_ptr .n5_3p
+.pos5_n3: ADD .pos5_n 3
+.w5_4: PUT .out .pos5_n3 .n5_3
+.n5_4p: ADD .t5_name_st 4
+.n5_4: CHR .l5_ptr .n5_4p
+.pos5_n4: ADD .pos5_n 4
+.w5_5: PUT .out .pos5_n4 .n5_4
+.n5_5p: ADD .t5_name_st 5
+.n5_5: CHR .l5_ptr .n5_5p
+.pos5_n5: ADD .pos5_n 5
+.w5_6: PUT .out .pos5_n5 .n5_5
+.pos5_c: ADD .pos5_start 1
+.pos5_c2: ADD .pos5_c .t5_name_len
+.wc5: PUT .out .pos5_c2 .colon
+.pos5_s: ADD .pos5_c2 1
+.ws5: PUT .out .pos5_s .space
+.pos5_op: ADD .pos5_s 1
+.op5_0: CHR .l5_ptr .t5_op_st
+.wop5_0: PUT .out .pos5_op .op5_0
+.op5_1p: ADD .t5_op_st 1
+.op5_1: CHR .l5_ptr .op5_1p
+.pos5_op1: ADD .pos5_op 1
+.wop5_1: PUT .out .pos5_op1 .op5_1
+.op5_2p: ADD .t5_op_st 2
+.op5_2: CHR .l5_ptr .op5_2p
+.pos5_op2: ADD .pos5_op 2
+.wop5_2: PUT .out .pos5_op2 .op5_2
+.pos5_ops: ADD .pos5_op 3
+.wops5: PUT .out .pos5_ops .space
+.pos5_dot: ADD .pos5_ops 1
+.wdot5: PUT .out .pos5_dot .dot
+.ref5_0: CHR .l5_ptr .t5_ref_st
+.pos5_ref: ADD .pos5_dot 1
+.wref5_0: PUT .out .pos5_ref .ref5_0
+.ref5_1p: ADD .t5_ref_st 1
+.ref5_1: CHR .l5_ptr .ref5_1p
+.pos5_ref1: ADD .pos5_ref 1
+.wref5_1: PUT .out .pos5_ref1 .ref5_1
+.ref5_2p: ADD .t5_ref_st 2
+.ref5_2: CHR .l5_ptr .ref5_2p
+.pos5_ref2: ADD .pos5_ref 2
+.wref5_2: PUT .out .pos5_ref2 .ref5_2
+.ref5_3p: ADD .t5_ref_st 3
+.ref5_3: CHR .l5_ptr .ref5_3p
+.pos5_ref3: ADD .pos5_ref 3
+.wref5_3: PUT .out .pos5_ref3 .ref5_3
+.ref5_4p: ADD .t5_ref_st 4
+.ref5_4: CHR .l5_ptr .ref5_4p
+.pos5_ref4: ADD .pos5_ref 4
+.wref5_4: PUT .out .pos5_ref4 .ref5_4
+.ref5_5p: ADD .t5_ref_st 5
+.ref5_5: CHR .l5_ptr .ref5_5p
+.pos5_ref5: ADD .pos5_ref 5
+.wref5_5: PUT .out .pos5_ref5 .ref5_5
+.ref5_6p: ADD .t5_ref_st 6
+.ref5_6: CHR .l5_ptr .ref5_6p
+.pos5_ref6: ADD .pos5_ref 6
+.wref5_6: PUT .out .pos5_ref6 .ref5_6
+.pos5_end: ADD .pos5_ref .t5_ref_len
+.wnl5: PUT .out .pos5_end .nl
+
+-- === LINE 6: .dummy: FRD .handle .srcbuf .bufsize (ternary) ===
+.t6_1: ADD .tok6 12
+.t6_name_st: GET .t6_1 1
+.t6_name_len: GET .t6_1 2
+.t6_3: ADD .tok6 20
+.t6_op_st: GET .t6_3 1
+.t6_5: ADD .tok6 28
+.t6_r1_st: GET .t6_5 1
+.t6_r1_len: GET .t6_5 2
+.t6_7: ADD .tok6 36
+.t6_r2_st: GET .t6_7 1
+.t6_r2_len: GET .t6_7 2
+.t6_9: ADD .tok6 44
+.t6_r3_st: GET .t6_9 1
+.t6_r3_len: GET .t6_9 2
+
+.pos6_start: ADD .pos5_end 1
+.w6_0: PUT .out .pos6_start .dot
+.n6_0: CHR .l6_ptr .t6_name_st
+.pos6_n: ADD .pos6_start 1
+.w6_1: PUT .out .pos6_n .n6_0
+.n6_1p: ADD .t6_name_st 1
+.n6_1: CHR .l6_ptr .n6_1p
+.pos6_n1: ADD .pos6_n 1
+.w6_2: PUT .out .pos6_n1 .n6_1
+.n6_2p: ADD .t6_name_st 2
+.n6_2: CHR .l6_ptr .n6_2p
+.pos6_n2: ADD .pos6_n 2
+.w6_3: PUT .out .pos6_n2 .n6_2
+.n6_3p: ADD .t6_name_st 3
+.n6_3: CHR .l6_ptr .n6_3p
+.pos6_n3: ADD .pos6_n 3
+.w6_4: PUT .out .pos6_n3 .n6_3
+.n6_4p: ADD .t6_name_st 4
+.n6_4: CHR .l6_ptr .n6_4p
+.pos6_n4: ADD .pos6_n 4
+.w6_5: PUT .out .pos6_n4 .n6_4
+.pos6_c: ADD .pos6_start 1
+.pos6_c2: ADD .pos6_c .t6_name_len
+.wc6: PUT .out .pos6_c2 .colon
+.pos6_s: ADD .pos6_c2 1
+.ws6: PUT .out .pos6_s .space
+.pos6_op: ADD .pos6_s 1
+.op6_0: CHR .l6_ptr .t6_op_st
+.wop6_0: PUT .out .pos6_op .op6_0
+.op6_1p: ADD .t6_op_st 1
+.op6_1: CHR .l6_ptr .op6_1p
+.pos6_op1: ADD .pos6_op 1
+.wop6_1: PUT .out .pos6_op1 .op6_1
+.op6_2p: ADD .t6_op_st 2
+.op6_2: CHR .l6_ptr .op6_2p
+.pos6_op2: ADD .pos6_op 2
+.wop6_2: PUT .out .pos6_op2 .op6_2
+.pos6_ops: ADD .pos6_op 3
+.wops6: PUT .out .pos6_ops .space
+.pos6_d1: ADD .pos6_ops 1
+.wd6_1: PUT .out .pos6_d1 .dot
+.r6_1_0: CHR .l6_ptr .t6_r1_st
+.pos6_r1: ADD .pos6_d1 1
+.wr6_1_0: PUT .out .pos6_r1 .r6_1_0
+.r6_1_1p: ADD .t6_r1_st 1
+.r6_1_1: CHR .l6_ptr .r6_1_1p
+.pos6_r1_1: ADD .pos6_r1 1
+.wr6_1_1: PUT .out .pos6_r1_1 .r6_1_1
+.r6_1_2p: ADD .t6_r1_st 2
+.r6_1_2: CHR .l6_ptr .r6_1_2p
+.pos6_r1_2: ADD .pos6_r1 2
+.wr6_1_2: PUT .out .pos6_r1_2 .r6_1_2
+.r6_1_3p: ADD .t6_r1_st 3
+.r6_1_3: CHR .l6_ptr .r6_1_3p
+.pos6_r1_3: ADD .pos6_r1 3
+.wr6_1_3: PUT .out .pos6_r1_3 .r6_1_3
+.r6_1_4p: ADD .t6_r1_st 4
+.r6_1_4: CHR .l6_ptr .r6_1_4p
+.pos6_r1_4: ADD .pos6_r1 4
+.wr6_1_4: PUT .out .pos6_r1_4 .r6_1_4
+.r6_1_5p: ADD .t6_r1_st 5
+.r6_1_5: CHR .l6_ptr .r6_1_5p
+.pos6_r1_5: ADD .pos6_r1 5
+.wr6_1_5: PUT .out .pos6_r1_5 .r6_1_5
+.pos6_r1s: ADD .pos6_r1 .t6_r1_len
+.wr6_1s: PUT .out .pos6_r1s .space
+.pos6_d2: ADD .pos6_r1s 1
+.wd6_2: PUT .out .pos6_d2 .dot
+.r6_2_0: CHR .l6_ptr .t6_r2_st
+.pos6_r2: ADD .pos6_d2 1
+.wr6_2_0: PUT .out .pos6_r2 .r6_2_0
+.r6_2_1p: ADD .t6_r2_st 1
+.r6_2_1: CHR .l6_ptr .r6_2_1p
+.pos6_r2_1: ADD .pos6_r2 1
+.wr6_2_1: PUT .out .pos6_r2_1 .r6_2_1
+.r6_2_2p: ADD .t6_r2_st 2
+.r6_2_2: CHR .l6_ptr .r6_2_2p
+.pos6_r2_2: ADD .pos6_r2 2
+.wr6_2_2: PUT .out .pos6_r2_2 .r6_2_2
+.r6_2_3p: ADD .t6_r2_st 3
+.r6_2_3: CHR .l6_ptr .r6_2_3p
+.pos6_r2_3: ADD .pos6_r2 3
+.wr6_2_3: PUT .out .pos6_r2_3 .r6_2_3
+.r6_2_4p: ADD .t6_r2_st 4
+.r6_2_4: CHR .l6_ptr .r6_2_4p
+.pos6_r2_4: ADD .pos6_r2 4
+.wr6_2_4: PUT .out .pos6_r2_4 .r6_2_4
+.r6_2_5p: ADD .t6_r2_st 5
+.r6_2_5: CHR .l6_ptr .r6_2_5p
+.pos6_r2_5: ADD .pos6_r2 5
+.wr6_2_5: PUT .out .pos6_r2_5 .r6_2_5
+.pos6_r2s: ADD .pos6_r2 .t6_r2_len
+.wr6_2s: PUT .out .pos6_r2s .space
+.pos6_d3: ADD .pos6_r2s 1
+.wd6_3: PUT .out .pos6_d3 .dot
+.r6_3_0: CHR .l6_ptr .t6_r3_st
+.pos6_r3: ADD .pos6_d3 1
+.wr6_3_0: PUT .out .pos6_r3 .r6_3_0
+.r6_3_1p: ADD .t6_r3_st 1
+.r6_3_1: CHR .l6_ptr .r6_3_1p
+.pos6_r3_1: ADD .pos6_r3 1
+.wr6_3_1: PUT .out .pos6_r3_1 .r6_3_1
+.r6_3_2p: ADD .t6_r3_st 2
+.r6_3_2: CHR .l6_ptr .r6_3_2p
+.pos6_r3_2: ADD .pos6_r3 2
+.wr6_3_2: PUT .out .pos6_r3_2 .r6_3_2
+.r6_3_3p: ADD .t6_r3_st 3
+.r6_3_3: CHR .l6_ptr .r6_3_3p
+.pos6_r3_3: ADD .pos6_r3 3
+.wr6_3_3: PUT .out .pos6_r3_3 .r6_3_3
+.r6_3_4p: ADD .t6_r3_st 4
+.r6_3_4: CHR .l6_ptr .r6_3_4p
+.pos6_r3_4: ADD .pos6_r3 4
+.wr6_3_4: PUT .out .pos6_r3_4 .r6_3_4
+.r6_3_5p: ADD .t6_r3_st 5
+.r6_3_5: CHR .l6_ptr .r6_3_5p
+.pos6_r3_5: ADD .pos6_r3 5
+.wr6_3_5: PUT .out .pos6_r3_5 .r6_3_5
+.r6_3_6p: ADD .t6_r3_st 6
+.r6_3_6: CHR .l6_ptr .r6_3_6p
+.pos6_r3_6: ADD .pos6_r3 6
+.wr6_3_6: PUT .out .pos6_r3_6 .r6_3_6
+.pos6_end: ADD .pos6_r3 .t6_r3_len
+.wnl6: PUT .out .pos6_end .nl
+
+-- === LINE 7: .closed: FCL .handle (unary) ===
+.t7_1: ADD .tok7 12
+.t7_name_st: GET .t7_1 1
+.t7_name_len: GET .t7_1 2
+.t7_3: ADD .tok7 20
+.t7_op_st: GET .t7_3 1
+.t7_5: ADD .tok7 28
+.t7_ref_st: GET .t7_5 1
+.t7_ref_len: GET .t7_5 2
+
+.pos7_start: ADD .pos6_end 1
+.w7_0: PUT .out .pos7_start .dot
+.n7_0: CHR .l7_ptr .t7_name_st
+.pos7_n: ADD .pos7_start 1
+.w7_1: PUT .out .pos7_n .n7_0
+.n7_1p: ADD .t7_name_st 1
+.n7_1: CHR .l7_ptr .n7_1p
+.pos7_n1: ADD .pos7_n 1
+.w7_2: PUT .out .pos7_n1 .n7_1
+.n7_2p: ADD .t7_name_st 2
+.n7_2: CHR .l7_ptr .n7_2p
+.pos7_n2: ADD .pos7_n 2
+.w7_3: PUT .out .pos7_n2 .n7_2
+.n7_3p: ADD .t7_name_st 3
+.n7_3: CHR .l7_ptr .n7_3p
+.pos7_n3: ADD .pos7_n 3
+.w7_4: PUT .out .pos7_n3 .n7_3
+.n7_4p: ADD .t7_name_st 4
+.n7_4: CHR .l7_ptr .n7_4p
+.pos7_n4: ADD .pos7_n 4
+.w7_5: PUT .out .pos7_n4 .n7_4
+.n7_5p: ADD .t7_name_st 5
+.n7_5: CHR .l7_ptr .n7_5p
+.pos7_n5: ADD .pos7_n 5
+.w7_6: PUT .out .pos7_n5 .n7_5
+.pos7_c: ADD .pos7_start 1
+.pos7_c2: ADD .pos7_c .t7_name_len
+.wc7: PUT .out .pos7_c2 .colon
+.pos7_s: ADD .pos7_c2 1
+.ws7: PUT .out .pos7_s .space
+.pos7_op: ADD .pos7_s 1
+.op7_0: CHR .l7_ptr .t7_op_st
+.wop7_0: PUT .out .pos7_op .op7_0
+.op7_1p: ADD .t7_op_st 1
+.op7_1: CHR .l7_ptr .op7_1p
+.pos7_op1: ADD .pos7_op 1
+.wop7_1: PUT .out .pos7_op1 .op7_1
+.op7_2p: ADD .t7_op_st 2
+.op7_2: CHR .l7_ptr .op7_2p
+.pos7_op2: ADD .pos7_op 2
+.wop7_2: PUT .out .pos7_op2 .op7_2
+.pos7_ops: ADD .pos7_op 3
+.wops7: PUT .out .pos7_ops .space
+.pos7_dot: ADD .pos7_ops 1
+.wdot7: PUT .out .pos7_dot .dot
+.ref7_0: CHR .l7_ptr .t7_ref_st
+.pos7_ref: ADD .pos7_dot 1
+.wref7_0: PUT .out .pos7_ref .ref7_0
+.ref7_1p: ADD .t7_ref_st 1
+.ref7_1: CHR .l7_ptr .ref7_1p
+.pos7_ref1: ADD .pos7_ref 1
+.wref7_1: PUT .out .pos7_ref1 .ref7_1
+.ref7_2p: ADD .t7_ref_st 2
+.ref7_2: CHR .l7_ptr .ref7_2p
+.pos7_ref2: ADD .pos7_ref 2
+.wref7_2: PUT .out .pos7_ref2 .ref7_2
+.ref7_3p: ADD .t7_ref_st 3
+.ref7_3: CHR .l7_ptr .ref7_3p
+.pos7_ref3: ADD .pos7_ref 3
+.wref7_3: PUT .out .pos7_ref3 .ref7_3
+.ref7_4p: ADD .t7_ref_st 4
+.ref7_4: CHR .l7_ptr .ref7_4p
+.pos7_ref4: ADD .pos7_ref 4
+.wref7_4: PUT .out .pos7_ref4 .ref7_4
+.ref7_5p: ADD .t7_ref_st 5
+.ref7_5: CHR .l7_ptr .ref7_5p
+.pos7_ref5: ADD .pos7_ref 5
+.wref7_5: PUT .out .pos7_ref5 .ref7_5
+.pos7_end: ADD .pos7_ref .t7_ref_len
+.wnl7: PUT .out .pos7_end .nl
+
+-- === LINE 8: .len: 182 (literal) ===
+.t8_1: ADD .tok8 12
+.t8_name_st: GET .t8_1 1
+.t8_name_len: GET .t8_1 2
+.t8_3: ADD .tok8 20
+.t8_val_st: GET .t8_3 1
+.t8_val_len: GET .t8_3 2
+
+.pos8_start: ADD .pos7_end 1
+.w8_0: PUT .out .pos8_start .dot
+.n8_0: CHR .l8_ptr .t8_name_st
+.pos8_n: ADD .pos8_start 1
+.w8_1: PUT .out .pos8_n .n8_0
+.n8_1p: ADD .t8_name_st 1
+.n8_1: CHR .l8_ptr .n8_1p
+.pos8_n1: ADD .pos8_n 1
+.w8_2: PUT .out .pos8_n1 .n8_1
+.n8_2p: ADD .t8_name_st 2
+.n8_2: CHR .l8_ptr .n8_2p
+.pos8_n2: ADD .pos8_n 2
+.w8_3: PUT .out .pos8_n2 .n8_2
+.pos8_c: ADD .pos8_start 1
+.pos8_c2: ADD .pos8_c .t8_name_len
+.wc8: PUT .out .pos8_c2 .colon
+.pos8_s: ADD .pos8_c2 1
+.ws8: PUT .out .pos8_s .space
+.pos8_v: ADD .pos8_s 1
+.v8_0: CHR .l8_ptr .t8_val_st
+.wv8_0: PUT .out .pos8_v .v8_0
+.v8_1p: ADD .t8_val_st 1
+.v8_1: CHR .l8_ptr .v8_1p
+.pos8_v1: ADD .pos8_v 1
+.wv8_1: PUT .out .pos8_v1 .v8_1
+.v8_2p: ADD .t8_val_st 2
+.v8_2: CHR .l8_ptr .v8_2p
+.pos8_v2: ADD .pos8_v 2
+.wv8_2: PUT .out .pos8_v2 .v8_2
+.pos8_end: ADD .pos8_v .t8_val_len
+.wnl8: PUT .out .pos8_end .nl
+
+-- === LINE 9: .result: PRT .srcbuf .len (binary) ===
+.t9_1: ADD .tok9 12
+.t9_name_st: GET .t9_1 1
+.t9_name_len: GET .t9_1 2
+.t9_3: ADD .tok9 20
+.t9_op_st: GET .t9_3 1
+.t9_5: ADD .tok9 28
+.t9_r1_st: GET .t9_5 1
+.t9_r1_len: GET .t9_5 2
+.t9_7: ADD .tok9 36
+.t9_r2_st: GET .t9_7 1
+.t9_r2_len: GET .t9_7 2
+
+.pos9_start: ADD .pos8_end 1
+.w9_0: PUT .out .pos9_start .dot
+.n9_0: CHR .l9_ptr .t9_name_st
+.pos9_n: ADD .pos9_start 1
+.w9_1: PUT .out .pos9_n .n9_0
+.n9_1p: ADD .t9_name_st 1
+.n9_1: CHR .l9_ptr .n9_1p
+.pos9_n1: ADD .pos9_n 1
+.w9_2: PUT .out .pos9_n1 .n9_1
+.n9_2p: ADD .t9_name_st 2
+.n9_2: CHR .l9_ptr .n9_2p
+.pos9_n2: ADD .pos9_n 2
+.w9_3: PUT .out .pos9_n2 .n9_2
+.n9_3p: ADD .t9_name_st 3
+.n9_3: CHR .l9_ptr .n9_3p
+.pos9_n3: ADD .pos9_n 3
+.w9_4: PUT .out .pos9_n3 .n9_3
+.n9_4p: ADD .t9_name_st 4
+.n9_4: CHR .l9_ptr .n9_4p
+.pos9_n4: ADD .pos9_n 4
+.w9_5: PUT .out .pos9_n4 .n9_4
+.n9_5p: ADD .t9_name_st 5
+.n9_5: CHR .l9_ptr .n9_5p
+.pos9_n5: ADD .pos9_n 5
+.w9_6: PUT .out .pos9_n5 .n9_5
+.pos9_c: ADD .pos9_start 1
+.pos9_c2: ADD .pos9_c .t9_name_len
+.wc9: PUT .out .pos9_c2 .colon
+.pos9_s: ADD .pos9_c2 1
+.ws9: PUT .out .pos9_s .space
+.pos9_op: ADD .pos9_s 1
+.op9_0: CHR .l9_ptr .t9_op_st
+.wop9_0: PUT .out .pos9_op .op9_0
+.op9_1p: ADD .t9_op_st 1
+.op9_1: CHR .l9_ptr .op9_1p
+.pos9_op1: ADD .pos9_op 1
+.wop9_1: PUT .out .pos9_op1 .op9_1
+.op9_2p: ADD .t9_op_st 2
+.op9_2: CHR .l9_ptr .op9_2p
+.pos9_op2: ADD .pos9_op 2
+.wop9_2: PUT .out .pos9_op2 .op9_2
+.pos9_ops: ADD .pos9_op 3
+.wops9: PUT .out .pos9_ops .space
+.pos9_d1: ADD .pos9_ops 1
+.wd9_1: PUT .out .pos9_d1 .dot
+.r9_1_0: CHR .l9_ptr .t9_r1_st
+.pos9_r1: ADD .pos9_d1 1
+.wr9_1_0: PUT .out .pos9_r1 .r9_1_0
+.r9_1_1p: ADD .t9_r1_st 1
+.r9_1_1: CHR .l9_ptr .r9_1_1p
+.pos9_r1_1: ADD .pos9_r1 1
+.wr9_1_1: PUT .out .pos9_r1_1 .r9_1_1
+.r9_1_2p: ADD .t9_r1_st 2
+.r9_1_2: CHR .l9_ptr .r9_1_2p
+.pos9_r1_2: ADD .pos9_r1 2
+.wr9_1_2: PUT .out .pos9_r1_2 .r9_1_2
+.r9_1_3p: ADD .t9_r1_st 3
+.r9_1_3: CHR .l9_ptr .r9_1_3p
+.pos9_r1_3: ADD .pos9_r1 3
+.wr9_1_3: PUT .out .pos9_r1_3 .r9_1_3
+.r9_1_4p: ADD .t9_r1_st 4
+.r9_1_4: CHR .l9_ptr .r9_1_4p
+.pos9_r1_4: ADD .pos9_r1 4
+.wr9_1_4: PUT .out .pos9_r1_4 .r9_1_4
+.r9_1_5p: ADD .t9_r1_st 5
+.r9_1_5: CHR .l9_ptr .r9_1_5p
+.pos9_r1_5: ADD .pos9_r1 5
+.wr9_1_5: PUT .out .pos9_r1_5 .r9_1_5
+.pos9_r1s: ADD .pos9_r1 .t9_r1_len
+.wr9_1s: PUT .out .pos9_r1s .space
+.pos9_d2: ADD .pos9_r1s 1
+.wd9_2: PUT .out .pos9_d2 .dot
+.r9_2_0: CHR .l9_ptr .t9_r2_st
+.pos9_r2: ADD .pos9_d2 1
+.wr9_2_0: PUT .out .pos9_r2 .r9_2_0
+.r9_2_1p: ADD .t9_r2_st 1
+.r9_2_1: CHR .l9_ptr .r9_2_1p
+.pos9_r2_1: ADD .pos9_r2 1
+.wr9_2_1: PUT .out .pos9_r2_1 .r9_2_1
+.r9_2_2p: ADD .t9_r2_st 2
+.r9_2_2: CHR .l9_ptr .r9_2_2p
+.pos9_r2_2: ADD .pos9_r2 2
+.wr9_2_2: PUT .out .pos9_r2_2 .r9_2_2
+.pos9_end: ADD .pos9_r2 .t9_r2_len
+
+-- Final output (with trailing newline)
+.wnl9: PUT .out .pos9_end .nl
+.pos9_final: ADD .pos9_end 1
+.result: PRT .out .pos9_final

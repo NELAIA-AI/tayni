@@ -1,10 +1,16 @@
-//! NELAIA Compiler v0.17
+//! NELAIA Compiler v0.22
 //! Pure Syscalls Only - Self-Hosting Ready
+//! Supports: Windows PE, Linux ELF, Capability System (SCN)
+//! Phase 8-11: Contracts, Negotiation, Testing, Cache, SEN Ecosystem (IA-first)
 
 mod ir;
 mod parser;
 mod emitter_pure;
 mod binary;
+mod native_emitter;
+mod pe;
+mod elf;
+mod capabilities;
 
 use parser::Parser;
 use emitter_pure::{PureEmitter, TargetPlatform};
@@ -19,19 +25,85 @@ fn main() {
     
     if args.len() < 2 {
         if !quiet {
-            eprintln!("nelaia-c 0.17");
+            eprintln!("nelaia-c 0.18");
             eprintln!("usage: nelaia-c <file.nts|file.nbin> [output] [options]");
             eprintln!("options:");
             eprintln!("  --emit-llvm    Output LLVM IR only");
             eprintln!("  --emit-bin     Output binary format (.nbin)");
+            eprintln!("  --emit-pe      Output Windows PE executable");
+            eprintln!("  --emit-elf     Output Linux ELF executable");
             eprintln!("  --target=linux/windows");
         }
         return;
     }
     
     let input_file = &args[1];
+    
+    // Special command: generate test PE
+    if input_file == "--test-pe" {
+        let pe_data = pe::generate_hello_pe();
+        let output = if args.len() > 2 { &args[2] } else { "test_pe.exe" };
+        if let Err(e) = fs::write(output, &pe_data) {
+            eprintln!("E:WRITE:{}", e);
+            std::process::exit(1);
+        }
+        if !quiet {
+            eprintln!("Generated {} ({} bytes)", output, pe_data.len());
+        }
+        return;
+    }
+    
+    // Special command: generate TCP server PE
+    if input_file == "--tcp-server" {
+        let port: u16 = args.get(2).and_then(|s| s.parse().ok()).unwrap_or(8080);
+        let response = "HTTP/1.1 200 OK\r\nContent-Length: 13\r\n\r\nHello NELAIA!";
+        let pe_data = pe::generate_tcp_server_pe(port, response);
+        let output = args.get(3).map(|s| s.as_str()).unwrap_or("tcp_server.exe");
+        if let Err(e) = fs::write(output, &pe_data) {
+            eprintln!("E:WRITE:{}", e);
+            std::process::exit(1);
+        }
+        if !quiet {
+            eprintln!("Generated TCP server {} on port {} ({} bytes)", output, port, pe_data.len());
+        }
+        return;
+    }
+    
+    // Special command: generate GUI PE
+    if input_file == "--gui" {
+        let title = args.get(2).map(|s| s.as_str()).unwrap_or("NELAIA");
+        let message = args.get(3).map(|s| s.as_str()).unwrap_or("Hello from NELAIA GUI!");
+        let output = args.get(4).map(|s| s.as_str()).unwrap_or("gui.exe");
+        let pe_data = pe::generate_gui_pe(title, message);
+        if let Err(e) = fs::write(output, &pe_data) {
+            eprintln!("E:WRITE:{}", e);
+            std::process::exit(1);
+        }
+        if !quiet {
+            eprintln!("Generated GUI {} ({} bytes)", output, pe_data.len());
+        }
+        return;
+    }
+    
+    // Special command: generate tiny PE (1KB)
+    if input_file == "--tiny" {
+        let message = args.get(2).map(|s| s.as_str()).unwrap_or("Hello from NELAIA!\n");
+        let output = args.get(3).map(|s| s.as_str()).unwrap_or("tiny.exe");
+        let pe_data = pe::generate_tiny_pe(message);
+        if let Err(e) = fs::write(output, &pe_data) {
+            eprintln!("E:WRITE:{}", e);
+            std::process::exit(1);
+        }
+        if !quiet {
+            eprintln!("Generated tiny PE {} ({} bytes)", output, pe_data.len());
+        }
+        return;
+    }
+    
     let emit_only = args.contains(&"--emit-llvm".to_string());
     let emit_bin = args.contains(&"--emit-bin".to_string());
+    let emit_pe = args.contains(&"--emit-pe".to_string());
+    let emit_elf = args.contains(&"--emit-elf".to_string());
     let no_warn = args.contains(&"--no-warn".to_string());
     
     // Parse target platform
@@ -46,10 +118,20 @@ fn main() {
         { TargetPlatform::Linux }
     };
     
-    let output_name = if args.len() > 2 && !args[2].starts_with("--") {
-        args[2].clone()
-    } else {
-        input_file.replace(".nts", "").replace(".nbin", "")
+    let output_name = {
+        // Find -o flag or use positional argument
+        let mut out = None;
+        let mut i = 2;
+        while i < args.len() {
+            if args[i] == "-o" && i + 1 < args.len() {
+                out = Some(args[i + 1].clone());
+                break;
+            } else if !args[i].starts_with("-") && out.is_none() {
+                out = Some(args[i].clone());
+            }
+            i += 1;
+        }
+        out.unwrap_or_else(|| input_file.replace(".nts", "").replace(".nbin", ""))
     };
     
     // Read input file (text or binary)
@@ -104,6 +186,49 @@ fn main() {
         }
         if !quiet {
             eprintln!("OK:BIN:{}:{} bytes", bin_file, bin_data.len());
+        }
+        return;
+    }
+    
+    // Emit native executable if requested
+    let emit_native = args.contains(&"--emit-native".to_string());
+    if emit_native {
+        let exe_data = native_emitter::emit_native_exe(&graph);
+        let exe_file = format!("{}.exe", output_name);
+        if let Err(e) = fs::write(&exe_file, &exe_data) {
+            eprintln!("E:WRITE:{}", e);
+            std::process::exit(1);
+        }
+        if !quiet {
+            eprintln!("OK:NATIVE:{}:{} bytes", exe_file, exe_data.len());
+        }
+        return;
+    }
+    
+    // Emit PE executable directly (no clang)
+    if emit_pe {
+        let exe_data = pe::generate_pe_from_graph(&graph);
+        let exe_file = format!("{}.exe", output_name);
+        if let Err(e) = fs::write(&exe_file, &exe_data) {
+            eprintln!("E:WRITE:{}", e);
+            std::process::exit(1);
+        }
+        if !quiet {
+            eprintln!("OK:PE:{}:{} bytes", exe_file, exe_data.len());
+        }
+        return;
+    }
+    
+    // Emit ELF executable directly (no clang)
+    if emit_elf {
+        let exe_data = elf::generate_elf_from_graph(&graph);
+        let exe_file = output_name.clone();
+        if let Err(e) = fs::write(&exe_file, &exe_data) {
+            eprintln!("E:WRITE:{}", e);
+            std::process::exit(1);
+        }
+        if !quiet {
+            eprintln!("OK:ELF:{}:{} bytes", exe_file, exe_data.len());
         }
         return;
     }

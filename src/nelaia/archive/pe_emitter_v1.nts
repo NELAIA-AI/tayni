@@ -1,0 +1,514 @@
+-- NELAIA PE Emitter v1.0
+-- Generates minimal PE executable from NELAIA source
+-- Outputs: "Hello!" to console
+
+.zero: 0
+.one: 1
+
+-- PE Constants
+.mz: 23117
+.pe_sig: 17744
+.machine_x64: 34404
+.opt_magic: 523
+
+-- Output buffer for PE file
+.pe: ALC 2048
+.pos: 0
+
+-- ============ DOS HEADER (64 bytes) ============
+-- MZ signature
+.w0: PUT .pe 0 77
+.w1: PUT .pe 1 90
+-- Padding (58 bytes of zeros)
+-- e_lfanew at offset 60 (PE header offset = 0x80 = 128)
+.w60: PUT .pe 60 128
+.w61: PUT .pe 61 0
+.w62: PUT .pe 62 0
+.w63: PUT .pe 63 0
+
+-- ============ DOS STUB (64 bytes padding to 0x80) ============
+-- Already zeros from ALC
+
+-- ============ PE SIGNATURE at 0x80 ============
+.w128: PUT .pe 128 80
+.w129: PUT .pe 129 69
+.w130: PUT .pe 130 0
+.w131: PUT .pe 131 0
+
+-- ============ COFF HEADER (20 bytes) at 0x84 ============
+-- Machine: x64 (0x8664)
+.w132: PUT .pe 132 100
+.w133: PUT .pe 133 134
+-- NumberOfSections: 2
+.w134: PUT .pe 134 2
+.w135: PUT .pe 135 0
+-- TimeDateStamp: 0
+.w136: PUT .pe 136 0
+.w137: PUT .pe 137 0
+.w138: PUT .pe 138 0
+.w139: PUT .pe 139 0
+-- PointerToSymbolTable: 0
+.w140: PUT .pe 140 0
+.w141: PUT .pe 141 0
+.w142: PUT .pe 142 0
+.w143: PUT .pe 143 0
+-- NumberOfSymbols: 0
+.w144: PUT .pe 144 0
+.w145: PUT .pe 145 0
+.w146: PUT .pe 146 0
+.w147: PUT .pe 147 0
+-- SizeOfOptionalHeader: 240 (0xF0)
+.w148: PUT .pe 148 240
+.w149: PUT .pe 149 0
+-- Characteristics: 0x22 (EXECUTABLE_IMAGE | LARGE_ADDRESS_AWARE)
+.w150: PUT .pe 150 34
+.w151: PUT .pe 151 0
+
+-- ============ OPTIONAL HEADER (240 bytes) at 0x98 ============
+-- Magic: PE32+ (0x20B)
+.w152: PUT .pe 152 11
+.w153: PUT .pe 153 2
+-- MajorLinkerVersion, MinorLinkerVersion
+.w154: PUT .pe 154 14
+.w155: PUT .pe 155 0
+-- SizeOfCode: 0x200
+.w156: PUT .pe 156 0
+.w157: PUT .pe 157 2
+.w158: PUT .pe 158 0
+.w159: PUT .pe 159 0
+-- SizeOfInitializedData: 0x200
+.w160: PUT .pe 160 0
+.w161: PUT .pe 161 2
+.w162: PUT .pe 162 0
+.w163: PUT .pe 163 0
+-- SizeOfUninitializedData: 0
+.w164: PUT .pe 164 0
+.w165: PUT .pe 165 0
+.w166: PUT .pe 166 0
+.w167: PUT .pe 167 0
+-- AddressOfEntryPoint: 0x1000
+.w168: PUT .pe 168 0
+.w169: PUT .pe 169 16
+.w170: PUT .pe 170 0
+.w171: PUT .pe 171 0
+-- BaseOfCode: 0x1000
+.w172: PUT .pe 172 0
+.w173: PUT .pe 173 16
+.w174: PUT .pe 174 0
+.w175: PUT .pe 175 0
+-- ImageBase: 0x140000000 (8 bytes)
+.w176: PUT .pe 176 0
+.w177: PUT .pe 177 0
+.w178: PUT .pe 178 0
+.w179: PUT .pe 179 64
+.w180: PUT .pe 180 1
+.w181: PUT .pe 181 0
+.w182: PUT .pe 182 0
+.w183: PUT .pe 183 0
+-- SectionAlignment: 0x1000
+.w184: PUT .pe 184 0
+.w185: PUT .pe 185 16
+.w186: PUT .pe 186 0
+.w187: PUT .pe 187 0
+-- FileAlignment: 0x200
+.w188: PUT .pe 188 0
+.w189: PUT .pe 189 2
+.w190: PUT .pe 190 0
+.w191: PUT .pe 191 0
+-- OS Version: 6.0
+.w192: PUT .pe 192 6
+.w193: PUT .pe 193 0
+.w194: PUT .pe 194 0
+.w195: PUT .pe 195 0
+-- Image Version: 0.0
+.w196: PUT .pe 196 0
+.w197: PUT .pe 197 0
+.w198: PUT .pe 198 0
+.w199: PUT .pe 199 0
+-- Subsystem Version: 6.0
+.w200: PUT .pe 200 6
+.w201: PUT .pe 201 0
+.w202: PUT .pe 202 0
+.w203: PUT .pe 203 0
+-- Win32VersionValue: 0
+.w204: PUT .pe 204 0
+.w205: PUT .pe 205 0
+.w206: PUT .pe 206 0
+.w207: PUT .pe 207 0
+-- SizeOfImage: 0x3000
+.w208: PUT .pe 208 0
+.w209: PUT .pe 209 48
+.w210: PUT .pe 210 0
+.w211: PUT .pe 211 0
+-- SizeOfHeaders: 0x200
+.w212: PUT .pe 212 0
+.w213: PUT .pe 213 2
+.w214: PUT .pe 214 0
+.w215: PUT .pe 215 0
+-- CheckSum: 0
+.w216: PUT .pe 216 0
+.w217: PUT .pe 217 0
+.w218: PUT .pe 218 0
+.w219: PUT .pe 219 0
+-- Subsystem: CONSOLE (3)
+.w220: PUT .pe 220 3
+.w221: PUT .pe 221 0
+-- DllCharacteristics: 0x8160 (DYNAMIC_BASE | NX_COMPAT | TERMINAL_SERVER_AWARE | HIGH_ENTROPY_VA)
+.w222: PUT .pe 222 96
+.w223: PUT .pe 223 129
+-- SizeOfStackReserve: 0x100000 (8 bytes)
+.w224: PUT .pe 224 0
+.w225: PUT .pe 225 0
+.w226: PUT .pe 226 16
+.w227: PUT .pe 227 0
+.w228: PUT .pe 228 0
+.w229: PUT .pe 229 0
+.w230: PUT .pe 230 0
+.w231: PUT .pe 231 0
+-- SizeOfStackCommit: 0x1000 (8 bytes)
+.w232: PUT .pe 232 0
+.w233: PUT .pe 233 16
+.w234: PUT .pe 234 0
+.w235: PUT .pe 235 0
+.w236: PUT .pe 236 0
+.w237: PUT .pe 237 0
+.w238: PUT .pe 238 0
+.w239: PUT .pe 239 0
+-- SizeOfHeapReserve: 0x100000 (8 bytes)
+.w240: PUT .pe 240 0
+.w241: PUT .pe 241 0
+.w242: PUT .pe 242 16
+.w243: PUT .pe 243 0
+.w244: PUT .pe 244 0
+.w245: PUT .pe 245 0
+.w246: PUT .pe 246 0
+.w247: PUT .pe 247 0
+-- SizeOfHeapCommit: 0x1000 (8 bytes)
+.w248: PUT .pe 248 0
+.w249: PUT .pe 249 16
+.w250: PUT .pe 250 0
+.w251: PUT .pe 251 0
+.w252: PUT .pe 252 0
+.w253: PUT .pe 253 0
+.w254: PUT .pe 254 0
+.w255: PUT .pe 255 0
+-- LoaderFlags: 0
+.w256: PUT .pe 256 0
+.w257: PUT .pe 257 0
+.w258: PUT .pe 258 0
+.w259: PUT .pe 259 0
+-- NumberOfRvaAndSizes: 16
+.w260: PUT .pe 260 16
+.w261: PUT .pe 261 0
+.w262: PUT .pe 262 0
+.w263: PUT .pe 263 0
+
+-- Data Directories (16 * 8 = 128 bytes)
+-- Import Directory at index 1 (offset 264 + 8 = 272)
+-- RVA: 0x2000, Size: 40
+.w280: PUT .pe 280 0
+.w281: PUT .pe 281 32
+.w282: PUT .pe 282 0
+.w283: PUT .pe 283 0
+.w284: PUT .pe 284 40
+.w285: PUT .pe 285 0
+.w286: PUT .pe 286 0
+.w287: PUT .pe 287 0
+
+-- ============ SECTION HEADERS at 0x188 (392) ============
+-- .text section
+.w392: PUT .pe 392 46
+.w393: PUT .pe 393 116
+.w394: PUT .pe 394 101
+.w395: PUT .pe 395 120
+.w396: PUT .pe 396 116
+.w397: PUT .pe 397 0
+.w398: PUT .pe 398 0
+.w399: PUT .pe 399 0
+-- VirtualSize: 0x100
+.w400: PUT .pe 400 0
+.w401: PUT .pe 401 1
+.w402: PUT .pe 402 0
+.w403: PUT .pe 403 0
+-- VirtualAddress: 0x1000
+.w404: PUT .pe 404 0
+.w405: PUT .pe 405 16
+.w406: PUT .pe 406 0
+.w407: PUT .pe 407 0
+-- SizeOfRawData: 0x200
+.w408: PUT .pe 408 0
+.w409: PUT .pe 409 2
+.w410: PUT .pe 410 0
+.w411: PUT .pe 411 0
+-- PointerToRawData: 0x200
+.w412: PUT .pe 412 0
+.w413: PUT .pe 413 2
+.w414: PUT .pe 414 0
+.w415: PUT .pe 415 0
+-- PointerToRelocations, PointerToLinenumbers, NumberOfRelocations, NumberOfLinenumbers: 0
+.w416: PUT .pe 416 0
+.w417: PUT .pe 417 0
+.w418: PUT .pe 418 0
+.w419: PUT .pe 419 0
+.w420: PUT .pe 420 0
+.w421: PUT .pe 421 0
+.w422: PUT .pe 422 0
+.w423: PUT .pe 423 0
+-- Characteristics: 0x60000020 (CODE | EXECUTE | READ)
+.w424: PUT .pe 424 32
+.w425: PUT .pe 425 0
+.w426: PUT .pe 426 0
+.w427: PUT .pe 427 96
+
+-- .rdata section
+.w432: PUT .pe 432 46
+.w433: PUT .pe 433 114
+.w434: PUT .pe 434 100
+.w435: PUT .pe 435 97
+.w436: PUT .pe 436 116
+.w437: PUT .pe 437 97
+.w438: PUT .pe 438 0
+.w439: PUT .pe 439 0
+-- VirtualSize: 0x100
+.w440: PUT .pe 440 0
+.w441: PUT .pe 441 1
+.w442: PUT .pe 442 0
+.w443: PUT .pe 443 0
+-- VirtualAddress: 0x2000
+.w444: PUT .pe 444 0
+.w445: PUT .pe 445 32
+.w446: PUT .pe 446 0
+.w447: PUT .pe 447 0
+-- SizeOfRawData: 0x200
+.w448: PUT .pe 448 0
+.w449: PUT .pe 449 2
+.w450: PUT .pe 450 0
+.w451: PUT .pe 451 0
+-- PointerToRawData: 0x400
+.w452: PUT .pe 452 0
+.w453: PUT .pe 453 4
+.w454: PUT .pe 454 0
+.w455: PUT .pe 455 0
+-- Zeros
+.w456: PUT .pe 456 0
+.w457: PUT .pe 457 0
+.w458: PUT .pe 458 0
+.w459: PUT .pe 459 0
+.w460: PUT .pe 460 0
+.w461: PUT .pe 461 0
+.w462: PUT .pe 462 0
+.w463: PUT .pe 463 0
+-- Characteristics: 0x40000040 (INITIALIZED_DATA | READ)
+.w464: PUT .pe 464 64
+.w465: PUT .pe 465 0
+.w466: PUT .pe 466 0
+.w467: PUT .pe 467 64
+
+-- ============ .text SECTION at 0x200 (512) ============
+-- Code: sub rsp, 40h; mov ecx, -11; call GetStdHandle; ...
+-- sub rsp, 0x28
+.w512: PUT .pe 512 72
+.w513: PUT .pe 513 131
+.w514: PUT .pe 514 236
+.w515: PUT .pe 515 40
+-- mov ecx, -11 (0xFFFFFFF5)
+.w516: PUT .pe 516 185
+.w517: PUT .pe 517 245
+.w518: PUT .pe 518 255
+.w519: PUT .pe 519 255
+.w520: PUT .pe 520 255
+-- call [rip+offset] to GetStdHandle (IAT at 0x2000)
+-- offset = 0x2000 - (0x1000 + current_pos + 6)
+-- At pos 9 (after mov), call is 6 bytes
+-- RIP after call = 0x1000 + 15 = 0x100F
+-- Target = 0x2000, offset = 0x2000 - 0x100F = 0xFF1
+.w521: PUT .pe 521 255
+.w522: PUT .pe 522 21
+.w523: PUT .pe 523 241
+.w524: PUT .pe 524 15
+.w525: PUT .pe 525 0
+.w526: PUT .pe 526 0
+-- mov rcx, rax (handle)
+.w527: PUT .pe 527 72
+.w528: PUT .pe 528 137
+.w529: PUT .pe 529 193
+-- lea rdx, [rip+msg] (msg at 0x2080)
+-- RIP after lea = 0x1000 + 21 = 0x1015
+-- offset = 0x2080 - 0x1015 = 0x106B
+.w530: PUT .pe 530 72
+.w531: PUT .pe 531 141
+.w532: PUT .pe 532 21
+.w533: PUT .pe 533 107
+.w534: PUT .pe 534 16
+.w535: PUT .pe 535 0
+.w536: PUT .pe 536 0
+-- mov r8d, 7 (length)
+.w537: PUT .pe 537 65
+.w538: PUT .pe 538 184
+.w539: PUT .pe 539 7
+.w540: PUT .pe 540 0
+.w541: PUT .pe 541 0
+.w542: PUT .pe 542 0
+-- lea r9, [rsp+32] (written count)
+.w543: PUT .pe 543 76
+.w544: PUT .pe 544 141
+.w545: PUT .pe 545 76
+.w546: PUT .pe 546 36
+.w547: PUT .pe 547 32
+-- mov qword [rsp+32], 0
+.w548: PUT .pe 548 72
+.w549: PUT .pe 549 199
+.w550: PUT .pe 550 68
+.w551: PUT .pe 551 36
+.w552: PUT .pe 552 32
+.w553: PUT .pe 553 0
+.w554: PUT .pe 554 0
+.w555: PUT .pe 555 0
+.w556: PUT .pe 556 0
+-- call WriteFile (IAT+8 = 0x2008)
+-- RIP = 0x1000 + 45 = 0x102D
+-- offset = 0x2008 - 0x102D = 0xFDB
+.w557: PUT .pe 557 255
+.w558: PUT .pe 558 21
+.w559: PUT .pe 559 219
+.w560: PUT .pe 560 15
+.w561: PUT .pe 561 0
+.w562: PUT .pe 562 0
+-- xor ecx, ecx
+.w563: PUT .pe 563 49
+.w564: PUT .pe 564 201
+-- call ExitProcess (IAT+16 = 0x2010)
+-- RIP = 0x1000 + 53 = 0x1035
+-- offset = 0x2010 - 0x1035 = 0xFDB
+.w565: PUT .pe 565 255
+.w566: PUT .pe 566 21
+.w567: PUT .pe 567 219
+.w568: PUT .pe 568 15
+.w569: PUT .pe 569 0
+.w570: PUT .pe 570 0
+
+-- ============ .rdata SECTION at 0x400 (1024) ============
+-- IAT at 0x2000 (file offset 0x400)
+-- GetStdHandle hint/name at 0x2040
+.w1024: PUT .pe 1024 64
+.w1025: PUT .pe 1025 32
+.w1026: PUT .pe 1026 0
+.w1027: PUT .pe 1027 0
+.w1028: PUT .pe 1028 0
+.w1029: PUT .pe 1029 0
+.w1030: PUT .pe 1030 0
+.w1031: PUT .pe 1031 0
+-- WriteFile hint/name at 0x2050
+.w1032: PUT .pe 1032 80
+.w1033: PUT .pe 1033 32
+.w1034: PUT .pe 1034 0
+.w1035: PUT .pe 1035 0
+.w1036: PUT .pe 1036 0
+.w1037: PUT .pe 1037 0
+.w1038: PUT .pe 1038 0
+.w1039: PUT .pe 1039 0
+-- ExitProcess hint/name at 0x2060
+.w1040: PUT .pe 1040 96
+.w1041: PUT .pe 1041 32
+.w1042: PUT .pe 1042 0
+.w1043: PUT .pe 1043 0
+.w1044: PUT .pe 1044 0
+.w1045: PUT .pe 1045 0
+.w1046: PUT .pe 1046 0
+.w1047: PUT .pe 1047 0
+-- NULL terminator
+.w1048: PUT .pe 1048 0
+.w1049: PUT .pe 1049 0
+.w1050: PUT .pe 1050 0
+.w1051: PUT .pe 1051 0
+.w1052: PUT .pe 1052 0
+.w1053: PUT .pe 1053 0
+.w1054: PUT .pe 1054 0
+.w1055: PUT .pe 1055 0
+
+-- Import Directory at 0x2000 (but we put IAT there, so move to 0x2020)
+-- Actually let's put import dir at file offset 0x420 (RVA 0x2020)
+-- Fix: Import dir RVA should be 0x2020
+-- Update data directory entry
+
+-- Hint/Name Table at 0x2040 (file offset 0x440)
+-- GetStdHandle
+.w1088: PUT .pe 1088 0
+.w1089: PUT .pe 1089 0
+.w1090: PUT .pe 1090 71
+.w1091: PUT .pe 1091 101
+.w1092: PUT .pe 1092 116
+.w1093: PUT .pe 1093 83
+.w1094: PUT .pe 1094 116
+.w1095: PUT .pe 1095 100
+.w1096: PUT .pe 1096 72
+.w1097: PUT .pe 1097 97
+.w1098: PUT .pe 1098 110
+.w1099: PUT .pe 1099 100
+.w1100: PUT .pe 1100 108
+.w1101: PUT .pe 1101 101
+.w1102: PUT .pe 1102 0
+
+-- WriteFile at 0x2050 (file offset 0x450)
+.w1104: PUT .pe 1104 0
+.w1105: PUT .pe 1105 0
+.w1106: PUT .pe 1106 87
+.w1107: PUT .pe 1107 114
+.w1108: PUT .pe 1108 105
+.w1109: PUT .pe 1109 116
+.w1110: PUT .pe 1110 101
+.w1111: PUT .pe 1111 70
+.w1112: PUT .pe 1112 105
+.w1113: PUT .pe 1113 108
+.w1114: PUT .pe 1114 101
+.w1115: PUT .pe 1115 0
+
+-- ExitProcess at 0x2060 (file offset 0x460)
+.w1120: PUT .pe 1120 0
+.w1121: PUT .pe 1121 0
+.w1122: PUT .pe 1122 69
+.w1123: PUT .pe 1123 120
+.w1124: PUT .pe 1124 105
+.w1125: PUT .pe 1125 116
+.w1126: PUT .pe 1126 80
+.w1127: PUT .pe 1127 114
+.w1128: PUT .pe 1128 111
+.w1129: PUT .pe 1129 99
+.w1130: PUT .pe 1130 101
+.w1131: PUT .pe 1131 115
+.w1132: PUT .pe 1132 115
+.w1133: PUT .pe 1133 0
+
+-- DLL name "kernel32.dll" at 0x2070 (file offset 0x470)
+.w1136: PUT .pe 1136 107
+.w1137: PUT .pe 1137 101
+.w1138: PUT .pe 1138 114
+.w1139: PUT .pe 1139 110
+.w1140: PUT .pe 1140 101
+.w1141: PUT .pe 1141 108
+.w1142: PUT .pe 1142 51
+.w1143: PUT .pe 1143 50
+.w1144: PUT .pe 1144 46
+.w1145: PUT .pe 1145 100
+.w1146: PUT .pe 1146 108
+.w1147: PUT .pe 1147 108
+.w1148: PUT .pe 1148 0
+
+-- Message "Hello!\n" at 0x2080 (file offset 0x480)
+.w1152: PUT .pe 1152 72
+.w1153: PUT .pe 1153 101
+.w1154: PUT .pe 1154 108
+.w1155: PUT .pe 1155 108
+.w1156: PUT .pe 1156 111
+.w1157: PUT .pe 1157 33
+.w1158: PUT .pe 1158 10
+
+-- Write PE to file
+.outpath: "hello_nelaia.exe"
+.outhandle: FWR .outpath .pe 1536
+.done: ADD .outhandle .zero
+
+-- Also print success message
+.msg: "PE generated: hello_nelaia.exe\n"
+.msglen: 31
+.prt: PRT .msg .msglen

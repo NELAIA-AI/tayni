@@ -1,0 +1,11 @@
+.a: 7
+.b: 6
+.prod: MUL .a .b
+.size: 16
+.buf: ALC .size
+.d1: 52
+.d2: 50
+.w0: PUT .buf 0 .d1
+.w1: PUT .buf 1 .d2
+.w2: PUT .buf 2 10
+.out: PRT .buf 3

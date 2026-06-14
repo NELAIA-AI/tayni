@@ -1,0 +1,51 @@
+-- Debug: print token info
+.zero: 0
+.bufsize: 256
+
+.path: "test_input.nts"
+.handle: FOP .path .zero
+.srcbuf: ALC .bufsize
+.slen: FRD .handle .srcbuf .bufsize
+.closed: FCL .handle
+
+.tokens: FSM .srcbuf .slen
+.tptr: ADD .tokens .zero
+
+-- Get token 0 (offset 0)
+.t0: ADD .tptr 0
+.t0_type: GET .t0 0
+.t0_start: GET .t0 1
+.t0_len: GET .t0 2
+
+-- Get token 1 (offset 4)
+.t1: ADD .tptr 4
+.t1_type: GET .t1 0
+.t1_start: GET .t1 1
+.t1_len: GET .t1 2
+
+-- Get token 2 (offset 8)
+.t2: ADD .tptr 8
+.t2_type: GET .t2 0
+.t2_start: GET .t2 1
+.t2_len: GET .t2 2
+
+-- Get token 3 (offset 12)
+.t3: ADD .tptr 12
+.t3_type: GET .t3 0
+.t3_start: GET .t3 1
+.t3_len: GET .t3 2
+
+-- Get token 4 (offset 16)
+.t4: ADD .tptr 16
+.t4_type: GET .t4 0
+.t4_start: GET .t4 1
+.t4_len: GET .t4 2
+
+-- Print token 3 char (offset 12, like v2.0 n0_id)
+.ch3: CHR .srcbuf .t3_start
+.out: ALC 64
+.p0: PUT .out 0 .ch3
+.p1: PRT .out 1
+
+-- Return t3_start to see the value
+.result: ADD .t3_start .zero

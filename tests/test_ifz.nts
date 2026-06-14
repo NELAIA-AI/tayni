@@ -1,0 +1,8 @@
+.val: 5
+.zero: 0
+.msg_yes: "Value is non-zero\n"
+.msg_no: "Value is zero\n"
+.len_yes: 18
+.len_no: 14
+.check: IFZ .val .zero .len_yes
+.out: PRT .msg_yes .check

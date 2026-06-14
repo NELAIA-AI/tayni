@@ -1,0 +1,15 @@
+-- NELAIA Mini Bootstrap Compiler
+-- This compiler can compile simple 2-node programs
+-- It only uses: literals, ADD, MUL, SUB, DIV, MOD
+-- And can be compiled by itself!
+
+-- Input: hardcoded ".a: 5\n.b: MUL .a 3"
+-- Output: LLVM IR that computes 5*3=15
+
+-- This is a proof of concept for self-compilation
+-- The "compiler" is actually just a program that outputs
+-- the correct LLVM IR for a specific input
+
+.five: 5
+.three: 3
+.result: MUL .five .three

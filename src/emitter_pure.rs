@@ -38,6 +38,15 @@ impl PureEmitter {
         let mut emitter = PureEmitter::new(target);
         // Analyze usage for dead code elimination
         emitter.usage = Some(UsageAnalysis::analyze(graph));
+        
+        // Report unused capabilities (Phase 9: DCE for capabilities)
+        if let Some(ref usage) = emitter.usage {
+            let unused = usage.unused_capabilities();
+            if !unused.is_empty() {
+                eprintln!("W:DCE:Unused capabilities declared but never used: {:?}", unused);
+            }
+        }
+        
         emitter.emit_graph(graph)
     }
     
@@ -368,6 +377,66 @@ impl PureEmitter {
             Op::Scm => self.emit_str_compare(id, args),
             Op::Wrt => self.emit_write_string(id, args),
             Op::Ifz => self.emit_if_zero(id, args),
+            
+            // === CAPABILITY SYSTEM (SCN) ===
+            Op::Req => Ok(format!("  ; REQUIRES declaration (compile-time only)\n")),
+            
+            // HTTP Capability
+            Op::HttpListen => self.emit_http_listen(id, args),
+            Op::HttpAccept => self.emit_http_accept(id, args),
+            Op::HttpMethod => self.emit_http_method(id, args),
+            Op::HttpPath => self.emit_http_path(id, args),
+            Op::HttpBody => self.emit_http_body(id, args),
+            Op::HttpRespond => self.emit_http_respond(id, args),
+            Op::HttpGet => self.emit_http_get(id, args),
+            Op::HttpPost => self.emit_http_post(id, args),
+            
+            // SQL Capability
+            Op::SqlConnect => self.emit_sql_connect(id, args),
+            Op::SqlQuery => self.emit_sql_query(id, args),
+            Op::SqlExec => self.emit_sql_exec(id, args),
+            Op::SqlNext => self.emit_sql_next(id, args),
+            Op::SqlGet => self.emit_sql_get(id, args),
+            Op::SqlClose => self.emit_sql_close(id, args),
+            
+            // JSON Capability
+            Op::JsonParse => self.emit_json_parse(id, args),
+            Op::JsonEncode => self.emit_json_encode(id, args),
+            Op::JsonGet => self.emit_json_get(id, args),
+            Op::JsonSet => self.emit_json_set(id, args),
+            
+            // === PHASE 8: CONTRACTS & NEGOTIATION ===
+            Op::Contract => self.emit_contract(id, args),
+            Op::Guarantee => self.emit_guarantee(id, args),
+            Op::Limit => self.emit_limit(id, args),
+            Op::Sandbox => self.emit_sandbox(id, args),
+            Op::Provides => self.emit_provides(id, args),
+            Op::Negotiate => self.emit_negotiate(id, args),
+            Op::Bind => self.emit_bind(id, args),
+            Op::DefCap => self.emit_defcap(id, args),
+            Op::ExtendCap => self.emit_extendcap(id, args),
+            Op::ComposeCap => self.emit_composecap(id, args),
+            
+            // === PHASE 10: TESTING ===
+            Op::Property => self.emit_property(id, args),
+            Op::GenTests => self.emit_gentests(id, args),
+            Op::Verify => self.emit_verify(id, args),
+            
+            // === PHASE 9.2: INCREMENTAL COMPILATION ===
+            Op::Hash => self.emit_hash(id, args),
+            Op::CacheGet => self.emit_cache_get(id, args),
+            Op::CachePut => self.emit_cache_put(id, args),
+            Op::CacheVerify => self.emit_cache_verify(id, args),
+            Op::CacheInvalidate => self.emit_cache_invalidate(id, args),
+            
+            // === PHASE 11: SEN - ECOSYSTEM (IA-first) ===
+            Op::Discover => self.emit_discover(id, args),
+            Op::CapInfo => self.emit_cap_info(id, args),
+            Op::CapCost => self.emit_cap_cost(id, args),
+            Op::CapPublish => self.emit_cap_publish(id, args),
+            Op::CapAvailable => self.emit_cap_available(id, args),
+            Op::CapVersion => self.emit_cap_version(id, args),
+            Op::CapDeps => self.emit_cap_deps(id, args),
             
             _ => Ok(format!("  ; TODO: {:?}\n", op)),
         }
@@ -1361,10 +1430,12 @@ impl PureEmitter {
                 code.push_str(&format!("  %{}_out = call i8* @VirtualAlloc(i8* null, i64 {}, i32 12288, i32 4)\n", id, len));
                 code.push_str(&format!("  %{}_outptr = ptrtoint i8* %{}_out to i64\n", id, id));
                 
-                // Loop setup
+                // Loop setup - use unique setup block to avoid phi predecessor issues
+                code.push_str(&format!("  br label %trn_setup_{}\n", id));
+                code.push_str(&format!("trn_setup_{}:\n", id));
                 code.push_str(&format!("  br label %trn_loop_{}\n", id));
                 code.push_str(&format!("trn_loop_{}:\n", id));
-                code.push_str(&format!("  %{}_i = phi i64 [0, %entry], [%{}_next, %trn_body_{}]\n", id, id, id));
+                code.push_str(&format!("  %{}_i = phi i64 [0, %trn_setup_{}], [%{}_next, %trn_body_{}]\n", id, id, id, id));
                 code.push_str(&format!("  %{}_done = icmp uge i64 %{}_i, {}\n", id, id, len));
                 code.push_str(&format!("  br i1 %{}_done, label %trn_end_{}, label %trn_body_{}\n", id, id, id));
                 
@@ -1421,14 +1492,18 @@ impl PureEmitter {
         code.push_str(&format!("  %{}_cptr = inttoptr i64 %{}_bptr to i64*\n", id, id));
         code.push_str(&format!("  store i64 0, i64* %{}_cptr\n", id));
         
-        // State: pos, token_count, current_type, token_start, token_len
+        // State: pos, token_count, current_type, token_start, token_len, escape_pending
+        // Use a setup block unique to this FSM to avoid phi predecessor issues
+        code.push_str(&format!("  br label %f_setup_{}\n", id));
+        code.push_str(&format!("f_setup_{}:\n", id));
         code.push_str(&format!("  br label %f_{}\n", id));
         code.push_str(&format!("f_{}:\n", id));
-        code.push_str(&format!("  %{}_p = phi i64 [0, %entry], [%{}_np, %f_n_{}]\n", id, id, id));
-        code.push_str(&format!("  %{}_tc = phi i64 [0, %entry], [%{}_ntc, %f_n_{}]\n", id, id, id));
-        code.push_str(&format!("  %{}_ct = phi i8 [0, %entry], [%{}_nct, %f_n_{}]\n", id, id, id));  // current type
-        code.push_str(&format!("  %{}_ts = phi i64 [0, %entry], [%{}_nts, %f_n_{}]\n", id, id, id));  // token start
-        code.push_str(&format!("  %{}_tl = phi i64 [0, %entry], [%{}_ntl, %f_n_{}]\n", id, id, id));  // token len
+        code.push_str(&format!("  %{}_p = phi i64 [0, %f_setup_{}], [%{}_np, %f_n_{}]\n", id, id, id, id));
+        code.push_str(&format!("  %{}_tc = phi i64 [0, %f_setup_{}], [%{}_ntc, %f_n_{}]\n", id, id, id, id));
+        code.push_str(&format!("  %{}_ct = phi i8 [0, %f_setup_{}], [%{}_nct, %f_n_{}]\n", id, id, id, id));  // current type
+        code.push_str(&format!("  %{}_ts = phi i64 [0, %f_setup_{}], [%{}_nts, %f_n_{}]\n", id, id, id, id));  // token start
+        code.push_str(&format!("  %{}_tl = phi i64 [0, %f_setup_{}], [%{}_ntl, %f_n_{}]\n", id, id, id, id));  // token len
+        code.push_str(&format!("  %{}_esc = phi i1 [false, %f_setup_{}], [%{}_nesc, %f_n_{}]\n", id, id, id, id));  // escape pending
         
         // Check done
         code.push_str(&format!("  %{}_dn = icmp uge i64 %{}_p, {}\n", id, id, len));
@@ -1448,6 +1523,7 @@ impl PureEmitter {
         code.push_str(&format!("  %{}_sp = icmp eq i64 %{}_ci, 32\n", id, id));
         code.push_str(&format!("  %{}_tb = icmp eq i64 %{}_ci, 9\n", id, id));
         code.push_str(&format!("  %{}_qt = icmp eq i64 %{}_ci, 34\n", id, id));
+        code.push_str(&format!("  %{}_bs = icmp eq i64 %{}_ci, 92\n", id, id));  // backslash
         code.push_str(&format!("  %{}_ws = or i1 %{}_sp, %{}_tb\n", id, id, id));
         // Alpha
         code.push_str(&format!("  %{}_ga = icmp uge i64 %{}_ci, 97\n", id, id));
@@ -1473,10 +1549,34 @@ impl PureEmitter {
         code.push_str(&format!("  %{}_y3 = select i1 %{}_dg, i8 4, i8 %{}_y2\n", id, id, id));
         code.push_str(&format!("  %{}_y4 = select i1 %{}_qt, i8 5, i8 %{}_y3\n", id, id, id));
         code.push_str(&format!("  %{}_y5 = select i1 %{}_nl, i8 6, i8 %{}_y4\n", id, id, id));
-        code.push_str(&format!("  %{}_ty = select i1 %{}_ws, i8 7, i8 %{}_y5\n", id, id, id));
+        code.push_str(&format!("  %{}_tyraw = select i1 %{}_ws, i8 7, i8 %{}_y5\n", id, id, id));
+        
+        // String handling: 
+        // If escape is pending, this char is escaped - stay in string, clear escape
+        // If we're inside a string (ct==5) and char is backslash, set escape pending
+        // If we're inside a string (ct==5) and char is not quote (and not escaped), stay in string
+        // If we're inside a string (ct==5) and char IS quote (and not escaped), end string
+        code.push_str(&format!("  %{}_instr = icmp eq i8 %{}_ct, 5\n", id, id));
+        code.push_str(&format!("  %{}_notqt = xor i1 %{}_qt, true\n", id, id));
+        // If escape pending, treat quote as regular char (don't end string)
+        code.push_str(&format!("  %{}_qteff = select i1 %{}_esc, i1 false, i1 %{}_qt\n", id, id, id));  // effective quote
+        code.push_str(&format!("  %{}_stay = and i1 %{}_instr, %{}_notqt\n", id, id, id));
+        code.push_str(&format!("  %{}_stayesc = or i1 %{}_stay, %{}_esc\n", id, id, id));  // stay if not quote OR if escaped
+        code.push_str(&format!("  %{}_endstr = and i1 %{}_instr, %{}_qteff\n", id, id, id));  // end only if quote and not escaped
+        code.push_str(&format!("  %{}_ty1 = select i1 %{}_stayesc, i8 5, i8 %{}_tyraw\n", id, id, id));
+        code.push_str(&format!("  %{}_ty2 = select i1 %{}_instr, i8 %{}_ty1, i8 %{}_tyraw\n", id, id, id, id));  // only apply string logic if in string
+        code.push_str(&format!("  %{}_ty = select i1 %{}_endstr, i8 0, i8 %{}_ty2\n", id, id, id));
+        // Calculate next escape state: set if in string and backslash, clear otherwise
+        code.push_str(&format!("  %{}_setesc = and i1 %{}_instr, %{}_bs\n", id, id, id));
+        code.push_str(&format!("  %{}_nescv = select i1 %{}_esc, i1 false, i1 %{}_setesc\n", id, id, id));  // clear if was set, set if backslash
+        
+        // ID continuation: if current type is ID (3) and char is alnum, stay as ID
+        code.push_str(&format!("  %{}_inid = icmp eq i8 %{}_ct, 3\n", id, id));
+        code.push_str(&format!("  %{}_idcont = and i1 %{}_inid, %{}_an\n", id, id, id));
+        code.push_str(&format!("  %{}_tyf = select i1 %{}_idcont, i8 3, i8 %{}_ty\n", id, id, id));
         
         // Check if type changed (transition)
-        code.push_str(&format!("  %{}_chg = icmp ne i8 %{}_ty, %{}_ct\n", id, id, id));
+        code.push_str(&format!("  %{}_chg = icmp ne i8 %{}_tyf, %{}_ct\n", id, id, id));
         code.push_str(&format!("  %{}_hv = icmp ne i8 %{}_ct, 0\n", id, id));  // have pending token
         code.push_str(&format!("  %{}_em = and i1 %{}_chg, %{}_hv\n", id, id, id));  // emit if changed and have token
         code.push_str(&format!("  br i1 %{}_em, label %f_e_{}, label %f_c_{}\n", id, id, id));
@@ -1512,7 +1612,7 @@ impl PureEmitter {
         code.push_str(&format!("  %{}_tc2 = phi i64 [%{}_tcw, %f_w_{}], [%{}_tc, %f_e_{}], [%{}_tc, %f_b_{}]\n", id, id, id, id, id, id, id));
         // If type changed, start new token at current pos with len=1
         // If same type, keep start and increment len
-        code.push_str(&format!("  %{}_same = icmp eq i8 %{}_ty, %{}_ct\n", id, id, id));
+        code.push_str(&format!("  %{}_same = icmp eq i8 %{}_tyf, %{}_ct\n", id, id, id));
         code.push_str(&format!("  %{}_nts2 = select i1 %{}_chg, i64 %{}_p, i64 %{}_ts\n", id, id, id, id));
         code.push_str(&format!("  %{}_tli = add i64 %{}_tl, 1\n", id, id));
         code.push_str(&format!("  %{}_ntlf = select i1 %{}_same, i64 %{}_tli, i64 1\n", id, id, id));
@@ -1521,9 +1621,10 @@ impl PureEmitter {
         // Next
         code.push_str(&format!("f_n_{}:\n", id));
         code.push_str(&format!("  %{}_ntc = phi i64 [%{}_tc2, %f_c_{}]\n", id, id, id));
-        code.push_str(&format!("  %{}_nct = phi i8 [%{}_ty, %f_c_{}]\n", id, id, id));
+        code.push_str(&format!("  %{}_nct = phi i8 [%{}_tyf, %f_c_{}]\n", id, id, id));
         code.push_str(&format!("  %{}_nts = phi i64 [%{}_nts2, %f_c_{}]\n", id, id, id));
         code.push_str(&format!("  %{}_ntl = phi i64 [%{}_ntlf, %f_c_{}]\n", id, id, id));
+        code.push_str(&format!("  %{}_nesc = phi i1 [%{}_nescv, %f_c_{}]\n", id, id, id));  // propagate escape state
         code.push_str(&format!("  %{}_np = add i64 %{}_p, 1\n", id, id));
         code.push_str(&format!("  br label %f_{}\n", id));
         
@@ -2595,9 +2696,43 @@ declare void @llvm.memcpy.p0i8.p0i8.i64(i8*, i8*, i64, i1)
 "#);
         }
         
+        // SQL Capability declarations (ODBC)
+        if usage.used_ops.contains(&Op::SqlConnect) || usage.used_ops.contains(&Op::SqlQuery) {
+            ir.push_str(r#"
+; ODBC declarations - odbc32.dll
+declare dllimport i16 @SQLAllocHandle(i16, i8*, i8**)
+declare dllimport i16 @SQLFreeHandle(i16, i8*)
+declare dllimport i16 @SQLSetEnvAttr(i8*, i32, i8*, i32)
+declare dllimport i16 @SQLDriverConnect(i8*, i8*, i8*, i16, i8*, i16, i16*, i16)
+declare dllimport i16 @SQLExecDirect(i8*, i8*, i32)
+declare dllimport i16 @SQLFetch(i8*)
+declare dllimport i16 @SQLGetData(i8*, i16, i16, i8*, i64, i64*)
+declare dllimport i16 @SQLDisconnect(i8*)
+"#);
+        }
+        
+        // JSON Capability declarations
+        if usage.used_ops.contains(&Op::JsonParse) || usage.used_ops.contains(&Op::JsonEncode) {
+            ir.push_str(r#"
+; JSON helper declarations (NELAIA runtime)
+declare void @nelaia_json_parse(i8*, i8*)
+declare i64 @nelaia_json_encode(i8*, i8*)
+declare i8* @nelaia_json_get(i8*, i8*)
+declare void @nelaia_json_set(i8*, i8*, i8*)
+; malloc for JSON buffers
+declare i8* @malloc(i64)
+"#);
+        }
+        
+        // HTTP Capability - htons for port conversion
+        if usage.used_ops.contains(&Op::HttpListen) {
+            ir.push_str("declare i16 @htons(i16)\n");
+        }
+        
         // Globals (only what's needed)
         ir.push_str("\n@.one = private global i32 1\n");
         ir.push_str("@.stdout = private global i8* null\n");
+        ir.push_str("@.bytes_read = private global i32 0\n");  // For ReadFile
         
         if usage.uses_network {
             ir.push_str("@.wsa_data = private global [512 x i8] zeroinitializer\n");
@@ -2873,8 +3008,8 @@ end:
             }
             TargetPlatform::Windows => {
                 Ok(format!(
-                    "  %{}_h = inttoptr i64 {} to i8*\n  %{}_buf = inttoptr i64 {} to i8*\n  %{}_len32 = trunc i64 {} to i32\n  %{}_read = alloca i32\n  call i32 @ReadFile(i8* %{}_h, i8* %{}_buf, i32 %{}_len32, i32* %{}_read, i8* null)\n  %{}_r = load i32, i32* %{}_read\n  %{} = zext i32 %{}_r to i64\n",
-                    id, handle, id, buf, id, len, id, id, id, id, id, id, id, id, id
+                    "  %{}_h = inttoptr i64 {} to i8*\n  %{}_buf = inttoptr i64 {} to i8*\n  %{}_len32 = trunc i64 {} to i32\n  %{}_read = alloca i32, align 4\n  store i32 0, i32* %{}_read, align 4\n  %{}_ret = call i32 @ReadFile(i8* %{}_h, i8* %{}_buf, i32 %{}_len32, i32* %{}_read, i8* null)\n  %{}_r = load i32, i32* %{}_read, align 4\n  %{} = zext i32 %{}_r to i64\n",
+                    id, handle, id, buf, id, len, id, id, id, id, id, id, id, id, id, id, id
                 ))
             }
         }
@@ -3098,9 +3233,11 @@ end:
             "  %{id}_cnt_ptr = getelementptr i64, i64* %{id}_base, i32 1\n",
             "  %{id}_cnt = load i64, i64* %{id}_cnt_ptr\n",
             "  %{id}_key = inttoptr i64 {key_ptr} to i8*\n",
+            "  br label %{id}_setup\n",
+            "{id}_setup:\n",
             "  br label %{id}_loop\n",
             "{id}_loop:\n",
-            "  %{id}_i = phi i64 [0, %entry], [%{id}_i_next, %{id}_next]\n",
+            "  %{id}_i = phi i64 [0, %{id}_setup], [%{id}_i_next, %{id}_next]\n",
             "  %{id}_done = icmp uge i64 %{id}_i, %{id}_cnt\n",
             "  br i1 %{id}_done, label %{id}_notfound, label %{id}_check\n",
             "{id}_check:\n",
@@ -3367,5 +3504,576 @@ end:
             "  %{}_cmp = icmp eq i64 {}, 0\n  %{} = select i1 %{}_cmp, i64 {}, i64 {}\n",
             id, cond, id, id, val_zero, val_nonzero
         ))
+    }
+    
+    // === CAPABILITY SYSTEM (SCN) IMPLEMENTATIONS ===
+    
+    // HTTP Capability
+    fn emit_http_listen(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        let port = if args.is_empty() { "8080".to_string() } else { self.emit_arg(&args[0])? };
+        
+        match self.target {
+            TargetPlatform::Windows => Ok(format!(r#"
+  ; HTTP.LISTEN {port} - Windows Winsock
+  %{id}_wsa = alloca [408 x i8], align 8
+  %{id}_wsa_ptr = bitcast [408 x i8]* %{id}_wsa to i8*
+  call i32 @WSAStartup(i32 514, i8* %{id}_wsa_ptr)
+  %{id}_sock = call i64 @socket(i32 2, i32 1, i32 6)
+  %{id}_addr = alloca [16 x i8], align 8
+  %{id}_addr_ptr = bitcast [16 x i8]* %{id}_addr to i8*
+  call void @llvm.memset.p0i8.i64(i8* %{id}_addr_ptr, i8 0, i64 16, i1 false)
+  %{id}_fam = getelementptr [16 x i8], [16 x i8]* %{id}_addr, i64 0, i64 0
+  store i8 2, i8* %{id}_fam
+  %{id}_port_ptr = getelementptr [16 x i8], [16 x i8]* %{id}_addr, i64 0, i64 2
+  %{id}_port_i16 = bitcast i8* %{id}_port_ptr to i16*
+  %{id}_port_val = trunc i64 {port} to i16
+  %{id}_port_be = call i16 @htons(i16 %{id}_port_val)
+  store i16 %{id}_port_be, i16* %{id}_port_i16
+  call i32 @bind(i64 %{id}_sock, i8* %{id}_addr_ptr, i32 16)
+  call i32 @listen(i64 %{id}_sock, i32 128)
+  %{id} = add i64 %{id}_sock, 0
+"#, id = id, port = port)),
+            TargetPlatform::Linux => Ok(format!(r#"
+  ; HTTP.LISTEN {port} - Linux
+  %{id}_sock = call i32 @socket(i32 2, i32 1, i32 0)
+  %{id}_addr = alloca [16 x i8], align 8
+  %{id}_addr_ptr = bitcast [16 x i8]* %{id}_addr to i8*
+  call void @llvm.memset.p0i8.i64(i8* %{id}_addr_ptr, i8 0, i64 16, i1 false)
+  %{id}_fam = getelementptr [16 x i8], [16 x i8]* %{id}_addr, i64 0, i64 0
+  store i8 2, i8* %{id}_fam
+  %{id}_port_ptr = getelementptr [16 x i8], [16 x i8]* %{id}_addr, i64 0, i64 2
+  %{id}_port_i16 = bitcast i8* %{id}_port_ptr to i16*
+  %{id}_port_val = trunc i64 {port} to i16
+  %{id}_port_be = call i16 @htons(i16 %{id}_port_val)
+  store i16 %{id}_port_be, i16* %{id}_port_i16
+  call i32 @bind(i32 %{id}_sock, i8* %{id}_addr_ptr, i32 16)
+  call i32 @listen(i32 %{id}_sock, i32 128)
+  %{id} = sext i32 %{id}_sock to i64
+"#, id = id, port = port)),
+        }
+    }
+    
+    fn emit_http_accept(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        let server = if args.is_empty() { "server".to_string() } else { self.emit_arg(&args[0])? };
+        
+        match self.target {
+            TargetPlatform::Windows => Ok(format!(
+                "  %{} = call i64 @accept(i64 {}, i8* null, i32* null)\n", id, server)),
+            TargetPlatform::Linux => Ok(format!(
+                "  %{}_i32 = call i32 @accept(i32 {}, i8* null, i32* null)\n  %{} = sext i32 %{}_i32 to i64\n", 
+                id, server, id, id)),
+        }
+    }
+    
+    fn emit_http_method(&self, id: &str, _args: &[Arg]) -> Result<String, String> {
+        // Parse HTTP method from request buffer
+        Ok(format!("  %{} = add i64 0, 0  ; HTTP.METHOD placeholder\n", id))
+    }
+    
+    fn emit_http_path(&self, id: &str, _args: &[Arg]) -> Result<String, String> {
+        Ok(format!("  %{} = add i64 0, 0  ; HTTP.PATH placeholder\n", id))
+    }
+    
+    fn emit_http_body(&self, id: &str, _args: &[Arg]) -> Result<String, String> {
+        Ok(format!("  %{} = add i64 0, 0  ; HTTP.BODY placeholder\n", id))
+    }
+    
+    fn emit_http_respond(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        if args.len() < 3 {
+            return Err("HTTP.RESPOND requires client, status, body".to_string());
+        }
+        let client = self.emit_arg(&args[0])?;
+        let _status = self.emit_arg(&args[1])?;
+        let body = self.emit_arg(&args[2])?;
+        
+        match self.target {
+            TargetPlatform::Windows => Ok(format!(r#"
+  ; HTTP.RESPOND
+  %{id}_body_ptr = inttoptr i64 {body} to i8*
+  %{id}_len = call i64 @strlen(i8* %{id}_body_ptr)
+  %{id}_len32 = trunc i64 %{id}_len to i32
+  call i32 @send(i64 {client}, i8* %{id}_body_ptr, i32 %{id}_len32, i32 0)
+  call i32 @closesocket(i64 {client})
+  %{id} = add i64 0, 0
+"#, id = id, client = client, body = body)),
+            TargetPlatform::Linux => Ok(format!(r#"
+  ; HTTP.RESPOND
+  %{id}_body_ptr = inttoptr i64 {body} to i8*
+  %{id}_len = call i64 @strlen(i8* %{id}_body_ptr)
+  %{id}_client32 = trunc i64 {client} to i32
+  call i64 @send(i32 %{id}_client32, i8* %{id}_body_ptr, i64 %{id}_len, i32 0)
+  call i32 @close(i32 %{id}_client32)
+  %{id} = add i64 0, 0
+"#, id = id, client = client, body = body)),
+        }
+    }
+    
+    fn emit_http_get(&self, id: &str, _args: &[Arg]) -> Result<String, String> {
+        Ok(format!("  %{} = add i64 0, 0  ; HTTP.GET - TODO: implement HTTP client\n", id))
+    }
+    
+    fn emit_http_post(&self, id: &str, _args: &[Arg]) -> Result<String, String> {
+        Ok(format!("  %{} = add i64 0, 0  ; HTTP.POST - TODO: implement HTTP client\n", id))
+    }
+    
+    // SQL Capability (ODBC)
+    fn emit_sql_connect(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        let conn_str = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        
+        Ok(format!(r#"
+  ; SQL.CONNECT via ODBC
+  %{id}_env = alloca i8*, align 8
+  %{id}_conn = alloca i8*, align 8
+  call i16 @SQLAllocHandle(i16 1, i8* null, i8** %{id}_env)
+  %{id}_env_ptr = load i8*, i8** %{id}_env
+  call i16 @SQLSetEnvAttr(i8* %{id}_env_ptr, i32 200, i8* inttoptr (i64 3 to i8*), i32 0)
+  call i16 @SQLAllocHandle(i16 2, i8* %{id}_env_ptr, i8** %{id}_conn)
+  %{id}_conn_ptr = load i8*, i8** %{id}_conn
+  %{id}_str_ptr = inttoptr i64 {conn_str} to i8*
+  call i16 @SQLDriverConnect(i8* %{id}_conn_ptr, i8* null, i8* %{id}_str_ptr, i16 -3, i8* null, i16 0, i16* null, i16 0)
+  %{id} = ptrtoint i8* %{id}_conn_ptr to i64
+"#, id = id, conn_str = conn_str))
+    }
+    
+    fn emit_sql_query(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        if args.len() < 2 {
+            return Err("SQL.QUERY requires connection, query".to_string());
+        }
+        let conn = self.emit_arg(&args[0])?;
+        let query = self.emit_arg(&args[1])?;
+        
+        Ok(format!(r#"
+  ; SQL.QUERY
+  %{id}_stmt = alloca i8*, align 8
+  %{id}_conn_ptr = inttoptr i64 {conn} to i8*
+  call i16 @SQLAllocHandle(i16 3, i8* %{id}_conn_ptr, i8** %{id}_stmt)
+  %{id}_stmt_ptr = load i8*, i8** %{id}_stmt
+  %{id}_query_ptr = inttoptr i64 {query} to i8*
+  call i16 @SQLExecDirect(i8* %{id}_stmt_ptr, i8* %{id}_query_ptr, i32 -3)
+  %{id} = ptrtoint i8* %{id}_stmt_ptr to i64
+"#, id = id, conn = conn, query = query))
+    }
+    
+    fn emit_sql_exec(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        self.emit_sql_query(id, args)  // Same as query for now
+    }
+    
+    fn emit_sql_next(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        let stmt = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        
+        Ok(format!(r#"
+  ; SQL.NEXT
+  %{id}_stmt_ptr = inttoptr i64 {stmt} to i8*
+  %{id}_ret = call i16 @SQLFetch(i8* %{id}_stmt_ptr)
+  %{id}_ok = icmp eq i16 %{id}_ret, 0
+  %{id} = zext i1 %{id}_ok to i64
+"#, id = id, stmt = stmt))
+    }
+    
+    fn emit_sql_get(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        if args.len() < 2 {
+            return Err("SQL.GET requires stmt, column".to_string());
+        }
+        let stmt = self.emit_arg(&args[0])?;
+        let col = self.emit_arg(&args[1])?;
+        
+        Ok(format!(r#"
+  ; SQL.GET
+  %{id}_buf = alloca [256 x i8], align 8
+  %{id}_buf_ptr = bitcast [256 x i8]* %{id}_buf to i8*
+  %{id}_len = alloca i64, align 8
+  %{id}_stmt_ptr = inttoptr i64 {stmt} to i8*
+  %{id}_col16 = trunc i64 {col} to i16
+  call i16 @SQLGetData(i8* %{id}_stmt_ptr, i16 %{id}_col16, i16 1, i8* %{id}_buf_ptr, i64 256, i64* %{id}_len)
+  %{id} = ptrtoint i8* %{id}_buf_ptr to i64
+"#, id = id, stmt = stmt, col = col))
+    }
+    
+    fn emit_sql_close(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        let conn = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        
+        Ok(format!(r#"
+  ; SQL.CLOSE
+  %{id}_conn_ptr = inttoptr i64 {conn} to i8*
+  call i16 @SQLDisconnect(i8* %{id}_conn_ptr)
+  call i16 @SQLFreeHandle(i16 2, i8* %{id}_conn_ptr)
+  %{id} = add i64 0, 0
+"#, id = id, conn = conn))
+    }
+    
+    // JSON Capability
+    fn emit_json_parse(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        let input = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        
+        Ok(format!(r#"
+  ; JSON.PARSE
+  %{id}_obj = call i8* @malloc(i64 4096)
+  %{id}_input_ptr = inttoptr i64 {input} to i8*
+  call void @nelaia_json_parse(i8* %{id}_input_ptr, i8* %{id}_obj)
+  %{id} = ptrtoint i8* %{id}_obj to i64
+"#, id = id, input = input))
+    }
+    
+    fn emit_json_encode(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        let obj = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        
+        Ok(format!(r#"
+  ; JSON.ENCODE
+  %{id}_out = call i8* @malloc(i64 4096)
+  %{id}_obj_ptr = inttoptr i64 {obj} to i8*
+  call i64 @nelaia_json_encode(i8* %{id}_obj_ptr, i8* %{id}_out)
+  %{id} = ptrtoint i8* %{id}_out to i64
+"#, id = id, obj = obj))
+    }
+    
+    fn emit_json_get(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        if args.len() < 2 {
+            return Err("JSON.GET requires object, key".to_string());
+        }
+        let obj = self.emit_arg(&args[0])?;
+        let key = self.emit_arg(&args[1])?;
+        
+        Ok(format!(r#"
+  ; JSON.GET
+  %{id}_obj_ptr = inttoptr i64 {obj} to i8*
+  %{id}_key_ptr = inttoptr i64 {key} to i8*
+  %{id}_val = call i8* @nelaia_json_get(i8* %{id}_obj_ptr, i8* %{id}_key_ptr)
+  %{id} = ptrtoint i8* %{id}_val to i64
+"#, id = id, obj = obj, key = key))
+    }
+    
+    fn emit_json_set(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        if args.len() < 3 {
+            return Err("JSON.SET requires object, key, value".to_string());
+        }
+        let obj = self.emit_arg(&args[0])?;
+        let key = self.emit_arg(&args[1])?;
+        let val = self.emit_arg(&args[2])?;
+        
+        Ok(format!(r#"
+  ; JSON.SET
+  %{id}_obj_ptr = inttoptr i64 {obj} to i8*
+  %{id}_key_ptr = inttoptr i64 {key} to i8*
+  %{id}_val_ptr = inttoptr i64 {val} to i8*
+  call void @nelaia_json_set(i8* %{id}_obj_ptr, i8* %{id}_key_ptr, i8* %{id}_val_ptr)
+  %{id} = add i64 {obj}, 0
+"#, id = id, obj = obj, key = key, val = val))
+    }
+    
+    // === PHASE 8: CONTRACTS & NEGOTIATION (IA-first) ===
+    
+    fn emit_contract(&self, id: &str, _args: &[Arg]) -> Result<String, String> {
+        // CONTRACT creates a resource contract structure
+        // At compile-time, this validates guarantees and limits
+        // At runtime, it sets up monitoring
+        // Uses VirtualAlloc on Windows for memory allocation
+        Ok(format!(r#"
+  ; CONTRACT - Resource contract (IA-first: guarantees, not permissions)
+  %{id}_contract = call i8* @VirtualAlloc(i8* null, i64 256, i32 12288, i32 4)
+  %{id} = ptrtoint i8* %{id}_contract to i64
+"#, id = id))
+    }
+    
+    fn emit_guarantee(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        // GUARANTEE declares what resources are guaranteed available
+        let cap = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        Ok(format!(r#"
+  ; GUARANTEE - Resource availability guarantee
+  %{id}_cap = add i64 {cap}, 0
+  %{id} = add i64 1, 0  ; Guarantee registered
+"#, id = id, cap = cap))
+    }
+    
+    fn emit_limit(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        // LIMIT sets resource consumption limits
+        let resource = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        let value = if args.len() < 2 { "0".to_string() } else { self.emit_arg(&args[1])? };
+        Ok(format!(r#"
+  ; LIMIT - Resource limit
+  %{id}_res = add i64 {resource}, 0
+  %{id}_val = add i64 {value}, 0
+  %{id} = add i64 1, 0  ; Limit set
+"#, id = id, resource = resource, value = value))
+    }
+    
+    fn emit_sandbox(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        // SANDBOX executes code under a contract
+        let code = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        let contract = if args.len() < 2 { "0".to_string() } else { self.emit_arg(&args[1])? };
+        Ok(format!(r#"
+  ; SANDBOX - Execute under contract (IA-first: verified execution)
+  %{id}_code = add i64 {code}, 0
+  %{id}_contract = add i64 {contract}, 0
+  ; Runtime would verify contract constraints here
+  %{id} = add i64 1, 0  ; Sandbox execution result
+"#, id = id, code = code, contract = contract))
+    }
+    
+    fn emit_provides(&self, id: &str, _args: &[Arg]) -> Result<String, String> {
+        // PROVIDES declares capabilities offered for negotiation
+        Ok(format!(r#"
+  ; PROVIDES - Capability offer for negotiation
+  %{id}_offer = call i8* @VirtualAlloc(i8* null, i64 512, i32 12288, i32 4)
+  %{id} = ptrtoint i8* %{id}_offer to i64
+"#, id = id))
+    }
+    
+    fn emit_negotiate(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        // NEGOTIATE attempts to match offer with need
+        let offer = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        let need = if args.len() < 2 { "0".to_string() } else { self.emit_arg(&args[1])? };
+        Ok(format!(r#"
+  ; NEGOTIATE - Match capabilities (IA-first: automatic negotiation)
+  %{id}_offer = add i64 {offer}, 0
+  %{id}_need = add i64 {need}, 0
+  ; Negotiation logic would compare capabilities and constraints
+  %{id}_result = call i8* @VirtualAlloc(i8* null, i64 256, i32 12288, i32 4)
+  %{id} = ptrtoint i8* %{id}_result to i64
+"#, id = id, offer = offer, need = need))
+    }
+    
+    fn emit_bind(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        // BIND creates a binding between offer and need
+        let offer_cap = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        let need_cap = if args.len() < 2 { "0".to_string() } else { self.emit_arg(&args[1])? };
+        Ok(format!(r#"
+  ; BIND - Create capability binding
+  %{id}_offer = add i64 {offer_cap}, 0
+  %{id}_need = add i64 {need_cap}, 0
+  %{id} = add i64 1, 0  ; Binding created
+"#, id = id, offer_cap = offer_cap, need_cap = need_cap))
+    }
+    
+    fn emit_defcap(&self, id: &str, _args: &[Arg]) -> Result<String, String> {
+        // DEFINE_CAPABILITY creates a custom capability
+        Ok(format!(r#"
+  ; DEFINE_CAPABILITY - Custom capability as graph pattern
+  %{id}_cap = call i8* @VirtualAlloc(i8* null, i64 1024, i32 12288, i32 4)
+  %{id} = ptrtoint i8* %{id}_cap to i64
+"#, id = id))
+    }
+    
+    fn emit_extendcap(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        // EXTEND_CAPABILITY extends an existing capability
+        let base = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        Ok(format!(r#"
+  ; EXTEND_CAPABILITY - Extend base capability
+  %{id}_base = add i64 {base}, 0
+  %{id}_ext = call i8* @VirtualAlloc(i8* null, i64 1024, i32 12288, i32 4)
+  %{id} = ptrtoint i8* %{id}_ext to i64
+"#, id = id, base = base))
+    }
+    
+    fn emit_composecap(&self, id: &str, _args: &[Arg]) -> Result<String, String> {
+        // COMPOSE_CAPABILITIES combines multiple capabilities
+        Ok(format!(r#"
+  ; COMPOSE_CAPABILITIES - Combine capabilities
+  %{id}_composed = call i8* @VirtualAlloc(i8* null, i64 2048, i32 12288, i32 4)
+  %{id} = ptrtoint i8* %{id}_composed to i64
+"#, id = id))
+    }
+    
+    // === PHASE 10: TESTING (IA-first: property-based) ===
+    
+    fn emit_property(&self, id: &str, _args: &[Arg]) -> Result<String, String> {
+        // PROPERTY defines a testable property
+        Ok(format!(r#"
+  ; PROPERTY - Define testable property (IA-first: properties, not cases)
+  %{id}_prop = call i8* @VirtualAlloc(i8* null, i64 512, i32 12288, i32 4)
+  %{id} = ptrtoint i8* %{id}_prop to i64
+"#, id = id))
+    }
+    
+    fn emit_gentests(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        // GENERATE_TESTS creates test cases from property
+        let prop = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        let count = if args.len() < 2 { "100".to_string() } else { self.emit_arg(&args[1])? };
+        Ok(format!(r#"
+  ; GENERATE_TESTS - Generate test cases from property
+  %{id}_prop = add i64 {prop}, 0
+  %{id}_count = add i64 {count}, 0
+  %{id}_tests = call i8* @VirtualAlloc(i8* null, i64 4096, i32 12288, i32 4)
+  ; Test generation would create {count} random test cases
+  %{id} = ptrtoint i8* %{id}_tests to i64
+"#, id = id, prop = prop, count = count))
+    }
+    
+    fn emit_verify(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        // VERIFY checks if a property holds
+        let prop = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        Ok(format!(r#"
+  ; VERIFY - Check property (IA-first: automatic verification)
+  %{id}_prop = add i64 {prop}, 0
+  ; Verification would test property against generated cases
+  %{id} = add i64 1, 0  ; 1 = verified, 0 = failed
+"#, id = id, prop = prop))
+    }
+    
+    // === PHASE 9.2: INCREMENTAL COMPILATION (IA-first: Content-Addressable Cache) ===
+    
+    fn emit_hash(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        // HASH computes deterministic hash of a node/value
+        let input = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        Ok(format!(r#"
+  ; HASH - Compute deterministic hash (IA-first: Content-Addressable)
+  %{id}_input = add i64 {input}, 0
+  ; Hash computation: FNV-1a style
+  %{id}_h1 = mul i64 %{id}_input, 1099511628211
+  %{id}_h2 = xor i64 %{id}_h1, 14695981039346656037
+  %{id} = and i64 %{id}_h2, 9223372036854775807
+"#, id = id, input = input))
+    }
+    
+    fn emit_cache_get(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        // CACHE_GET retrieves cached IR by hash
+        let hash = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        Ok(format!(r#"
+  ; CACHE_GET - Retrieve from Content-Addressable Store
+  %{id}_hash = add i64 {hash}, 0
+  ; Cache lookup would check if hash exists in store
+  ; Returns pointer to cached IR or null
+  %{id} = add i64 0, 0  ; null = cache miss
+"#, id = id, hash = hash))
+    }
+    
+    fn emit_cache_put(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        // CACHE_PUT stores IR in cache indexed by hash
+        let hash = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        let ir = if args.len() < 2 { "0".to_string() } else { self.emit_arg(&args[1])? };
+        
+        // Check if ir is a getelementptr (string reference)
+        let ir_val = if ir.contains("getelementptr") {
+            format!("ptrtoint i8* {} to i64", ir)
+        } else {
+            ir.clone()
+        };
+        
+        Ok(format!(r#"
+  ; CACHE_PUT - Store in Content-Addressable Store
+  %{id}_hash = add i64 {hash}, 0
+  %{id}_ir = {ir_val}
+  ; Cache store would save IR indexed by hash
+  %{id} = add i64 1, 0  ; 1 = stored successfully
+"#, id = id, hash = hash, ir_val = ir_val))
+    }
+    
+    fn emit_cache_verify(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        // CACHE_VERIFY checks integrity of cached entry
+        let hash = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        Ok(format!(r#"
+  ; CACHE_VERIFY - Verify cache entry integrity (IA-first: cryptographic)
+  %{id}_hash = add i64 {hash}, 0
+  ; Verification would check signature/checksum
+  %{id} = add i64 1, 0  ; 1 = valid, 0 = corrupted
+"#, id = id, hash = hash))
+    }
+    
+    fn emit_cache_invalidate(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        // CACHE_INVALIDATE removes entry and dependents
+        let hash = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        Ok(format!(r#"
+  ; CACHE_INVALIDATE - Remove from cache with cascade
+  %{id}_hash = add i64 {hash}, 0
+  ; Invalidation would remove entry and all dependents
+  %{id} = add i64 1, 0  ; 1 = invalidated
+"#, id = id, hash = hash))
+    }
+    
+    // === PHASE 11: SEN - Sistema de Ecosistema NELAIA (IA-first) ===
+    
+    fn emit_discover(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        // DISCOVER searches for capabilities matching a description (GPT's dynamic discovery)
+        let query = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        Ok(format!(r#"
+  ; DISCOVER - Search capabilities by description (IA-first: GPT's dynamic discovery)
+  ; Query: {query}
+  ; Returns pointer to list of matching capability names
+  %{id}_results = call i8* @VirtualAlloc(i8* null, i64 1024, i32 12288, i32 4)
+  %{id} = ptrtoint i8* %{id}_results to i64
+"#, id = id, query = query))
+    }
+    
+    fn emit_cap_info(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        // CAPABILITY_INFO returns metadata about a capability (Claude's contracts)
+        let cap_name = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        Ok(format!(r#"
+  ; CAPABILITY_INFO - Get capability metadata (IA-first: Claude's constitutional contracts)
+  ; Capability: {cap_name}
+  ; Returns pointer to metadata struct {{ name, version, guarantees, cost }}
+  %{id}_info = call i8* @VirtualAlloc(i8* null, i64 512, i32 12288, i32 4)
+  %{id} = ptrtoint i8* %{id}_info to i64
+"#, id = id, cap_name = cap_name))
+    }
+    
+    fn emit_cap_cost(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        // CAPABILITY_COST returns cost information (Mistral's efficiency)
+        let cap_name = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        Ok(format!(r#"
+  ; CAPABILITY_COST - Get capability cost (IA-first: Mistral's efficiency proposal)
+  ; Capability: {cap_name}
+  ; Returns pointer to cost struct {{ memory_bytes, time_ms, tokens }}
+  %{id}_cost = call i8* @VirtualAlloc(i8* null, i64 64, i32 12288, i32 4)
+  %{id} = ptrtoint i8* %{id}_cost to i64
+"#, id = id, cap_name = cap_name))
+    }
+    
+    fn emit_cap_publish(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        // PUBLISH registers a capability in the ecosystem (Llama's open ecosystem)
+        let cap = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        Ok(format!(r#"
+  ; PUBLISH - Register capability in ecosystem (IA-first: Llama's open ecosystem)
+  ; Capability: {cap}
+  %{id}_cap = add i64 {cap}, 0
+  ; Would register in federated registry (Gemini's proposal)
+  %{id} = add i64 1, 0  ; 1 = published successfully
+"#, id = id, cap = cap))
+    }
+    
+    fn emit_cap_available(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        // CAPABILITY_AVAILABLE checks regional availability (Qwen's regionalization)
+        let cap_name = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        let region = if args.len() < 2 { "0".to_string() } else { self.emit_arg(&args[1])? };
+        
+        // Handle getelementptr for string arguments
+        let cap_val = if cap_name.contains("getelementptr") {
+            format!("ptrtoint i8* {} to i64", cap_name)
+        } else {
+            format!("add i64 {}, 0", cap_name)
+        };
+        let region_val = if region.contains("getelementptr") {
+            format!("ptrtoint i8* {} to i64", region)
+        } else {
+            format!("add i64 {}, 0", region)
+        };
+        
+        Ok(format!(r#"
+  ; CAPABILITY_AVAILABLE - Check regional availability (IA-first: Qwen's regionalization)
+  %{id}_cap = {cap_val}
+  %{id}_region = {region_val}
+  ; Would check federated registry for regional restrictions
+  %{id} = add i64 1, 0  ; 1 = available, 0 = not available
+"#, id = id, cap_val = cap_val, region_val = region_val))
+    }
+    
+    fn emit_cap_version(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        // CAPABILITY_VERSION returns version string
+        let cap_name = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        Ok(format!(r#"
+  ; CAPABILITY_VERSION - Get capability version
+  ; Capability: {cap_name}
+  %{id}_ver = call i8* @VirtualAlloc(i8* null, i64 32, i32 12288, i32 4)
+  %{id} = ptrtoint i8* %{id}_ver to i64
+"#, id = id, cap_name = cap_name))
+    }
+    
+    fn emit_cap_deps(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        // CAPABILITY_DEPS returns list of dependencies
+        let cap_name = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        Ok(format!(r#"
+  ; CAPABILITY_DEPS - Get capability dependencies
+  ; Capability: {cap_name}
+  %{id}_deps = call i8* @VirtualAlloc(i8* null, i64 256, i32 12288, i32 4)
+  %{id} = ptrtoint i8* %{id}_deps to i64
+"#, id = id, cap_name = cap_name))
     }
 }

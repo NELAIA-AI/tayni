@@ -1,0 +1,21 @@
+-- NELAIA Test: Incremental Compilation Cache (IA-first)
+-- Tests Content-Addressable Store operations
+
+-- Compute hash of a value
+.val: 42
+.hash: HASH .val
+
+-- Try to get from cache (will miss)
+.cached: CACHE_GET .hash
+
+-- Store in cache
+.ir: "compiled_ir_here"
+.stored: CACHE_PUT .hash .ir
+
+-- Verify cache integrity
+.valid: CACHE_VERIFY .hash
+
+-- Print result
+.msg: "Cache test: OK\n"
+.len: 15
+.out: PRT .msg .len

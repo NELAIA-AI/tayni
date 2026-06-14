@@ -1,0 +1,3 @@
+.a: 5
+.b: ADD .a 3
+.result: ADD .b 0

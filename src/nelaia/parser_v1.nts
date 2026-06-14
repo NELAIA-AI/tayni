@@ -1,0 +1,107 @@
+-- NELAIA Parser v1.0
+-- Parses .nts files and outputs token stream
+-- Part of self-hosting bootstrap
+
+.zero: 0
+.one: 1
+.bufsize: 4096
+
+-- Character codes
+.dot: 46
+.colon: 58
+.space: 32
+.newline: 10
+.quote: 34
+.dash: 45
+.tab: 9
+
+-- Token types
+.tok_dot: 1
+.tok_id: 2
+.tok_num: 3
+.tok_str: 4
+.tok_op: 5
+.tok_colon: 6
+.tok_newline: 7
+.tok_comment: 8
+
+-- Read source file
+.path: "input.nts"
+.handle: FOP .path .zero
+.srcbuf: ALC .bufsize
+.srclen: FRD .handle .srcbuf .bufsize
+.closed: FCL .handle
+
+-- Tokenize using FSM
+.tokens: FSM .srcbuf .srclen
+
+-- Output buffer for parsed representation
+.outbuf: ALC 2048
+.outpos: 0
+
+-- Token count (FSM returns this in first 4 bytes)
+.tcount: GET .tokens 0
+
+-- Process each token
+-- Token structure: [type:4][start:4][len:4] = 12 bytes per token
+-- Tokens start at offset 4 (after count)
+
+-- Token 0
+.t0_off: 4
+.t0_type: GET .tokens .t0_off
+.t0_start_off: ADD .t0_off 4
+.t0_start: GET .tokens .t0_start_off
+.t0_len_off: ADD .t0_off 8
+.t0_len: GET .tokens .t0_len_off
+
+-- Token 1
+.t1_off: 16
+.t1_type: GET .tokens .t1_off
+.t1_start_off: ADD .t1_off 4
+.t1_start: GET .tokens .t1_start_off
+.t1_len_off: ADD .t1_off 8
+.t1_len: GET .tokens .t1_len_off
+
+-- Token 2
+.t2_off: 28
+.t2_type: GET .tokens .t2_off
+.t2_start_off: ADD .t2_off 4
+.t2_start: GET .tokens .t2_start_off
+.t2_len_off: ADD .t2_off 8
+.t2_len: GET .tokens .t2_len_off
+
+-- Token 3
+.t3_off: 40
+.t3_type: GET .tokens .t3_off
+.t3_start_off: ADD .t3_off 4
+.t3_start: GET .tokens .t3_start_off
+.t3_len_off: ADD .t3_off 8
+.t3_len: GET .tokens .t3_len_off
+
+-- Token 4
+.t4_off: 52
+.t4_type: GET .tokens .t4_off
+.t4_start_off: ADD .t4_off 4
+.t4_start: GET .tokens .t4_start_off
+.t4_len_off: ADD .t4_off 8
+.t4_len: GET .tokens .t4_len_off
+
+-- Output format: "T[type] @[start] L[len]: [content]\n"
+-- Build output for token 0
+.o0: PUT .outbuf 0 84
+.o1: PUT .outbuf 1 .t0_type
+.o2: PUT .outbuf 2 32
+.o3: PUT .outbuf 3 64
+.o4: PUT .outbuf 4 .t0_start
+.o5: PUT .outbuf 5 32
+.o6: PUT .outbuf 6 76
+.o7: PUT .outbuf 7 .t0_len
+.o8: PUT .outbuf 8 10
+
+-- Copy token content from source
+.c0: CHR .srcbuf .t0_start
+.o9: PUT .outbuf 9 .c0
+
+-- Output first 10 bytes as debug
+.out: PRT .outbuf 10
+.done: ADD .out .zero

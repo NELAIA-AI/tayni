@@ -1,0 +1,9 @@
+.path: "input.nts"
+.zero: 0
+.handle: FOP .path .zero
+.srcbuf: ALC 64
+.slen: FRD .handle .srcbuf 64
+.closed: FCL .handle
+
+-- Print first 13 bytes of buffer directly
+.p: PRT .srcbuf 13

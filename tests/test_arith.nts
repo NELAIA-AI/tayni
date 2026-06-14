@@ -1,0 +1,9 @@
+.a: 5
+.b: 3
+.sum: ADD .a .b
+.size: 16
+.buf: ALC .size
+.digit: ADD .sum 48
+.w0: PUT .buf 0 .digit
+.w1: PUT .buf 1 10
+.out: PRT .buf 2

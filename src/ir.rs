@@ -1,7 +1,334 @@
-//! NELAIA v0.4 Intermediate Representation
-//! Data Flow Graph representation
+//! NELAIA v0.7 Intermediate Representation
+//! Data Flow Graph representation with Capability System
+//! Includes: Contracts, Guarantees, Negotiation (IA-first design)
 
 use std::collections::{HashMap, HashSet};
+
+/// Capability requirement for the program
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum Capability {
+    // Core capabilities
+    Math,       // ADD, SUB, MUL, DIV, MOD
+    Memory,     // ALC, FRE, CPY, etc.
+    IO,         // PRT, INP, file operations
+    
+    // Network capabilities
+    HttpServer,
+    HttpClient,
+    TcpRaw,
+    
+    // Data capabilities
+    Json,
+    Xml,
+    
+    // Database capabilities
+    Sql,
+    SqlReadOnly,
+    
+    // System capabilities
+    FileSystem,
+    FileSystemReadOnly,
+    Threading,
+    Gui,
+    
+    // Custom capability
+    Custom(String),
+}
+
+/// Resource guarantee (IA-first: not permissions, but guarantees)
+#[derive(Debug, Clone, PartialEq)]
+pub enum Guarantee {
+    Available,              // Resource is available
+    Latency(u64),          // Max latency in ms
+    Bandwidth(u64),        // Bandwidth in bytes/sec
+    Uptime(f64),           // Uptime ratio (0.0-1.0)
+    Deterministic,         // Same input = same output
+    NoPersistence,         // Won't persist data
+    NoExfiltration,        // Won't send data externally
+}
+
+/// Resource limit
+#[derive(Debug, Clone, PartialEq)]
+pub struct ResourceLimit {
+    pub memory_bytes: Option<u64>,
+    pub time_ms: Option<u64>,
+    pub connections: Option<u32>,
+    pub cpu_percent: Option<u8>,
+}
+
+impl Default for ResourceLimit {
+    fn default() -> Self {
+        Self {
+            memory_bytes: None,
+            time_ms: None,
+            connections: None,
+            cpu_percent: None,
+        }
+    }
+}
+
+/// Contract for resource usage (IA-first: replaces permissions)
+#[derive(Debug, Clone, Default)]
+pub struct Contract {
+    pub guarantees: HashMap<Capability, Vec<Guarantee>>,
+    pub limits: ResourceLimit,
+    pub trust_level: TrustLevel,
+}
+
+/// Trust level for code execution
+#[derive(Debug, Clone, PartialEq, Default)]
+pub enum TrustLevel {
+    Full,       // Own code: full access
+    #[default]
+    Standard,   // Verified code: standard capabilities
+    Minimal,    // Untrusted code: sandboxed
+}
+
+/// Capability offer (for negotiation)
+#[derive(Debug, Clone, Default)]
+pub struct CapabilityOffer {
+    pub capabilities: HashSet<Capability>,
+    pub guarantees: HashMap<Capability, Vec<Guarantee>>,
+    pub cost_per_use: f64,
+}
+
+/// Capability requirement (for negotiation)
+#[derive(Debug, Clone, Default)]
+pub struct CapabilityNeed {
+    pub capabilities: HashSet<Capability>,
+    pub constraints: HashMap<Capability, Vec<Guarantee>>,
+    pub max_budget: f64,
+}
+
+/// Custom capability definition
+#[derive(Debug, Clone)]
+pub struct CustomCapability {
+    pub name: String,
+    pub inputs: Vec<(String, String)>,  // (name, type)
+    pub pattern: Vec<Node>,             // Implementation pattern
+    pub provides: HashSet<String>,      // What it provides
+    pub requires: HashSet<Capability>,  // What it needs
+}
+
+/// Test property (IA-first: property-based testing)
+#[derive(Debug, Clone)]
+pub struct TestProperty {
+    pub name: String,
+    pub variables: Vec<String>,
+    pub assertion: Box<Node>,
+}
+
+/// Capability requirements block
+#[derive(Debug, Clone, Default)]
+pub struct Requirements {
+    pub capabilities: HashSet<Capability>,
+    pub contract: Contract,
+    pub offers: Vec<CapabilityOffer>,
+    pub needs: Vec<CapabilityNeed>,
+    pub custom_capabilities: HashMap<String, CustomCapability>,
+    pub test_properties: Vec<TestProperty>,
+}
+
+/// Cache entry for incremental compilation (IA-first: Content-Addressable)
+#[derive(Debug, Clone)]
+pub struct CacheEntry {
+    pub hash: u64,
+    pub ir: String,
+    pub dependencies: Vec<u64>,
+    pub signature: Option<Vec<u8>>,  // Optional cryptographic signature
+}
+
+/// Incremental compilation cache (IA-first: Content-Addressable Store)
+#[derive(Debug, Default)]
+pub struct CompilationCache {
+    pub entries: HashMap<u64, CacheEntry>,
+    pub hits: u64,
+    pub misses: u64,
+}
+
+/// Capability cost information (IA-first: Mistral's efficiency proposal)
+#[derive(Debug, Clone, Default)]
+pub struct CapabilityCost {
+    pub memory_bytes: u64,
+    pub time_ms: u64,
+    pub tokens: u64,
+}
+
+/// Capability metadata for SEN registry (IA-first: ecosystem)
+#[derive(Debug, Clone)]
+pub struct CapabilityMetadata {
+    pub name: String,
+    pub version: String,
+    pub description: String,
+    pub guarantees: Vec<String>,      // Claude's constitutional contracts
+    pub cost: CapabilityCost,         // Mistral's efficiency
+    pub dependencies: Vec<String>,
+    pub regions: Vec<String>,         // Qwen's regionalization (empty = global)
+    pub keywords: Vec<String>,        // For DISCOVER search
+}
+
+/// SEN Registry - Sistema de Ecosistema NELAIA (IA-first: federated)
+#[derive(Debug, Default)]
+pub struct EcosystemRegistry {
+    pub capabilities: HashMap<String, CapabilityMetadata>,
+    pub local_node_id: String,
+}
+
+impl EcosystemRegistry {
+    pub fn new() -> Self {
+        let mut registry = Self {
+            capabilities: HashMap::new(),
+            local_node_id: "local".to_string(),
+        };
+        // Register built-in capabilities
+        registry.register_builtins();
+        registry
+    }
+    
+    fn register_builtins(&mut self) {
+        // HTTP capability
+        self.capabilities.insert("http".to_string(), CapabilityMetadata {
+            name: "http".to_string(),
+            version: "1.0.0".to_string(),
+            description: "HTTP server and client operations".to_string(),
+            guarantees: vec!["network_access".to_string()],
+            cost: CapabilityCost { memory_bytes: 1024 * 1024, time_ms: 100, tokens: 0 },
+            dependencies: vec![],
+            regions: vec![],  // Global
+            keywords: vec!["http".to_string(), "web".to_string(), "rest".to_string(), "api".to_string()],
+        });
+        
+        // SQL capability
+        self.capabilities.insert("sql".to_string(), CapabilityMetadata {
+            name: "sql".to_string(),
+            version: "1.0.0".to_string(),
+            description: "SQL database operations via ODBC".to_string(),
+            guarantees: vec!["database_access".to_string()],
+            cost: CapabilityCost { memory_bytes: 2 * 1024 * 1024, time_ms: 50, tokens: 0 },
+            dependencies: vec![],
+            regions: vec![],
+            keywords: vec!["sql".to_string(), "database".to_string(), "db".to_string(), "query".to_string()],
+        });
+        
+        // JSON capability
+        self.capabilities.insert("json".to_string(), CapabilityMetadata {
+            name: "json".to_string(),
+            version: "1.0.0".to_string(),
+            description: "JSON parsing and encoding".to_string(),
+            guarantees: vec!["deterministic".to_string(), "no_side_effects".to_string()],
+            cost: CapabilityCost { memory_bytes: 512 * 1024, time_ms: 10, tokens: 0 },
+            dependencies: vec![],
+            regions: vec![],
+            keywords: vec!["json".to_string(), "parse".to_string(), "encode".to_string(), "data".to_string()],
+        });
+        
+        // Threading capability
+        self.capabilities.insert("threading".to_string(), CapabilityMetadata {
+            name: "threading".to_string(),
+            version: "1.0.0".to_string(),
+            description: "Multi-threading and synchronization".to_string(),
+            guarantees: vec!["concurrent_execution".to_string()],
+            cost: CapabilityCost { memory_bytes: 64 * 1024, time_ms: 1, tokens: 0 },
+            dependencies: vec![],
+            regions: vec![],
+            keywords: vec!["thread".to_string(), "parallel".to_string(), "concurrent".to_string(), "async".to_string()],
+        });
+        
+        // GUI capability
+        self.capabilities.insert("gui".to_string(), CapabilityMetadata {
+            name: "gui".to_string(),
+            version: "1.0.0".to_string(),
+            description: "Graphical user interface".to_string(),
+            guarantees: vec!["user_interaction".to_string()],
+            cost: CapabilityCost { memory_bytes: 10 * 1024 * 1024, time_ms: 16, tokens: 0 },
+            dependencies: vec![],
+            regions: vec![],
+            keywords: vec!["gui".to_string(), "window".to_string(), "ui".to_string(), "interface".to_string(), "button".to_string()],
+        });
+    }
+    
+    /// DISCOVER - Find capabilities matching description (GPT's dynamic discovery)
+    pub fn discover(&self, query: &str) -> Vec<&CapabilityMetadata> {
+        let query_lower = query.to_lowercase();
+        let query_words: Vec<&str> = query_lower.split_whitespace().collect();
+        
+        let mut results: Vec<(&CapabilityMetadata, usize)> = self.capabilities.values()
+            .map(|cap| {
+                let mut score = 0;
+                for word in &query_words {
+                    if cap.name.to_lowercase().contains(word) { score += 10; }
+                    if cap.description.to_lowercase().contains(word) { score += 5; }
+                    for kw in &cap.keywords {
+                        if kw.to_lowercase().contains(word) { score += 3; }
+                    }
+                }
+                (cap, score)
+            })
+            .filter(|(_, score)| *score > 0)
+            .collect();
+        
+        results.sort_by(|a, b| b.1.cmp(&a.1));  // Sort by score descending
+        results.into_iter().map(|(cap, _)| cap).collect()
+    }
+    
+    /// PUBLISH - Register a new capability (Llama's open ecosystem)
+    pub fn publish(&mut self, metadata: CapabilityMetadata) {
+        self.capabilities.insert(metadata.name.clone(), metadata);
+    }
+    
+    /// Check if capability is available in region (Qwen's regionalization)
+    pub fn is_available(&self, name: &str, region: &str) -> bool {
+        if let Some(cap) = self.capabilities.get(name) {
+            cap.regions.is_empty() || cap.regions.contains(&region.to_string())
+        } else {
+            false
+        }
+    }
+}
+
+impl CompilationCache {
+    pub fn new() -> Self {
+        Self::default()
+    }
+    
+    pub fn get(&mut self, hash: u64) -> Option<&CacheEntry> {
+        if self.entries.contains_key(&hash) {
+            self.hits += 1;
+            self.entries.get(&hash)
+        } else {
+            self.misses += 1;
+            None
+        }
+    }
+    
+    pub fn put(&mut self, hash: u64, ir: String, dependencies: Vec<u64>) {
+        self.entries.insert(hash, CacheEntry {
+            hash,
+            ir,
+            dependencies,
+            signature: None,
+        });
+    }
+    
+    pub fn invalidate(&mut self, hash: u64) {
+        // Remove entry and all entries that depend on it
+        if self.entries.remove(&hash).is_some() {
+            let dependents: Vec<u64> = self.entries.iter()
+                .filter(|(_, e)| e.dependencies.contains(&hash))
+                .map(|(h, _)| *h)
+                .collect();
+            for dep in dependents {
+                self.invalidate(dep);
+            }
+        }
+    }
+    
+    pub fn stats(&self) -> (u64, u64, f64) {
+        let total = self.hits + self.misses;
+        let ratio = if total > 0 { self.hits as f64 / total as f64 } else { 0.0 };
+        (self.hits, self.misses, ratio)
+    }
+}
 
 /// A node in the data flow graph
 #[derive(Debug, Clone)]
@@ -26,6 +353,87 @@ pub enum Node {
     
     /// Function definition: .id: FUN .param { body } !FUN
     Function { id: String, params: Vec<String>, body: Vec<Node> },
+    
+    /// Capability requirement declaration
+    Requires { id: String, capabilities: Vec<Capability> },
+    
+    /// High-level capability operation (resolved by compiler)
+    CapabilityOp { id: String, capability: Capability, operation: String, args: Vec<Arg> },
+}
+
+impl Node {
+    /// Compute deterministic hash for incremental compilation (IA-first)
+    pub fn compute_hash(&self) -> u64 {
+        use std::collections::hash_map::DefaultHasher;
+        use std::hash::{Hash, Hasher};
+        
+        let mut hasher = DefaultHasher::new();
+        
+        match self {
+            Node::Literal { id, value } => {
+                "Literal".hash(&mut hasher);
+                id.hash(&mut hasher);
+                format!("{:?}", value).hash(&mut hasher);
+            }
+            Node::Reference { id, target } => {
+                "Reference".hash(&mut hasher);
+                id.hash(&mut hasher);
+                target.hash(&mut hasher);
+            }
+            Node::Operation { id, op, args } => {
+                "Operation".hash(&mut hasher);
+                id.hash(&mut hasher);
+                format!("{:?}", op).hash(&mut hasher);
+                for arg in args {
+                    format!("{:?}", arg).hash(&mut hasher);
+                }
+            }
+            Node::SubGraph { id, inputs, outputs, nodes } => {
+                "SubGraph".hash(&mut hasher);
+                id.hash(&mut hasher);
+                inputs.hash(&mut hasher);
+                outputs.hash(&mut hasher);
+                for node in nodes {
+                    node.compute_hash().hash(&mut hasher);
+                }
+            }
+            Node::Flow { source, dest } => {
+                "Flow".hash(&mut hasher);
+                format!("{:?}", source).hash(&mut hasher);
+                format!("{:?}", dest).hash(&mut hasher);
+            }
+            Node::Label(s) => {
+                "Label".hash(&mut hasher);
+                s.hash(&mut hasher);
+            }
+            Node::Function { id, params, body } => {
+                "Function".hash(&mut hasher);
+                id.hash(&mut hasher);
+                params.hash(&mut hasher);
+                for node in body {
+                    node.compute_hash().hash(&mut hasher);
+                }
+            }
+            Node::Requires { id, capabilities } => {
+                "Requires".hash(&mut hasher);
+                id.hash(&mut hasher);
+                for cap in capabilities {
+                    format!("{:?}", cap).hash(&mut hasher);
+                }
+            }
+            Node::CapabilityOp { id, capability, operation, args } => {
+                "CapabilityOp".hash(&mut hasher);
+                id.hash(&mut hasher);
+                format!("{:?}", capability).hash(&mut hasher);
+                operation.hash(&mut hasher);
+                for arg in args {
+                    format!("{:?}", arg).hash(&mut hasher);
+                }
+            }
+        }
+        
+        hasher.finish()
+    }
 }
 
 /// A value (literal)
@@ -138,6 +546,80 @@ pub enum Op {
     // GUI - Control Values
     Gvl,  // GVL control_handle buffer len -> get text value
     Svl,  // SVL control_handle text -> set text value
+    
+    // === CAPABILITY SYSTEM (SCN) ===
+    // Capability declaration
+    Req,  // REQ capabilities... -> declare required capabilities
+    
+    // HTTP Capability Operations
+    HttpListen,   // HTTP.LISTEN port -> server_handle
+    HttpAccept,   // HTTP.ACCEPT server -> request_handle
+    HttpMethod,   // HTTP.METHOD request -> method string (GET, POST, etc.)
+    HttpPath,     // HTTP.PATH request -> path string
+    HttpBody,     // HTTP.BODY request -> body string
+    HttpRespond,  // HTTP.RESPOND request status body -> send response
+    HttpGet,      // HTTP.GET url -> response body
+    HttpPost,     // HTTP.POST url body -> response body
+    
+    // SQL Capability Operations
+    SqlConnect,   // SQL.CONNECT connection_string -> connection_handle
+    SqlQuery,     // SQL.QUERY connection query -> result_set
+    SqlExec,      // SQL.EXEC connection statement -> rows_affected
+    SqlNext,      // SQL.NEXT result_set -> 1 if has row, 0 if done
+    SqlGet,       // SQL.GET result_set column -> value
+    SqlClose,     // SQL.CLOSE connection -> close connection
+    
+    // JSON Capability Operations
+    JsonParse,    // JSON.PARSE string -> json_object
+    JsonEncode,   // JSON.ENCODE object -> string
+    JsonGet,      // JSON.GET object key -> value
+    JsonSet,      // JSON.SET object key value -> modified object
+    
+    // === PHASE 8: CONTRACTS & NEGOTIATION (IA-first) ===
+    
+    // Contract operations
+    Contract,     // CONTRACT { guarantees, limits } -> define resource contract
+    Guarantee,    // GUARANTEE capability property -> declare guarantee
+    Limit,        // LIMIT resource value -> set resource limit
+    Sandbox,      // SANDBOX code contract -> execute under contract
+    
+    // Negotiation operations
+    Provides,     // PROVIDES { capabilities, guarantees } -> offer capabilities
+    Negotiate,    // NEGOTIATE offer need -> attempt to match
+    Bind,         // BIND offer.cap TO need.cap -> create binding
+    
+    // Custom capability operations
+    DefCap,       // DEFINE_CAPABILITY name { inputs, pattern, provides }
+    ExtendCap,    // EXTEND_CAPABILITY base { additions }
+    ComposeCap,   // COMPOSE_CAPABILITIES { cap1, cap2, ... }
+    
+    // === PHASE 10: TESTING (IA-first) ===
+    
+    // Property-based testing
+    Property,     // PROPERTY FORALL vars: assertion
+    GenTests,     // GENERATE_TESTS property count -> test cases
+    Verify,       // VERIFY property -> check if holds
+    
+    // === PHASE 9.2: INCREMENTAL COMPILATION (IA-first) ===
+    
+    // Content-Addressable Cache operations
+    Hash,         // HASH node -> deterministic hash of node
+    CacheGet,     // CACHE_GET hash -> cached IR or null
+    CachePut,     // CACHE_PUT hash ir -> store in cache
+    CacheVerify,  // CACHE_VERIFY hash -> 1 if valid, 0 if corrupted
+    CacheInvalidate, // CACHE_INVALIDATE hash -> remove from cache
+    
+    // === PHASE 11: SEN - Sistema de Ecosistema NELAIA (IA-first) ===
+    
+    // Capability discovery (design-time for IAs)
+    Discover,       // DISCOVER "description" -> list of matching capabilities
+    CapInfo,        // CAPABILITY_INFO cap_name -> capability metadata
+    CapCost,        // CAPABILITY_COST cap_name -> { memory, time, tokens }
+    CapPublish,     // PUBLISH capability -> register in ecosystem
+    CapAvailable,   // CAPABILITY_AVAILABLE cap_name region -> 1 if available
+    CapVersion,     // CAPABILITY_VERSION cap_name -> version string
+    CapDeps,        // CAPABILITY_DEPS cap_name -> list of dependencies
+    
     // Sub-graph call
     Call(String),
 }
@@ -177,6 +659,29 @@ pub enum ResourceType {
 pub struct Graph {
     pub nodes: Vec<Node>,
     pub node_map: HashMap<String, usize>,
+    pub requirements: Requirements,
+}
+
+impl Graph {
+    /// Compute deterministic hash for the entire graph (IA-first: Content-Addressable)
+    pub fn compute_hash(&self) -> u64 {
+        use std::collections::hash_map::DefaultHasher;
+        use std::hash::{Hash, Hasher};
+        
+        let mut hasher = DefaultHasher::new();
+        
+        // Hash all nodes
+        for node in &self.nodes {
+            node.compute_hash().hash(&mut hasher);
+        }
+        
+        // Hash requirements
+        for cap in &self.requirements.capabilities {
+            format!("{:?}", cap).hash(&mut hasher);
+        }
+        
+        hasher.finish()
+    }
 }
 
 /// Analysis results
@@ -192,10 +697,18 @@ impl Graph {
         Graph {
             nodes: Vec::new(),
             node_map: HashMap::new(),
+            requirements: Requirements::default(),
         }
     }
     
     pub fn add_node(&mut self, node: Node) {
+        // Extract capabilities from Requires nodes
+        if let Node::Requires { capabilities, .. } = &node {
+            for cap in capabilities {
+                self.requirements.capabilities.insert(cap.clone());
+            }
+        }
+        
         if let Some(id) = Self::get_node_id(&node) {
             self.node_map.insert(id, self.nodes.len());
         }
@@ -344,17 +857,44 @@ pub struct UsageAnalysis {
     pub uses_threading: bool,
     pub uses_file_io: bool,
     pub uses_console: bool,
+    // Phase 9: Capability-aware DCE
+    pub uses_contracts: bool,
+    pub uses_negotiation: bool,
+    pub uses_custom_caps: bool,
+    pub uses_testing: bool,
+    pub used_capabilities: HashSet<Capability>,
+    pub declared_capabilities: HashSet<Capability>,
 }
 
 impl UsageAnalysis {
     pub fn analyze(graph: &Graph) -> Self {
         let mut analysis = UsageAnalysis::default();
         
+        // Collect declared capabilities from requirements
+        for cap in &graph.requirements.capabilities {
+            analysis.declared_capabilities.insert(cap.clone());
+        }
+        
         for node in &graph.nodes {
             analysis.visit_node(node);
         }
         
         analysis
+    }
+    
+    /// Returns capabilities that are declared but never used
+    pub fn unused_capabilities(&self) -> HashSet<Capability> {
+        self.declared_capabilities
+            .difference(&self.used_capabilities)
+            .cloned()
+            .collect()
+    }
+    
+    /// Returns true if any capability-related code should be included
+    pub fn needs_capability_runtime(&self) -> bool {
+        self.uses_contracts || self.uses_negotiation || 
+        self.uses_custom_caps || self.uses_testing ||
+        !self.used_capabilities.is_empty()
     }
     
     fn visit_node(&mut self, node: &Node) {
@@ -398,22 +938,72 @@ impl UsageAnalysis {
             // File I/O
             Op::Fop | Op::Frd | Op::Fwr | Op::Fcl => {
                 self.uses_file_io = true;
+                self.used_capabilities.insert(Capability::FileSystem);
             }
             // Dynamic Vectors
             Op::Vec | Op::Vph | Op::Vgt | Op::Vst | Op::Vln | Op::Vcp => {
                 self.uses_file_io = true;  // Uses memory allocation
+                self.used_capabilities.insert(Capability::Memory);
             }
             // HashMap
             Op::Hmp | Op::Hpt | Op::Hgt | Op::Hhs => {
                 self.uses_file_io = true;  // Uses memory allocation
+                self.used_capabilities.insert(Capability::Memory);
             }
             // String operations
             Op::Cat | Op::Its | Op::Chr | Op::Sbs => {
                 self.uses_file_io = true;  // Uses memory
+                self.used_capabilities.insert(Capability::Memory);
             }
             // Console I/O
             Op::Prt | Op::Inp | Op::Err => {
                 self.uses_console = true;
+                self.used_capabilities.insert(Capability::IO);
+            }
+            // Capability System operations
+            Op::Req => {
+                // Requirements declaration - no runtime effect
+            }
+            Op::HttpListen | Op::HttpAccept | Op::HttpMethod | Op::HttpPath |
+            Op::HttpBody | Op::HttpRespond => {
+                self.uses_network = true;
+                self.used_capabilities.insert(Capability::HttpServer);
+            }
+            Op::HttpGet | Op::HttpPost => {
+                self.uses_network = true;
+                self.used_capabilities.insert(Capability::HttpClient);
+            }
+            Op::SqlConnect | Op::SqlQuery | Op::SqlExec | Op::SqlNext |
+            Op::SqlGet | Op::SqlClose => {
+                self.uses_file_io = true;  // SQL uses I/O
+                self.used_capabilities.insert(Capability::Sql);
+            }
+            Op::JsonParse | Op::JsonEncode | Op::JsonGet | Op::JsonSet => {
+                self.used_capabilities.insert(Capability::Json);
+            }
+            // Phase 8: Contracts & Negotiation
+            Op::Contract | Op::Guarantee | Op::Limit | Op::Sandbox => {
+                self.uses_contracts = true;
+            }
+            Op::Provides | Op::Negotiate | Op::Bind => {
+                self.uses_negotiation = true;
+            }
+            Op::DefCap | Op::ExtendCap | Op::ComposeCap => {
+                self.uses_custom_caps = true;
+            }
+            // Phase 10: Testing
+            Op::Property | Op::GenTests | Op::Verify => {
+                self.uses_testing = true;
+            }
+            // Phase 9.2: Incremental Compilation (compile-time operations)
+            Op::Hash | Op::CacheGet | Op::CachePut | 
+            Op::CacheVerify | Op::CacheInvalidate => {
+                // Cache operations - compile-time
+            }
+            // Phase 11: SEN - Ecosystem (design-time operations for IAs)
+            Op::Discover | Op::CapInfo | Op::CapCost | Op::CapPublish |
+            Op::CapAvailable | Op::CapVersion | Op::CapDeps => {
+                // SEN operations - design-time for IAs
             }
             _ => {}
         }

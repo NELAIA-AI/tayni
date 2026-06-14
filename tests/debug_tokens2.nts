@@ -1,0 +1,56 @@
+.zero: 0
+.bufsize: 256
+.path: "input.nts"
+.handle: FOP .path .zero
+.srcbuf: ALC .bufsize
+.srclen: FRD .handle .srcbuf .bufsize
+.closed: FCL .handle
+.tokens: FSM .srcbuf .srclen
+.out: ALC 128
+.c48: 48
+.nl: 10
+.sp: 32
+
+-- Token count
+.tcount: GET .tokens 0
+.d0: ADD .tcount .c48
+.w0: PUT .out 0 .d0
+.w1: PUT .out 1 .sp
+
+-- Token 0 type (offset 4)
+.t0_type: GET .tokens 4
+.d1: ADD .t0_type .c48
+.w2: PUT .out 2 .d1
+.w3: PUT .out 3 .sp
+
+-- Token 0 start (offset 8)
+.t0_start: GET .tokens 8
+.d2: ADD .t0_start .c48
+.w4: PUT .out 4 .d2
+.w5: PUT .out 5 .sp
+
+-- Token 0 len (offset 12)
+.t0_len: GET .tokens 12
+.d3: ADD .t0_len .c48
+.w6: PUT .out 6 .d3
+.w7: PUT .out 7 .nl
+
+-- Token 1 type (offset 16)
+.t1_type: GET .tokens 16
+.d4: ADD .t1_type .c48
+.w8: PUT .out 8 .d4
+.w9: PUT .out 9 .sp
+
+-- Token 1 start (offset 20)
+.t1_start: GET .tokens 20
+.d5: ADD .t1_start .c48
+.w10: PUT .out 10 .d5
+.w11: PUT .out 11 .sp
+
+-- Token 1 len (offset 24)
+.t1_len: GET .tokens 24
+.d6: ADD .t1_len .c48
+.w12: PUT .out 12 .d6
+.w13: PUT .out 13 .nl
+
+.prt: PRT .out 14

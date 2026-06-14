@@ -186,6 +186,11 @@ impl Parser {
             return Self::parse_subgraph(&id, rest);
         }
         
+        // Check if it's a REQUIRES declaration
+        if rest.starts_with("REQUIRES") || rest.starts_with("REQ") {
+            return Self::parse_requires(&id, rest);
+        }
+        
         // Check if it's a reference to another node
         if rest.starts_with('.') && !rest.contains(' ') {
             let target = rest[1..].to_string();
@@ -241,6 +246,63 @@ impl Parser {
         }
         
         Err(format!("Cannot parse literal: {}", s))
+    }
+    
+    fn parse_requires(id: &str, rest: &str) -> Result<Option<Node>, String> {
+        // Parse: REQUIRES { http, sql, json } or REQUIRES http sql json
+        let content = rest.trim_start_matches("REQUIRES").trim_start_matches("REQ").trim();
+        
+        let cap_strs: Vec<&str> = if content.starts_with('{') && content.ends_with('}') {
+            // Brace syntax: { http, sql, json }
+            content[1..content.len()-1]
+                .split(',')
+                .map(|s| s.trim())
+                .filter(|s| !s.is_empty())
+                .collect()
+        } else {
+            // Space-separated: http sql json
+            content.split_whitespace().collect()
+        };
+        
+        let mut capabilities = Vec::new();
+        for cap_str in cap_strs {
+            let cap = Self::parse_capability(cap_str)?;
+            capabilities.push(cap);
+        }
+        
+        Ok(Some(Node::Requires {
+            id: id.to_string(),
+            capabilities,
+        }))
+    }
+    
+    fn parse_capability(s: &str) -> Result<Capability, String> {
+        match s.to_lowercase().as_str() {
+            "math" => Ok(Capability::Math),
+            "memory" | "mem" => Ok(Capability::Memory),
+            "io" => Ok(Capability::IO),
+            "http" | "http:server" | "http:client" => {
+                if s.contains("client") {
+                    Ok(Capability::HttpClient)
+                } else if s.contains("server") {
+                    Ok(Capability::HttpServer)
+                } else {
+                    Ok(Capability::HttpServer) // Default to server
+                }
+            }
+            "http:server" => Ok(Capability::HttpServer),
+            "http:client" => Ok(Capability::HttpClient),
+            "tcp" | "tcp:raw" => Ok(Capability::TcpRaw),
+            "json" => Ok(Capability::Json),
+            "xml" => Ok(Capability::Xml),
+            "sql" => Ok(Capability::Sql),
+            "sql:readonly" | "sql:read" => Ok(Capability::SqlReadOnly),
+            "filesystem" | "fs" => Ok(Capability::FileSystem),
+            "filesystem:readonly" | "fs:readonly" | "fs:read" => Ok(Capability::FileSystemReadOnly),
+            "threading" | "threads" => Ok(Capability::Threading),
+            "gui" => Ok(Capability::Gui),
+            other => Ok(Capability::Custom(other.to_string())),
+        }
     }
     
     fn parse_operation(id: &str, rest: &str) -> Result<Option<Node>, String> {
@@ -382,6 +444,77 @@ impl Parser {
             // GUI - Control Values
             "GVL" => Ok(Op::Gvl),
             "SVL" => Ok(Op::Svl),
+            
+            // === CAPABILITY SYSTEM (SCN) ===
+            "REQ" | "REQUIRES" => Ok(Op::Req),
+            
+            // HTTP Capability Operations
+            "HTTP.LISTEN" => Ok(Op::HttpListen),
+            "HTTP.ACCEPT" => Ok(Op::HttpAccept),
+            "HTTP.METHOD" => Ok(Op::HttpMethod),
+            "HTTP.PATH" => Ok(Op::HttpPath),
+            "HTTP.BODY" => Ok(Op::HttpBody),
+            "HTTP.RESPOND" => Ok(Op::HttpRespond),
+            "HTTP.GET" => Ok(Op::HttpGet),
+            "HTTP.POST" => Ok(Op::HttpPost),
+            
+            // SQL Capability Operations
+            "SQL.CONNECT" => Ok(Op::SqlConnect),
+            "SQL.QUERY" => Ok(Op::SqlQuery),
+            "SQL.EXEC" => Ok(Op::SqlExec),
+            "SQL.NEXT" => Ok(Op::SqlNext),
+            "SQL.GET" => Ok(Op::SqlGet),
+            "SQL.CLOSE" => Ok(Op::SqlClose),
+            
+            // JSON Capability Operations
+            "JSON.PARSE" => Ok(Op::JsonParse),
+            "JSON.ENCODE" => Ok(Op::JsonEncode),
+            "JSON.GET" => Ok(Op::JsonGet),
+            "JSON.SET" => Ok(Op::JsonSet),
+            
+            // === PHASE 8: CONTRACTS & NEGOTIATION (IA-first) ===
+            
+            // Contract operations
+            "CONTRACT" => Ok(Op::Contract),
+            "GUARANTEE" | "GUARANTEES" => Ok(Op::Guarantee),
+            "LIMIT" | "LIMITS" => Ok(Op::Limit),
+            "SANDBOX" => Ok(Op::Sandbox),
+            
+            // Negotiation operations
+            "PROVIDES" => Ok(Op::Provides),
+            "NEGOTIATE" => Ok(Op::Negotiate),
+            "BIND" => Ok(Op::Bind),
+            
+            // Custom capability operations
+            "DEFINE_CAPABILITY" | "DEFCAP" => Ok(Op::DefCap),
+            "EXTEND_CAPABILITY" | "EXTCAP" => Ok(Op::ExtendCap),
+            "COMPOSE_CAPABILITIES" | "COMPOSE" => Ok(Op::ComposeCap),
+            
+            // === PHASE 10: TESTING (IA-first) ===
+            
+            // Property-based testing
+            "PROPERTY" | "PROP" => Ok(Op::Property),
+            "GENERATE_TESTS" | "GENTESTS" => Ok(Op::GenTests),
+            "VERIFY" => Ok(Op::Verify),
+            
+            // === PHASE 9.2: INCREMENTAL COMPILATION (IA-first) ===
+            
+            // Content-Addressable Cache operations
+            "HASH" => Ok(Op::Hash),
+            "CACHE_GET" | "CGET" => Ok(Op::CacheGet),
+            "CACHE_PUT" | "CPUT" => Ok(Op::CachePut),
+            "CACHE_VERIFY" | "CVERIFY" => Ok(Op::CacheVerify),
+            "CACHE_INVALIDATE" | "CINV" => Ok(Op::CacheInvalidate),
+            
+            // === PHASE 11: SEN - Sistema de Ecosistema NELAIA (IA-first) ===
+            "DISCOVER" => Ok(Op::Discover),
+            "CAPABILITY_INFO" | "CAP_INFO" => Ok(Op::CapInfo),
+            "CAPABILITY_COST" | "CAP_COST" => Ok(Op::CapCost),
+            "PUBLISH" => Ok(Op::CapPublish),
+            "CAPABILITY_AVAILABLE" | "CAP_AVAIL" => Ok(Op::CapAvailable),
+            "CAPABILITY_VERSION" | "CAP_VER" => Ok(Op::CapVersion),
+            "CAPABILITY_DEPS" | "CAP_DEPS" => Ok(Op::CapDeps),
+            
             s if s.starts_with('.') => Ok(Op::Call(s[1..].to_string())),
             _ => Err(format!("Unknown operation: {}", s)),
         }

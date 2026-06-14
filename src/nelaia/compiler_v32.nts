@@ -1,0 +1,124 @@
+-- NELAIA Self-Compiler v3.2
+-- Compiles 2-line programs: literal + binary op
+-- Token format: 4 bytes [type, start, len, 0] starting at offset 8
+
+.zero: 0
+.one: 1
+.bufsize: 4096
+
+-- Character codes
+.dot: 46
+.colon: 58
+.space: 32
+.newline: 10
+
+-- Read source file
+.path: "input.nts"
+.handle: FOP .path .zero
+.srcbuf: ALC .bufsize
+.srclen: FRD .handle .srcbuf .bufsize
+.closed: FCL .handle
+
+-- Tokenize
+.tokens: FSM .srcbuf .srclen
+
+-- Output buffer
+.out: ALC 256
+
+-- ============ LINE 0: .a: 5 ============
+-- Tokens: DOT(0) ID(1) COLON(2) NUM(3) NL(4)
+-- Token structure: 4 bytes [type, start, len, 0]
+-- Token 0 at offset 8, Token 1 at offset 12, etc.
+
+-- Token 1 (ID = name) at offset 12
+.t0_1_off: 12
+.t0_1_start: GET .tokens 13
+.t0_1_len: GET .tokens 14
+
+-- Token 3 (NUM = value) at offset 20
+.t0_3_off: 20
+.t0_3_start: GET .tokens 21
+.t0_3_len: GET .tokens 22
+
+-- Get characters
+.l0_name: CHR .srcbuf .t0_1_start
+.l0_val0: CHR .srcbuf .t0_3_start
+.l0_val1_pos: ADD .t0_3_start 1
+.l0_val1: CHR .srcbuf .l0_val1_pos
+
+-- Emit: ".a: 5\n"
+.e0: PUT .out 0 .dot
+.e1: PUT .out 1 .l0_name
+.e2: PUT .out 2 .colon
+.e3: PUT .out 3 .space
+.e4: PUT .out 4 .l0_val0
+-- Conditional second digit
+.has_2dig: SUB .t0_3_len 1
+.e5_1: PUT .out 5 .newline
+.e5_2: PUT .out 5 .l0_val1
+.e5: IFZ .has_2dig .e5_1 .e5_2
+.e6_pos: ADD 5 .has_2dig
+.e6: PUT .out .e6_pos .newline
+.l0_end: ADD .e6_pos 1
+
+-- ============ LINE 1: .b: ADD .a 3 ============
+-- Tokens: DOT(5) ID(6) COLON(7) ID(8) DOT(9) ID(10) NUM(11) NL(12)
+-- Line 1 starts at token 5 = offset 8 + 5*4 = 28
+
+-- Token 6 (ID = name) at offset 32
+.t1_1_start: GET .tokens 33
+.t1_1_len: GET .tokens 34
+
+-- Token 8 (ID = op) at offset 40
+.t1_3_start: GET .tokens 41
+.t1_3_len: GET .tokens 42
+
+-- Token 10 (ID = arg1) at offset 48
+.t1_5_start: GET .tokens 49
+.t1_5_len: GET .tokens 50
+
+-- Token 11 (NUM = arg2) at offset 52
+.t1_6_start: GET .tokens 53
+.t1_6_len: GET .tokens 54
+
+-- Get characters
+.l1_name: CHR .srcbuf .t1_1_start
+.l1_op0: CHR .srcbuf .t1_3_start
+.l1_op1_pos: ADD .t1_3_start 1
+.l1_op1: CHR .srcbuf .l1_op1_pos
+.l1_op2_pos: ADD .t1_3_start 2
+.l1_op2: CHR .srcbuf .l1_op2_pos
+.l1_arg1: CHR .srcbuf .t1_5_start
+.l1_arg2: CHR .srcbuf .t1_6_start
+
+-- Emit: ".b: ADD .a 3\n"
+.f0: PUT .out .l0_end .dot
+.f0_pos: ADD .l0_end 1
+.f1: PUT .out .f0_pos .l1_name
+.f1_pos: ADD .f0_pos 1
+.f2: PUT .out .f1_pos .colon
+.f2_pos: ADD .f1_pos 1
+.f3: PUT .out .f2_pos .space
+.f3_pos: ADD .f2_pos 1
+.f4: PUT .out .f3_pos .l1_op0
+.f4_pos: ADD .f3_pos 1
+.f5: PUT .out .f4_pos .l1_op1
+.f5_pos: ADD .f4_pos 1
+.f6: PUT .out .f5_pos .l1_op2
+.f6_pos: ADD .f5_pos 1
+.f7: PUT .out .f6_pos .space
+.f7_pos: ADD .f6_pos 1
+.f8: PUT .out .f7_pos .dot
+.f8_pos: ADD .f7_pos 1
+.f9: PUT .out .f8_pos .l1_arg1
+.f9_pos: ADD .f8_pos 1
+.f10: PUT .out .f9_pos .space
+.f10_pos: ADD .f9_pos 1
+.f11: PUT .out .f10_pos .l1_arg2
+.f11_pos: ADD .f10_pos 1
+.f12: PUT .out .f11_pos .newline
+.total: ADD .f11_pos 1
+
+-- Output
+.output: PRT .out .total
+.done: ADD .output .zero

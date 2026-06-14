@@ -1,0 +1,99 @@
+-- NELAIA Compiler v5b - Unary Only Test
+-- For: .a: NUM \n .b: OP ARG
+
+.zero: 0
+.bufsize: 64
+
+.path: "boot.nts"
+.handle: FOP .path .zero
+.srcbuf: ALC .bufsize
+.dummy: FRD .handle .srcbuf .bufsize
+.closed: FCL .handle
+
+.nl: 10
+.dot: 46
+.colon: 58
+.space: 32
+
+-- Find newline at position 6
+.c6: CHR .srcbuf 6
+.d6: SUB .c6 .nl
+.nl1: IFZ .d6 6 99
+
+.l2_start: ADD .nl1 1
+.inputlen: 18
+.l2_len: SUB .inputlen .l2_start
+
+-- Tokenize
+.tok1: FSM .srcbuf .nl1
+.l2_ptr: ADD .srcbuf .l2_start
+.tok2: FSM .l2_ptr .l2_len
+
+-- Line 1: DOT, ID, COLON, NUM
+.t1_1: ADD .tok1 12
+.t1_name_st: GET .t1_1 1
+.t1_name_len: GET .t1_1 2
+
+.t1_3: ADD .tok1 20
+.t1_val_st: GET .t1_3 1
+.t1_val_len: GET .t1_3 2
+
+-- Line 2: DOT, ID, COLON, ID(OP), NUM(ARG)
+.t2_1: ADD .tok2 12
+.t2_name_st: GET .t2_1 1
+.t2_name_len: GET .t2_1 2
+
+.t2_3: ADD .tok2 20
+.t2_op_st: GET .t2_3 1
+.t2_op_len: GET .t2_3 2
+
+.t2_4: ADD .tok2 24
+.t2_arg_st: GET .t2_4 1
+.t2_arg_len: GET .t2_4 2
+
+-- Output
+.out: ALC 64
+
+-- Line 1: .a: 64
+.w0: PUT .out 0 .dot
+.n1: CHR .srcbuf .t1_name_st
+.w1: PUT .out 1 .n1
+.w2: PUT .out 2 .colon
+.w3: PUT .out 3 .space
+.v1: CHR .srcbuf .t1_val_st
+.w4: PUT .out 4 .v1
+.v1_1p: ADD .t1_val_st 1
+.v1_1: CHR .srcbuf .v1_1p
+.w5: PUT .out 5 .v1_1
+.w6: PUT .out 6 .nl
+
+-- Line 2: .b: ALC 128
+.w7: PUT .out 7 .dot
+.n2: CHR .l2_ptr .t2_name_st
+.w8: PUT .out 8 .n2
+.w9: PUT .out 9 .colon
+.w10: PUT .out 10 .space
+
+-- OP (3 chars)
+.op0: CHR .l2_ptr .t2_op_st
+.w11: PUT .out 11 .op0
+.op1p: ADD .t2_op_st 1
+.op1: CHR .l2_ptr .op1p
+.w12: PUT .out 12 .op1
+.op2p: ADD .t2_op_st 2
+.op2: CHR .l2_ptr .op2p
+.w13: PUT .out 13 .op2
+.w14: PUT .out 14 .space
+
+-- ARG (3 chars)
+.arg0: CHR .l2_ptr .t2_arg_st
+.w15: PUT .out 15 .arg0
+.arg1p: ADD .t2_arg_st 1
+.arg1: CHR .l2_ptr .arg1p
+.w16: PUT .out 16 .arg1
+.arg2p: ADD .t2_arg_st 2
+.arg2: CHR .l2_ptr .arg2p
+.w17: PUT .out 17 .arg2
+.w18: PUT .out 18 .nl
+
+.result: PRT .out 19

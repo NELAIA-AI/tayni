@@ -1,0 +1,6 @@
+-- NELAIA Bootstrap Test
+-- Simple program that can be compiled by v1.2c
+-- Tests: literal, ADD, MUL
+
+.x: 5
+.y: MUL .x 3

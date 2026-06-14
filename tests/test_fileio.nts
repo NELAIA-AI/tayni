@@ -1,0 +1,8 @@
+.zero: 0
+.path: "test_input.txt"
+.handle: FOP .path .zero
+.bufsize: 64
+.buf: ALC .bufsize
+.read: FRD .handle .buf .bufsize
+.closed: FCL .handle
+.out: PRT .buf 13

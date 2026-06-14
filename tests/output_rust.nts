@@ -1,0 +1,6 @@
+.zero: 0
+.msg: "Hi"
+.out: ALC 8
+.w0: PUT .out 0 72
+.w1: PUT .out 1 105
+.r: PRT .out 2

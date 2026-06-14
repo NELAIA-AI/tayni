@@ -1,0 +1,3 @@
+.msg: "Hello from NELAIA PE!"
+.len: 21
+.out: PRT .msg .len

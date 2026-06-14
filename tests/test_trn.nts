@@ -1,0 +1,7 @@
+.count: 5
+.buf: ALC 16
+.i: 0
+.loop: TRN .i .count .body
+.body: PUT .buf .i 65
+.inc: ADD .i 1
+.done: PRT .buf 5

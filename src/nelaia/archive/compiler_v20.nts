@@ -1,0 +1,166 @@
+-- NELAIA Self-Hosted Compiler v2.0
+-- Generates .nts output (not LLVM IR)
+-- Per Consortium Resolution #2024-06-14-001
+
+.zero: 0
+.one: 1
+.two: 2
+.three: 3
+.bufsize: 2048
+
+-- Op comparison strings
+.op_add: "ADD"
+.op_sub: "SUB"
+.op_mul: "MUL"
+.op_div: "DIV"
+.op_mod: "MOD"
+
+-- Read source
+.path: "test_input.nts"
+.handle: FOP .path .zero
+.srcbuf: ALC .bufsize
+.slen: FRD .handle .srcbuf .bufsize
+.closed: FCL .handle
+
+-- Tokenize
+.tokens: FSM .srcbuf .slen
+.tptr: ADD .tokens .zero
+
+-- ============ PARSE NODE 0 ============
+.n0_id: ADD .tptr 12
+.n0_id_st: GET .n0_id 1
+.n0_val: ADD .tptr 20
+.n0_val_st: GET .n0_val 1
+.n0_val_len: GET .n0_val 2
+.n0_name: CHR .srcbuf .n0_id_st
+
+-- Extract number (up to 3 digits)
+.n0buf: ALC 8
+.n0d0: CHR .srcbuf .n0_val_st
+.n0w0: PUT .n0buf 0 .n0d0
+.n0d1p: ADD .n0_val_st 1
+.n0d1: CHR .srcbuf .n0d1p
+.n0w1: PUT .n0buf 1 .n0d1
+.n0d2p: ADD .n0_val_st 2
+.n0d2: CHR .srcbuf .n0d2p
+.n0w2: PUT .n0buf 2 .n0d2
+
+-- ============ PARSE NODE 1 ============
+.n1_id: ADD .tptr 32
+.n1_id_st: GET .n1_id 1
+.n1_name: CHR .srcbuf .n1_id_st
+
+.n1_op: ADD .tptr 40
+.n1_op_st: GET .n1_op 1
+
+.n1_opbuf: ALC 8
+.n1oc0: CHR .srcbuf .n1_op_st
+.n1op0: PUT .n1_opbuf 0 .n1oc0
+.n1os1: ADD .n1_op_st 1
+.n1oc1: CHR .srcbuf .n1os1
+.n1op1: PUT .n1_opbuf 1 .n1oc1
+.n1os2: ADD .n1_op_st 2
+.n1oc2: CHR .srcbuf .n1os2
+.n1op2: PUT .n1_opbuf 2 .n1oc2
+
+-- Compare ops
+.n1_is_add: SCM .n1_opbuf .op_add .three
+.n1_is_sub: SCM .n1_opbuf .op_sub .three
+.n1_is_mul: SCM .n1_opbuf .op_mul .three
+.n1_is_div: SCM .n1_opbuf .op_div .three
+.n1_is_mod: SCM .n1_opbuf .op_mod .three
+
+-- Args
+.n1_a1: ADD .tptr 48
+.n1_a1_st: GET .n1_a1 1
+.n1_arg1: CHR .srcbuf .n1_a1_st
+
+.n1_a2: ADD .tptr 52
+.n1_a2_st: GET .n1_a2 1
+.n1_a2_len: GET .n1_a2 2
+
+.n1_a2buf: ALC 8
+.n1a2d0: CHR .srcbuf .n1_a2_st
+.n1a2w0: PUT .n1_a2buf 0 .n1a2d0
+.n1a2d1p: ADD .n1_a2_st 1
+.n1a2d1: CHR .srcbuf .n1a2d1p
+.n1a2w1: PUT .n1_a2buf 1 .n1a2d1
+.n1a2d2p: ADD .n1_a2_st 2
+.n1a2d2: CHR .srcbuf .n1a2d2p
+.n1a2w2: PUT .n1_a2buf 2 .n1a2d2
+
+-- ============ EMIT .nts OUTPUT ============
+-- Format: ".name: value" or ".name: OP .arg1 arg2"
+.out: ALC 1024
+
+-- Char codes
+.dot: 46
+.colon: 58
+.space: 32
+.newline: 10
+
+-- NODE 0: ".a: NUM\n"
+.p0: PUT .out 0 .dot
+.nbuf: ALC 8
+.pn0: PUT .nbuf 0 .n0_name
+.p1: WRT .out 1 .nbuf 1
+.p2: PUT .out 2 .colon
+.p3: PUT .out 3 .space
+
+-- Write number based on length
+.n0_len1: SUB .n0_val_len 1
+.n0_len2: SUB .n0_val_len 2
+.p4_1: WRT .out 4 .n0buf 1
+.p4_2: WRT .out 4 .n0buf 2
+.p4_3: WRT .out 4 .n0buf 3
+.p4_s1: IFZ .n0_len2 .p4_2 .p4_3
+.p4: IFZ .n0_len1 .p4_1 .p4_s1
+
+-- Position after number
+.pos_n0: ADD 4 .n0_val_len
+.p5: PUT .out .pos_n0 .newline
+.pos_n1: ADD .pos_n0 1
+
+-- NODE 1: ".b: OP .a NUM\n"
+.p6: PUT .out .pos_n1 .dot
+.pos_n1a: ADD .pos_n1 1
+.pn1: PUT .nbuf 0 .n1_name
+.p7: WRT .out .pos_n1a .nbuf 1
+.pos_n1b: ADD .pos_n1a 1
+.p8: PUT .out .pos_n1b .colon
+.pos_n1c: ADD .pos_n1b 1
+.p9: PUT .out .pos_n1c .space
+.pos_n1d: ADD .pos_n1c 1
+
+-- Write op (3 chars)
+.p10: WRT .out .pos_n1d .n1_opbuf 3
+.pos_n1e: ADD .pos_n1d 3
+.p11: PUT .out .pos_n1e .space
+.pos_n1f: ADD .pos_n1e 1
+
+-- Write .arg1
+.p12: PUT .out .pos_n1f .dot
+.pos_n1g: ADD .pos_n1f 1
+.pa1: PUT .nbuf 0 .n1_arg1
+.p13: WRT .out .pos_n1g .nbuf 1
+.pos_n1h: ADD .pos_n1g 1
+.p14: PUT .out .pos_n1h .space
+.pos_n1i: ADD .pos_n1h 1
+
+-- Write arg2 (number)
+.n1a2_len1: SUB .n1_a2_len 1
+.n1a2_len2: SUB .n1_a2_len 2
+.p15_1: WRT .out .pos_n1i .n1_a2buf 1
+.p15_2: WRT .out .pos_n1i .n1_a2buf 2
+.p15_3: WRT .out .pos_n1i .n1_a2buf 3
+.p15_s1: IFZ .n1a2_len2 .p15_2 .p15_3
+.p15: IFZ .n1a2_len1 .p15_1 .p15_s1
+
+-- Final newline
+.pos_end: ADD .pos_n1i .n1_a2_len
+.p16: PUT .out .pos_end .newline
+.total_len: ADD .pos_end 1
+
+-- Output
+.oout: PRT .out .total_len
+.result: ADD .oout .zero

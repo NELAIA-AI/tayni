@@ -1,0 +1,137 @@
+-- NELAIA Compiler Module: String Literals
+-- Handles: .name: "string"
+-- Tokens: DOT(8), ID(12), COLON(16), STR(20)
+
+.zero: 0
+.one: 1
+.bufsize: 512
+
+-- Read source
+.path: "test_input.nts"
+.handle: FOP .path .zero
+.srcbuf: ALC .bufsize
+.slen: FRD .handle .srcbuf .bufsize
+.closed: FCL .handle
+
+-- Tokenize
+.tokens: FSM .srcbuf .slen
+.tptr: ADD .tokens .zero
+
+-- Parse: ".name: "string""
+-- Token 0 (offset 8): DOT
+-- Token 1 (offset 12): ID(name)
+-- Token 2 (offset 16): COLON
+-- Token 3 (offset 20): STR(string) - includes quotes
+
+.t_name: ADD .tptr 12
+.t_name_st: GET .t_name 1
+.name_ch: CHR .srcbuf .t_name_st
+
+.t_str: ADD .tptr 20
+.t_str_st: GET .t_str 1
+.t_str_len: GET .t_str 2
+
+-- Copy string content (including quotes)
+.strbuf: ALC 64
+.sd0: CHR .srcbuf .t_str_st
+.sw0: PUT .strbuf 0 .sd0
+
+.sd1p: ADD .t_str_st 1
+.sd1: CHR .srcbuf .sd1p
+.sw1: PUT .strbuf 1 .sd1
+
+.sd2p: ADD .t_str_st 2
+.sd2: CHR .srcbuf .sd2p
+.sw2: PUT .strbuf 2 .sd2
+
+.sd3p: ADD .t_str_st 3
+.sd3: CHR .srcbuf .sd3p
+.sw3: PUT .strbuf 3 .sd3
+
+.sd4p: ADD .t_str_st 4
+.sd4: CHR .srcbuf .sd4p
+.sw4: PUT .strbuf 4 .sd4
+
+.sd5p: ADD .t_str_st 5
+.sd5: CHR .srcbuf .sd5p
+.sw5: PUT .strbuf 5 .sd5
+
+.sd6p: ADD .t_str_st 6
+.sd6: CHR .srcbuf .sd6p
+.sw6: PUT .strbuf 6 .sd6
+
+.sd7p: ADD .t_str_st 7
+.sd7: CHR .srcbuf .sd7p
+.sw7: PUT .strbuf 7 .sd7
+
+.sd8p: ADD .t_str_st 8
+.sd8: CHR .srcbuf .sd8p
+.sw8: PUT .strbuf 8 .sd8
+
+.sd9p: ADD .t_str_st 9
+.sd9: CHR .srcbuf .sd9p
+.sw9: PUT .strbuf 9 .sd9
+
+.sd10p: ADD .t_str_st 10
+.sd10: CHR .srcbuf .sd10p
+.sw10: PUT .strbuf 10 .sd10
+
+.sd11p: ADD .t_str_st 11
+.sd11: CHR .srcbuf .sd11p
+.sw11: PUT .strbuf 11 .sd11
+
+.sd12p: ADD .t_str_st 12
+.sd12: CHR .srcbuf .sd12p
+.sw12: PUT .strbuf 12 .sd12
+
+.sd13p: ADD .t_str_st 13
+.sd13: CHR .srcbuf .sd13p
+.sw13: PUT .strbuf 13 .sd13
+
+.sd14p: ADD .t_str_st 14
+.sd14: CHR .srcbuf .sd14p
+.sw14: PUT .strbuf 14 .sd14
+
+.sd15p: ADD .t_str_st 15
+.sd15: CHR .srcbuf .sd15p
+.sw15: PUT .strbuf 15 .sd15
+
+-- Emit output: ".name: "string"\n"
+.out: ALC 128
+.dot: 46
+.colon: 58
+.space: 32
+.newline: 10
+
+.p0: PUT .out 0 .dot
+.nbuf: ALC 4
+.pn: PUT .nbuf 0 .name_ch
+.p1: WRT .out 1 .nbuf 1
+.p2: PUT .out 2 .colon
+.p3: PUT .out 3 .space
+
+-- Write string based on length (up to 16 chars)
+-- Use conditional WRT to avoid memcpy
+.len1: SUB .t_str_len 1
+.len2: SUB .t_str_len 2
+.len3: SUB .t_str_len 3
+.len4: SUB .t_str_len 4
+.len5: SUB .t_str_len 5
+
+.p4_5: WRT .out 4 .strbuf 5
+.p4_6: WRT .out 4 .strbuf 6
+.p4_7: WRT .out 4 .strbuf 7
+.p4_16: WRT .out 4 .strbuf 16
+
+.p4_s4: IFZ .len5 .p4_5 .p4_16
+.p4_s3: IFZ .len4 .p4_s4 .p4_s4
+.p4_s2: IFZ .len3 .p4_s3 .p4_s3
+.p4_s1: IFZ .len2 .p4_s2 .p4_s2
+.p4: IFZ .len1 .p4_s1 .p4_s1
+
+.pos_end: ADD 4 .t_str_len
+.p5: PUT .out .pos_end .newline
+.total: ADD .pos_end 1
+
+.oout: PRT .out .total
+.result: ADD .oout .zero

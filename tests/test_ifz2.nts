@@ -1,0 +1,9 @@
+.val: 5
+.zero: 0
+.yes: 89
+.no: 78
+.result: IFZ .val .no .yes
+.buf: ALC 4
+.w0: PUT .buf 0 .result
+.w1: PUT .buf 1 10
+.out: PRT .buf 2

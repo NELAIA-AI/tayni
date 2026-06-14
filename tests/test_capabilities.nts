@@ -1,0 +1,8 @@
+-- Programa con Sistema de Capacidades NELAIA (SCN)
+.caps: REQUIRES { http, json }
+
+-- Servidor HTTP simple
+.port: 8080
+.server: HTTP.LISTEN .port
+.msg: "Hello from NELAIA Capability System!"
+.out: PRT .msg 37

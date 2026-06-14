@@ -1,0 +1,228 @@
+-- NELAIA Self-Hosted Compiler v1.3b
+-- Supports multi-digit numbers (up to 3 digits)
+-- Uses fixed-length extraction
+
+.zero: 0
+.one: 1
+.two: 2
+.three: 3
+.four: 4
+.bufsize: 2048
+
+-- Op comparison strings
+.op_add: "ADD"
+.op_sub: "SUB"
+.op_mul: "MUL"
+.op_div: "DIV"
+.op_mod: "MOD"
+
+-- Read source
+.path: "test_input.nts"
+.handle: FOP .path .zero
+.srcbuf: ALC .bufsize
+.slen: FRD .handle .srcbuf .bufsize
+.closed: FCL .handle
+
+-- Tokenize
+.tokens: FSM .srcbuf .slen
+.tptr: ADD .tokens .zero
+
+-- Parse Node 0: ".a: 123"
+-- Token offsets from v1.2c (working)
+.n0_id: ADD .tptr 12
+.n0_id_st: GET .n0_id 1
+.n0_id_len: GET .n0_id 2
+
+.n0_val: ADD .tptr 20
+.n0_val_st: GET .n0_val 1
+.n0_val_len: GET .n0_val 2
+
+.n0_name: CHR .srcbuf .n0_id_st
+
+-- Extract number digits (up to 3)
+.numbuf: ALC 8
+.d0_pos: ADD .n0_val_st 0
+.d0: CHR .srcbuf .d0_pos
+.wd0: PUT .numbuf 0 .d0
+
+.d1_pos: ADD .n0_val_st 1
+.d1: CHR .srcbuf .d1_pos
+.wd1: PUT .numbuf 1 .d1
+
+.d2_pos: ADD .n0_val_st 2
+.d2: CHR .srcbuf .d2_pos
+.wd2: PUT .numbuf 2 .d2
+
+-- Parse Node 1: ".b: ADD .a 25"
+-- Token offsets from v1.2c
+.n1_id: ADD .tptr 32
+.n1_id_st: GET .n1_id 1
+.n1_name: CHR .srcbuf .n1_id_st
+
+.n1_op: ADD .tptr 40
+.n1_op_st: GET .n1_op 1
+
+-- Extract op (3 chars)
+.opbuf: ALC 8
+.oc0: CHR .srcbuf .n1_op_st
+.op0: PUT .opbuf 0 .oc0
+.os1: ADD .n1_op_st 1
+.oc1: CHR .srcbuf .os1
+.op1: PUT .opbuf 1 .oc1
+.os2: ADD .n1_op_st 2
+.oc2: CHR .srcbuf .os2
+.op2: PUT .opbuf 2 .oc2
+
+-- Compare (0 = match)
+.is_add: SCM .opbuf .op_add .three
+.is_sub: SCM .opbuf .op_sub .three
+.is_mul: SCM .opbuf .op_mul .three
+.is_div: SCM .opbuf .op_div .three
+.is_mod: SCM .opbuf .op_mod .three
+
+-- Args
+.n1_a1: ADD .tptr 48
+.n1_a1_st: GET .n1_a1 1
+.n1_arg1: CHR .srcbuf .n1_a1_st
+
+.n1_a2: ADD .tptr 52
+.n1_a2_st: GET .n1_a2 1
+.n1_a2_len: GET .n1_a2 2
+
+-- Extract arg2 digits (up to 3)
+.arg2buf: ALC 8
+.a2d0_pos: ADD .n1_a2_st 0
+.a2d0: CHR .srcbuf .a2d0_pos
+.wa2d0: PUT .arg2buf 0 .a2d0
+
+.a2d1_pos: ADD .n1_a2_st 1
+.a2d1: CHR .srcbuf .a2d1_pos
+.wa2d1: PUT .arg2buf 1 .a2d1
+
+.a2d2_pos: ADD .n1_a2_st 2
+.a2d2: CHR .srcbuf .a2d2_pos
+.wa2d2: PUT .arg2buf 2 .a2d2
+
+-- Char codes
+.sp: 32
+.eq: 61
+.pct: 37
+.ch_a: 97
+.ch_b: 98
+.ch_d: 100
+.ch_e: 101
+.ch_i: 105
+.ch_l: 108
+.ch_m: 109
+.ch_r: 114
+.ch_s: 115
+.ch_u: 117
+.ch_v: 118
+.ch_4: 52
+.ch_6: 54
+
+-- Emit LLVM IR
+.out: ALC 4096
+
+.hdr: "target triple = \"x86_64-pc-windows-msvc\"\n\ndefine i64 @main() {\nentry:\n"
+.p0: WRT .out .zero .hdr 72
+
+-- Node 0: "  %a = add i64 123, 0\n"
+.ln0a: "  %"
+.p1: WRT .out .p0 .ln0a 3
+.nbuf: ALC 8
+.pn0: PUT .nbuf 0 .n0_name
+.p2: WRT .out .p1 .nbuf 1
+.ln0b: " = add i64 "
+.p3: WRT .out .p2 .ln0b 11
+
+-- Write number (use length to determine how many digits)
+-- len=1: write 1 digit, len=2: write 2, len=3: write 3
+.p4_1: WRT .out .p3 .numbuf 1
+.p4_2: WRT .out .p3 .numbuf 2
+.p4_3: WRT .out .p3 .numbuf 3
+
+-- Select based on length
+.is_len1: SUB .n0_val_len 1
+.is_len2: SUB .n0_val_len 2
+.p4_sel1: IFZ .is_len2 .p4_2 .p4_3
+.p4: IFZ .is_len1 .p4_1 .p4_sel1
+
+.ln0c: ", 0\n"
+.p5: WRT .out .p4 .ln0c 4
+
+-- Node 1
+.p6: WRT .out .p5 .ln0a 3
+.pn1: PUT .nbuf 0 .n1_name
+.p7: WRT .out .p6 .nbuf 1
+.eqsp: " = "
+.p8: WRT .out .p7 .eqsp 3
+
+-- Build op string
+.opbuf2: ALC 8
+.c0_dm: IFZ .is_div .ch_s .ch_s
+.c0_m: IFZ .is_mod .ch_s .c0_dm
+.c0_mul: IFZ .is_mul .ch_m .c0_m
+.c0_sub: IFZ .is_sub .ch_s .c0_mul
+.c0: IFZ .is_add .ch_a .c0_sub
+.wo0: PUT .opbuf2 0 .c0
+
+.c1_dm: IFZ .is_div .ch_d .ch_r
+.c1_m: IFZ .is_mod .ch_r .c1_dm
+.c1_mul: IFZ .is_mul .ch_u .c1_m
+.c1_sub: IFZ .is_sub .ch_u .c1_mul
+.c1: IFZ .is_add .ch_d .c1_sub
+.wo1: PUT .opbuf2 1 .c1
+
+.c2_dm: IFZ .is_div .ch_i .ch_e
+.c2_m: IFZ .is_mod .ch_e .c2_dm
+.c2_mul: IFZ .is_mul .ch_l .c2_m
+.c2_sub: IFZ .is_sub .ch_b .c2_mul
+.c2: IFZ .is_add .ch_d .c2_sub
+.wo2: PUT .opbuf2 2 .c2
+
+.c3_dm: IFZ .is_div .ch_v .ch_m
+.c3_m: IFZ .is_mod .ch_m .c3_dm
+.c3_3: IFZ .is_mul .sp .c3_m
+.c3_sub: IFZ .is_sub .sp .c3_3
+.c3: IFZ .is_add .sp .c3_sub
+.wo3: PUT .opbuf2 3 .c3
+
+.p9: WRT .out .p8 .opbuf2 4
+
+-- " i64 %"
+.i64pct: " i64 %"
+.p10: WRT .out .p9 .i64pct 6
+
+-- arg1 (variable name)
+.pa1: PUT .nbuf 0 .n1_arg1
+.p11: WRT .out .p10 .nbuf 1
+
+-- ", "
+.comma: ", "
+.p12: WRT .out .p11 .comma 2
+
+-- arg2 (multi-digit number)
+.a2_len1: SUB .n1_a2_len 1
+.a2_len2: SUB .n1_a2_len 2
+.p13_1: WRT .out .p12 .arg2buf 1
+.p13_2: WRT .out .p12 .arg2buf 2
+.p13_3: WRT .out .p12 .arg2buf 3
+.p13_sel1: IFZ .a2_len2 .p13_2 .p13_3
+.p13: IFZ .a2_len1 .p13_1 .p13_sel1
+
+-- newline
+.nl: "\n"
+.p14: WRT .out .p13 .nl 1
+
+-- Return
+.ftr1: "  ret i64 %"
+.p15: WRT .out .p14 .ftr1 11
+.retbuf: ALC 4
+.pret: PUT .retbuf 0 .n1_name
+.p16: WRT .out .p15 .retbuf 1
+.ftr2: "\n}\n\ndefine i64 @mainCRTStartup() {\n  %r = call i64 @main()\n  ret i64 %r\n}\n"
+.p17: WRT .out .p16 .ftr2 76
+
+.oout: PRT .out .p17
+.result: ADD .oout .zero

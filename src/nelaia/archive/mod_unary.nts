@@ -1,0 +1,103 @@
+-- NELAIA Compiler Module: Unary Operations
+-- Handles: ALC, PRT, FSM
+-- Format: .name: OP arg
+-- Tokens: DOT(0), ID(4), COLON(8), ID(12), NUM/ID(16)
+
+.zero: 0
+.one: 1
+.three: 3
+.bufsize: 512
+
+-- Op strings
+.op_alc: "ALC"
+.op_prt: "PRT"
+.op_fsm: "FSM"
+
+-- Read source
+.path: "test_input.nts"
+.handle: FOP .path .zero
+.srcbuf: ALC .bufsize
+.slen: FRD .handle .srcbuf .bufsize
+.closed: FCL .handle
+
+-- Tokenize
+.tokens: FSM .srcbuf .slen
+.tptr: ADD .tokens .zero
+
+-- Parse single unary node: ".buf: ALC 1024"
+-- FSM buffer: 8-byte header, then 4-byte tokens
+-- Token 0 (offset 8): DOT
+-- Token 1 (offset 12): ID(buf) <- name
+-- Token 2 (offset 16): COLON
+-- Token 3 (offset 20): ID(ALC) <- op
+-- Token 4 (offset 24): NUM(1024) <- arg
+
+.t_name: ADD .tptr 12
+.t_name_st: GET .t_name 1
+.name_ch: CHR .srcbuf .t_name_st
+
+.t_op: ADD .tptr 20
+.t_op_st: GET .t_op 1
+
+.opbuf: ALC 4
+.oc0: CHR .srcbuf .t_op_st
+.wo0: PUT .opbuf 0 .oc0
+.os1: ADD .t_op_st 1
+.oc1: CHR .srcbuf .os1
+.wo1: PUT .opbuf 1 .oc1
+.os2: ADD .t_op_st 2
+.oc2: CHR .srcbuf .os2
+.wo2: PUT .opbuf 2 .oc2
+
+.t_arg: ADD .tptr 24
+.t_arg_st: GET .t_arg 1
+.t_arg_len: GET .t_arg 2
+
+-- Extract arg (up to 4 digits)
+.argbuf: ALC 8
+.ad0: CHR .srcbuf .t_arg_st
+.aw0: PUT .argbuf 0 .ad0
+.ad1p: ADD .t_arg_st 1
+.ad1: CHR .srcbuf .ad1p
+.aw1: PUT .argbuf 1 .ad1
+.ad2p: ADD .t_arg_st 2
+.ad2: CHR .srcbuf .ad2p
+.aw2: PUT .argbuf 2 .ad2
+.ad3p: ADD .t_arg_st 3
+.ad3: CHR .srcbuf .ad3p
+.aw3: PUT .argbuf 3 .ad3
+
+-- Emit .nts: ".name: OP arg\n"
+.out: ALC 64
+.dot: 46
+.colon: 58
+.space: 32
+.newline: 10
+
+.p0: PUT .out 0 .dot
+.nbuf: ALC 4
+.pn: PUT .nbuf 0 .name_ch
+.p1: WRT .out 1 .nbuf 1
+.p2: PUT .out 2 .colon
+.p3: PUT .out 3 .space
+.p4: WRT .out 4 .opbuf 3
+.p5: PUT .out 7 .space
+
+-- Write arg based on length
+.len1: SUB .t_arg_len 1
+.len2: SUB .t_arg_len 2
+.len3: SUB .t_arg_len 3
+.p6_1: WRT .out 8 .argbuf 1
+.p6_2: WRT .out 8 .argbuf 2
+.p6_3: WRT .out 8 .argbuf 3
+.p6_4: WRT .out 8 .argbuf 4
+.p6_s2: IFZ .len3 .p6_3 .p6_4
+.p6_s1: IFZ .len2 .p6_2 .p6_s2
+.p6: IFZ .len1 .p6_1 .p6_s1
+
+.pos_end: ADD 8 .t_arg_len
+.p7: PUT .out .pos_end .newline
+.total: ADD .pos_end 1
+
+.oout: PRT .out .total
+.result: ADD .oout .zero

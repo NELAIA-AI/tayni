@@ -1,0 +1,16 @@
+.zero: 0
+.path: "value.txt"
+.handle: FOP .path .zero
+.buf: ALC 16
+.read: FRD .handle .buf 16
+.closed: FCL .handle
+.val: CHR .buf 0
+.forty_eight: 48
+.actual: SUB .val .forty_eight
+.yes: 89
+.no: 78
+.result: IFZ .actual .yes .no
+.outbuf: ALC 4
+.w0: PUT .outbuf 0 .result
+.w1: PUT .outbuf 1 10
+.out: PRT .outbuf 2

@@ -1,0 +1,29 @@
+-- Debug: tokenize line 2
+.zero: 0
+.bufsize: 64
+.inputlen: 30
+
+-- Read source
+.path: "input.nts"
+.handle: FOP .path .zero
+.srcbuf: ALC .bufsize
+.dummy: FRD .handle .srcbuf .bufsize
+.closed: FCL .handle
+
+-- Line 2 starts at position 18 (after newline at 17)
+.line2_start: 18
+.line2_len: 12
+
+-- Get pointer to line 2
+.line2_ptr: ADD .srcbuf .line2_start
+
+-- Tokenize line 2
+.tok2: FSM .line2_ptr .line2_len
+
+-- Get token count
+.tcnt: GET .tok2 0
+
+-- Output
+.out: ALC 64
+.w0: PUT .out 0 .tcnt
+.result: PRT .out 1

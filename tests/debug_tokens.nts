@@ -1,0 +1,16 @@
+.zero: 0
+.bufsize: 256
+.path: "input.nts"
+.handle: FOP .path .zero
+.srcbuf: ALC .bufsize
+.srclen: FRD .handle .srcbuf .bufsize
+.closed: FCL .handle
+.tokens: FSM .srcbuf .srclen
+.tcount: GET .tokens 0
+.out: ALC 64
+.c48: 48
+.d0: ADD .tcount .c48
+.w0: PUT .out 0 .d0
+.nl: 10
+.w1: PUT .out 1 .nl
+.prt: PRT .out 2

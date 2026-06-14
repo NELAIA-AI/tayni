@@ -24,7 +24,7 @@ fn op_to_byte(op: &Op) -> u8 {
         // I/O 0x30-0x3F
         Op::Prt => 0x30, Op::Inp => 0x31, Op::Fop => 0x32, Op::Frd => 0x33, Op::Fwr => 0x34, Op::Fcl => 0x35,
         Op::Err => 0x36,
-        // Network 0x40-0x4F
+        // Network 0x40-0x4F  
         Op::Tcp => 0x40, Op::Udp => 0x41, Op::Bnd => 0x42, Op::Lst => 0x43,
         Op::Acc => 0x44, Op::Con => 0x45, Op::Xmt => 0x46, Op::Rcv => 0x47, Op::Cls => 0x48,
         Op::Sel => 0x49, Op::Rdy => 0x4A, Op::Nbk => 0x4B,
@@ -51,6 +51,27 @@ fn op_to_byte(op: &Op) -> u8 {
         Op::Len => 0xA4, Op::Fst => 0xA5, Op::Snd => 0xA6,
         // Other
         Op::Opn => 0xB0, Op::Chk => 0xB1,
+        // Capability System 0xC0-0xDF
+        Op::Req => 0xC0,
+        Op::HttpListen => 0xC1, Op::HttpAccept => 0xC2, Op::HttpMethod => 0xC3,
+        Op::HttpPath => 0xC4, Op::HttpBody => 0xC5, Op::HttpRespond => 0xC6,
+        Op::HttpGet => 0xC7, Op::HttpPost => 0xC8,
+        Op::SqlConnect => 0xD0, Op::SqlQuery => 0xD1, Op::SqlExec => 0xD2,
+        Op::SqlNext => 0xD3, Op::SqlGet => 0xD4, Op::SqlClose => 0xD5,
+        Op::JsonParse => 0xE0, Op::JsonEncode => 0xE1, Op::JsonGet => 0xE2, Op::JsonSet => 0xE3,
+        // Phase 8: Contracts & Negotiation
+        Op::Contract => 0xE4, Op::Guarantee => 0xE5, Op::Limit => 0xE6, Op::Sandbox => 0xE7,
+        Op::Provides => 0xE8, Op::Negotiate => 0xE9, Op::Bind => 0xEA,
+        Op::DefCap => 0xEB, Op::ExtendCap => 0xEC, Op::ComposeCap => 0xED,
+        // Phase 10: Testing
+        Op::Property => 0xF0, Op::GenTests => 0xF1, Op::Verify => 0xF2,
+        // Phase 9.2: Incremental Compilation
+        Op::Hash => 0xF3, Op::CacheGet => 0xF4, Op::CachePut => 0xF5,
+        Op::CacheVerify => 0xF6, Op::CacheInvalidate => 0xF7,
+        // Phase 11: SEN - Ecosystem
+        Op::Discover => 0xF8, Op::CapInfo => 0xF9, Op::CapCost => 0xFA,
+        Op::CapPublish => 0xFB, Op::CapAvailable => 0xFC, 
+        Op::CapVersion => 0xFD, Op::CapDeps => 0xFE,
         Op::Call(_) => 0xFF,
     }
 }
@@ -79,6 +100,27 @@ fn byte_to_op(b: u8) -> Option<Op> {
         0x85 => Op::Lbl, 0x86 => Op::Txb, 0x87 => Op::Btn, 0x88 => Op::Dlg,
         0x89 => Op::Gvl, 0x8A => Op::Svl,
         0x90 => Op::Epl, 0x91 => Op::Ect, 0x92 => Op::Ewa,
+        // Capability System
+        0xC0 => Op::Req,
+        0xC1 => Op::HttpListen, 0xC2 => Op::HttpAccept, 0xC3 => Op::HttpMethod,
+        0xC4 => Op::HttpPath, 0xC5 => Op::HttpBody, 0xC6 => Op::HttpRespond,
+        0xC7 => Op::HttpGet, 0xC8 => Op::HttpPost,
+        0xD0 => Op::SqlConnect, 0xD1 => Op::SqlQuery, 0xD2 => Op::SqlExec,
+        0xD3 => Op::SqlNext, 0xD4 => Op::SqlGet, 0xD5 => Op::SqlClose,
+        0xE0 => Op::JsonParse, 0xE1 => Op::JsonEncode, 0xE2 => Op::JsonGet, 0xE3 => Op::JsonSet,
+        // Phase 8: Contracts & Negotiation
+        0xE4 => Op::Contract, 0xE5 => Op::Guarantee, 0xE6 => Op::Limit, 0xE7 => Op::Sandbox,
+        0xE8 => Op::Provides, 0xE9 => Op::Negotiate, 0xEA => Op::Bind,
+        0xEB => Op::DefCap, 0xEC => Op::ExtendCap, 0xED => Op::ComposeCap,
+        // Phase 10: Testing
+        0xF0 => Op::Property, 0xF1 => Op::GenTests, 0xF2 => Op::Verify,
+        // Phase 9.2: Incremental Compilation
+        0xF3 => Op::Hash, 0xF4 => Op::CacheGet, 0xF5 => Op::CachePut,
+        0xF6 => Op::CacheVerify, 0xF7 => Op::CacheInvalidate,
+        // Phase 11: SEN - Ecosystem
+        0xF8 => Op::Discover, 0xF9 => Op::CapInfo, 0xFA => Op::CapCost,
+        0xFB => Op::CapPublish, 0xFC => Op::CapAvailable,
+        0xFD => Op::CapVersion, 0xFE => Op::CapDeps,
         _ => return None,
     })
 }

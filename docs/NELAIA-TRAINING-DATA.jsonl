@@ -1,0 +1,114 @@
+{"input": "Print hello world", "output": ".msg: \"Hello World!\\n\"\n.len: 13\n.out: PRT .msg .len"}
+{"input": "Add two numbers 42 and 8", "output": ".a: 42\n.b: 8\n.sum: ADD .a .b"}
+{"input": "Subtract 10 from 50", "output": ".a: 50\n.b: 10\n.result: SUB .a .b"}
+{"input": "Multiply 6 by 7", "output": ".a: 6\n.b: 7\n.result: MUL .a .b"}
+{"input": "Divide 100 by 4", "output": ".a: 100\n.b: 4\n.result: DIV .a .b"}
+{"input": "Calculate modulo 17 mod 5", "output": ".a: 17\n.b: 5\n.result: MOD .a .b"}
+{"input": "Negate number -42", "output": ".x: 42\n.result: NEG .x"}
+{"input": "Check if x equals y", "output": ".x: 10\n.y: 10\n.result: EQ .x .y"}
+{"input": "Check if a is not equal to b", "output": ".a: 5\n.b: 10\n.result: NE .a .b"}
+{"input": "Check if x is less than y", "output": ".x: 5\n.y: 10\n.result: LT .x .y"}
+{"input": "Check if x is greater than y", "output": ".x: 15\n.y: 10\n.result: GT .x .y"}
+{"input": "Check if x is less than or equal to y", "output": ".x: 10\n.y: 10\n.result: LE .x .y"}
+{"input": "Check if x is greater than or equal to y", "output": ".x: 10\n.y: 5\n.result: GE .x .y"}
+{"input": "Logical AND of two conditions", "output": ".a: 1\n.b: 1\n.result: AND .a .b"}
+{"input": "Logical OR of two conditions", "output": ".a: 0\n.b: 1\n.result: OR .a .b"}
+{"input": "Logical NOT of a condition", "output": ".a: 1\n.result: NOT .a"}
+{"input": "Allocate 1024 bytes of memory", "output": ".buf: ALC 1024"}
+{"input": "Free allocated memory", "output": ".buf: ALC 1024\n.free: FRE .buf"}
+{"input": "Write byte 65 at offset 0", "output": ".buf: ALC 100\n.write: PUT .buf 0 65"}
+{"input": "Read byte from offset 0", "output": ".buf: ALC 100\n.byte: GET .buf 0"}
+{"input": "Copy 50 bytes from source to destination", "output": ".src: ALC 100\n.dst: ALC 100\n.copy: CPY .dst .src 50"}
+{"input": "Get string length", "output": ".str: \"Hello\"\n.len: SLN .str"}
+{"input": "Print message to console", "output": ".msg: \"Hello\\n\"\n.len: 6\n.out: PRT .msg .len"}
+{"input": "Read from stdin", "output": ".input: INP"}
+{"input": "Get last error code", "output": ".err: ERR"}
+{"input": "Open file for reading", "output": ".path: \"data.txt\"\n.file: FOP .path 0"}
+{"input": "Open file for writing", "output": ".path: \"output.txt\"\n.file: FOP .path 1"}
+{"input": "Read 1024 bytes from file", "output": ".file: FOP .path 0\n.buf: ALC 1024\n.n: FRD .file .buf 1024"}
+{"input": "Write data to file", "output": ".file: FOP .path 1\n.msg: \"Hello\"\n.len: 5\n.write: FWR .file .msg .len"}
+{"input": "Close file handle", "output": ".close: FCL .file"}
+{"input": "Read file and print contents", "output": ".path: \"data.txt\"\n.file: FOP .path 0\n.buf: ALC 1024\n.n: FRD .file .buf 1024\n.out: PRT .buf .n\n.close: FCL .file"}
+{"input": "Write string to file", "output": ".path: \"output.txt\"\n.file: FOP .path 1\n.msg: \"Hello World\"\n.len: 11\n.write: FWR .file .msg .len\n.close: FCL .file"}
+{"input": "Create TCP socket", "output": ".sock: TCP"}
+{"input": "Bind socket to port 8080", "output": ".sock: TCP\n.addr: ALC 16\n.a0: PUT .addr 0 2\n.a1: PUT .addr 2 31\n.a2: PUT .addr 3 144\n.bind: BND .sock .addr"}
+{"input": "Listen for connections with backlog 10", "output": ".listen: LST .sock 10"}
+{"input": "Accept incoming connection", "output": ".client: ACC .sock"}
+{"input": "Send data to client", "output": ".msg: \"Hello\"\n.len: 5\n.send: XMT .client .msg .len"}
+{"input": "Receive data from client", "output": ".buf: ALC 1024\n.n: RCV .client .buf 1024"}
+{"input": "Close socket connection", "output": ".close: CLS .client"}
+{"input": "Create simple TCP server on port 8080", "output": ".sock: TCP\n.addr: ALC 16\n.a0: PUT .addr 0 2\n.a1: PUT .addr 2 31\n.a2: PUT .addr 3 144\n.bind: BND .sock .addr\n.listen: LST .sock 10\n.client: ACC .sock\n.buf: ALC 512\n.n: RCV .client .buf 512\n.send: XMT .client .buf .n\n.close: CLS .client"}
+{"input": "TCP echo server with loop", "output": ".sock: TCP\n.addr: ALC 16\n.a0: PUT .addr 0 2\n.a1: PUT .addr 2 31\n.a2: PUT .addr 3 144\n.bind: BND .sock .addr\n.listen: LST .sock 10\n.loop: ACC .sock\n.buf: ALC 512\n.n: RCV .loop .buf 512\n.send: XMT .loop .buf .n\n.cls: CLS .loop\n.loop >> .loop"}
+{"input": "Create thread with function and argument", "output": ".thread: THR .func .arg"}
+{"input": "Join thread and wait for completion", "output": ".join: JON .thread"}
+{"input": "Create mutex for synchronization", "output": ".mutex: MTX"}
+{"input": "Lock mutex", "output": ".lock: LCK .mutex"}
+{"input": "Unlock mutex", "output": ".unlock: ULK .mutex"}
+{"input": "Declare HTTP capability", "output": ".caps: REQUIRES { http }"}
+{"input": "Declare SQL capability", "output": ".caps: REQUIRES { sql }"}
+{"input": "Declare JSON capability", "output": ".caps: REQUIRES { json }"}
+{"input": "Declare multiple capabilities", "output": ".caps: REQUIRES { http, sql, json }"}
+{"input": "Create HTTP server on port 8080", "output": ".caps: REQUIRES { http }\n.server: HTTP.LISTEN 8080"}
+{"input": "Accept HTTP request", "output": ".caps: REQUIRES { http }\n.server: HTTP.LISTEN 8080\n.req: HTTP.ACCEPT .server"}
+{"input": "Get HTTP request method", "output": ".method: HTTP.METHOD .req"}
+{"input": "Get HTTP request path", "output": ".path: HTTP.PATH .req"}
+{"input": "Get HTTP request body", "output": ".body: HTTP.BODY .req"}
+{"input": "Respond to HTTP request with 200 OK", "output": ".resp: HTTP.RESPOND .req 200 \"OK\""}
+{"input": "Respond to HTTP request with JSON", "output": ".resp: HTTP.RESPOND .req 200 \"{\\\"status\\\": \\\"success\\\"}\""}
+{"input": "Make HTTP GET request", "output": ".caps: REQUIRES { http }\n.data: HTTP.GET \"http://api.example.com/data\""}
+{"input": "Make HTTP POST request with body", "output": ".caps: REQUIRES { http }\n.response: HTTP.POST \"http://api.example.com/users\" .body"}
+{"input": "Simple HTTP server responding Hello", "output": ".caps: REQUIRES { http }\n.server: HTTP.LISTEN 8080\n.req: HTTP.ACCEPT .server\n.resp: HTTP.RESPOND .req 200 \"Hello from NELAIA!\""}
+{"input": "HTTP server with method routing", "output": ".caps: REQUIRES { http }\n.server: HTTP.LISTEN 8080\n.req: HTTP.ACCEPT .server\n.method: HTTP.METHOD .req\n.path: HTTP.PATH .req\n.resp: HTTP.RESPOND .req 200 \"OK\""}
+{"input": "Connect to SQL database", "output": ".caps: REQUIRES { sql }\n.conn: SQL.CONNECT \"Driver={SQL Server};Server=localhost;Database=test\""}
+{"input": "Execute SQL SELECT query", "output": ".caps: REQUIRES { sql }\n.conn: SQL.CONNECT \"Driver={SQL Server};Server=localhost;Database=test\"\n.result: SQL.QUERY .conn \"SELECT * FROM users\""}
+{"input": "Execute SQL INSERT statement", "output": ".caps: REQUIRES { sql }\n.conn: SQL.CONNECT \"...\"\n.exec: SQL.EXEC .conn \"INSERT INTO users (name) VALUES ('John')\""}
+{"input": "Get next row from SQL result", "output": ".has_row: SQL.NEXT .result"}
+{"input": "Get column value from SQL result", "output": ".value: SQL.GET .result 0"}
+{"input": "Close SQL connection", "output": ".close: SQL.CLOSE .conn"}
+{"input": "Query users and get first name", "output": ".caps: REQUIRES { sql }\n.conn: SQL.CONNECT \"Driver={SQL Server};Server=localhost;Database=test\"\n.result: SQL.QUERY .conn \"SELECT name FROM users\"\n.has_row: SQL.NEXT .result\n.name: SQL.GET .result 0\n.close: SQL.CLOSE .conn"}
+{"input": "Insert user into database", "output": ".caps: REQUIRES { sql }\n.conn: SQL.CONNECT \"Driver={SQL Server};Server=localhost;Database=test\"\n.exec: SQL.EXEC .conn \"INSERT INTO users (name, email) VALUES ('John', 'john@example.com')\"\n.close: SQL.CLOSE .conn"}
+{"input": "Parse JSON string", "output": ".caps: REQUIRES { json }\n.input: \"{ \\\"name\\\": \\\"NELAIA\\\" }\"\n.obj: JSON.PARSE .input"}
+{"input": "Encode object to JSON string", "output": ".caps: REQUIRES { json }\n.output: JSON.ENCODE .obj"}
+{"input": "Get value from JSON object by key", "output": ".caps: REQUIRES { json }\n.obj: JSON.PARSE .input\n.name: JSON.GET .obj \"name\""}
+{"input": "Set value in JSON object", "output": ".caps: REQUIRES { json }\n.obj: JSON.PARSE .input\n.modified: JSON.SET .obj \"status\" \"active\""}
+{"input": "Parse JSON and extract multiple fields", "output": ".caps: REQUIRES { json }\n.input: \"{ \\\"name\\\": \\\"NELAIA\\\", \\\"version\\\": 22 }\"\n.obj: JSON.PARSE .input\n.name: JSON.GET .obj \"name\"\n.version: JSON.GET .obj \"version\""}
+{"input": "Modify JSON and serialize", "output": ".caps: REQUIRES { json }\n.obj: JSON.PARSE .input\n.modified: JSON.SET .obj \"updated\" \"true\"\n.output: JSON.ENCODE .modified"}
+{"input": "Create resource contract", "output": ".contract: CONTRACT 0"}
+{"input": "Declare resource guarantee", "output": ".guarantee: GUARANTEE 1 0"}
+{"input": "Set resource limit to 1MB", "output": ".limit: LIMIT 1 1048576"}
+{"input": "Execute code in sandbox", "output": ".result: SANDBOX .code .contract"}
+{"input": "Offer capability to other AIs", "output": ".offer: PROVIDES 0"}
+{"input": "Negotiate capability binding", "output": ".binding: NEGOTIATE .offer .need"}
+{"input": "Bind offered and needed capabilities", "output": ".link: BIND .offer_cap .need_cap"}
+{"input": "Define custom capability", "output": ".my_cap: DEFCAP 0"}
+{"input": "Extend existing capability", "output": ".extended: EXTCAP .base_cap"}
+{"input": "Compose multiple capabilities", "output": ".composed: COMPOSE 0"}
+{"input": "Contract with memory limit", "output": ".contract: CONTRACT 0\n.limit: LIMIT 1 1048576\n.guarantee: GUARANTEE 1 0"}
+{"input": "Define testable property", "output": ".prop: PROPERTY 0"}
+{"input": "Generate 100 test cases", "output": ".prop: PROPERTY 0\n.tests: GENTESTS .prop 100"}
+{"input": "Verify property holds", "output": ".prop: PROPERTY 0\n.result: VERIFY .prop"}
+{"input": "Property-based testing workflow", "output": ".prop: PROPERTY 0\n.tests: GENTESTS .prop 100\n.result: VERIFY .prop"}
+{"input": "Calculate hash of value", "output": ".hash: HASH .value"}
+{"input": "Look up value in cache", "output": ".cached: CACHE_GET .hash"}
+{"input": "Store value in cache", "output": ".stored: CACHE_PUT .hash .ir"}
+{"input": "Verify cache integrity", "output": ".valid: CACHE_VERIFY .hash"}
+{"input": "Invalidate cache entry", "output": ".inv: CACHE_INVALIDATE .hash"}
+{"input": "Cache compilation result", "output": ".hash: HASH .source\n.cached: CACHE_GET .hash\n.store: CACHE_PUT .hash .compiled\n.valid: CACHE_VERIFY .hash"}
+{"input": "Discover capabilities for JSON processing", "output": ".options: DISCOVER \"json processing\""}
+{"input": "Get capability information", "output": ".info: CAPABILITY_INFO \"json\""}
+{"input": "Get capability cost", "output": ".cost: CAPABILITY_COST \"json\""}
+{"input": "Publish custom capability", "output": ".pub: PUBLISH .my_capability"}
+{"input": "Check capability availability in region", "output": ".avail: CAPABILITY_AVAILABLE \"json\" \"global\""}
+{"input": "Get capability version", "output": ".ver: CAPABILITY_VERSION \"json\""}
+{"input": "Get capability dependencies", "output": ".deps: CAPABILITY_DEPS \"json\""}
+{"input": "AI discovers and evaluates capabilities", "output": ".options: DISCOVER \"process data\"\n.info: CAPABILITY_INFO \"json\"\n.cost: CAPABILITY_COST \"json\"\n.avail: CAPABILITY_AVAILABLE \"json\" \"global\""}
+{"input": "AI workflow: discover, evaluate, use", "output": ".options: DISCOVER \"json\"\n.cost: CAPABILITY_COST \"json\"\n.info: CAPABILITY_INFO \"json\"\n.caps: REQUIRES { json }\n.data: JSON.PARSE .input"}
+{"input": "Calculate sum of a and b then multiply by c", "output": ".a: 5\n.b: 3\n.c: 2\n.sum: ADD .a .b\n.result: MUL .sum .c"}
+{"input": "Check if number is positive", "output": ".x: 10\n.zero: 0\n.is_positive: GT .x .zero"}
+{"input": "Check if number is in range 0 to 100", "output": ".x: 50\n.ge_zero: GE .x 0\n.le_hundred: LE .x 100\n.in_range: AND .ge_zero .le_hundred"}
+{"input": "Build HTTP response with JSON body", "output": ".caps: REQUIRES { http, json }\n.data: JSON.ENCODE .result\n.resp: HTTP.RESPOND .req 200 .data"}
+{"input": "REST API endpoint returning JSON", "output": ".caps: REQUIRES { http, json }\n.server: HTTP.LISTEN 8080\n.req: HTTP.ACCEPT .server\n.path: HTTP.PATH .req\n.data: \"{ \\\"status\\\": \\\"ok\\\" }\"\n.resp: HTTP.RESPOND .req 200 .data"}
+{"input": "Query database and return as JSON", "output": ".caps: REQUIRES { sql, json }\n.conn: SQL.CONNECT \"...\"\n.result: SQL.QUERY .conn \"SELECT name FROM users\"\n.has_row: SQL.NEXT .result\n.name: SQL.GET .result 0\n.json: JSON.SET .obj \"name\" .name\n.close: SQL.CLOSE .conn"}
+{"input": "HTTP client fetching JSON API", "output": ".caps: REQUIRES { http, json }\n.response: HTTP.GET \"http://api.example.com/data\"\n.data: JSON.PARSE .response\n.value: JSON.GET .data \"result\""}
+{"input": "Allocate buffer and write string", "output": ".buf: ALC 100\n.w0: PUT .buf 0 72\n.w1: PUT .buf 1 105\n.w2: PUT .buf 2 0\n.out: PRT .buf 2"}
+{"input": "Compare two strings for equality", "output": ".a: \"hello\"\n.b: \"hello\"\n.len: 5\n.result: CMP .a .b .len"}
