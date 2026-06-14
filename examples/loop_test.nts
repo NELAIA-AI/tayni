@@ -1,33 +1,90 @@
-.msg: "Loop iteration\n"
-.done_msg: "Loop complete!\n"
-.five: 5
-.one: 1
+-- Test dynamic loop over tokens
+-- Count tokens in input
+
 .zero: 0
+.one: 1
 
-.i0: ADD .five .zero
-.p0: PRT .msg 15
-.d0: SUB .i0 .one
-.c0: END .d0
+.src: ".a: 1\n.b: 2\n.c: 3"
+.slen: 17
 
-.i1: ADD .d0 .zero
-.p1: PRT .msg 15
-.d1: SUB .i1 .one
-.c1: END .d1
+-- Tokenize
+.tokens: FSM .src .slen
+.tptr: ADD .tokens .zero
 
-.i2: ADD .d1 .zero
-.p2: PRT .msg 15
-.d2: SUB .i2 .one
-.c2: END .d2
+-- Get token count from FSM header (first 8 bytes)
+.tcnt: GET .tptr 0
 
-.i3: ADD .d2 .zero
-.p3: PRT .msg 15
-.d3: SUB .i3 .one
-.c3: END .d3
+-- Output
+.msg1: "=== Loop Test ===\n"
+.o1: PRT .msg1 18
 
-.i4: ADD .d3 .zero
-.p4: PRT .msg 15
-.d4: SUB .i4 .one
-.c4: END .d4
+.msg2: "Source: "
+.o2: PRT .msg2 8
+.o2b: PRT .src .slen
+.nl: "\n"
+.o2c: PRT .nl 1
 
-.final: PRT .done_msg 15
-.out: ADD .c0 .c1 .c2 .c3 .c4 .final
+.msg3: "Token count: "
+.o3: PRT .msg3 13
+
+-- Print count (assume < 100)
+.d1: DIV .tcnt 10
+.d2: MOD .tcnt 10
+.c1: ADD .d1 48
+.c2: ADD .d2 48
+.nbuf: ALC 4
+.p1: PUT .nbuf 0 .c1
+.p2: PUT .nbuf 1 .c2
+.p3: PUT .nbuf 2 10
+.o4: PRT .nbuf 3
+
+-- Now iterate and print each token type
+.msg4: "Token types: "
+.o5: PRT .msg4 13
+
+-- Unrolled loop for now (will make dynamic)
+-- Token 0
+.t0: ADD .tptr 8
+.t0_ty: GET .t0 0
+.ty0: ADD .t0_ty 48
+.pt0: PUT .nbuf 0 .ty0
+.pt0s: PUT .nbuf 1 32
+.ot0: PRT .nbuf 2
+
+-- Token 1
+.t1: ADD .tptr 12
+.t1_ty: GET .t1 0
+.ty1: ADD .t1_ty 48
+.pt1: PUT .nbuf 0 .ty1
+.ot1: PRT .nbuf 2
+
+-- Token 2
+.t2: ADD .tptr 16
+.t2_ty: GET .t2 0
+.ty2: ADD .t2_ty 48
+.pt2: PUT .nbuf 0 .ty2
+.ot2: PRT .nbuf 2
+
+-- Token 3
+.t3: ADD .tptr 20
+.t3_ty: GET .t3 0
+.ty3: ADD .t3_ty 48
+.pt3: PUT .nbuf 0 .ty3
+.ot3: PRT .nbuf 2
+
+-- Token 4
+.t4: ADD .tptr 24
+.t4_ty: GET .t4 0
+.ty4: ADD .t4_ty 48
+.pt4: PUT .nbuf 0 .ty4
+.ot4: PRT .nbuf 2
+
+.o6: PRT .nl 1
+
+.msg5: "Expected: 1 3 2 4 6 (DOT ID COLON NUM NL)\n"
+.o7: PRT .msg5 42
+
+.done: "Loop test done!\n"
+.od: PRT .done 16
+
+.result: ADD .o1 .o2 .o2b .o2c .o3 .o4 .o5 .ot0 .ot1 .ot2 .ot3 .ot4 .o6 .o7 .od

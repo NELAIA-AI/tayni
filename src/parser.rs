@@ -338,6 +338,7 @@ impl Parser {
             "SBS" => Ok(Op::Sbs),
             "SCM" => Ok(Op::Scm),
             "WRT" => Ok(Op::Wrt),
+            "IFZ" => Ok(Op::Ifz),
             // BRK/CNT deprecated - use cyclic flow >> instead
             // Error handling
             "CHK" => Ok(Op::Chk),

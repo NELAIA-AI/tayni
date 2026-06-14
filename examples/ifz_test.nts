@@ -1,0 +1,47 @@
+-- Test IFZ (If Zero select)
+
+.zero: 0
+.one: 1
+.ten: 10
+.twenty: 20
+
+-- Test 1: cond = 0, should return 10
+.r1: IFZ .zero .ten .twenty
+
+-- Test 2: cond = 1, should return 20
+.r2: IFZ .one .ten .twenty
+
+-- Output
+.msg1: "IFZ Test\n"
+.o1: PRT .msg1 9
+
+.msg2: "IFZ 0 10 20 = "
+.o2: PRT .msg2 14
+.buf: ALC 8
+.d1: DIV .r1 10
+.m1: MOD .r1 10
+.c1: ADD .d1 48
+.c2: ADD .m1 48
+.p1: PUT .buf 0 .c1
+.p2: PUT .buf 1 .c2
+.p3: PUT .buf 2 32
+.o3: PRT .buf 3
+.exp1: "(expected 10)\n"
+.o4: PRT .exp1 14
+
+.msg3: "IFZ 1 10 20 = "
+.o5: PRT .msg3 14
+.d2: DIV .r2 10
+.m2: MOD .r2 10
+.c3: ADD .d2 48
+.c4: ADD .m2 48
+.p4: PUT .buf 0 .c3
+.p5: PUT .buf 1 .c4
+.o6: PRT .buf 3
+.exp2: "(expected 20)\n"
+.o7: PRT .exp2 14
+
+.done: "IFZ works!\n"
+.od: PRT .done 11
+
+.result: ADD .o1 .o2 .o3 .o4 .o5 .o6 .o7 .od

@@ -120,6 +120,7 @@ pub enum Op {
     Sbs,  // SBS dst src start len -> substring
     Scm,  // SCM str1 str2 len -> 0 if equal, non-zero if different
     Wrt,  // WRT dst pos src len -> write src to dst at pos, returns pos+len
+    Ifz,  // IFZ cond val_zero val_nonzero -> select value based on cond
     // Error handling
     Chk,
     // GUI - Window Management

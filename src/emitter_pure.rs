@@ -367,6 +367,7 @@ impl PureEmitter {
             Op::Sbs => self.emit_substring(id, args),
             Op::Scm => self.emit_str_compare(id, args),
             Op::Wrt => self.emit_write_string(id, args),
+            Op::Ifz => self.emit_if_zero(id, args),
             
             _ => Ok(format!("  ; TODO: {:?}\n", op)),
         }
@@ -2872,8 +2873,8 @@ end:
             }
             TargetPlatform::Windows => {
                 Ok(format!(
-                    "  %{}_h = inttoptr i64 {} to i8*\n  %{}_buf = inttoptr i64 {} to i8*\n  %{}_read = alloca i32\n  call i32 @ReadFile(i8* %{}_h, i8* %{}_buf, i32 {}, i32* %{}_read, i8* null)\n  %{}_r = load i32, i32* %{}_read\n  %{} = zext i32 %{}_r to i64\n",
-                    id, handle, id, buf, id, id, id, len, id, id, id, id, id
+                    "  %{}_h = inttoptr i64 {} to i8*\n  %{}_buf = inttoptr i64 {} to i8*\n  %{}_len32 = trunc i64 {} to i32\n  %{}_read = alloca i32\n  call i32 @ReadFile(i8* %{}_h, i8* %{}_buf, i32 %{}_len32, i32* %{}_read, i8* null)\n  %{}_r = load i32, i32* %{}_read\n  %{} = zext i32 %{}_r to i64\n",
+                    id, handle, id, buf, id, len, id, id, id, id, id, id, id, id, id
                 ))
             }
         }
@@ -3350,5 +3351,21 @@ end:
         code.push_str(&format!("  %{} = add i64 {}, {}\n", id, pos, len));
         
         Ok(code)
+    }
+    
+    fn emit_if_zero(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        // IFZ cond val_zero val_nonzero -> select value based on cond
+        // If cond == 0, return val_zero, else return val_nonzero
+        if args.len() < 3 {
+            return Err("IFZ requires cond, val_zero, val_nonzero".to_string());
+        }
+        let cond = self.emit_arg(&args[0])?;
+        let val_zero = self.emit_arg(&args[1])?;
+        let val_nonzero = self.emit_arg(&args[2])?;
+        
+        Ok(format!(
+            "  %{}_cmp = icmp eq i64 {}, 0\n  %{} = select i1 %{}_cmp, i64 {}, i64 {}\n",
+            id, cond, id, id, val_zero, val_nonzero
+        ))
     }
 }

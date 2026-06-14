@@ -1,3 +1,2 @@
-.a: 5
-.b: MUL .a 2
-.c: ADD .b 3
+.x: 9
+.y: SUB .x 4
