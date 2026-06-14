@@ -1,5 +1,5 @@
--- Test FSM v2 - Full tokenizer with ID, NUM, STR
--- Token types: 1=DOT, 2=COLON, 3=ID, 4=NUM, 5=STR, 6=NL
+-- Test FSM v3 - Token grouping
+-- Groups consecutive chars of same type
 
 .input: ".msg: 42\n.out: PRT"
 .len: 18
@@ -8,10 +8,10 @@
 .tokens: FSM .input .len
 .tptr: ADD .tokens .zero
 
--- Read token count (first 8 bytes as i64, but we read byte 0)
+-- Read token count
 .cnt: GET .tptr 0
 
--- Read tokens
+-- Read first 6 tokens
 .t0_off: ADD .tptr 8
 .t0_type: GET .t0_off 0
 
@@ -31,36 +31,48 @@
 .t5_type: GET .t5_off 0
 
 -- Output
-.msg1: "FSM v2 Tokenizer\n"
-.out1: PRT .msg1 17
+.msg1: "FSM v3 - Token Grouping\n"
+.out1: PRT .msg1 24
 
 .msg2: "Input: .msg: 42\\n.out: PRT\n"
 .out2: PRT .msg2 27
 
-.msg3: "Token types: "
+.msg3: "Token count: "
 .out3: PRT .msg3 13
+.cnt_d: ADD .cnt 48
+.cbuf: ALC 4
+.pc: PUT .cbuf 0 .cnt_d
+.pcn: PUT .cbuf 1 10
+.out3b: PRT .cbuf 2
 
--- Print each token type
+.msg4: "Token types: "
+.out4: PRT .msg4 13
+
 .buf: ALC 16
 .d0: ADD .t0_type 48
 .p0: PUT .buf 0 .d0
+.sp0: PUT .buf 1 32
 .d1: ADD .t1_type 48
-.p1: PUT .buf 1 .d1
+.p1: PUT .buf 2 .d1
+.sp1: PUT .buf 3 32
 .d2: ADD .t2_type 48
-.p2: PUT .buf 2 .d2
+.p2: PUT .buf 4 .d2
+.sp2: PUT .buf 5 32
 .d3: ADD .t3_type 48
-.p3: PUT .buf 3 .d3
+.p3: PUT .buf 6 .d3
+.sp3: PUT .buf 7 32
 .d4: ADD .t4_type 48
-.p4: PUT .buf 4 .d4
+.p4: PUT .buf 8 .d4
+.sp4: PUT .buf 9 32
 .d5: ADD .t5_type 48
-.p5: PUT .buf 5 .d5
-.pnl: PUT .buf 6 10
-.out4: PRT .buf 7
+.p5: PUT .buf 10 .d5
+.pnl: PUT .buf 11 10
+.out5: PRT .buf 12
 
-.msg5: "Expected: 1(DOT) 3(ID) 2(COLON) 4(NUM) 6(NL) 1(DOT)\n"
-.out5: PRT .msg5 52
+.msg6: "Expected: 1(.) 3(msg) 2(:) 4(42) 6(NL) 1(.)\n"
+.out6: PRT .msg6 44
 
-.done: "FSM v2 works!\n"
-.out6: PRT .done 14
+.done: "FSM v3 works!\n"
+.out7: PRT .done 14
 
-.result: ADD .out1 .out2 .out3 .out4 .out5 .out6
+.result: ADD .out1 .out2 .out3 .out3b .out4 .out5 .out6 .out7
