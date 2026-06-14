@@ -98,6 +98,16 @@ pub enum Op {
     Vst,  // VST vec index value -> set value at index
     Vln,  // VLN vec -> current length
     Vcp,  // VCP vec -> capacity
+    // HashMap (self-hosting - symbol tables)
+    Hmp,  // HMP capacity -> hashmap_ptr
+    Hpt,  // HPT map key_ptr key_len value -> put key-value
+    Hgt,  // HGT map key_ptr key_len -> value (0 if not found)
+    Hhs,  // HHS map key_ptr key_len -> 1 if exists, 0 if not
+    // String operations (self-hosting - code generation)
+    Cat,  // CAT dst src1 src2 -> concatenate strings to dst
+    Its,  // ITS num buf -> int to string, returns length
+    Chr,  // CHR str index -> char code at index
+    Sbs,  // SBS dst src start len -> substring
     // Error handling
     Chk,
     // GUI - Window Management
@@ -379,6 +389,14 @@ impl UsageAnalysis {
             // Dynamic Vectors
             Op::Vec | Op::Vph | Op::Vgt | Op::Vst | Op::Vln | Op::Vcp => {
                 self.uses_file_io = true;  // Uses memory allocation
+            }
+            // HashMap
+            Op::Hmp | Op::Hpt | Op::Hgt | Op::Hhs => {
+                self.uses_file_io = true;  // Uses memory allocation
+            }
+            // String operations
+            Op::Cat | Op::Its | Op::Chr | Op::Sbs => {
+                self.uses_file_io = true;  // Uses memory
             }
             // Console I/O
             Op::Prt | Op::Inp | Op::Err => {

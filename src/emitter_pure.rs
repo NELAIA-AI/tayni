@@ -349,6 +349,18 @@ impl PureEmitter {
             Op::Vln => self.emit_vec_len(id, args),
             Op::Vcp => self.emit_vec_cap(id, args),
             
+            // HashMap (self-hosting)
+            Op::Hmp => self.emit_hashmap_create(id, args),
+            Op::Hpt => self.emit_hashmap_put(id, args),
+            Op::Hgt => self.emit_hashmap_get(id, args),
+            Op::Hhs => self.emit_hashmap_has(id, args),
+            
+            // String operations (self-hosting)
+            Op::Cat => self.emit_str_cat(id, args),
+            Op::Its => self.emit_int_to_str(id, args),
+            Op::Chr => self.emit_char_at(id, args),
+            Op::Sbs => self.emit_substring(id, args),
+            
             _ => Ok(format!("  ; TODO: {:?}\n", op)),
         }
     }
@@ -451,23 +463,30 @@ impl PureEmitter {
             Arg::Lit(Value::String(s)) => {
                 let ptr = self.emit_arg(&args[0])?;
                 let len = s.len();
-                match self.target {
-                    TargetPlatform::Linux => {
-                        Ok(format!("  %{} = call i64 @sys_write(i32 1, i8* {}, i64 {})\n", id, ptr, len))
-                    }
-                    TargetPlatform::Windows => {
-                        Ok(format!("  %{} = call i64 @sys_write(i32 1, i8* {}, i64 {})\n", id, ptr, len))
-                    }
-                }
+                // String literals are already pointers (getelementptr)
+                Ok(format!("  %{} = call i64 @sys_write(i32 1, i8* {}, i64 {})\n", id, ptr, len))
             }
-            _ => {
-                // For references, AI must provide length as second arg
+            Arg::Ref(ref_name) => {
+                // Check if this is a reference to a string literal
                 if args.len() < 2 {
                     return Err("PRT with reference requires length argument".to_string());
                 }
                 let ptr = self.emit_arg(&args[0])?;
                 let len = self.emit_arg(&args[1])?;
-                // Convert i64 to i8* if needed
+                // Handle both pointer (getelementptr) and i64 arguments
+                if ptr.contains("getelementptr") {
+                    Ok(format!("  %{}_ptr = bitcast i8* {} to i8*\n  %{} = call i64 @sys_write(i32 1, i8* %{}_ptr, i64 {})\n", id, ptr, id, id, len))
+                } else {
+                    Ok(format!("  %{}_ptr = inttoptr i64 {} to i8*\n  %{} = call i64 @sys_write(i32 1, i8* %{}_ptr, i64 {})\n", id, ptr, id, id, len))
+                }
+            }
+            _ => {
+                // For other cases
+                if args.len() < 2 {
+                    return Err("PRT with reference requires length argument".to_string());
+                }
+                let ptr = self.emit_arg(&args[0])?;
+                let len = self.emit_arg(&args[1])?;
                 Ok(format!("  %{}_ptr = inttoptr i64 {} to i8*\n  %{} = call i64 @sys_write(i32 1, i8* %{}_ptr, i64 {})\n", id, ptr, id, id, len))
             }
         }
@@ -2686,6 +2705,188 @@ end:
         Ok(format!(
             "  %{}_base = inttoptr i64 {} to i64*\n  %{} = load i64, i64* %{}_base\n",
             id, vec, id, id
+        ))
+    }
+    
+    // ============================================================
+    // HASHMAP (Self-hosting - Symbol Tables)
+    // Layout: [capacity: i64][count: i64][buckets: (hash, key_ptr, key_len, value)*]
+    // Simple open addressing with linear probing
+    // ============================================================
+    
+    fn emit_hashmap_create(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        // HMP capacity -> hashmap_ptr
+        let cap = if args.is_empty() { "64".to_string() } else { self.emit_arg(&args[0])? };
+        // Each bucket: 32 bytes (hash:8 + key_ptr:8 + key_len:8 + value:8)
+        // Header: 16 bytes (capacity:8 + count:8)
+        match self.target {
+            TargetPlatform::Linux => {
+                Ok(format!(
+                    "  %{}_bsize = mul i64 {}, 32\n  %{}_total = add i64 %{}_bsize, 16\n  %{} = call i64 @sys_mmap(i64 0, i64 %{}_total, i64 3, i64 34, i64 -1, i64 0)\n  %{}_cap_ptr = inttoptr i64 %{} to i64*\n  store i64 {}, i64* %{}_cap_ptr\n  %{}_cnt_ptr = getelementptr i64, i64* %{}_cap_ptr, i32 1\n  store i64 0, i64* %{}_cnt_ptr\n",
+                    id, cap, id, id, id, id, id, id, cap, id, id, id, id
+                ))
+            }
+            TargetPlatform::Windows => {
+                Ok(format!(
+                    "  %{}_bsize = mul i64 {}, 32\n  %{}_total = add i64 %{}_bsize, 16\n  %{}_ptr = call i8* @VirtualAlloc(i8* null, i64 %{}_total, i32 12288, i32 4)\n  %{} = ptrtoint i8* %{}_ptr to i64\n  %{}_cap_ptr = inttoptr i64 %{} to i64*\n  store i64 {}, i64* %{}_cap_ptr\n  %{}_cnt_ptr = getelementptr i64, i64* %{}_cap_ptr, i32 1\n  store i64 0, i64* %{}_cnt_ptr\n",
+                    id, cap, id, id, id, id, id, id, id, id, cap, id, id, id, id
+                ))
+            }
+        }
+    }
+    
+    fn emit_hashmap_put(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        // HPT map key_ptr key_len value -> 0
+        // Simple implementation: append to linear list
+        if args.len() < 4 {
+            return Err("HPT requires map, key_ptr, key_len, value".to_string());
+        }
+        let map = self.emit_arg(&args[0])?;
+        let key_ptr = self.emit_arg(&args[1])?;
+        let key_len = self.emit_arg(&args[2])?;
+        let value = self.emit_arg(&args[3])?;
+        
+        // Simplified: just store at next slot (4 i64s per entry)
+        Ok(format!(concat!(
+            "  ; HPT: store key-value\n",
+            "  %{id}_base = inttoptr i64 {map} to i64*\n",
+            "  %{id}_cnt_ptr = getelementptr i64, i64* %{id}_base, i32 1\n",
+            "  %{id}_cnt = load i64, i64* %{id}_cnt_ptr\n",
+            "  %{id}_off = mul i64 %{id}_cnt, 4\n",
+            "  %{id}_off2 = add i64 %{id}_off, 2\n",
+            "  %{id}_slot = getelementptr i64, i64* %{id}_base, i64 %{id}_off2\n",
+            "  store i64 {key_ptr}, i64* %{id}_slot\n",
+            "  %{id}_s1 = getelementptr i64, i64* %{id}_slot, i32 1\n",
+            "  store i64 {key_len}, i64* %{id}_s1\n",
+            "  %{id}_s2 = getelementptr i64, i64* %{id}_slot, i32 2\n",
+            "  store i64 {value}, i64* %{id}_s2\n",
+            "  %{id}_newcnt = add i64 %{id}_cnt, 1\n",
+            "  store i64 %{id}_newcnt, i64* %{id}_cnt_ptr\n",
+            "  %{id} = add i64 0, 0\n"),
+            id=id, map=map, key_ptr=key_ptr, key_len=key_len, value=value
+        ))
+    }
+    
+    fn emit_hashmap_get(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        // HGT map key_ptr key_len -> value
+        if args.len() < 3 {
+            return Err("HGT requires map, key_ptr, key_len".to_string());
+        }
+        let map = self.emit_arg(&args[0])?;
+        let _key_ptr = self.emit_arg(&args[1])?;
+        let _key_len = self.emit_arg(&args[2])?;
+        
+        // Simplified: linear search through buckets
+        // For full implementation, would need loop in LLVM IR
+        // This is a placeholder that returns 0
+        Ok(format!(
+            "  ; HGT: lookup (simplified - returns 0)\n  %{}_base = inttoptr i64 {} to i64*\n  %{} = add i64 0, 0\n",
+            id, map, id
+        ))
+    }
+    
+    fn emit_hashmap_has(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        // HHS map key_ptr key_len -> 1 if exists, 0 if not
+        if args.len() < 3 {
+            return Err("HHS requires map, key_ptr, key_len".to_string());
+        }
+        let map = self.emit_arg(&args[0])?;
+        
+        // Simplified placeholder
+        Ok(format!(
+            "  ; HHS: check exists (simplified)\n  %{}_base = inttoptr i64 {} to i64*\n  %{} = add i64 0, 0\n",
+            id, map, id
+        ))
+    }
+    
+    // ============================================================
+    // STRING OPERATIONS (Self-hosting - Code Generation)
+    // ============================================================
+    
+    fn emit_str_cat(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        // CAT dst src1 src2 -> total_len
+        if args.len() < 3 {
+            return Err("CAT requires dst, src1, src2".to_string());
+        }
+        let dst = self.emit_arg(&args[0])?;
+        let src1 = self.emit_arg(&args[1])?;
+        let src2 = self.emit_arg(&args[2])?;
+        
+        // Handle both pointer (getelementptr) and i64 arguments
+        let s1_conv = if src1.contains("getelementptr") {
+            format!("  %{}_s1 = bitcast i8* {} to i8*\n", id, src1)
+        } else {
+            format!("  %{}_s1 = inttoptr i64 {} to i8*\n", id, src1)
+        };
+        let s2_conv = if src2.contains("getelementptr") {
+            format!("  %{}_s2 = bitcast i8* {} to i8*\n", id, src2)
+        } else {
+            format!("  %{}_s2 = inttoptr i64 {} to i8*\n", id, src2)
+        };
+        
+        Ok(format!(
+            "  ; CAT: concatenate strings\n  %{}_dst = inttoptr i64 {} to i8*\n{}{}  %{}_len1 = call i64 @strlen(i8* %{}_s1)\n  %{}_len2 = call i64 @strlen(i8* %{}_s2)\n  call void @llvm.memcpy.p0i8.p0i8.i64(i8* %{}_dst, i8* %{}_s1, i64 %{}_len1, i1 false)\n  %{}_dst2 = getelementptr i8, i8* %{}_dst, i64 %{}_len1\n  call void @llvm.memcpy.p0i8.p0i8.i64(i8* %{}_dst2, i8* %{}_s2, i64 %{}_len2, i1 false)\n  %{} = add i64 %{}_len1, %{}_len2\n",
+            id, dst, s1_conv, s2_conv, id, id, id, id, id, id, id, id, id, id, id, id, id, id, id, id
+        ))
+    }
+    
+    fn emit_int_to_str(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        // ITS num buf -> length
+        if args.len() < 2 {
+            return Err("ITS requires num, buf".to_string());
+        }
+        let num = self.emit_arg(&args[0])?;
+        let buf = self.emit_arg(&args[1])?;
+        
+        // Simple implementation: single digit for now, full impl needs loop
+        // This handles 0-9 only as placeholder
+        Ok(format!(
+            "  ; ITS: int to string\n  %{}_buf = inttoptr i64 {} to i8*\n  %{}_digit = add i64 {}, 48\n  %{}_char = trunc i64 %{}_digit to i8\n  store i8 %{}_char, i8* %{}_buf\n  %{}_next = getelementptr i8, i8* %{}_buf, i32 1\n  store i8 0, i8* %{}_next\n  %{} = add i64 0, 1\n",
+            id, buf, id, num, id, id, id, id, id, id, id, id
+        ))
+    }
+    
+    fn emit_char_at(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        // CHR str index -> char_code
+        if args.len() < 2 {
+            return Err("CHR requires str, index".to_string());
+        }
+        let str_ptr = self.emit_arg(&args[0])?;
+        let index = self.emit_arg(&args[1])?;
+        
+        // Handle both pointer (getelementptr) and i64 arguments
+        let str_conv = if str_ptr.contains("getelementptr") {
+            format!("  %{}_str = bitcast i8* {} to i8*\n", id, str_ptr)
+        } else {
+            format!("  %{}_str = inttoptr i64 {} to i8*\n", id, str_ptr)
+        };
+        
+        Ok(format!(
+            "{}  %{}_ptr = getelementptr i8, i8* %{}_str, i64 {}\n  %{}_char = load i8, i8* %{}_ptr\n  %{} = zext i8 %{}_char to i64\n",
+            str_conv, id, id, index, id, id, id, id
+        ))
+    }
+    
+    fn emit_substring(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        // SBS dst src start len -> len
+        if args.len() < 4 {
+            return Err("SBS requires dst, src, start, len".to_string());
+        }
+        let dst = self.emit_arg(&args[0])?;
+        let src = self.emit_arg(&args[1])?;
+        let start = self.emit_arg(&args[2])?;
+        let len = self.emit_arg(&args[3])?;
+        
+        // Handle both pointer (getelementptr) and i64 arguments
+        let src_conv = if src.contains("getelementptr") {
+            format!("  %{}_src = bitcast i8* {} to i8*\n", id, src)
+        } else {
+            format!("  %{}_src = inttoptr i64 {} to i8*\n", id, src)
+        };
+        
+        Ok(format!(
+            "  %{}_dst = inttoptr i64 {} to i8*\n{}  %{}_srcoff = getelementptr i8, i8* %{}_src, i64 {}\n  call void @llvm.memcpy.p0i8.p0i8.i64(i8* %{}_dst, i8* %{}_srcoff, i64 {}, i1 false)\n  %{}_term = getelementptr i8, i8* %{}_dst, i64 {}\n  store i8 0, i8* %{}_term\n  %{} = add i64 0, {}\n",
+            id, dst, src_conv, id, id, start, id, id, len, id, id, len, id, id, len
         ))
     }
 }

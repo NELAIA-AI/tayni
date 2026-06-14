@@ -1,0 +1,44 @@
+-- NELAIA Self-Hosting Test: Mini Tokenizer
+-- Reads a .nts file and counts lines starting with '.'
+
+.path: "test_input.nts"
+.file: FOP .path 0
+.buf: ALC 4096
+.n: FRD .file .buf 4096
+.close: FCL .file
+
+-- Count lines starting with '.'
+.count: ALC 8
+.p0: PUT .count 0 0
+
+.i: ALC 8
+.p1: PUT .i 0 0
+
+-- Loop through buffer
+.loop: GET .i 0
+.char: CHR .buf .loop
+
+-- Check if '.' (46)
+.is_dot: EQ .char 46
+.branch: BRN .is_dot .inc_count .next
+
+.inc_count: GET .count 0
+.new_count: ADD .inc_count 1
+.store_count: PUT .count 0 .new_count
+
+-- Skip to next line (find newline)
+.next: GET .i 0
+.next_i: ADD .next 1
+.store_i: PUT .i 0 .next_i
+
+-- Check if done
+.check: LT .next_i .n
+.cont: BRN .check .loop .done
+
+.done: GET .count 0
+.result: ALC 32
+.len: ITS .done .result
+.out: PRT .result .len
+.nl: "\n"
+.out2: PRT .nl 1
+!

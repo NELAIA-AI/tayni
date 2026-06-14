@@ -268,6 +268,16 @@ impl Parser {
             "VST" => Ok(Op::Vst),
             "VLN" => Ok(Op::Vln),
             "VCP" => Ok(Op::Vcp),
+            // HashMap (self-hosting)
+            "HMP" => Ok(Op::Hmp),
+            "HPT" => Ok(Op::Hpt),
+            "HGT" => Ok(Op::Hgt),
+            "HHS" => Ok(Op::Hhs),
+            // String operations (self-hosting)
+            "CAT" => Ok(Op::Cat),
+            "ITS" => Ok(Op::Its),
+            "CHR" => Ok(Op::Chr),
+            "SBS" => Ok(Op::Sbs),
             // BRK/CNT deprecated - use cyclic flow >> instead
             // Error handling
             "CHK" => Ok(Op::Chk),

@@ -1,0 +1,5 @@
+.msg: "Hello"
+.out: PRT .msg 5
+.x: 42
+.y: ADD .x 1
+!
