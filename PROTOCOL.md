@@ -86,10 +86,35 @@ Para cada decisión de diseño, verificar:
 | Capa | ¿Quién consume? | Enfoque |
 |------|-----------------|---------|
 | Sintaxis .nts | IA genera, IA lee | AI-NATIVE |
+| Macros | IA define, IA usa | AI-NATIVE |
 | Semántica | IA razona | HÍBRIDO |
 | LLVM IR generado | CPU ejecuta | HARDWARE-OPTIMAL |
 | Compilador (Rust) | Depende objetivo | HÍBRIDO |
 | Documentación | IAs aprenden | AI-NATIVE |
+
+---
+
+## Macros - Extensión AI-Native
+
+Las macros permiten definir patrones reutilizables que se expanden en tiempo de compilación.
+
+### Verificación de Macros
+
+| Fase | Criterio | Verificación |
+|------|----------|--------------|
+| Sintaxis | Económica | ✅ Define 1 vez, usa N veces |
+| Semántica | Predecible | ✅ Expansión textual determinística |
+| Código | Óptimo | ✅ Inline, sin overhead de llamada |
+
+### Sintaxis de Macros
+
+```
+#NOMBRE param1 param2:
+  .interno: OP .param1 .param2
+#END
+
+!NOMBRE .arg1 .arg2
+```
 
 ---
 

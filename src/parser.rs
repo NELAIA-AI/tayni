@@ -1,7 +1,16 @@
-//! NELAIA v0.4 Parser
+//! NELAIA v0.5 Parser
 //! Parses data flow graph syntax into IR
+//! Supports macros for code reuse
 
 use crate::ir::*;
+use std::collections::HashMap;
+
+/// Macro definition: name, parameters, body lines
+#[derive(Clone, Debug)]
+struct MacroDef {
+    params: Vec<String>,
+    body: Vec<String>,
+}
 
 pub struct Parser;
 
@@ -11,12 +20,56 @@ impl Parser {
         let lines: Vec<&str> = content.lines().collect();
         let mut i = 0;
         let mut current_function: Option<(String, Vec<String>, Vec<Node>)> = None;
+        let mut macros: HashMap<String, MacroDef> = HashMap::new();
+        let mut macro_counter: u32 = 0;
         
+        // First pass: collect macro definitions
+        while i < lines.len() {
+            let line = lines[i].trim();
+            if line.starts_with('#') && line.contains(':') && !line.starts_with("#END") {
+                let (name, def) = Self::parse_macro_def(&lines, &mut i)?;
+                macros.insert(name, def);
+                continue;
+            }
+            i += 1;
+        }
+        
+        // Second pass: parse with macro expansion
+        i = 0;
         while i < lines.len() {
             let line = lines[i].trim();
             
             // Skip empty lines and comments
             if line.is_empty() || line.starts_with("--") {
+                i += 1;
+                continue;
+            }
+            
+            // Skip macro definitions (already processed)
+            if line.starts_with('#') && !line.starts_with("#END") {
+                while i < lines.len() && !lines[i].trim().starts_with("#END") {
+                    i += 1;
+                }
+                i += 1; // skip #END
+                continue;
+            }
+            
+            // Macro call: !NAME args
+            if line.starts_with('!') && !line.starts_with("!FUN") && line != "!" {
+                let expanded = Self::expand_macro(line, &macros, &mut macro_counter)?;
+                for exp_line in expanded {
+                    match Self::parse_line(&exp_line, &mut vec![], &mut 0) {
+                        Ok(Some(node)) => {
+                            if let Some((_, _, ref mut body)) = current_function {
+                                body.push(node);
+                            } else {
+                                graph.add_node(node);
+                            }
+                        }
+                        Ok(None) => {},
+                        Err(e) => return Err(format!("Macro expansion error: {}", e)),
+                    }
+                }
                 i += 1;
                 continue;
             }
@@ -598,5 +651,152 @@ impl Parser {
         }
         
         tokens
+    }
+    
+    /// Parse macro definition: #NAME param1 param2:
+    fn parse_macro_def(lines: &[&str], i: &mut usize) -> Result<(String, MacroDef), String> {
+        let header = lines[*i].trim();
+        
+        // Parse header: #NAME param1 param2:
+        let colon_pos = header.find(':').ok_or("Macro definition must end with ':'")?;
+        let header_content = &header[1..colon_pos].trim();
+        
+        let tokens: Vec<&str> = header_content.split_whitespace().collect();
+        if tokens.is_empty() {
+            return Err("Macro name required".to_string());
+        }
+        
+        let name = tokens[0].to_string();
+        let params: Vec<String> = tokens[1..].iter().map(|s| s.to_string()).collect();
+        
+        // Collect body lines until #END
+        let mut body = Vec::new();
+        *i += 1;
+        while *i < lines.len() {
+            let line = lines[*i].trim();
+            if line.starts_with("#END") {
+                *i += 1;
+                break;
+            }
+            if !line.is_empty() && !line.starts_with("--") {
+                body.push(line.to_string());
+            }
+            *i += 1;
+        }
+        
+        Ok((name, MacroDef { params, body }))
+    }
+    
+    /// Expand macro call: !NAME arg1 arg2
+    fn expand_macro(line: &str, macros: &HashMap<String, MacroDef>, counter: &mut u32) -> Result<Vec<String>, String> {
+        let tokens: Vec<&str> = line[1..].split_whitespace().collect();
+        if tokens.is_empty() {
+            return Err("Macro name required".to_string());
+        }
+        
+        let name = tokens[0];
+        let args: Vec<&str> = tokens[1..].to_vec();
+        
+        let macro_def = macros.get(name).ok_or(format!("Unknown macro: {}", name))?;
+        
+        if args.len() != macro_def.params.len() {
+            return Err(format!(
+                "Macro {} expects {} args, got {}",
+                name, macro_def.params.len(), args.len()
+            ));
+        }
+        
+        // Generate unique prefix for this expansion
+        let prefix = format!("_m{}_{}_", counter, name.to_lowercase());
+        *counter += 1;
+        
+        // Expand body with parameter substitution
+        let mut expanded = Vec::new();
+        for body_line in &macro_def.body {
+            // First pass: replace .param references with arguments
+            let mut line = body_line.clone();
+            for (i, param) in macro_def.params.iter().enumerate() {
+                let param_ref = format!(".{}", param);
+                let arg = args[i];
+                // Only replace exact .param matches (word boundary)
+                line = Self::replace_word(&line, &param_ref, arg);
+            }
+            
+            // Second pass: prefix internal node references
+            let mut result = String::new();
+            let mut chars = line.chars().peekable();
+            while let Some(c) = chars.next() {
+                if c == '.' {
+                    let mut node_name = String::new();
+                    while let Some(&nc) = chars.peek() {
+                        if nc.is_alphanumeric() || nc == '_' {
+                            node_name.push(chars.next().unwrap());
+                        } else {
+                            break;
+                        }
+                    }
+                    if !node_name.is_empty() {
+                        // Check if this is an argument (don't prefix)
+                        let is_arg = args.iter().any(|a| a.trim_start_matches('.') == node_name);
+                        if is_arg {
+                            result.push('.');
+                            result.push_str(&node_name);
+                        } else {
+                            result.push('.');
+                            result.push_str(&prefix);
+                            result.push_str(&node_name);
+                        }
+                    } else {
+                        result.push('.');
+                    }
+                } else {
+                    result.push(c);
+                }
+            }
+            
+            expanded.push(result);
+        }
+        
+        Ok(expanded)
+    }
+    
+    /// Replace word with exact match (not substring)
+    fn replace_word(text: &str, word: &str, replacement: &str) -> String {
+        let mut result = String::new();
+        let mut i = 0;
+        let chars: Vec<char> = text.chars().collect();
+        let word_chars: Vec<char> = word.chars().collect();
+        
+        while i < chars.len() {
+            // Check if word matches at position i
+            let mut matches = true;
+            if i + word_chars.len() <= chars.len() {
+                for (j, wc) in word_chars.iter().enumerate() {
+                    if chars[i + j] != *wc {
+                        matches = false;
+                        break;
+                    }
+                }
+                // Check word boundary after match
+                if matches && i + word_chars.len() < chars.len() {
+                    let next_char = chars[i + word_chars.len()];
+                    if next_char.is_alphanumeric() || next_char == '_' {
+                        matches = false;
+                    }
+                }
+            } else {
+                matches = false;
+            }
+            
+            if matches {
+                result.push_str(replacement);
+                i += word_chars.len();
+            } else {
+                result.push(chars[i]);
+                i += 1;
+            }
+        }
+        
+        result
     }
 }

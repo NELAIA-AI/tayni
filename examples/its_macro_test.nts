@@ -1,0 +1,21 @@
+-- Test ITS macro (Integer to String)
+
+-- Simple ITS for single digit (0-9)
+#ITS1 buf n:
+  .zero_char: 48
+  .c: ADD .n .zero_char
+  .p: PUT .buf 0 .c
+  .null: PUT .buf 1 0
+#END
+
+-- Main program
+.buf: ALC 8
+.num: 7
+
+!ITS1 .buf .num
+
+.msg: "Number: "
+.print1: PRT .msg 8
+.print2: PRT .buf 1
+.nl: PRT "\n" 1
+.out: ADD .print1 .print2 .nl ._m0_its1_p

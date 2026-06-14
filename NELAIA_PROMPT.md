@@ -1,18 +1,39 @@
 # NELAIA Quick Reference for AI
 
-## Syntax (5 rules)
+## Syntax (6 rules)
 ```
 .id: VALUE          -- literal (number or "string")
 .id: OP args        -- operation (EVERY line needs .id:)
 .id: .other         -- reference to another node
 .a > .b             -- data flow (execute a, then b)
 .a >> .b            -- cyclic flow (loop back to b)
+!MACRO args         -- macro call (expands at compile time)
+```
+
+## Macros
+```
+-- Define macro
+#NAME param1 param2:
+  .internal: OP .param1 .param2
+  .result: OP .internal
+#END
+
+-- Call macro
+!NAME .arg1 .arg2
+-- Creates nodes: ._m0_name_internal, ._m0_name_result
 ```
 
 ## Important
 - Every operation MUST have `.id:` prefix
 - Numbers are decimal only (no 0x hex)
 - Port 8080 = bytes 31, 144 (0x1F, 0x90)
+- Macro nodes are prefixed: `._mN_name_nodeid`
+
+## Control Flow
+```
+END cond            -- terminate if cond == 0, continue if != 0
+BRN cond a b        -- select a if cond != 0, else b
+```
 
 ## Core Opcodes
 ```

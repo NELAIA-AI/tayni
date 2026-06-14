@@ -1,0 +1,62 @@
+-- NELAIA Standard Macros Library
+-- Include with: copy content to your .nts file
+
+-- ITS: Integer to String (multi-digit)
+-- Converts integer n to string in buffer buf
+-- buf must have at least 20 bytes allocated
+-- Returns: pointer to start of number in buf
+#ITS buf n:
+  .ten: 10
+  .zero_char: 48
+  .neg_one: -1
+  .pos: 19
+  .val: ADD .n 0
+  
+  -- Handle zero case
+  .is_zero: EQ .val 0
+  .z_char: ADD .zero_char 0
+  .z_put: PUT .buf .pos .z_char
+  
+  -- Extract digits (simplified: max 10 digits)
+  .d0: MOD .val .ten
+  .c0: ADD .d0 .zero_char
+  .p0: PUT .buf .pos .c0
+  .pos0: SUB .pos 1
+  .val0: DIV .val .ten
+  .chk0: END .val0
+  
+  .d1: MOD .val0 .ten
+  .c1: ADD .d1 .zero_char
+  .p1: PUT .buf .pos0 .c1
+  .pos1: SUB .pos0 1
+  .val1: DIV .val0 .ten
+  .chk1: END .val1
+  
+  .d2: MOD .val1 .ten
+  .c2: ADD .d2 .zero_char
+  .p2: PUT .buf .pos1 .c2
+  .pos2: SUB .pos1 1
+  .val2: DIV .val1 .ten
+  .chk2: END .val2
+  
+  .d3: MOD .val2 .ten
+  .c3: ADD .d3 .zero_char
+  .p3: PUT .buf .pos2 .c3
+  .pos3: SUB .pos2 1
+  .val3: DIV .val2 .ten
+  .chk3: END .val3
+  
+  .d4: MOD .val3 .ten
+  .c4: ADD .d4 .zero_char
+  .p4: PUT .buf .pos3 .c4
+  .result: ADD .buf .pos3
+#END
+
+-- PRINT_INT: Print integer to stdout
+-- Allocates buffer, converts, prints
+#PRINT_INT n:
+  .buf: ALC 24
+  !ITS .buf .n
+  .len: SLN .buf
+  .out: PRT .buf .len
+#END

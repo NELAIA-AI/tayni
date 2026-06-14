@@ -1,0 +1,16 @@
+-- Test macro system
+
+-- Define a macro that doubles a number
+#DBL x:
+  .two: 2
+  .r: MUL .x .two
+#END
+
+-- Main program
+.five: 5
+!DBL .five
+
+-- The macro creates _m0_dbl_r with the result
+.msg: "Macro test OK\n"
+.print1: PRT .msg 14
+.out: ADD .print1 ._m0_dbl_r
