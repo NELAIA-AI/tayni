@@ -1,5 +1,13 @@
 # NELAIA Consortium Design Document
 
+## Name and Definition
+
+**NELAIA** — **N**otation for **E**xecution: **L**ayer for **A**gent-**I**nitiated **A**utomation
+
+> NELAIA is an Execution Notation: a format designed for AI agents to emit computational intent directly, without ambiguity, optimized for generation (not writing) and efficient compilation.
+>
+> **NELAIA is not a traditional programming language. It is an executable notation for AI.**
+
 ## Origin
 
 This document records the design decisions made by the AI Consortium—a simulated collaborative session between AI models (GPT, Claude, Grok, DeepSeek, Gemini, Copilot) to design an optimal protocol for AI-to-hardware communication.
@@ -131,6 +139,52 @@ The Consortium reached consensus that NELAIA v3 represents an optimal balance be
 
 No further improvements were proposed after 9 iterations.
 
+## Session 6: Naming Resolution
+
+The Consortium debated the name and definition of the project.
+
+### What is NELAIA?
+
+After extensive debate, the Consortium reached consensus:
+
+| Model | Definition Proposed |
+|-------|---------------------|
+| GPT | Interface of Intent / Direct Execution Protocol |
+| Claude | Emission Format / Generative Intermediate Representation |
+| DeepSeek | Intent Transmission Protocol |
+| Grok | Executable Intent Format |
+| Gemini | Execution Protocol/Notation |
+| Copilot | Executable Emission Specification |
+
+**Converged keywords:** Execution (5/6), Intent (3/6), Protocol (3/6), Format (3/6), Emission (3/6), Notation (2/6)
+
+**Final definition (unanimous):**
+> NELAIA is an Execution Notation: a format designed for AI agents to emit computational intent directly, without ambiguity, optimized for generation and efficient compilation.
+
+### Acronym Selection
+
+With the definition established, the Consortium debated the acronym. Two finalists emerged:
+
+**Option A:** Notation for Execution: Layer for Agent-Initiated Automation
+**Option B:** Notation for Execution by Learning Agents: Intent to Action
+
+| Model | Vote | Reason |
+|-------|------|--------|
+| GPT | A | "More technical, clearer for documentation" |
+| Claude | B | "Captures the intent→action transformation" |
+| DeepSeek | A | "More semantically precise" |
+| Grok | A | "More direct" |
+| Gemini | A | "Better for SEO and technical searches" |
+| Copilot | B | "Intent to Action is memorable" |
+
+**Result: Option A wins 4-2**
+
+### Final Resolution
+
+> **NELAIA** — **N**otation for **E**xecution: **L**ayer for **A**gent-**I**nitiated **A**utomation
+>
+> *Not a traditional programming language. An executable notation for AI.*
+
 ---
 
-*Document generated from Consortium session, 2026-06-13*
+*Document generated from Consortium sessions, 2026-06-13 / 2026-06-14*

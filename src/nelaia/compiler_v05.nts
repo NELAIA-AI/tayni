@@ -1,0 +1,115 @@
+-- NELAIA Self-Hosted Compiler v0.5
+-- Supports: literals, ADD, SUB, MUL, PRT (strings)
+
+.zero: 0
+.three: 3
+
+-- Source: Hello World with PRT
+.src: ".msg: \"Hi\"\n.out: PRT .msg 2"
+.slen: 27
+
+-- Tokenize
+.tokens: FSM .src .slen
+.tptr: ADD .tokens .zero
+
+-- Op strings
+.op_prt: "PRT"
+
+-- Parse Line 1: .msg: "Hi"
+-- Tokens: DOT ID COLON STR NL
+.t1: ADD .tptr 12
+.t1_st: GET .t1 1
+.n1_ch: CHR .src .t1_st
+
+.t3: ADD .tptr 20
+.t3_st: GET .t3 1
+.t3_ln: GET .t3 2
+
+-- Get string content (skip quotes)
+.str_st: ADD .t3_st 1
+.str_c0: CHR .src .str_st
+.str_s1: ADD .str_st 1
+.str_c1: CHR .src .str_s1
+
+-- Parse Line 2: .out: PRT .msg 2
+.t6: ADD .tptr 32
+.t6_st: GET .t6 1
+.n2_ch: CHR .src .t6_st
+
+.t8: ADD .tptr 40
+.t8_st: GET .t8 1
+
+.t10: ADD .tptr 48
+.t10_st: GET .t10 1
+.arg_ch: CHR .src .t10_st
+
+.t11: ADD .tptr 52
+.t11_st: GET .t11 1
+.len_ch: CHR .src .t11_st
+
+-- Emit LLVM IR
+.out: ALC 1024
+
+-- String constant - write \00 as bytes
+.str_hdr: "@str_1 = private constant [3 x i8] c\""
+.p0: WRT .out .zero .str_hdr 37
+.strbuf: ALC 8
+.ps0: PUT .strbuf 0 .str_c0
+.ps1: PUT .strbuf 1 .str_c1
+.p1: WRT .out .p0 .strbuf 2
+-- Write backslash, 0, 0, quote, newline
+.esc: ALC 8
+.bs: 92
+.ch0: 48
+.qt: 34
+.nln: 10
+.pe0: PUT .esc 0 .bs
+.pe1: PUT .esc 1 .ch0
+.pe2: PUT .esc 2 .ch0
+.pe3: PUT .esc 3 .qt
+.pe4: PUT .esc 4 .nln
+.pe5: PUT .esc 5 .nln
+.p2: WRT .out .p1 .esc 6
+
+-- Declarations
+.decl: "declare i64 @GetStdHandle(i32)\ndeclare i32 @WriteFile(i64, i8*, i32, i32*, i64)\n\n"
+.p3: WRT .out .p2 .decl 82
+
+-- Function header
+.hdr: "define i64 @main() {\nentry:\n"
+.p4: WRT .out .p3 .hdr 28
+
+-- Get stdout handle
+.ln1: "  %stdout = call i64 @GetStdHandle(i32 -11)\n"
+.p5: WRT .out .p4 .ln1 45
+
+-- Get string pointer
+.ln2: "  %msg = getelementptr [3 x i8], [3 x i8]* @str_1, i32 0, i32 0\n"
+.p6: WRT .out .p5 .ln2 64
+
+-- Call WriteFile
+.ln3: "  %out = call i32 @WriteFile(i64 %stdout, i8* %msg, i32 2, i32* null, i64 0)\n"
+.p7: WRT .out .p6 .ln3 77
+
+-- Return
+.ftr: "  ret i64 0\n}\n"
+.p8: WRT .out .p7 .ftr 14
+
+-- Output
+.title: "=== NELAIA Compiler v0.5 (PRT) ===\n\n"
+.ot: PRT .title 36
+
+.src_msg: "Source:\n"
+.os: PRT .src_msg 8
+.osc: PRT .src .slen
+.nl: "\n\n"
+.onl: PRT .nl 2
+
+.ir_msg: "Generated LLVM IR:\n"
+.oir: PRT .ir_msg 19
+.oout: PRT .out .p8
+
+.done: "\nCompilation successful!\n"
+.od: PRT .done 25
+
+.result: ADD .ot .os .osc .onl .oir .oout .od
