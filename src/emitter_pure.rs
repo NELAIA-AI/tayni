@@ -1483,37 +1483,34 @@ impl PureEmitter {
         code.push_str(&format!("  %{}_nws = icmp ne i8 %{}_ct, 7\n", id, id));  // not whitespace
         code.push_str(&format!("  br i1 %{}_nws, label %f_w_{}, label %f_c_{}\n", id, id, id));
         
-        // Write token
+        // Write token: 4 bytes [type, start, len, 0]
         code.push_str(&format!("f_w_{}:\n", id));
-        code.push_str(&format!("  %{}_so = mul i64 %{}_tc, 8\n", id, id));
+        code.push_str(&format!("  %{}_so = mul i64 %{}_tc, 4\n", id, id));
         code.push_str(&format!("  %{}_sb = add i64 %{}_bptr, 8\n", id, id));
         code.push_str(&format!("  %{}_sa = add i64 %{}_sb, %{}_so\n", id, id, id));
-        // Type
+        // Type (byte 0)
         code.push_str(&format!("  %{}_tp = inttoptr i64 %{}_sa to i8*\n", id, id));
         code.push_str(&format!("  store i8 %{}_ct, i8* %{}_tp\n", id, id));
-        // Start pos
-        code.push_str(&format!("  %{}_pp = add i64 %{}_sa, 2\n", id, id));
-        code.push_str(&format!("  %{}_ppi = inttoptr i64 %{}_pp to i32*\n", id, id));
-        code.push_str(&format!("  %{}_ts32 = trunc i64 %{}_ts to i32\n", id, id));
-        code.push_str(&format!("  store i32 %{}_ts32, i32* %{}_ppi\n", id, id));
-        // Length
-        code.push_str(&format!("  %{}_lp = add i64 %{}_sa, 6\n", id, id));
-        code.push_str(&format!("  %{}_lpi = inttoptr i64 %{}_lp to i16*\n", id, id));
-        code.push_str(&format!("  %{}_tl16 = trunc i64 %{}_tl to i16\n", id, id));
-        code.push_str(&format!("  store i16 %{}_tl16, i16* %{}_lpi\n", id, id));
+        // Start pos (byte 1)
+        code.push_str(&format!("  %{}_pp = add i64 %{}_sa, 1\n", id, id));
+        code.push_str(&format!("  %{}_ppi = inttoptr i64 %{}_pp to i8*\n", id, id));
+        code.push_str(&format!("  %{}_ts8 = trunc i64 %{}_ts to i8\n", id, id));
+        code.push_str(&format!("  store i8 %{}_ts8, i8* %{}_ppi\n", id, id));
+        // Length (byte 2)
+        code.push_str(&format!("  %{}_lp = add i64 %{}_sa, 2\n", id, id));
+        code.push_str(&format!("  %{}_lpi = inttoptr i64 %{}_lp to i8*\n", id, id));
+        code.push_str(&format!("  %{}_tl8 = trunc i64 %{}_tl to i8\n", id, id));
+        code.push_str(&format!("  store i8 %{}_tl8, i8* %{}_lpi\n", id, id));
         code.push_str(&format!("  %{}_tcw = add i64 %{}_tc, 1\n", id, id));
         code.push_str(&format!("  br label %f_c_{}\n", id));
         
         // Continue: update state
         code.push_str(&format!("f_c_{}:\n", id));
         code.push_str(&format!("  %{}_tc2 = phi i64 [%{}_tcw, %f_w_{}], [%{}_tc, %f_e_{}], [%{}_tc, %f_b_{}]\n", id, id, id, id, id, id, id));
-        // If type changed, start new token
-        code.push_str(&format!("  %{}_nts = select i1 %{}_chg, i64 %{}_p, i64 %{}_ts\n", id, id, id, id));
-        code.push_str(&format!("  %{}_ntl = select i1 %{}_chg, i64 1, i64 %{}_tl\n", id, id, id));
-        code.push_str(&format!("  %{}_ntl2 = add i64 %{}_ntl, 0\n", id, id));
-        code.push_str(&format!("  %{}_ntl3 = select i1 %{}_chg, i64 1, i64 %{}_ntl2\n", id, id, id));
-        // Increment len if same type
+        // If type changed, start new token at current pos with len=1
+        // If same type, keep start and increment len
         code.push_str(&format!("  %{}_same = icmp eq i8 %{}_ty, %{}_ct\n", id, id, id));
+        code.push_str(&format!("  %{}_nts2 = select i1 %{}_chg, i64 %{}_p, i64 %{}_ts\n", id, id, id, id));
         code.push_str(&format!("  %{}_tli = add i64 %{}_tl, 1\n", id, id));
         code.push_str(&format!("  %{}_ntlf = select i1 %{}_same, i64 %{}_tli, i64 1\n", id, id, id));
         code.push_str(&format!("  br label %f_n_{}\n", id));
@@ -1522,6 +1519,8 @@ impl PureEmitter {
         code.push_str(&format!("f_n_{}:\n", id));
         code.push_str(&format!("  %{}_ntc = phi i64 [%{}_tc2, %f_c_{}]\n", id, id, id));
         code.push_str(&format!("  %{}_nct = phi i8 [%{}_ty, %f_c_{}]\n", id, id, id));
+        code.push_str(&format!("  %{}_nts = phi i64 [%{}_nts2, %f_c_{}]\n", id, id, id));
+        code.push_str(&format!("  %{}_ntl = phi i64 [%{}_ntlf, %f_c_{}]\n", id, id, id));
         code.push_str(&format!("  %{}_np = add i64 %{}_p, 1\n", id, id));
         code.push_str(&format!("  br label %f_{}\n", id));
         
@@ -1532,21 +1531,21 @@ impl PureEmitter {
         code.push_str(&format!("  %{}_fem = and i1 %{}_fhv, %{}_fnw\n", id, id, id));
         code.push_str(&format!("  br i1 %{}_fem, label %f_fw_{}, label %f_xx_{}\n", id, id, id));
         
-        // Write final token
+        // Write final token: 4 bytes [type, start, len, 0]
         code.push_str(&format!("f_fw_{}:\n", id));
-        code.push_str(&format!("  %{}_fso = mul i64 %{}_tc, 8\n", id, id));
+        code.push_str(&format!("  %{}_fso = mul i64 %{}_tc, 4\n", id, id));
         code.push_str(&format!("  %{}_fsb = add i64 %{}_bptr, 8\n", id, id));
         code.push_str(&format!("  %{}_fsa = add i64 %{}_fsb, %{}_fso\n", id, id, id));
         code.push_str(&format!("  %{}_ftp = inttoptr i64 %{}_fsa to i8*\n", id, id));
         code.push_str(&format!("  store i8 %{}_ct, i8* %{}_ftp\n", id, id));
-        code.push_str(&format!("  %{}_fpp = add i64 %{}_fsa, 2\n", id, id));
-        code.push_str(&format!("  %{}_fppi = inttoptr i64 %{}_fpp to i32*\n", id, id));
-        code.push_str(&format!("  %{}_fts32 = trunc i64 %{}_ts to i32\n", id, id));
-        code.push_str(&format!("  store i32 %{}_fts32, i32* %{}_fppi\n", id, id));
-        code.push_str(&format!("  %{}_flp = add i64 %{}_fsa, 6\n", id, id));
-        code.push_str(&format!("  %{}_flpi = inttoptr i64 %{}_flp to i16*\n", id, id));
-        code.push_str(&format!("  %{}_ftl16 = trunc i64 %{}_tl to i16\n", id, id));
-        code.push_str(&format!("  store i16 %{}_ftl16, i16* %{}_flpi\n", id, id));
+        code.push_str(&format!("  %{}_fpp = add i64 %{}_fsa, 1\n", id, id));
+        code.push_str(&format!("  %{}_fppi = inttoptr i64 %{}_fpp to i8*\n", id, id));
+        code.push_str(&format!("  %{}_fts8 = trunc i64 %{}_ts to i8\n", id, id));
+        code.push_str(&format!("  store i8 %{}_fts8, i8* %{}_fppi\n", id, id));
+        code.push_str(&format!("  %{}_flp = add i64 %{}_fsa, 2\n", id, id));
+        code.push_str(&format!("  %{}_flpi = inttoptr i64 %{}_flp to i8*\n", id, id));
+        code.push_str(&format!("  %{}_ftl8 = trunc i64 %{}_tl to i8\n", id, id));
+        code.push_str(&format!("  store i8 %{}_ftl8, i8* %{}_flpi\n", id, id));
         code.push_str(&format!("  %{}_ftc = add i64 %{}_tc, 1\n", id, id));
         code.push_str(&format!("  br label %f_xx_{}\n", id));
         
