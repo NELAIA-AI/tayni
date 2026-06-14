@@ -1,6 +1,6 @@
--- Test macro system
+-- Test GEN system (Graph Element Generators)
 
--- Define a macro that doubles a number
+-- Define a generator that doubles a number
 #DBL x:
   .two: 2
   .r: MUL .x .two
@@ -10,7 +10,7 @@
 .five: 5
 !DBL .five
 
--- The macro creates _m0_dbl_r with the result
-.msg: "Macro test OK\n"
-.print1: PRT .msg 14
-.out: ADD .print1 ._m0_dbl_r
+-- The generator creates ._g0_dbl_r with the result
+.msg: "GEN test OK\n"
+.print1: PRT .msg 12
+.out: ADD .print1 ._g0_dbl_r

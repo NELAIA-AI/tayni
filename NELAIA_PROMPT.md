@@ -7,27 +7,27 @@
 .id: .other         -- reference to another node
 .a > .b             -- data flow (execute a, then b)
 .a >> .b            -- cyclic flow (loop back to b)
-!MACRO args         -- macro call (expands at compile time)
+!GEN args           -- generate nodes (subgraph fusion)
 ```
 
-## Macros
+## GEN - Graph Element Generators
 ```
--- Define macro
+-- Define generator (creates reusable subgraph pattern)
 #NAME param1 param2:
   .internal: OP .param1 .param2
   .result: OP .internal
 #END
 
--- Call macro
+-- Generate nodes (fuses subgraph into main graph)
 !NAME .arg1 .arg2
--- Creates nodes: ._m0_name_internal, ._m0_name_result
+-- Creates nodes: ._g0_name_internal, ._g0_name_result
 ```
 
 ## Important
 - Every operation MUST have `.id:` prefix
 - Numbers are decimal only (no 0x hex)
 - Port 8080 = bytes 31, 144 (0x1F, 0x90)
-- Macro nodes are prefixed: `._mN_name_nodeid`
+- Generated nodes are prefixed: `._gN_name_nodeid`
 
 ## Control Flow
 ```

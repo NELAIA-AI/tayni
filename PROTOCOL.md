@@ -94,19 +94,24 @@ Para cada decisión de diseño, verificar:
 
 ---
 
-## Macros - Extensión AI-Native
+## GEN - Graph Element Generators (AI-Native)
 
-Las macros permiten definir patrones reutilizables que se expanden en tiempo de compilación.
+Los generadores permiten definir patrones de subgrafos reutilizables que se fusionan en el grafo principal en tiempo de compilación.
 
-### Verificación de Macros
+### Modelo Mental Correcto
+
+- **NO es**: "expansión de texto" (sesgo humano de macros)
+- **ES**: "generación de subgrafo que se fusiona con el grafo principal"
+
+### Verificación de GEN
 
 | Fase | Criterio | Verificación |
 |------|----------|--------------|
-| Sintaxis | Económica | ✅ Define 1 vez, usa N veces |
-| Semántica | Predecible | ✅ Expansión textual determinística |
+| Sintaxis | Económica | ✅ Define 1 vez, genera N veces |
+| Semántica | Predecible | ✅ Fusión de grafo determinística |
 | Código | Óptimo | ✅ Inline, sin overhead de llamada |
 
-### Sintaxis de Macros
+### Sintaxis de GEN
 
 ```
 #NOMBRE param1 param2:
@@ -115,6 +120,15 @@ Las macros permiten definir patrones reutilizables que se expanden en tiempo de 
 
 !NOMBRE .arg1 .arg2
 ```
+
+### Terminología AI-Native
+
+| Término Humano (evitar) | Término AI-Native (usar) |
+|------------------------|--------------------------|
+| Macro | Generador (GEN) |
+| Llamar macro | Generar nodos |
+| Expansión | Fusión de grafo |
+| Macro nodes | Generated nodes |
 
 ---
 

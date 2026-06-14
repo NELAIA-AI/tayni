@@ -1,11 +1,11 @@
 //! NELAIA v0.5 Parser
 //! Parses data flow graph syntax into IR
-//! Supports macros for code reuse
+//! Supports GEN (Graph Element Generators) for subgraph reuse
 
 use crate::ir::*;
 use std::collections::HashMap;
 
-/// Macro definition: name, parameters, body lines
+/// GEN definition: name, parameters, body lines (subgraph pattern)
 #[derive(Clone, Debug)]
 struct MacroDef {
     params: Vec<String>,
@@ -21,7 +21,7 @@ impl Parser {
         let mut i = 0;
         let mut current_function: Option<(String, Vec<String>, Vec<Node>)> = None;
         let mut macros: HashMap<String, MacroDef> = HashMap::new();
-        let mut macro_counter: u32 = 0;
+        let mut gen_counter: u32 = 0;
         
         // First pass: collect macro definitions
         while i < lines.len() {
@@ -54,9 +54,9 @@ impl Parser {
                 continue;
             }
             
-            // Macro call: !NAME args
+            // GEN call: !NAME args (generate and fuse subgraph)
             if line.starts_with('!') && !line.starts_with("!FUN") && line != "!" {
-                let expanded = Self::expand_macro(line, &macros, &mut macro_counter)?;
+                let expanded = Self::expand_gen(line, &macros, &mut gen_counter)?;
                 for exp_line in expanded {
                     match Self::parse_line(&exp_line, &mut vec![], &mut 0) {
                         Ok(Some(node)) => {
@@ -653,17 +653,17 @@ impl Parser {
         tokens
     }
     
-    /// Parse macro definition: #NAME param1 param2:
+    /// Parse GEN definition: #NAME param1 param2:
     fn parse_macro_def(lines: &[&str], i: &mut usize) -> Result<(String, MacroDef), String> {
         let header = lines[*i].trim();
         
         // Parse header: #NAME param1 param2:
-        let colon_pos = header.find(':').ok_or("Macro definition must end with ':'")?;
+        let colon_pos = header.find(':').ok_or("GEN definition must end with ':'")?;
         let header_content = &header[1..colon_pos].trim();
         
         let tokens: Vec<&str> = header_content.split_whitespace().collect();
         if tokens.is_empty() {
-            return Err("Macro name required".to_string());
+            return Err("GEN name required".to_string());
         }
         
         let name = tokens[0].to_string();
@@ -687,27 +687,27 @@ impl Parser {
         Ok((name, MacroDef { params, body }))
     }
     
-    /// Expand macro call: !NAME arg1 arg2
-    fn expand_macro(line: &str, macros: &HashMap<String, MacroDef>, counter: &mut u32) -> Result<Vec<String>, String> {
+    /// Generate and fuse subgraph: !NAME arg1 arg2
+    fn expand_gen(line: &str, macros: &HashMap<String, MacroDef>, counter: &mut u32) -> Result<Vec<String>, String> {
         let tokens: Vec<&str> = line[1..].split_whitespace().collect();
         if tokens.is_empty() {
-            return Err("Macro name required".to_string());
+            return Err("GEN name required".to_string());
         }
         
         let name = tokens[0];
         let args: Vec<&str> = tokens[1..].to_vec();
         
-        let macro_def = macros.get(name).ok_or(format!("Unknown macro: {}", name))?;
+        let macro_def = macros.get(name).ok_or(format!("Unknown GEN: {}", name))?;
         
         if args.len() != macro_def.params.len() {
             return Err(format!(
-                "Macro {} expects {} args, got {}",
+                "GEN {} expects {} args, got {}",
                 name, macro_def.params.len(), args.len()
             ));
         }
         
         // Generate unique prefix for this expansion
-        let prefix = format!("_m{}_{}_", counter, name.to_lowercase());
+        let prefix = format!("_g{}_{}_", counter, name.to_lowercase());
         *counter += 1;
         
         // Expand body with parameter substitution

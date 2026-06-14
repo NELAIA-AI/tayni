@@ -1,4 +1,4 @@
--- Test ITS macro (Integer to String)
+-- Test ITS1 GEN (Integer to String - single digit)
 
 -- Simple ITS for single digit (0-9)
 #ITS1 buf n:
@@ -18,4 +18,4 @@
 .print1: PRT .msg 8
 .print2: PRT .buf 1
 .nl: PRT "\n" 1
-.out: ADD .print1 .print2 .nl ._m0_its1_p
+.out: ADD .print1 .print2 .nl ._g0_its1_p
