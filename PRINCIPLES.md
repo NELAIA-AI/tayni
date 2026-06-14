@@ -1,7 +1,7 @@
 # NELAIA Core Principles v4
 
 ## Established: 2026-06-13
-## Revised: 2026-06-13 (v0.12 Functions & Threading)
+## Revised: 2026-06-13 (v0.17 END, GEN, Self-Hosting)
 ## Status: Consortium Unanimous
 
 ---
@@ -156,16 +156,19 @@ ARITHMETIC:  ADD=1 SUB=2 MUL=3 DIV=4 MOD=5 NEG=6
 COMPARISON:  EQ=10 NE=11 LT=12 GT=13 LE=14 GE=15
 LOGIC:       AND=20 OR=21 NOT=22
 COLLECTION:  SEQ=30 MAP=31 FLD=32 FLT=33 LEN=34 FST=35 SND=36
-CONTROL:     BRN=40 (LOOP=41 DEPRECATED) (BRK=42 DEPRECATED) (CNT=43 DEPRECATED)
-FILE:        OPN=50 GET=51 PUT=52 CLS=53
+CONTROL:     BRN=40 END=41 (LOOP=42 DEPRECATED) (BRK=43 DEPRECATED)
+FILE:        OPN=50 GET=51 PUT=52 CLS=53 FOP=54 FRD=55 FWR=56 FCL=57
 CONSOLE:     PRT=60 INP=61 ERR=62
 NETWORK:     TCP=70 UDP=71 BND=72 LST=73 ACC=74 CON=75 XMT=76 RCV=77 SEL=78 RDY=79 NBK=80
 SOCKOPT:     NDL=81 QCK=82 SBF=83 KAL=84
 EPOLL/IOCP:  EPL=85 ECT=86 EWA=87
 THREADING:   THR=88 JON=89 MTX=90 LCK=91 ULK=92
-MEMORY:      ALC=93 FRE=94
-FUNCTIONS:   FUN=95 RET=96
-ERROR:       CHK=97
+MEMORY:      ALC=93 FRE=94 CPY=95 CMP=96 FND=97 SLN=98
+FUNCTIONS:   FUN=100 RET=101
+ERROR:       CHK=102
+VECTORS:     VEC=110 VPH=111 VGT=112 VST=113 VLN=114 VCP=115
+HASHMAP:     HMP=120 HPT=121 HGT=122 HHS=123
+STRINGS:     CAT=130 ITS=131 CHR=132 SBS=133
 ```
 
 ---
@@ -212,6 +215,46 @@ AI generates Format B or C. Format A exists only for human debugging.
 |------|------------|------|
 | 2026-06-13 | Accept ws2_32.dll as OS interface | 5-0 |
 | 2026-06-13 | Deprecate LOOP/CNT/BRK, adopt >> | 5-0 |
+| 2026-06-13 | END opcode for conditional termination | 5-0 |
+| 2026-06-13 | GEN (Graph Element Generators) replaces "Macro" | 5-0 |
+| 2026-06-13 | Self-hosting primitives (VEC, HMP, CAT, etc.) | 5-0 |
+| 2026-06-13 | PROTOCOL v1.0 - Mandamientos del Consorcio | 5-0 |
+
+---
+
+## 10. GEN - Graph Element Generators
+
+### Definition
+```
+#NAME param1 param2:
+  .internal: OP .param1 .param2
+#END
+```
+
+### Invocation
+```
+!NAME .arg1 .arg2
+-- Creates: ._gN_name_internal
+```
+
+### Semantics
+- NOT text expansion (human bias from "macros")
+- IS subgraph generation and fusion into main graph
+- Zero runtime overhead (compile-time fusion)
+- Deterministic node naming: `._gN_name_nodeid`
+
+---
+
+## 11. END - Conditional Termination
+
+```
+.check: END .cond
+```
+
+- If cond == 0: terminate program (ret 0)
+- If cond != 0: continue execution
+- Generates: `br i1 %cond, label %continue, label %exit`
+- Hardware-optimal: single conditional branch
 
 ---
 

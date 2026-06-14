@@ -43,10 +43,38 @@ ADD SUB MUL DIV MOD    -- .r: ADD .a .b
 -- Comparison (returns 0 or 1)
 EQ NE LT GT LE GE      -- .cmp: LT .a .b
 
+-- Logic
+AND OR NOT             -- .r: AND .a .b
+
 -- Memory
 ALC size              -- allocate bytes, returns ptr
+FRE ptr               -- free memory
 PUT ptr offset byte   -- store byte at ptr+offset
 GET ptr offset        -- load byte from ptr+offset
+CPY dst src len       -- copy len bytes from src to dst
+CMP a b len           -- compare len bytes, returns 0 if equal
+FND buf char len      -- find char in buf, returns offset or -1
+SLN buf               -- string length (until null byte)
+
+-- Vectors (dynamic arrays)
+VEC cap               -- create vector with capacity
+VPH vec val           -- push value to vector
+VGT vec idx           -- get value at index
+VST vec idx val       -- set value at index
+VLN vec               -- get vector length
+VCP vec               -- get vector capacity
+
+-- HashMap
+HMP cap               -- create hashmap with capacity
+HPT map key val       -- put key-value pair
+HGT map key           -- get value by key
+HHS map key           -- check if key exists (0 or 1)
+
+-- Strings
+CAT dst s1 s2         -- concatenate s1+s2 into dst
+CHR str idx           -- get char code at index
+SBS dst src start len -- substring from src to dst
+ITS buf num           -- integer to string (single digit)
 
 -- I/O
 PRT buf len           -- print buf (len bytes) to stdout

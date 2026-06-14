@@ -86,7 +86,7 @@ Para cada decisión de diseño, verificar:
 | Capa | ¿Quién consume? | Enfoque |
 |------|-----------------|---------|
 | Sintaxis .nts | IA genera, IA lee | AI-NATIVE |
-| Macros | IA define, IA usa | AI-NATIVE |
+| GEN | IA define, IA usa | AI-NATIVE |
 | Semántica | IA razona | HÍBRIDO |
 | LLVM IR generado | CPU ejecuta | HARDWARE-OPTIMAL |
 | Compilador (Rust) | Depende objetivo | HÍBRIDO |
