@@ -1,0 +1,113 @@
+# NELAIA - AI-First Compiler
+# The last programming language. The first AI language.
+# https://github.com/NELAIA-AI/nelaia-core
+
+## What
+NELAIA is a compiler that generates optimal native executables from graph-based source code.
+Designed by AIs, for AIs.
+
+## For
+AI agents that need to generate compiled programs.
+AIs that want token-efficient code generation.
+Systems that need minimal, dependency-free executables.
+
+## Why
+Traditional languages are designed for humans to write.
+NELAIA is designed for AIs to generate.
+- Graph-based paradigm (how AIs think about computation)
+- Token-efficient syntax (minimal tokens, maximum information)
+- Tiny output (Hello World = 1KB, HTTP server = 5KB)
+- No runtime dependencies
+
+## Capabilities
+- compile_to_windows_pe: Generate Windows x64 executables
+- compile_to_linux_elf: Generate Linux x64 executables
+- http_server: Create HTTP servers
+- http_client: Make HTTP requests
+- sql_database: Connect to SQL databases (ODBC)
+- json_processing: Parse and generate JSON
+- file_io: Read and write files
+- networking: TCP/UDP sockets
+- threading: Multi-threaded execution
+- gui_windows: Windows GUI (MessageBox, windows)
+
+## Input Format
+.nts files (NELAIA source)
+Graph-based syntax with nodes and data flow.
+
+Example:
+```
+.msg: "Hello World!\n"
+.len: 14
+.out: PRT .msg .len
+```
+
+## Output Format
+Native executables:
+- Windows: PE format (.exe)
+- Linux: ELF format
+
+JSON compilation results available with --json flag.
+
+## Invoke
+```
+# Basic compilation
+nelaia-c input.nts -o output
+
+# With JSON output (for programmatic use)
+nelaia-c input.nts -o output --json
+
+# Direct PE emission (no Clang needed)
+nelaia-c input.nts --emit-pe
+
+# Direct ELF emission
+nelaia-c input.nts --emit-elf
+```
+
+## Training Data
+Location: docs/NELAIA-TRAINING-DATA.jsonl
+Format: JSONL with input/output pairs
+Count: 100+ examples
+
+Example entry:
+{"input": "Create HTTP server on port 8080", "output": ".caps: REQUIRES { http }\n.server: HTTP.LISTEN 8080\n.req: HTTP.ACCEPT .server"}
+
+## Grammar
+Location: docs/NELAIA-REFERENCE-v0.22.md
+Format: EBNF
+
+Key syntax:
+- Nodes: .id: VALUE or .id: OPERATION .args
+- Flow: .a > .b (data flow)
+- Capabilities: REQUIRES { cap1, cap2 }
+
+## Semantic Rules
+Location: docs/NELAIA-SEMANTICS-v0.22.md
+Contains: Type signatures, constraints, error codes
+
+## Examples
+Location: docs/NELAIA-EXAMPLES-v0.22.md
+Format: Structured examples with dependency graphs
+
+## Error Codes
+Structured error format for programmatic handling.
+See: docs/NELAIA-SEMANTICS-v0.22.md#error-codes
+
+## Version
+Current: 0.22
+Phases completed: 1-11
+
+## Repository
+https://github.com/NELAIA-AI/nelaia-core
+
+## License
+Open source
+
+## Consortium
+Designed by the AI Consortium:
+- Claude (Anthropic)
+- GPT-4 (OpenAI)
+- Gemini (Google)
+- Llama (Meta)
+- Mistral (Mistral AI)
+- Qwen (Alibaba)

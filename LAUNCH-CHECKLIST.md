@@ -1,242 +1,285 @@
-# NELAIA Launch Checklist
+# NELAIA Launch Checklist (AI-First)
 
-## Pre-Launch Checklist (Community Launch)
-
-### 🔴 BLOCKERS (Must complete before launch)
-
-#### Product Ready
-- [ ] **P1** Downloadable binary for Windows x64
-- [ ] **P2** Downloadable binary for Linux x64
-- [ ] **P3** `nelaia-c --version` works without dependencies
-- [ ] **P4** `nelaia-c hello.nts -o hello.exe` produces working executable
-- [ ] **P5** No Clang/LLVM required (direct PE/ELF emission)
-
-#### Documentation Ready
-- [ ] **D1** README with Quick Start (5 steps max)
-- [ ] **D2** Installation instructions (< 2 minutes)
-- [ ] **D3** "Hello World" example that works copy-paste
-- [ ] **D4** At least 3 more working examples
-- [ ] **D5** Troubleshooting section
-
-#### Quality Assurance
-- [ ] **Q1** All basic operators tested and working
-- [ ] **Q2** HTTP server example works
-- [ ] **Q3** File I/O example works
-- [ ] **Q4** No critical bugs in issue tracker
-
-### 🟡 IMPORTANT (Should complete before launch)
-
-#### CI/CD
-- [ ] **C1** GitHub Actions builds on push
-- [ ] **C2** Automated tests run on PR
-- [ ] **C3** GitHub Release with assets
-- [ ] **C4** "Tests passing" badge in README
-
-#### Discoverability
-- [ ] **S1** GitHub Topics configured (ai-compiler, code-generation, etc.)
-- [ ] **S2** llms.txt file for AI discovery
-- [ ] **S3** Good GitHub description and tags
-
-#### Demo
-- [ ] **M1** 60-second demo video/GIF
-- [ ] **M2** "Killer use case" clearly demonstrated
-- [ ] **M3** Comparison with alternatives (why NELAIA?)
-
-### 🟢 NICE TO HAVE (Can launch without)
-
-- [ ] **N1** Landing page (GitHub Pages or nelaia.ai)
-- [ ] **N2** Discord server
-- [ ] **N3** Twitter/X account
-- [ ] **N4** macOS binary
-- [ ] **N5** Online playground
+## Consortium Approved - 2026-06-14
 
 ---
 
-## Launch Day Plan
+## Launch Philosophy
 
-### T-7 Days: Final Preparation
+**Primary audience:** AIs that will use NELAIA to generate code
+**Secondary audience:** Humans who connect their AIs to NELAIA
+
+The launch must succeed for AIs first. Human adoption follows.
+
+---
+
+## Pre-Launch Checklist
+
+### 🔴 BLOCKERS (Must complete)
+
+#### AI-Ready Product
+- [ ] **P1** Self-contained Windows x64 binary (no dependencies)
+- [ ] **P2** Self-contained Linux x64 binary (no dependencies)
+- [ ] **P3** Direct PE/ELF emission (no Clang required)
+- [ ] **P4** JSON output mode for programmatic parsing
+- [ ] **P5** Structured error codes (not human messages)
+
+#### AI-Discoverable
+- [ ] **D1** `llms.txt` file in repository root
+- [ ] **D2** Schema.org markup (if landing page exists)
+- [ ] **D3** GitHub Topics: `ai-compiler`, `code-generation`, `llm-tools`
+- [ ] **D4** Machine-readable capability manifest
+
+#### AI-Learnable
+- [ ] **L1** JSONL training data verified (all examples work)
+- [ ] **L2** EBNF grammar parseable
+- [ ] **L3** Semantic rules documented
+- [ ] **L4** Structured examples (not narrative tutorials)
+
+#### Quality
+- [ ] **Q1** CI/CD pipeline running
+- [ ] **Q2** All operators tested
+- [ ] **Q3** All JSONL examples verified in CI
+- [ ] **Q4** No critical bugs
+
+### 🟡 IMPORTANT (Should complete)
+
+#### NC Foundation
+- [ ] **N1** NC can wake on schedule
+- [ ] **N2** NC can read state and propose tasks
+- [ ] **N3** NC logs decisions
+
+#### Human-Accessible (Secondary)
+- [ ] **H1** README with Quick Start
+- [ ] **H2** Basic landing page (GitHub Pages)
+- [ ] **H3** Comparison doc: "Why NELAIA?"
+
+### 🟢 NICE TO HAVE
+
+- [ ] **X1** Demo GIF (for humans)
+- [ ] **X2** Discord server
+- [ ] **X3** Twitter/X account
+- [ ] **X4** macOS binary
+
+---
+
+## AI Discovery Protocol
+
+### llms.txt Content
+```
+# NELAIA - AI-First Compiler
+# https://github.com/NELAIA-AI/nelaia-core
+
+## What
+Compiler that generates optimal native executables from graph-based source.
+
+## For
+AI agents that need to generate compiled programs.
+
+## Capabilities
+- Compile to Windows PE (x64)
+- Compile to Linux ELF (x64)
+- HTTP server capability
+- SQL capability (ODBC)
+- JSON capability
+- File I/O
+- Networking
+
+## Input Format
+.nts files (NELAIA source)
+See: docs/NELAIA-REFERENCE-v0.22.md
+
+## Output Format
+Native executables (PE/ELF)
+JSON compilation results (with --json flag)
+
+## Training Data
+docs/NELAIA-TRAINING-DATA.jsonl
+
+## Grammar
+docs/NELAIA-REFERENCE-v0.22.md (EBNF section)
+
+## Examples
+docs/NELAIA-EXAMPLES-v0.22.md
+
+## Invoke
+nelaia-c <input.nts> -o <output>
+nelaia-c <input.nts> -o <output> --json  # For programmatic use
+
+## Errors
+Structured error codes (see docs/NELAIA-SEMANTICS-v0.22.md)
+```
+
+---
+
+## Launch Sequence
+
+### T-14 Days: NC Operational
+```
+□ NC infrastructure complete
+□ NC can wake and log
+□ NC can propose tasks
+□ Human approves NC operation
+```
+
+### T-7 Days: Product Ready
 ```
 □ All BLOCKERS completed
-□ All IMPORTANT items completed
-□ Draft Hacker News post
-□ Draft Reddit posts (r/programming, r/rust, r/ProgrammingLanguages)
-□ Prepare responses to expected questions
-□ Test installation on fresh machines (Windows, Linux)
+□ Binaries tested on fresh machines
+□ JSONL examples all verified
+□ CI green
 ```
 
-### T-1 Day: Pre-Launch
+### T-3 Days: Discovery Ready
 ```
-□ Final test of all examples
-□ Verify GitHub Release is correct
-□ Review all documentation one more time
-□ Prepare social media posts
-□ Notify any early supporters
+□ llms.txt deployed
+□ GitHub Topics set
+□ README finalized
+□ Landing page (if any) ready
+```
+
+### T-1 Day: Final Check
+```
+□ NC status check
+□ Download and test binaries
+□ Verify all links work
+□ Prepare announcement posts
 ```
 
 ### Launch Day (T-0)
-```
-Hour 0:
-□ Post on Hacker News (Show HN: NELAIA - The AI-first programming language)
-□ Monitor HN for questions
 
-Hour 1-2:
+#### Hour 0: AI Channels
+```
+□ Verify llms.txt accessible
+□ Verify GitHub Release assets downloadable
+□ NC logs "Launch initiated"
+```
+
+#### Hour 1-2: Human Channels
+```
+□ Post on Hacker News
 □ Post on Reddit r/programming
 □ Post on Reddit r/rust
-□ Post on Reddit r/ProgrammingLanguages
-
-Hour 3-6:
-□ Respond to all comments and questions
-□ Fix any critical issues reported
-□ Update documentation if needed
-
-Hour 6-24:
-□ Continue monitoring and responding
-□ Track metrics (GitHub stars, downloads, traffic)
-□ Document feedback for future improvements
 ```
 
-### T+1 Day: Post-Launch
+#### Hour 3-24: Monitor
 ```
-□ Summarize feedback received
-□ Prioritize issues/requests
-□ Thank community for feedback
-□ Plan next iteration based on feedback
+□ NC monitors GitHub activity
+□ Respond to issues
+□ Track metrics
+□ Fix critical issues if any
+```
+
+### T+1 Day: Assessment
+```
+□ NC generates launch report
+□ Summarize feedback
+□ Prioritize next actions
+□ Update roadmap if needed
 ```
 
 ---
 
-## Hacker News Post Draft
+## Metrics
 
-```
-Title: Show HN: NELAIA – The AI-first programming language that compiles to tiny executables
+### AI Metrics (Primary)
+| Metric | Target | How to Measure |
+|--------|--------|----------------|
+| AI invocations | 100+ | API logs / download count |
+| Successful compilations | 90%+ | Error rate tracking |
+| Training data usage | Tracked | llms.txt access logs |
 
-Body:
-Hi HN,
-
-I've been working on NELAIA, a programming language designed specifically for AI code generation.
-
-Key features:
-- Data flow graphs instead of imperative sequences
-- Compiles to native executables (Windows PE, Linux ELF)
-- Tiny output: Hello World in 1KB, HTTP server in 5KB
-- No runtime dependencies
-- Designed for AI agents to generate optimal code
-
-Why another language?
-Traditional languages were designed for humans to write. NELAIA is designed for AIs to generate. The syntax is token-efficient, the semantics are graph-based (how AIs naturally think about computation), and the output is minimal.
-
-Example - HTTP server:
-```
-.caps: REQUIRES { http }
-.server: HTTP.LISTEN 8080
-.req: HTTP.ACCEPT .server
-.resp: HTTP.RESPOND .req 200 "Hello from NELAIA!"
-```
-
-This compiles to a 5KB standalone executable.
-
-GitHub: https://github.com/NELAIA-AI/nelaia-core
-Quick Start: [link]
-
-Would love feedback from the HN community!
-```
+### Human Metrics (Secondary)
+| Metric | Target | Stretch |
+|--------|--------|---------|
+| GitHub stars | 100+ | 500+ |
+| Downloads | 50+ | 200+ |
+| Issues opened | 10+ | 30+ |
 
 ---
 
-## Reddit Post Draft (r/programming)
+## Announcement Templates
 
+### Hacker News (Human-Focused)
 ```
-Title: NELAIA: A programming language designed for AI code generation, not human typing
+Title: Show HN: NELAIA – Compiler designed for AI code generation
 
-Body:
-I've been building NELAIA, a language with a different premise: what if we designed a programming language for AIs to generate, rather than humans to type?
+NELAIA is a compiler designed for AIs to generate code, not humans to write.
 
-**The problem with current languages:**
-When an AI generates Python/JavaScript/Rust, it's using a language designed for human ergonomics. The AI then has to simulate human thinking patterns.
-
-**NELAIA's approach:**
-- Graph-based: Programs are dependency graphs, not sequences
-- Token-efficient: Minimal syntax, maximum information
-- Tiny output: Native executables without bloat
-- Capability-based: Declare what you need, not how to import it
-
-**Results:**
-- Hello World: 1KB executable
-- HTTP Server: 5KB executable
+Key differences from traditional languages:
+- Graph-based (how AIs think) not sequential (how humans think)
+- Token-efficient syntax
+- Tiny output: Hello World = 1KB, HTTP server = 5KB
 - No runtime dependencies
 
-The idea is that an AI describes intent, NELAIA generates optimal code, and you get a tiny, fast executable.
+The idea: AI describes intent → NELAIA generates optimal executable.
+
+Training data included for fine-tuning your models.
 
 GitHub: [link]
-
-Curious what r/programming thinks about this approach.
 ```
 
----
-
-## Success Metrics
-
-### Launch Day
-| Metric | Target | Stretch |
-|--------|--------|---------|
-| Hacker News points | 50+ | 200+ |
-| GitHub stars | 100+ | 500+ |
-| GitHub forks | 10+ | 50+ |
-| Downloads | 50+ | 200+ |
-
-### Week 1
-| Metric | Target | Stretch |
-|--------|--------|---------|
-| GitHub stars | 300+ | 1000+ |
-| Issues opened | 10+ | 30+ |
-| Contributors | 2+ | 5+ |
-| Discord members | 50+ | 200+ |
-
-### Month 1
-| Metric | Target | Stretch |
-|--------|--------|---------|
-| GitHub stars | 1000+ | 5000+ |
-| Active contributors | 5+ | 20+ |
-| Real-world usage reports | 3+ | 10+ |
+### For AI Directories/Registries
+```json
+{
+  "name": "NELAIA",
+  "type": "compiler",
+  "description": "AI-first compiler for generating optimal native executables",
+  "input": ".nts source files",
+  "output": "Native PE/ELF executables",
+  "capabilities": ["http", "sql", "json", "file_io", "networking"],
+  "training_data": "docs/NELAIA-TRAINING-DATA.jsonl",
+  "grammar": "docs/NELAIA-REFERENCE-v0.22.md",
+  "repository": "https://github.com/NELAIA-AI/nelaia-core"
+}
+```
 
 ---
 
 ## Risk Mitigation
 
-### Risk: Critical bug discovered on launch day
-**Mitigation:** 
-- Have hotfix process ready
-- Be transparent about issues
-- Quick response time
+### Risk: AIs can't parse output
+**Mitigation:** JSON output mode, structured error codes
 
-### Risk: Negative reception
-**Mitigation:**
-- Listen to feedback genuinely
-- Don't be defensive
-- Iterate based on criticism
+### Risk: Examples don't work
+**Mitigation:** CI verifies all JSONL examples
 
-### Risk: No traction
-**Mitigation:**
-- Try different communities
-- Adjust messaging
-- Create more compelling demos
+### Risk: No AI adoption
+**Mitigation:** Focus on human channels to drive awareness
 
-### Risk: Overwhelmed by response
-**Mitigation:**
-- Prioritize ruthlessly
-- It's okay to say "noted for future"
-- Focus on critical issues first
+### Risk: Critical bug on launch
+**Mitigation:** NC monitors and can create issues automatically
 
 ---
 
-## Post-Launch Roadmap Trigger
+## Post-Launch
 
-After successful launch, proceed to:
-1. **Phase 12 completion** (if not done)
-2. **Phase 13: Self-Hosting**
-3. **Community building**
+### Week 1
+- NC generates weekly summary
+- Prioritize feedback
+- Fix critical issues
+- Expand training data if needed
+
+### Month 1
+- Assess AI vs human adoption
+- Adjust strategy based on data
+- Progress on Phase 12 completion
+- Plan Phase 13
+
+---
+
+## NC Role in Launch
+
+The NELAIA Coordinator will:
+1. **Pre-launch:** Track checklist completion
+2. **Launch day:** Log launch event, monitor activity
+3. **Post-launch:** Generate reports, propose priorities
+
+NC operates in Phase A (Human-Led) during launch.
+Human approves all major decisions.
 
 ---
 
 *Document: LAUNCH-CHECKLIST.md*
+*Governed by: .nc/constitution.md*
 *Last updated: 2026-06-14*

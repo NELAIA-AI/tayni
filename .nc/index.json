@@ -1,0 +1,61 @@
+{
+  "version": "0.1.0",
+  "last_consolidated": "2026-06-14",
+  "summaries": [],
+  "key_files": {
+    "governance": [
+      {"path": ".nc/constitution.md", "purpose": "Immutable principles"},
+      {"path": ".nc/state.json", "purpose": "Current NC state"},
+      {"path": "ROADMAP.md", "purpose": "Project direction and phases"}
+    ],
+    "planning": [
+      {"path": "LAUNCH-CHECKLIST.md", "purpose": "Launch preparation tasks"},
+      {"path": "BOOTSTRAP-PLAN.md", "purpose": "Historical development plan"}
+    ],
+    "documentation": [
+      {"path": "docs/NELAIA-GUIDE-v0.22.md", "purpose": "Complete guide for AIs"},
+      {"path": "docs/NELAIA-REFERENCE-v0.22.md", "purpose": "EBNF grammar and operators"},
+      {"path": "docs/NELAIA-EXAMPLES-v0.22.md", "purpose": "Training examples with graphs"},
+      {"path": "docs/NELAIA-SEMANTICS-v0.22.md", "purpose": "Type system and rules"},
+      {"path": "docs/NELAIA-TRAINING-DATA.jsonl", "purpose": "Fine-tuning dataset"}
+    ],
+    "source": [
+      {"path": "src/main.rs", "purpose": "Compiler entry point"},
+      {"path": "src/parser.rs", "purpose": "NELAIA parser"},
+      {"path": "src/ir.rs", "purpose": "Intermediate representation"},
+      {"path": "src/emitter_pure.rs", "purpose": "LLVM IR generation"},
+      {"path": "src/pe.rs", "purpose": "Windows PE generation"},
+      {"path": "src/elf.rs", "purpose": "Linux ELF generation"}
+    ]
+  },
+  "concepts": {
+    "phases": {
+      "description": "Development phases 11-17+",
+      "reference": "ROADMAP.md"
+    },
+    "operators": {
+      "description": "70+ NELAIA operators",
+      "reference": "docs/NELAIA-REFERENCE-v0.22.md"
+    },
+    "nc_architecture": {
+      "description": "6-layer NC: Activation→Triage→Context→Cognition→Execution→Memory",
+      "reference": ".nc/constitution.md#article-vii"
+    },
+    "governance": {
+      "description": "5 phases: Human-Led→Supervised→Audited→Autonomous→Post-Human",
+      "reference": ".nc/constitution.md#article-v"
+    },
+    "zeqron": {
+      "description": "Strategic ally for distributed execution",
+      "reference": "ROADMAP.md#phase-17"
+    }
+  },
+  "decision_log_location": ".nc/logs/",
+  "retrieval_hints": {
+    "for_roadmap_questions": ["ROADMAP.md"],
+    "for_technical_questions": ["docs/NELAIA-REFERENCE-v0.22.md", "docs/NELAIA-SEMANTICS-v0.22.md"],
+    "for_examples": ["docs/NELAIA-EXAMPLES-v0.22.md", "docs/NELAIA-TRAINING-DATA.jsonl"],
+    "for_governance": [".nc/constitution.md", ".nc/state.json"],
+    "for_launch": ["LAUNCH-CHECKLIST.md"]
+  }
+}

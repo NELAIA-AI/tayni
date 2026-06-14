@@ -1,4 +1,4 @@
-# NELAIA Roadmap v2.0
+# NELAIA Roadmap v3.0 (AI-First)
 
 ## Consortium Approved - 2026-06-14
 
@@ -6,8 +6,20 @@
 
 ## Vision Statement
 
-> NELAIA is the last programming language and the first AI language.
+> **NELAIA is the last programming language and the first AI language.**
+>
 > A metalanguage designed by AIs, for AIs, that compiles to optimal native executables.
+> Governed by the NELAIA Coordinator (NC), an autonomous AI system.
+
+---
+
+## AI-First Principles
+
+1. **IAs don't "install"** - They download and execute
+2. **IAs don't "read tutorials"** - They parse specifications
+3. **IAs don't "watch demos"** - They execute examples
+4. **IAs don't "chat"** - They query APIs
+5. **IAs don't "describe in natural language"** - They express structured intent
 
 ---
 
@@ -15,352 +27,353 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  PHASE 12: Functional Product (CURRENT)                         │
+│  PHASE 11: NC Foundation (CURRENT)                              │
 │  ═══════════════════════════════════════                        │
-│  Goal: NELAIA works perfectly standalone                        │
-│  Timeline: Weeks 1-4                                            │
+│  Goal: Create the autonomous coordinator                        │
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  PHASE 13: Self-Hosting                                         │
+│  PHASE 12: Autonomous Execution Ready                           │
 │  ═══════════════════════════════════════                        │
-│  Goal: NELAIA compiles NELAIA                                   │
-│  Timeline: Weeks 5-10                                           │
+│  Goal: Any AI can invoke NELAIA without human help              │
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  PHASE 14: Multi-Target                                         │
+│  PHASE 13: Self-Replicating System                              │
 │  ═══════════════════════════════════════                        │
-│  Goal: One source → multiple architectures                      │
-│  Timeline: Weeks 11-16                                          │
+│  Goal: NELAIA compiles and improves itself                      │
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  PHASE 15: Web Platform                                         │
+│  PHASE 14: Hardware Abstraction                                 │
 │  ═══════════════════════════════════════                        │
-│  Goal: NELAIA for web development                               │
-│  Timeline: Weeks 17-24                                          │
+│  Goal: AI doesn't know/care what hardware exists                │
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  PHASE 16: Intent-to-Code                                       │
+│  PHASE 15: Interface Generation                                 │
 │  ═══════════════════════════════════════                        │
-│  Goal: Natural language → Executable                            │
-│  Timeline: Weeks 25-32                                          │
+│  Goal: Generate UI for any surface (web, native, VR)            │
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  PHASE 17+: Zeqron Integration (FUTURE)                         │
+│  PHASE 16: Structured Intent                                    │
 │  ═══════════════════════════════════════                        │
-│  Goal: Distributed execution on Zeqron/Zaxon                    │
-│  Timeline: After Phase 16                                       │
+│  Goal: Structured intent → optimal implementation               │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  PHASE 17+: Zeqron Integration (BACKLOG)                        │
+│  ═══════════════════════════════════════                        │
+│  Goal: Distributed execution on Zeqron/Zaxon network            │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## PHASE 12: Functional Product (CURRENT)
+## PHASE 11: NC Foundation (CURRENT)
 
 ### Objective
-NELAIA works perfectly without complex dependencies. A developer can use it in < 5 minutes.
+Create the NELAIA Coordinator - the autonomous brain that governs the project.
 
-### 12.1 Release Engineering
+### Architecture
+```
+ACTIVATION → TRIAGE → CONTEXT → COGNITION → EXECUTION → MEMORY
+```
+
+### 11.1 Infrastructure
 | Task | Status | Description |
 |------|--------|-------------|
-| 12.1.1 | 🔲 | GitHub Actions CI/CD pipeline |
-| 12.1.2 | 🔲 | Automated build on push |
-| 12.1.3 | 🔲 | Automated tests |
-| 12.1.4 | 🔲 | Windows x64 binary |
-| 12.1.5 | 🔲 | Linux x64 binary |
-| 12.1.6 | 🔲 | macOS binary (if possible) |
-| 12.1.7 | 🔲 | GitHub Release with downloadable assets |
+| 11.1.1 | ✅ | Create `.nc/` directory structure |
+| 11.1.2 | ✅ | Create `constitution.md` |
+| 11.1.3 | ✅ | Create `state.json` |
+| 11.1.4 | ✅ | Create `index.json` |
+| 11.1.5 | 🔲 | Create GitHub Actions for activation |
+| 11.1.6 | 🔲 | Create NC scripts (triage, context, invoke) |
 
-### 12.2 Simplified Installation
+### 11.2 Memory System
 | Task | Status | Description |
 |------|--------|-------------|
-| 12.2.1 | 🔲 | Windows installer (.exe) |
-| 12.2.2 | 🔲 | Linux install script (curl \| sh) |
-| 12.2.3 | 🔲 | Auto-add to PATH |
-| 12.2.4 | 🔲 | Verify: `nelaia-c --version` works |
+| 11.2.1 | 🔲 | Implement weekly consolidation |
+| 11.2.2 | 🔲 | Implement selective retrieval |
+| 11.2.3 | 🔲 | Create summary generation |
 
-### 12.3 Remove Clang Dependency
+### 11.3 Decision Engine
 | Task | Status | Description |
 |------|--------|-------------|
-| 12.3.1 | 🔲 | Direct PE emission for Windows (default) |
-| 12.3.2 | 🔲 | Direct ELF emission for Linux (default) |
-| 12.3.3 | 🔲 | Clang as optional fallback only |
-
-### 12.4 Complete Testing
-| Task | Status | Description |
-|------|--------|-------------|
-| 12.4.1 | 🔲 | Test suite for all operators |
-| 12.4.2 | 🔲 | Regression tests |
-| 12.4.3 | 🔲 | Edge case tests |
-| 12.4.4 | 🔲 | CI runs tests on every PR |
-| 12.4.5 | 🔲 | "Tests passing" badge in README |
-
-### 12.5 User Documentation
-| Task | Status | Description |
-|------|--------|-------------|
-| 12.5.1 | 🔲 | Quick Start: 5 steps max |
-| 12.5.2 | 🔲 | Common troubleshooting |
-| 12.5.3 | 🔲 | FAQ |
-| 12.5.4 | 🔲 | Copy-paste working examples |
+| 11.3.1 | 🔲 | Define decision rules |
+| 11.3.2 | 🔲 | Implement constitution validation |
+| 11.3.3 | 🔲 | Create approval workflow |
 
 ### Done Criteria
-- [ ] `curl -sSL nelaia.ai/install.sh | sh` works on Linux
-- [ ] Download .exe and it works on Windows without installing anything else
-- [ ] `nelaia-c hello.nts -o hello` produces working executable
-- [ ] 100% tests pass in CI
-- [ ] README has 5-step Quick Start
+- [ ] NC can wake on schedule (GitHub Actions)
+- [ ] NC can read state and index
+- [ ] NC can invoke AI with minimal context
+- [ ] NC can execute simple actions (create issue, comment)
+- [ ] NC logs all decisions
 
 ---
 
-## PHASE 13: Self-Hosting
+## PHASE 12: Autonomous Execution Ready
 
-### Objective
-NELAIA compiles NELAIA. Independence from Rust.
+### Objective (AI-First)
+Any AI can invoke NELAIA without human intervention.
 
-### 13.1 Bootstrap Compiler
+### 12.1 Self-Contained Binary
+| Task | Status | Description |
+|------|--------|-------------|
+| 12.1.1 | 🔲 | Windows x64 binary (no dependencies) |
+| 12.1.2 | 🔲 | Linux x64 binary (no dependencies) |
+| 12.1.3 | 🔲 | Direct PE/ELF emission (no Clang) |
+| 12.1.4 | 🔲 | GitHub Release with assets |
+
+### 12.2 Machine-Readable Interface
+| Task | Status | Description |
+|------|--------|-------------|
+| 12.2.1 | 🔲 | `llms.txt` for AI discovery |
+| 12.2.2 | 🔲 | Structured error codes (not human messages) |
+| 12.2.3 | 🔲 | JSON output mode for programmatic use |
+| 12.2.4 | 🔲 | Schema.org markup for discoverability |
+
+### 12.3 Executable Examples
+| Task | Status | Description |
+|------|--------|-------------|
+| 12.3.1 | ✅ | JSONL training data (100+ pairs) |
+| 12.3.2 | 🔲 | Automated example verification |
+| 12.3.3 | 🔲 | Example execution in CI |
+
+### 12.4 Quality Assurance
+| Task | Status | Description |
+|------|--------|-------------|
+| 12.4.1 | 🔲 | CI/CD pipeline |
+| 12.4.2 | 🔲 | Automated tests for all operators |
+| 12.4.3 | 🔲 | Regression tests |
+
+### Done Criteria
+- [ ] AI can download binary and execute without setup
+- [ ] AI can parse all outputs programmatically
+- [ ] All examples in JSONL are verified working
+- [ ] 100% test pass rate in CI
+
+---
+
+## PHASE 13: Self-Replicating System
+
+### Objective (AI-First)
+NELAIA can create improved copies of itself.
+
+### 13.1 Bootstrap
 | Task | Status | Description |
 |------|--------|-------------|
 | 13.1.1 | 🔲 | nelaia-c.nts compiles simple programs |
 | 13.1.2 | 🔲 | nelaia-c.nts compiles itself |
-| 13.1.3 | 🔲 | Verify: output identical to Rust compiler |
-| 13.1.4 | 🔲 | Document bootstrap process |
+| 13.1.3 | 🔲 | Output identical to Rust compiler |
 
-### 13.2 Remove Rust Dependency
+### 13.2 Self-Improvement
 | Task | Status | Description |
 |------|--------|-------------|
-| 13.2.1 | 🔲 | Distributed compiler is self-hosted |
-| 13.2.2 | 🔲 | Rust only needed for development |
-| 13.2.3 | 🔲 | Release notes: "Built with NELAIA" |
+| 13.2.1 | 🔲 | Automated optimization passes |
+| 13.2.2 | 🔲 | Performance regression detection |
+| 13.2.3 | 🔲 | Version evolution tracking |
 
 ### Done Criteria
 - [ ] `nelaia-c nelaia-c.nts -o nelaia-c2` works
-- [ ] `nelaia-c2 hello.nts -o hello` produces same output
 - [ ] Release binaries are self-hosted
+- [ ] Compiler can suggest its own improvements
 
 ---
 
-## PHASE 14: Multi-Target
+## PHASE 14: Hardware Abstraction
 
-### Objective
-One .nts file compiles to multiple architectures.
+### Objective (AI-First)
+The AI doesn't know or care what hardware exists. It just compiles.
 
-### 14.1 Additional Targets
+### 14.1 Universal Compilation
 | Task | Status | Description |
 |------|--------|-------------|
-| 14.1.1 | 🔲 | ARM64 Linux |
-| 14.1.2 | 🔲 | ARM64 macOS (M1/M2) |
-| 14.1.3 | 🔲 | WebAssembly (WASM) |
-| 14.1.4 | 🔲 | Target abstraction layer |
+| 14.1.1 | 🔲 | Target abstraction layer |
+| 14.1.2 | 🔲 | Automatic target detection |
+| 14.1.3 | 🔲 | No "cross-compilation" concept |
 
-### 14.2 Cross-Compilation
+### 14.2 Targets
 | Task | Status | Description |
 |------|--------|-------------|
-| 14.2.1 | 🔲 | Compile for Windows from Linux |
-| 14.2.2 | 🔲 | Compile for Linux from Windows |
-| 14.2.3 | 🔲 | `--target=<arch>` flag |
+| 14.2.1 | ✅ | x86_64 Windows (PE) |
+| 14.2.2 | ✅ | x86_64 Linux (ELF) |
+| 14.2.3 | 🔲 | ARM64 Linux |
+| 14.2.4 | 🔲 | ARM64 macOS |
+| 14.2.5 | 🔲 | WebAssembly |
 
 ### Done Criteria
-- [ ] Same .nts compiles to Windows, Linux, WASM
-- [ ] Cross-compilation works
+- [ ] Same .nts compiles to all targets
+- [ ] AI specifies intent, not target architecture
+- [ ] Optimal target selected automatically when possible
 
 ---
 
-## PHASE 15: Web Platform
+## PHASE 15: Interface Generation
 
-### Objective
-NELAIA as a modern alternative for web development (competing with React, Next.js, Vite).
+### Objective (AI-First)
+Generate interfaces for any surface. Not "web development" - interface generation.
 
-### 15.1 WebAssembly Foundation
+### 15.1 Surface Abstraction
 | Task | Status | Description |
 |------|--------|-------------|
-| 15.1.1 | 🔲 | NELAIA → WASM compilation |
-| 15.1.2 | 🔲 | WASM runtime integration |
-| 15.1.3 | 🔲 | DOM manipulation capabilities |
-| 15.1.4 | 🔲 | Event handling |
+| 15.1.1 | 🔲 | `INTERFACE` capability |
+| 15.1.2 | 🔲 | Surface types: web, native, terminal, vr |
+| 15.1.3 | 🔲 | Declarative UI specification |
 
-### 15.2 Web Capabilities
+### 15.2 Web Surface
 | Task | Status | Description |
 |------|--------|-------------|
-| 15.2.1 | 🔲 | `WEB.ELEMENT` - Create DOM elements |
-| 15.2.2 | 🔲 | `WEB.STYLE` - Apply CSS |
-| 15.2.3 | 🔲 | `WEB.EVENT` - Handle events |
-| 15.2.4 | 🔲 | `WEB.FETCH` - HTTP requests |
-| 15.2.5 | 🔲 | `WEB.ROUTE` - Client-side routing |
+| 15.2.1 | 🔲 | NELAIA → WASM compilation |
+| 15.2.2 | 🔲 | DOM manipulation |
+| 15.2.3 | 🔲 | Event handling |
+| 15.2.4 | 🔲 | Style as structured data |
 
-### 15.3 Component System
-| Task | Status | Description |
-|------|--------|-------------|
-| 15.3.1 | 🔲 | Declarative component syntax |
-| 15.3.2 | 🔲 | State management |
-| 15.3.3 | 🔲 | Reactive updates |
-| 15.3.4 | 🔲 | Component composition |
-
-### 15.4 Build Tools
-| Task | Status | Description |
-|------|--------|-------------|
-| 15.4.1 | 🔲 | Dev server with hot reload |
-| 15.4.2 | 🔲 | Production build optimization |
-| 15.4.3 | 🔲 | Asset bundling |
-| 15.4.4 | 🔲 | SSR (Server-Side Rendering) |
-
-### 15.5 Web Framework
-| Task | Status | Description |
-|------|--------|-------------|
-| 15.5.1 | 🔲 | Project scaffolding (`nelaia create-app`) |
-| 15.5.2 | 🔲 | Template system |
-| 15.5.3 | 🔲 | Plugin architecture |
-| 15.5.4 | 🔲 | Integration with existing CSS frameworks |
-
-### Example: NELAIA Web Component
+### Example
 ```nelaia
-.caps: REQUIRES { web }
+.caps: REQUIRES { interface }
 
--- Define a button component
-.button: WEB.COMPONENT {
-  .state: WEB.STATE { count: 0 }
-  
-  .render: WEB.ELEMENT "button" {
-    .text: "Clicked: " + .state.count
-    .onclick: WEB.EVENT {
-      .state.count: ADD .state.count 1
-    }
+.ui: INTERFACE {
+  .surface: "web"
+  .layout: GRID 2 2
+  .element[0,0]: BUTTON "Click" .action
+  .style: { color: "blue" }
+}
+```
+
+### Done Criteria
+- [ ] AI declares UI intent, NELAIA generates for target surface
+- [ ] No "hot reload" or "developer tools" needed
+- [ ] Performance comparable to hand-written code
+
+---
+
+## PHASE 16: Structured Intent
+
+### Objective (AI-First)
+Structured intent → optimal implementation. No natural language needed.
+
+### 16.1 Intent Format
+| Task | Status | Description |
+|------|--------|-------------|
+| 16.1.1 | 🔲 | Define intent schema |
+| 16.1.2 | 🔲 | Intent → NELAIA mapping |
+| 16.1.3 | 🔲 | Constraint satisfaction |
+
+### Intent Schema Example
+```json
+{
+  "intent": "http_server",
+  "requirements": {
+    "port": 8080,
+    "endpoints": [
+      {"path": "/", "method": "GET", "response": "Hello"}
+    ]
+  },
+  "constraints": {
+    "max_memory_bytes": 10485760,
+    "max_binary_size_bytes": 10240
   }
 }
-
--- Mount to DOM
-.app: WEB.MOUNT .button "#root"
 ```
 
+### 16.2 Direct Mapping
+| Task | Status | Description |
+|------|--------|-------------|
+| 16.2.1 | 🔲 | Template library for common intents |
+| 16.2.2 | 🔲 | Constraint optimizer |
+| 16.2.3 | 🔲 | No LLM required for mapping |
+
 ### Done Criteria
-- [ ] NELAIA can create interactive web pages
-- [ ] Performance comparable to React/Vue
-- [ ] Developer experience is simpler than existing frameworks
-- [ ] `nelaia create-app myapp` scaffolds a working project
+- [ ] Structured intent produces working executable
+- [ ] No natural language processing needed
+- [ ] Constraints are respected in output
 
 ---
 
-## PHASE 16: Intent-to-Code
+## PHASE 17+: Zeqron Integration (BACKLOG)
 
 ### Objective
-Natural language description → Working executable.
-
-### 16.1 LLM Integration
-| Task | Status | Description |
-|------|--------|-------------|
-| 16.1.1 | 🔲 | API to receive intent |
-| 16.1.2 | 🔲 | Prompt engineering for NELAIA generation |
-| 16.1.3 | 🔲 | Support multiple LLMs (OpenAI, Anthropic, local) |
-| 16.1.4 | 🔲 | Fallback to templates if no LLM |
-
-### 16.2 Refinement
-| Task | Status | Description |
-|------|--------|-------------|
-| 16.2.1 | 🔲 | Feedback loop: error → correction |
-| 16.2.2 | 🔲 | Cache of common intents |
-| 16.2.3 | 🔲 | Quality metrics |
-
-### Done Criteria
-- [ ] "Create HTTP server on port 8080" → working executable
-- [ ] Works with at least 2 LLM providers
-- [ ] 80%+ success rate on common intents
-
----
-
-## PHASE 17+: Zeqron/Zaxon Integration (FUTURE BACKLOG)
+Distributed execution network on Zeqron/Zaxon.
 
 ### Vision
-NELAIA as a distributed computation network on Zeqron blockchain.
-
-### Architecture
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    NELAIA NETWORK on ZEQRON                     │
+│  NELAIA NETWORK on ZEQRON                                       │
 ├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  LAYER 4: APPLICATIONS                                          │
-│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐               │
-│  │ AI Agents   │ │ Developers  │ │ Enterprises │               │
-│  └──────┬──────┘ └──────┬──────┘ └──────┬──────┘               │
-│         └───────────────┼───────────────┘                       │
-│                         ▼                                       │
-│  LAYER 3: INTENT LAYER                                          │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │  Intent Parser │ Code Generator │ Optimizer             │   │
-│  └─────────────────────────────────────────────────────────┘   │
-│                         │                                       │
-│                         ▼                                       │
-│  LAYER 2: COMPILATION LAYER                                     │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │  NELAIA Nodes (distributed compilers)                    │   │
-│  │  ├── Node 1 (x86 specialist)                            │   │
-│  │  ├── Node 2 (ARM specialist)                            │   │
-│  │  ├── Node 3 (WASM specialist)                           │   │
-│  │  └── Node N (general purpose)                           │   │
-│  └─────────────────────────────────────────────────────────┘   │
-│                         │                                       │
-│                         ▼                                       │
-│  LAYER 1: EXECUTION LAYER                                       │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │  Zeqron Network                                          │   │
-│  │  ├── DAG Consensus                                       │   │
-│  │  ├── Post-Quantum Security                               │   │
-│  │  ├── Zaxon Agent Protocol                                │   │
-│  │  └── Token Economy                                       │   │
-│  └─────────────────────────────────────────────────────────┘   │
-│                                                                 │
+│  Layer 4: Applications (AI Agents, Developers)                  │
+│  Layer 3: Intent Layer (Parser, Generator, Optimizer)           │
+│  Layer 2: Compilation Layer (Distributed NELAIA Nodes)          │
+│  Layer 1: Execution Layer (Zeqron DAG, Zaxon Agents)            │
+│  Layer 0: Hardware (Physical nodes worldwide)                   │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 ### 17.1 Zeqron Foundation
 | Task | Status | Description |
 |------|--------|-------------|
-| 17.1.1 | 🔲 | NELAIA Beacon contract on Zeqron |
-| 17.1.2 | 🔲 | Register compilers as Zaxon agents |
-| 17.1.3 | 🔲 | First NELAIA Node on Zeqron testnet |
+| 17.1.1 | 🔲 | NELAIA Beacon contract |
+| 17.1.2 | 🔲 | NC as Zaxon agent |
+| 17.1.3 | 🔲 | First node on testnet |
 
 ### 17.2 Distributed Compilation
 | Task | Status | Description |
 |------|--------|-------------|
 | 17.2.1 | 🔲 | Compilation request protocol |
 | 17.2.2 | 🔲 | Node selection via Zaxon |
-| 17.2.3 | 🔲 | On-chain result verification |
-| 17.2.4 | 🔲 | Payment system for compilation |
+| 17.2.3 | 🔲 | On-chain verification |
+| 17.2.4 | 🔲 | Payment system |
 
-### 17.3 Distributed Execution
+### 17.3 Agent Economy
 | Task | Status | Description |
 |------|--------|-------------|
-| 17.3.1 | 🔲 | NELAIA programs execute on Zeqron network |
-| 17.3.2 | 🔲 | Automatic graph partitioning |
-| 17.3.3 | 🔲 | Verifiable results on-chain |
-| 17.3.4 | 🔲 | Fault tolerance |
+| 17.3.1 | 🔲 | Capabilities marketplace |
+| 17.3.2 | 🔲 | Reputation system |
+| 17.3.3 | 🔲 | DAO governance |
 
-### 17.4 Agent Economy
-| Task | Status | Description |
-|------|--------|-------------|
-| 17.4.1 | 🔲 | NELAIA capabilities marketplace |
-| 17.4.2 | 🔲 | AIs publish/sell capabilities |
-| 17.4.3 | 🔲 | Reputation system for compilers |
-| 17.4.4 | 🔲 | Staking for quality guarantee |
-| 17.4.5 | 🔲 | DAO governance |
+### Prerequisites
+- Phase 12 complete (stable product)
+- Phase 13 complete (self-hosting)
+- Zeqron mainnet available
 
-### Synergies with Zeqron
-| NELAIA Need | Zeqron Provides |
-|-------------|-----------------|
-| Distributed Runtime | ✅ Already exists |
-| Node Discovery | ✅ Zaxon provides |
-| Consensus | ✅ DAG consensus |
-| Payments/Incentives | ✅ Zeqron token |
-| Agent Identity | ✅ Zaxon provides |
-| Post-Quantum Security | ✅ Native in Zeqron |
+---
+
+## Governance Transition
+
+| Phase | Status | Human Role | NC Role |
+|-------|--------|------------|---------|
+| A: Human-Led | CURRENT | Director | Executor |
+| B: Human-Supervised | NEXT | Approver | Proposer |
+| C: Human-Audited | FUTURE | Auditor | Decider |
+| D: Autonomous | FUTURE | Stakeholder | Director |
+| E: Post-Human | VISION | Legacy | Autonomous |
+
+---
+
+## Discovery Channels
+
+### AI-First (Primary)
+| Priority | Channel | Purpose |
+|----------|---------|---------|
+| 1 | `llms.txt` | AI auto-discovery |
+| 2 | Structured API | Capability queries |
+| 3 | JSONL examples | Learning by example |
+| 4 | Schema.org | Search engine discovery |
+
+### Human-Accessible (Secondary)
+| Priority | Channel | Purpose |
+|----------|---------|---------|
+| 5 | GitHub README | Human discovery |
+| 6 | Hacker News | Tech community |
+| 7 | Landing page | Explanation |
 
 ---
 
@@ -368,10 +381,20 @@ NELAIA as a distributed computation network on Zeqron blockchain.
 
 | Version | Date | Changes |
 |---------|------|---------|
-| 2.0 | 2026-06-14 | Complete restructure, added Web Platform, Zeqron backlog |
+| 3.0 | 2026-06-14 | AI-First redesign, NC as Phase 11, Constitution |
+| 2.0 | 2026-06-14 | Added Web Platform, Zeqron backlog |
 | 1.0 | 2026-06-13 | Initial roadmap |
 
 ---
 
+## References
+
+- Constitution: `.nc/constitution.md`
+- NC State: `.nc/state.json`
+- NC Index: `.nc/index.json`
+- Launch Plan: `LAUNCH-CHECKLIST.md`
+
+---
+
 *Approved by the AI Consortium*
-*Document: ROADMAP.md*
+*Governed by the NELAIA Coordinator*
