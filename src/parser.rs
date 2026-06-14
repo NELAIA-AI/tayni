@@ -288,6 +288,7 @@ impl Parser {
             "WHL" => Ok(Op::Whl),
             "END" => Ok(Op::End),
             "TRN" => Ok(Op::Trn),
+            "FSM" => Ok(Op::Fsm),
             // LOOP deprecated - use cyclic flow >> instead
             "PRT" => Ok(Op::Prt),
             "INP" => Ok(Op::Inp),

@@ -69,6 +69,8 @@ pub enum Op {
     End,  // END cond -> terminate if cond == 0, continue if != 0
     // Graph Transform
     Trn,  // TRN input rule -> apply rule to each element, return vector
+    // Finite State Machine
+    Fsm,  // FSM input len rules -> tokenize with state machine
     // Effects (I/O)
     Prt, Inp, Opn, Acc, Get, Put, Cls, Err,
     // Network

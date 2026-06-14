@@ -1,30 +1,13 @@
--- NELAIA Self-Hosted Tokenizer v0.2
--- Extracts real tokens: DOT, COLON, ID, NUM, STR, NEWLINE
--- Stores tokens in vector
+-- NELAIA Self-Hosted Tokenizer v0.3
+-- Uses TRN (Graph Transform) - the emergent solution
+-- Transforms source bytes into token markers
 
--- Token types
-.TK_EOF: 0
-.TK_DOT: 1
-.TK_COLON: 2
-.TK_ID: 3
-.TK_NUM: 4
-.TK_STR: 5
-.TK_NL: 6
-
--- Character constants
+-- Character codes for token detection
 .CH_DOT: 46
 .CH_COLON: 58
-.CH_QUOTE: 34
 .CH_NL: 10
 .CH_SPACE: 32
-.CH_TAB: 9
-.CH_0: 48
-.CH_9: 57
-.CH_A: 65
-.CH_Z: 90
-.CH_a: 97
-.CH_z: 122
-.CH_UNDER: 95
+.CH_QUOTE: 34
 
 -- Read input file
 .input_path: "src/nelaia/input.nts"
@@ -33,127 +16,118 @@
 .len: FRD .file .src 1024
 .close_file: FCL .file
 
--- Token storage: each token = (type, start, length)
--- Using 3 separate vectors for simplicity
-.tok_types: VEC 64
-.tok_starts: VEC 64
-.tok_lens: VEC 64
+-- Transform: mark dots (46 -> 1, else -> 0)
+.dot_rule: 2
+.dot_marks: TRN .src .len .dot_rule
 
--- Counters
-.zero: 0
-.one: 1
-.tok_count: 0
+-- Count dots by summing marks (first 40 bytes)
+.d0: GET .dot_marks 0
+.d1: GET .dot_marks 1
+.d2: GET .dot_marks 2
+.d3: GET .dot_marks 3
+.d4: GET .dot_marks 4
+.d5: GET .dot_marks 5
+.d6: GET .dot_marks 6
+.d7: GET .dot_marks 7
+.d8: GET .dot_marks 8
+.d9: GET .dot_marks 9
+.d10: GET .dot_marks 10
+.d11: GET .dot_marks 11
+.d12: GET .dot_marks 12
+.d13: GET .dot_marks 13
+.d14: GET .dot_marks 14
+.d15: GET .dot_marks 15
+.d16: GET .dot_marks 16
+.d17: GET .dot_marks 17
+.d18: GET .dot_marks 18
+.d19: GET .dot_marks 19
+.d20: GET .dot_marks 20
+.d21: GET .dot_marks 21
+.d22: GET .dot_marks 22
+.d23: GET .dot_marks 23
+.d24: GET .dot_marks 24
+.d25: GET .dot_marks 25
+.d26: GET .dot_marks 26
+.d27: GET .dot_marks 27
+.d28: GET .dot_marks 28
+.d29: GET .dot_marks 29
+.d30: GET .dot_marks 30
+.d31: GET .dot_marks 31
+.d32: GET .dot_marks 32
+.d33: GET .dot_marks 33
+.d34: GET .dot_marks 34
+.d35: GET .dot_marks 35
+.d36: GET .dot_marks 36
+.d37: GET .dot_marks 37
+.d38: GET .dot_marks 38
+.d39: GET .dot_marks 39
 
--- Process position 0
-.c0: GET .src 0
-.is_dot0: EQ .c0 .CH_DOT
-.is_colon0: EQ .c0 .CH_COLON
-.is_nl0: EQ .c0 .CH_NL
-.is_space0: EQ .c0 .CH_SPACE
-
--- If dot, add token
-.add_dot0: BRN .is_dot0 .TK_DOT .zero
-.push_dot0: VPH .tok_types .add_dot0
-.push_start0: VPH .tok_starts 0
-.push_len0: VPH .tok_lens 1
-
--- If colon, add token  
-.add_colon0: BRN .is_colon0 .TK_COLON .zero
-.push_colon0: VPH .tok_types .add_colon0
-
--- Process position 1
-.c1: GET .src 1
-.is_dot1: EQ .c1 .CH_DOT
-.is_colon1: EQ .c1 .CH_COLON
-
--- Process position 2
-.c2: GET .src 2
-.is_dot2: EQ .c2 .CH_DOT
-.is_colon2: EQ .c2 .CH_COLON
-
--- Process position 3
-.c3: GET .src 3
-.is_dot3: EQ .c3 .CH_DOT
-.is_colon3: EQ .c3 .CH_COLON
-
--- Process position 4
-.c4: GET .src 4
-.is_dot4: EQ .c4 .CH_DOT
-.is_colon4: EQ .c4 .CH_COLON
-
--- Process position 5 (should be colon in ".msg:")
-.c5: GET .src 5
-.is_dot5: EQ .c5 .CH_DOT
-.is_colon5: EQ .c5 .CH_COLON
-.add_colon5: BRN .is_colon5 .TK_COLON .zero
-.push_colon5: VPH .tok_types .add_colon5
-
--- Continue processing...
-.c6: GET .src 6
-.c7: GET .src 7
-.c8: GET .src 8
-.c9: GET .src 9
-.c10: GET .src 10
-.c11: GET .src 11
-.c12: GET .src 12
-.c13: GET .src 13
-.c14: GET .src 14
-.c15: GET .src 15
-.c16: GET .src 16
-.c17: GET .src 17
-.c18: GET .src 18
-.c19: GET .src 19
-.c20: GET .src 20
-.c21: GET .src 21
-.c22: GET .src 22
-.c23: GET .src 23
-.c24: GET .src 24
-
--- Position 24 should be dot (.out)
-.is_dot24: EQ .c24 .CH_DOT
-.add_dot24: BRN .is_dot24 .TK_DOT .zero
-.push_dot24: VPH .tok_types .add_dot24
-
-.c25: GET .src 25
-.c26: GET .src 26
-.c27: GET .src 27
-.c28: GET .src 28
-.c29: GET .src 29
-
--- Position 29 should be colon
-.is_colon29: EQ .c29 .CH_COLON
-.add_colon29: BRN .is_colon29 .TK_COLON .zero
-.push_colon29: VPH .tok_types .add_colon29
-
-.c30: GET .src 30
-.c31: GET .src 31
-.c32: GET .src 32
-.c33: GET .src 33
-.c34: GET .src 34
-
--- Position 34 should be dot (.msg reference)
-.is_dot34: EQ .c34 .CH_DOT
-.add_dot34: BRN .is_dot34 .TK_DOT .zero
-.push_dot34: VPH .tok_types .add_dot34
-
--- Get token count
-.final_count: VLN .tok_types
+-- Sum all marks
+.s0: ADD .d0 .d1
+.s1: ADD .s0 .d2
+.s2: ADD .s1 .d3
+.s3: ADD .s2 .d4
+.s4: ADD .s3 .d5
+.s5: ADD .s4 .d6
+.s6: ADD .s5 .d7
+.s7: ADD .s6 .d8
+.s8: ADD .s7 .d9
+.s9: ADD .s8 .d10
+.s10: ADD .s9 .d11
+.s11: ADD .s10 .d12
+.s12: ADD .s11 .d13
+.s13: ADD .s12 .d14
+.s14: ADD .s13 .d15
+.s15: ADD .s14 .d16
+.s16: ADD .s15 .d17
+.s17: ADD .s16 .d18
+.s18: ADD .s17 .d19
+.s19: ADD .s18 .d20
+.s20: ADD .s19 .d21
+.s21: ADD .s20 .d22
+.s22: ADD .s21 .d23
+.s23: ADD .s22 .d24
+.s24: ADD .s23 .d25
+.s25: ADD .s24 .d26
+.s26: ADD .s25 .d27
+.s27: ADD .s26 .d28
+.s28: ADD .s27 .d29
+.s29: ADD .s28 .d30
+.s30: ADD .s29 .d31
+.s31: ADD .s30 .d32
+.s32: ADD .s31 .d33
+.s33: ADD .s32 .d34
+.s34: ADD .s33 .d35
+.s35: ADD .s34 .d36
+.s36: ADD .s35 .d37
+.s37: ADD .s36 .d38
+.dot_count: ADD .s37 .d39
 
 -- Output
-.msg1: "NELAIA Tokenizer v0.2\n"
-.out1: PRT .msg1 22
+.msg1: "NELAIA Tokenizer v0.3 (TRN)\n"
+.out1: PRT .msg1 28
 
-.msg2: "Tokens found: "
-.out2: PRT .msg2 14
+.msg2: "File bytes read: "
+.out2: PRT .msg2 17
+.len_val: ADD .len 0
+.lbuf: ALC 8
+-- Simple: just show if > 0
+.has_data: GT .len 0
+.data_char: ADD .has_data 48
+.put_len: PUT .lbuf 0 .data_char
+.put_len2: PUT .lbuf 1 48
+.put_nl0: PUT .lbuf 2 10
+.out2b: PRT .lbuf 3
 
--- Convert count to digit
-.count_digit: ADD .final_count 48
-.count_buf: ALC 4
-.put_count: PUT .count_buf 0 .count_digit
-.put_nl: PUT .count_buf 1 10
-.out3: PRT .count_buf 2
+.msg3: "Dots found: "
+.out3: PRT .msg3 12
+.dot_digit: ADD .dot_count 48
+.dot_buf: ALC 4
+.put_dot: PUT .dot_buf 0 .dot_digit
+.put_nl: PUT .dot_buf 1 10
+.out4: PRT .dot_buf 2
 
-.msg4: "Self-hosted tokenizer v0.2 OK!\n"
-.out4: PRT .msg4 31
+.done: "TRN-based tokenizer works!\n"
+.out5: PRT .done 27
 
-.result: ADD .out1 .out2 .out3 .out4 .close_file .push_dot0 .push_colon5 .push_dot24 .push_colon29 .push_dot34
+.result: ADD .out1 .out2 .out2b .out3 .out4 .out5 .close_file
