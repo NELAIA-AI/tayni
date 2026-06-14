@@ -1,46 +1,66 @@
--- Test FSM (Finite State Machine) - Emergent tokenizer
--- Tokenizes input into structured tokens
+-- Test FSM v2 - Full tokenizer with ID, NUM, STR
+-- Token types: 1=DOT, 2=COLON, 3=ID, 4=NUM, 5=STR, 6=NL
 
-.input: ".msg: \"Hello\"\n.out: PRT"
-.len: 24
-
--- FSM tokenizes the input
--- Returns: pointer to token array
--- Header: [count:i64]
--- Each token: [type:i8, pad:i8, start:i32, len:i16]
-.tokens: FSM .input .len
-
--- Read token count from header
+.input: ".msg: 42\n.out: PRT"
+.len: 18
 .zero: 0
-.toks_ptr: ADD .tokens .zero
-.tok_count: GET .toks_ptr 0
+
+.tokens: FSM .input .len
+.tptr: ADD .tokens .zero
+
+-- Read token count (first 8 bytes as i64, but we read byte 0)
+.cnt: GET .tptr 0
+
+-- Read tokens
+.t0_off: ADD .tptr 8
+.t0_type: GET .t0_off 0
+
+.t1_off: ADD .tptr 16
+.t1_type: GET .t1_off 0
+
+.t2_off: ADD .tptr 24
+.t2_type: GET .t2_off 0
+
+.t3_off: ADD .tptr 32
+.t3_type: GET .t3_off 0
+
+.t4_off: ADD .tptr 40
+.t4_type: GET .t4_off 0
+
+.t5_off: ADD .tptr 48
+.t5_type: GET .t5_off 0
 
 -- Output
-.msg1: "FSM Tokenizer Test\n"
-.out1: PRT .msg1 19
+.msg1: "FSM v2 Tokenizer\n"
+.out1: PRT .msg1 17
 
-.msg2: "Tokens found: "
-.out2: PRT .msg2 14
+.msg2: "Input: .msg: 42\\n.out: PRT\n"
+.out2: PRT .msg2 27
 
-.count_digit: ADD .tok_count 48
-.cbuf: ALC 4
-.put_c: PUT .cbuf 0 .count_digit
-.put_nl: PUT .cbuf 1 10
-.out3: PRT .cbuf 2
+.msg3: "Token types: "
+.out3: PRT .msg3 13
 
--- Read first token type (at offset 8)
-.tok0_off: ADD .tokens 8
-.tok0_type: GET .tok0_off 0
+-- Print each token type
+.buf: ALC 16
+.d0: ADD .t0_type 48
+.p0: PUT .buf 0 .d0
+.d1: ADD .t1_type 48
+.p1: PUT .buf 1 .d1
+.d2: ADD .t2_type 48
+.p2: PUT .buf 2 .d2
+.d3: ADD .t3_type 48
+.p3: PUT .buf 3 .d3
+.d4: ADD .t4_type 48
+.p4: PUT .buf 4 .d4
+.d5: ADD .t5_type 48
+.p5: PUT .buf 5 .d5
+.pnl: PUT .buf 6 10
+.out4: PRT .buf 7
 
-.msg3: "First token type: "
-.out4: PRT .msg3 18
-.t0_digit: ADD .tok0_type 48
-.tbuf: ALC 4
-.put_t: PUT .tbuf 0 .t0_digit
-.put_nl2: PUT .tbuf 1 10
-.out5: PRT .tbuf 2
+.msg5: "Expected: 1(DOT) 3(ID) 2(COLON) 4(NUM) 6(NL) 1(DOT)\n"
+.out5: PRT .msg5 52
 
-.done: "FSM works!\n"
-.out6: PRT .done 11
+.done: "FSM v2 works!\n"
+.out6: PRT .done 14
 
 .result: ADD .out1 .out2 .out3 .out4 .out5 .out6

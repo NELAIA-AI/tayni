@@ -1393,11 +1393,8 @@ impl PureEmitter {
     }
     
     fn emit_fsm(&mut self, id: &str, args: &[Arg]) -> Result<String, String> {
-        // FSM input len -> tokenize input, return token array
-        // Token types: 0=EOF, 1=DOT, 2=COLON, 3=ID, 4=NUM, 5=STR, 6=NL, 7=SPACE
-        // Output: array of (type:i8, start:i32, len:i16) = 7 bytes per token, padded to 8
-        // Returns pointer to token array, with count in first 8 bytes
-        
+        // FSM v2: Full tokenizer with ID, NUM, STR support
+        // Token types: 0=OTHER, 1=DOT, 2=COLON, 3=ID, 4=NUM, 5=STR, 6=NL
         if args.len() < 2 {
             return Err("FSM requires input, length".to_string());
         }
@@ -1407,7 +1404,6 @@ impl PureEmitter {
         
         let mut code = String::new();
         
-        // Convert input to i64 pointer if it's a string literal
         let input = if input_raw.starts_with("getelementptr") {
             code.push_str(&format!("  %{}_inbase = ptrtoint i8* {} to i64\n", id, input_raw));
             format!("%{}_inbase", id)
@@ -1415,101 +1411,96 @@ impl PureEmitter {
             input_raw.clone()
         };
         
-        match self.target {
-            TargetPlatform::Linux | TargetPlatform::Windows => {
-                // Allocate token buffer: 8 bytes header + max_tokens * 8 bytes
-                // Header: [count:i64]
-                // Each token: [type:i8, pad:i8, start:i32, len:i16]
-                let max_tokens = 256;
-                let buf_size = 8 + max_tokens * 8;
-                
-                code.push_str(&format!("  %{}_buf = call i8* @VirtualAlloc(i8* null, i64 {}, i32 12288, i32 4)\n", id, buf_size));
-                code.push_str(&format!("  %{}_bufptr = ptrtoint i8* %{}_buf to i64\n", id, id));
-                
-                // Initialize count to 0
-                code.push_str(&format!("  %{}_countptr = inttoptr i64 %{}_bufptr to i64*\n", id, id));
-                code.push_str(&format!("  store i64 0, i64* %{}_countptr\n", id));
-                
-                // FSM loop
-                code.push_str(&format!("  br label %fsm_loop_{}\n", id));
-                code.push_str(&format!("fsm_loop_{}:\n", id));
-                code.push_str(&format!("  %{}_pos = phi i64 [0, %entry], [%{}_nextpos, %fsm_next_{}]\n", id, id, id));
-                code.push_str(&format!("  %{}_tokcount = phi i64 [0, %entry], [%{}_newtokcount, %fsm_next_{}]\n", id, id, id));
-                
-                // Check if done
-                code.push_str(&format!("  %{}_done = icmp uge i64 %{}_pos, {}\n", id, id, len));
-                code.push_str(&format!("  br i1 %{}_done, label %fsm_end_{}, label %fsm_body_{}\n", id, id, id));
-                
-                // FSM body - read char and classify
-                code.push_str(&format!("fsm_body_{}:\n", id));
-                code.push_str(&format!("  %{}_charoff = add i64 {}, %{}_pos\n", id, input, id));
-                code.push_str(&format!("  %{}_charptr = inttoptr i64 %{}_charoff to i8*\n", id, id));
-                code.push_str(&format!("  %{}_char = load i8, i8* %{}_charptr\n", id, id));
-                code.push_str(&format!("  %{}_chari = zext i8 %{}_char to i64\n", id, id));
-                
-                // Classify character
-                // DOT = 46, COLON = 58, NL = 10, SPACE = 32, TAB = 9, QUOTE = 34
-                // 0-9 = 48-57, A-Z = 65-90, a-z = 97-122, _ = 95
-                
-                code.push_str(&format!("  %{}_is_dot = icmp eq i64 %{}_chari, 46\n", id, id));
-                code.push_str(&format!("  %{}_is_colon = icmp eq i64 %{}_chari, 58\n", id, id));
-                code.push_str(&format!("  %{}_is_nl = icmp eq i64 %{}_chari, 10\n", id, id));
-                code.push_str(&format!("  %{}_is_space = icmp eq i64 %{}_chari, 32\n", id, id));
-                code.push_str(&format!("  %{}_is_tab = icmp eq i64 %{}_chari, 9\n", id, id));
-                code.push_str(&format!("  %{}_is_ws = or i1 %{}_is_space, %{}_is_tab\n", id, id, id));
-                
-                // Determine token type (1=DOT, 2=COLON, 6=NL, 7=SPACE, 0=other)
-                code.push_str(&format!("  %{}_t1 = select i1 %{}_is_dot, i8 1, i8 0\n", id, id));
-                code.push_str(&format!("  %{}_t2 = select i1 %{}_is_colon, i8 2, i8 %{}_t1\n", id, id, id));
-                code.push_str(&format!("  %{}_t3 = select i1 %{}_is_nl, i8 6, i8 %{}_t2\n", id, id, id));
-                code.push_str(&format!("  %{}_toktype = select i1 %{}_is_ws, i8 7, i8 %{}_t3\n", id, id, id));
-                
-                // Skip whitespace (don't emit token)
-                code.push_str(&format!("  %{}_skip = icmp eq i8 %{}_toktype, 7\n", id, id));
-                code.push_str(&format!("  br i1 %{}_skip, label %fsm_skip_{}, label %fsm_emit_{}\n", id, id, id));
-                
-                // Emit token
-                code.push_str(&format!("fsm_emit_{}:\n", id));
-                // Calculate token slot address: bufptr + 8 + tokcount * 8
-                code.push_str(&format!("  %{}_slotoff = mul i64 %{}_tokcount, 8\n", id, id));
-                code.push_str(&format!("  %{}_slotbase = add i64 %{}_bufptr, 8\n", id, id));
-                code.push_str(&format!("  %{}_slotaddr = add i64 %{}_slotbase, %{}_slotoff\n", id, id, id));
-                
-                // Store token type
-                code.push_str(&format!("  %{}_typeptr = inttoptr i64 %{}_slotaddr to i8*\n", id, id));
-                code.push_str(&format!("  store i8 %{}_toktype, i8* %{}_typeptr\n", id, id));
-                
-                // Store position (as i32 at offset 2)
-                code.push_str(&format!("  %{}_posoff = add i64 %{}_slotaddr, 2\n", id, id));
-                code.push_str(&format!("  %{}_posptr = inttoptr i64 %{}_posoff to i32*\n", id, id));
-                code.push_str(&format!("  %{}_pos32 = trunc i64 %{}_pos to i32\n", id, id));
-                code.push_str(&format!("  store i32 %{}_pos32, i32* %{}_posptr\n", id, id));
-                
-                // Store length (1 for single-char tokens, at offset 6)
-                code.push_str(&format!("  %{}_lenoff = add i64 %{}_slotaddr, 6\n", id, id));
-                code.push_str(&format!("  %{}_lenptr = inttoptr i64 %{}_lenoff to i16*\n", id, id));
-                code.push_str(&format!("  store i16 1, i16* %{}_lenptr\n", id));
-                
-                // Increment token count
-                code.push_str(&format!("  %{}_newtokcount_emit = add i64 %{}_tokcount, 1\n", id, id));
-                code.push_str(&format!("  br label %fsm_next_{}\n", id));
-                
-                // Skip (whitespace)
-                code.push_str(&format!("fsm_skip_{}:\n", id));
-                code.push_str(&format!("  br label %fsm_next_{}\n", id));
-                
-                // Next iteration
-                code.push_str(&format!("fsm_next_{}:\n", id));
-                code.push_str(&format!("  %{}_newtokcount = phi i64 [%{}_newtokcount_emit, %fsm_emit_{}], [%{}_tokcount, %fsm_skip_{}]\n", id, id, id, id, id));
-                code.push_str(&format!("  %{}_nextpos = add i64 %{}_pos, 1\n", id, id));
-                code.push_str(&format!("  br label %fsm_loop_{}\n", id));
-                
-                // End - store final count
-                code.push_str(&format!("fsm_end_{}:\n", id));
-                code.push_str(&format!("  store i64 %{}_tokcount, i64* %{}_countptr\n", id, id));
-                code.push_str(&format!("  %{} = add i64 %{}_bufptr, 0\n", id, id));
-            }
-        }
+        // Allocate token buffer
+        code.push_str(&format!("  %{}_buf = call i8* @VirtualAlloc(i8* null, i64 2056, i32 12288, i32 4)\n", id));
+        code.push_str(&format!("  %{}_bufptr = ptrtoint i8* %{}_buf to i64\n", id, id));
+        code.push_str(&format!("  %{}_cntptr = inttoptr i64 %{}_bufptr to i64*\n", id, id));
+        code.push_str(&format!("  store i64 0, i64* %{}_cntptr\n", id));
+        
+        // Main loop
+        code.push_str(&format!("  br label %fsm_{}\n", id));
+        code.push_str(&format!("fsm_{}:\n", id));
+        code.push_str(&format!("  %{}_p = phi i64 [0, %entry], [%{}_np, %fsm_n_{}]\n", id, id, id));
+        code.push_str(&format!("  %{}_tc = phi i64 [0, %entry], [%{}_ntc, %fsm_n_{}]\n", id, id, id));
+        code.push_str(&format!("  %{}_dn = icmp uge i64 %{}_p, {}\n", id, id, len));
+        code.push_str(&format!("  br i1 %{}_dn, label %fsm_x_{}, label %fsm_b_{}\n", id, id, id));
+        
+        // Body: read and classify
+        code.push_str(&format!("fsm_b_{}:\n", id));
+        code.push_str(&format!("  %{}_co = add i64 {}, %{}_p\n", id, input, id));
+        code.push_str(&format!("  %{}_cp = inttoptr i64 %{}_co to i8*\n", id, id));
+        code.push_str(&format!("  %{}_c = load i8, i8* %{}_cp\n", id, id));
+        code.push_str(&format!("  %{}_ci = zext i8 %{}_c to i64\n", id, id));
+        
+        // Check char types
+        code.push_str(&format!("  %{}_dot = icmp eq i64 %{}_ci, 46\n", id, id));
+        code.push_str(&format!("  %{}_col = icmp eq i64 %{}_ci, 58\n", id, id));
+        code.push_str(&format!("  %{}_nl = icmp eq i64 %{}_ci, 10\n", id, id));
+        code.push_str(&format!("  %{}_sp = icmp eq i64 %{}_ci, 32\n", id, id));
+        code.push_str(&format!("  %{}_tb = icmp eq i64 %{}_ci, 9\n", id, id));
+        code.push_str(&format!("  %{}_qt = icmp eq i64 %{}_ci, 34\n", id, id));
+        code.push_str(&format!("  %{}_ws = or i1 %{}_sp, %{}_tb\n", id, id, id));
+        
+        // Check alpha: a-z(97-122), A-Z(65-90), _(95)
+        code.push_str(&format!("  %{}_ga = icmp uge i64 %{}_ci, 97\n", id, id));
+        code.push_str(&format!("  %{}_la = icmp ule i64 %{}_ci, 122\n", id, id));
+        code.push_str(&format!("  %{}_lc = and i1 %{}_ga, %{}_la\n", id, id, id));
+        code.push_str(&format!("  %{}_gA = icmp uge i64 %{}_ci, 65\n", id, id));
+        code.push_str(&format!("  %{}_lA = icmp ule i64 %{}_ci, 90\n", id, id));
+        code.push_str(&format!("  %{}_uc = and i1 %{}_gA, %{}_lA\n", id, id, id));
+        code.push_str(&format!("  %{}_un = icmp eq i64 %{}_ci, 95\n", id, id));
+        code.push_str(&format!("  %{}_a1 = or i1 %{}_lc, %{}_uc\n", id, id, id));
+        code.push_str(&format!("  %{}_al = or i1 %{}_a1, %{}_un\n", id, id, id));
+        
+        // Check digit: 0-9(48-57)
+        code.push_str(&format!("  %{}_g0 = icmp uge i64 %{}_ci, 48\n", id, id));
+        code.push_str(&format!("  %{}_l9 = icmp ule i64 %{}_ci, 57\n", id, id));
+        code.push_str(&format!("  %{}_dg = and i1 %{}_g0, %{}_l9\n", id, id, id));
+        
+        // Determine type: 1=DOT,2=COLON,3=ID,4=NUM,5=STR,6=NL,7=WS
+        code.push_str(&format!("  %{}_t0 = select i1 %{}_dot, i8 1, i8 0\n", id, id));
+        code.push_str(&format!("  %{}_t1 = select i1 %{}_col, i8 2, i8 %{}_t0\n", id, id, id));
+        code.push_str(&format!("  %{}_t2 = select i1 %{}_al, i8 3, i8 %{}_t1\n", id, id, id));
+        code.push_str(&format!("  %{}_t3 = select i1 %{}_dg, i8 4, i8 %{}_t2\n", id, id, id));
+        code.push_str(&format!("  %{}_t4 = select i1 %{}_qt, i8 5, i8 %{}_t3\n", id, id, id));
+        code.push_str(&format!("  %{}_t5 = select i1 %{}_nl, i8 6, i8 %{}_t4\n", id, id, id));
+        code.push_str(&format!("  %{}_ty = select i1 %{}_ws, i8 7, i8 %{}_t5\n", id, id, id));
+        
+        // Skip whitespace
+        code.push_str(&format!("  %{}_sk = icmp eq i8 %{}_ty, 7\n", id, id));
+        code.push_str(&format!("  br i1 %{}_sk, label %fsm_s_{}, label %fsm_e_{}\n", id, id, id));
+        
+        // Emit token
+        code.push_str(&format!("fsm_e_{}:\n", id));
+        code.push_str(&format!("  %{}_so = mul i64 %{}_tc, 8\n", id, id));
+        code.push_str(&format!("  %{}_sb = add i64 %{}_bufptr, 8\n", id, id));
+        code.push_str(&format!("  %{}_sa = add i64 %{}_sb, %{}_so\n", id, id, id));
+        code.push_str(&format!("  %{}_tp = inttoptr i64 %{}_sa to i8*\n", id, id));
+        code.push_str(&format!("  store i8 %{}_ty, i8* %{}_tp\n", id, id));
+        code.push_str(&format!("  %{}_pp = add i64 %{}_sa, 2\n", id, id));
+        code.push_str(&format!("  %{}_ppi = inttoptr i64 %{}_pp to i32*\n", id, id));
+        code.push_str(&format!("  %{}_p32 = trunc i64 %{}_p to i32\n", id, id));
+        code.push_str(&format!("  store i32 %{}_p32, i32* %{}_ppi\n", id, id));
+        code.push_str(&format!("  %{}_lp = add i64 %{}_sa, 6\n", id, id));
+        code.push_str(&format!("  %{}_lpi = inttoptr i64 %{}_lp to i16*\n", id, id));
+        code.push_str(&format!("  store i16 1, i16* %{}_lpi\n", id));
+        code.push_str(&format!("  %{}_ntce = add i64 %{}_tc, 1\n", id, id));
+        code.push_str(&format!("  br label %fsm_n_{}\n", id));
+        
+        // Skip
+        code.push_str(&format!("fsm_s_{}:\n", id));
+        code.push_str(&format!("  br label %fsm_n_{}\n", id));
+        
+        // Next
+        code.push_str(&format!("fsm_n_{}:\n", id));
+        code.push_str(&format!("  %{}_ntc = phi i64 [%{}_ntce, %fsm_e_{}], [%{}_tc, %fsm_s_{}]\n", id, id, id, id, id));
+        code.push_str(&format!("  %{}_np = add i64 %{}_p, 1\n", id, id));
+        code.push_str(&format!("  br label %fsm_{}\n", id));
+        
+        // End
+        code.push_str(&format!("fsm_x_{}:\n", id));
+        code.push_str(&format!("  store i64 %{}_tc, i64* %{}_cntptr\n", id, id));
+        code.push_str(&format!("  %{} = add i64 %{}_bufptr, 0\n", id, id));
         
         Ok(code)
     }
