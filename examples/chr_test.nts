@@ -1,0 +1,9 @@
+.hello: "Hello World!\n"
+.zero: 0
+.six: 6
+
+.char: CHR .hello .six
+.print: PRT "Char at 6: " 11
+.print2: PRT .char 1
+.nl: PRT "\n" 1
+.out: ADD .print .print2 .nl .zero

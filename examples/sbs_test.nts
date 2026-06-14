@@ -1,0 +1,10 @@
+.hello: "Hello World!\n"
+.zero: 0
+.six: 6
+.five: 5
+
+.buf: ALC 64
+.sub: SBS .buf .hello .six .five
+.print: PRT .buf 5
+.nl: PRT "\n" 1
+.out: ADD .print .nl .zero

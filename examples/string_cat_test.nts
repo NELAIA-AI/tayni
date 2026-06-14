@@ -1,0 +1,8 @@
+.hello: "Hello"
+.world: " World!\n"
+.zero: 0
+
+.buf: ALC 64
+.cat: CAT .buf .hello .world
+.print: PRT .buf 13
+.out: ADD .print .zero

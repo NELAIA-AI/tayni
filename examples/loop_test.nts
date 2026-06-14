@@ -1,0 +1,33 @@
+.msg: "Loop iteration\n"
+.done_msg: "Loop complete!\n"
+.five: 5
+.one: 1
+.zero: 0
+
+.i0: ADD .five .zero
+.p0: PRT .msg 15
+.d0: SUB .i0 .one
+.c0: END .d0
+
+.i1: ADD .d0 .zero
+.p1: PRT .msg 15
+.d1: SUB .i1 .one
+.c1: END .d1
+
+.i2: ADD .d1 .zero
+.p2: PRT .msg 15
+.d2: SUB .i2 .one
+.c2: END .d2
+
+.i3: ADD .d2 .zero
+.p3: PRT .msg 15
+.d3: SUB .i3 .one
+.c3: END .d3
+
+.i4: ADD .d3 .zero
+.p4: PRT .msg 15
+.d4: SUB .i4 .one
+.c4: END .d4
+
+.final: PRT .done_msg 15
+.out: ADD .c0 .c1 .c2 .c3 .c4 .final
