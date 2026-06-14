@@ -67,6 +67,8 @@ pub enum Op {
     Whl,  // WHL cond body_label -> while loop
     // Conditional termination
     End,  // END cond -> terminate if cond == 0, continue if != 0
+    // Graph Transform
+    Trn,  // TRN input rule -> apply rule to each element, return vector
     // Effects (I/O)
     Prt, Inp, Opn, Acc, Get, Put, Cls, Err,
     // Network

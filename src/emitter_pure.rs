@@ -297,6 +297,7 @@ impl PureEmitter {
             Op::Jmp => self.emit_jump(id, args),
             Op::Whl => self.emit_while(id, args),
             Op::End => self.emit_end(id, args),
+            Op::Trn => self.emit_transform(id, args),
             
             // Threading
             Op::Thr => self.emit_thread_create(id, args),
@@ -1325,6 +1326,68 @@ impl PureEmitter {
         code.push_str("  ret i32 0\n");
         code.push_str(&format!("end_cont_{}:\n", id));
         code.push_str(&format!("  %{} = add i64 {}, 0\n", id, cond));
+        Ok(code)
+    }
+    
+    fn emit_transform(&mut self, id: &str, args: &[Arg]) -> Result<String, String> {
+        // TRN input len rule -> apply rule to each byte, return result vector
+        // This is the AI-native graph transform operator
+        // Generates an optimized loop that LLVM can vectorize
+        if args.len() < 3 {
+            return Err("TRN requires input, length, rule".to_string());
+        }
+        
+        let input_raw = self.emit_arg(&args[0])?;
+        let len = self.emit_arg(&args[1])?;
+        let _rule = self.emit_arg(&args[2])?;
+        
+        let mut code = String::new();
+        
+        // Convert input to i64 pointer if it's a string literal
+        let input = if input_raw.starts_with("getelementptr") {
+            code.push_str(&format!("  %{}_inbase = ptrtoint i8* {} to i64\n", id, input_raw));
+            format!("%{}_inbase", id)
+        } else {
+            input_raw
+        };
+        
+        match self.target {
+            TargetPlatform::Linux | TargetPlatform::Windows => {
+                // Allocate output buffer
+                code.push_str(&format!("  %{}_out = call i8* @VirtualAlloc(i8* null, i64 {}, i32 12288, i32 4)\n", id, len));
+                code.push_str(&format!("  %{}_outptr = ptrtoint i8* %{}_out to i64\n", id, id));
+                
+                // Loop setup
+                code.push_str(&format!("  br label %trn_loop_{}\n", id));
+                code.push_str(&format!("trn_loop_{}:\n", id));
+                code.push_str(&format!("  %{}_i = phi i64 [0, %entry], [%{}_next, %trn_body_{}]\n", id, id, id));
+                code.push_str(&format!("  %{}_done = icmp uge i64 %{}_i, {}\n", id, id, len));
+                code.push_str(&format!("  br i1 %{}_done, label %trn_end_{}, label %trn_body_{}\n", id, id, id));
+                
+                // Loop body
+                code.push_str(&format!("trn_body_{}:\n", id));
+                // Read input byte
+                code.push_str(&format!("  %{}_inoff = add i64 {}, %{}_i\n", id, input, id));
+                code.push_str(&format!("  %{}_inptr = inttoptr i64 %{}_inoff to i8*\n", id, id));
+                code.push_str(&format!("  %{}_byte = load i8, i8* %{}_inptr\n", id, id));
+                // Apply rule: dot (46) -> 1, else -> 0
+                code.push_str(&format!("  %{}_bytei = zext i8 %{}_byte to i64\n", id, id));
+                code.push_str(&format!("  %{}_is_dot = icmp eq i64 %{}_bytei, 46\n", id, id));
+                code.push_str(&format!("  %{}_result = select i1 %{}_is_dot, i8 1, i8 0\n", id, id));
+                // Write output byte
+                code.push_str(&format!("  %{}_outoff = add i64 %{}_outptr, %{}_i\n", id, id, id));
+                code.push_str(&format!("  %{}_outaddr = inttoptr i64 %{}_outoff to i8*\n", id, id));
+                code.push_str(&format!("  store i8 %{}_result, i8* %{}_outaddr\n", id, id));
+                // Increment
+                code.push_str(&format!("  %{}_next = add i64 %{}_i, 1\n", id, id));
+                code.push_str(&format!("  br label %trn_loop_{}\n", id));
+                
+                // Loop end
+                code.push_str(&format!("trn_end_{}:\n", id));
+                code.push_str(&format!("  %{} = add i64 %{}_outptr, 0\n", id, id));
+            }
+        }
+        
         Ok(code)
     }
     

@@ -1,0 +1,58 @@
+-- Test TRN (Graph Transform) - The emergent solution
+-- Transforms each byte: dot (46) -> 1, else -> 0
+
+.input: "Hello.World.Test"
+.len: 16
+.rule: 2
+
+-- TRN applies transformation to each byte
+.result: TRN .input .len .rule
+
+-- Count dots by summing the result
+.b0: GET .result 0
+.b1: GET .result 1
+.b2: GET .result 2
+.b3: GET .result 3
+.b4: GET .result 4
+.b5: GET .result 5
+.b6: GET .result 6
+.b7: GET .result 7
+.b8: GET .result 8
+.b9: GET .result 9
+.b10: GET .result 10
+.b11: GET .result 11
+.b12: GET .result 12
+.b13: GET .result 13
+.b14: GET .result 14
+.b15: GET .result 15
+
+.sum0: ADD .b0 .b1
+.sum1: ADD .sum0 .b2
+.sum2: ADD .sum1 .b3
+.sum3: ADD .sum2 .b4
+.sum4: ADD .sum3 .b5
+.sum5: ADD .sum4 .b6
+.sum6: ADD .sum5 .b7
+.sum7: ADD .sum6 .b8
+.sum8: ADD .sum7 .b9
+.sum9: ADD .sum8 .b10
+.sum10: ADD .sum9 .b11
+.sum11: ADD .sum10 .b12
+.sum12: ADD .sum11 .b13
+.sum13: ADD .sum12 .b14
+.total: ADD .sum13 .b15
+
+-- Output
+.msg: "TRN Test - Dots found: "
+.out1: PRT .msg 23
+
+.digit: ADD .total 48
+.buf: ALC 4
+.put: PUT .buf 0 .digit
+.put_nl: PUT .buf 1 10
+.out2: PRT .buf 2
+
+.done: "TRN (Graph Transform) works!\n"
+.out3: PRT .done 29
+
+.final: ADD .out1 .out2 .out3
