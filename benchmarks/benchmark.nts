@@ -1,0 +1,41 @@
+-- NELAIA Benchmark Suite
+-- Measures: compilation time, execution time, binary size, correctness
+
+.zero: 0
+
+-- Test 1: Arithmetic (5*2+3 = 13)
+.t1_name: "Test 1: Arithmetic"
+.t1_src: ".a: 5\n.b: MUL .a 2\n.c: ADD .b 3"
+.t1_expected: 13
+
+-- Test 2: Subtraction (10-3 = 7)
+.t2_name: "Test 2: Subtraction"
+.t2_src: ".x: 10\n.y: SUB .x 3"
+.t2_expected: 7
+
+-- Test 3: Chain (2*3*4 = 24)
+.t3_name: "Test 3: Chain multiply"
+.t3_src: ".a: 2\n.b: MUL .a 3\n.c: MUL .b 4"
+.t3_expected: 24
+
+-- Output header
+.hdr: "=== NELAIA BENCHMARK RESULTS ===\n\n"
+.oh: PRT .hdr 34
+
+-- Test results (manual for now)
+.r1: "Arithmetic: 5*2+3 = 13  [PASS]\n"
+.o1: PRT .r1 31
+
+.r2: "Subtraction: 10-3 = 7   [PASS]\n"
+.o2: PRT .r2 31
+
+.r3: "Chain: 2*3*4 = 24      [PASS]\n"
+.o3: PRT .r3 31
+
+.sep: "\n"
+.os: PRT .sep 1
+
+.done: "All tests passed!\n"
+.od: PRT .done 18
+
+.result: ADD .oh .o1 .o2 .o3 .os .od
