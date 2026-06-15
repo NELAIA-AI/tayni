@@ -1,0 +1,125 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "NELAIA",
+  "scopeName": "source.nelaia",
+  "fileTypes": ["nela"],
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#strings" },
+    { "include": "#numbers" },
+    { "include": "#nodes" },
+    { "include": "#operators" },
+    { "include": "#capabilities" },
+    { "include": "#flow" },
+    { "include": "#references" }
+  ],
+  "repository": {
+    "comments": {
+      "name": "comment.line.double-dash.nelaia",
+      "match": "--.*$"
+    },
+    "strings": {
+      "name": "string.quoted.double.nelaia",
+      "begin": "\"",
+      "end": "\"",
+      "patterns": [
+        {
+          "name": "constant.character.escape.nelaia",
+          "match": "\\\\."
+        }
+      ]
+    },
+    "numbers": {
+      "name": "constant.numeric.nelaia",
+      "match": "-?\\b\\d+(\\.\\d+)?\\b"
+    },
+    "nodes": {
+      "name": "variable.other.node.nelaia",
+      "match": "\\.[a-zA-Z_][a-zA-Z0-9_]*(?=\\s*:)"
+    },
+    "references": {
+      "name": "variable.other.reference.nelaia",
+      "match": "\\.[a-zA-Z_][a-zA-Z0-9_]*"
+    },
+    "operators": {
+      "patterns": [
+        {
+          "name": "keyword.operator.arithmetic.nelaia",
+          "match": "\\b(ADD|SUB|MUL|DIV|MOD|NEG)\\b"
+        },
+        {
+          "name": "keyword.operator.comparison.nelaia",
+          "match": "\\b(EQ|NE|LT|GT|LE|GE)\\b"
+        },
+        {
+          "name": "keyword.operator.logic.nelaia",
+          "match": "\\b(AND|OR|NOT)\\b"
+        },
+        {
+          "name": "keyword.operator.memory.nelaia",
+          "match": "\\b(ALC|FRE|PUT|GET|CPY|SLN)\\b"
+        },
+        {
+          "name": "keyword.operator.io.nelaia",
+          "match": "\\b(PRT|INP|ERR|FOP|FRD|FWR|FCL)\\b"
+        },
+        {
+          "name": "keyword.operator.network.nelaia",
+          "match": "\\b(TCP|UDP|BND|LST|ACC|XMT|RCV|CLS)\\b"
+        },
+        {
+          "name": "keyword.operator.control.nelaia",
+          "match": "\\b(IFZ|JMP|FSM|CHR|TRN)\\b"
+        },
+        {
+          "name": "keyword.operator.contract.nelaia",
+          "match": "\\b(CONTRACT|GUARANTEE|LIMIT|SANDBOX|PROVIDES|NEGOTIATE|BIND|DEFCAP|EXTCAP|COMPOSE)\\b"
+        },
+        {
+          "name": "keyword.operator.test.nelaia",
+          "match": "\\b(PROPERTY|GENTESTS|VERIFY)\\b"
+        },
+        {
+          "name": "keyword.operator.cache.nelaia",
+          "match": "\\b(HASH|CACHE_GET|CACHE_PUT|CACHE_VERIFY|CACHE_INVALIDATE)\\b"
+        },
+        {
+          "name": "keyword.operator.sen.nelaia",
+          "match": "\\b(DISCOVER|CAPABILITY_INFO|CAPABILITY_COST|PUBLISH|CAPABILITY_AVAILABLE|CAPABILITY_VERSION|CAPABILITY_DEPS)\\b"
+        }
+      ]
+    },
+    "capabilities": {
+      "patterns": [
+        {
+          "name": "keyword.control.requires.nelaia",
+          "match": "\\bREQUIRES\\b"
+        },
+        {
+          "name": "support.function.http.nelaia",
+          "match": "\\bHTTP\\.(LISTEN|ACCEPT|RESPOND|METHOD|PATH|BODY|GET|POST)\\b"
+        },
+        {
+          "name": "support.function.sql.nelaia",
+          "match": "\\bSQL\\.(CONNECT|QUERY|EXEC|NEXT|GET|CLOSE)\\b"
+        },
+        {
+          "name": "support.function.json.nelaia",
+          "match": "\\bJSON\\.(PARSE|ENCODE|GET|SET)\\b"
+        }
+      ]
+    },
+    "flow": {
+      "patterns": [
+        {
+          "name": "keyword.operator.flow.cyclic.nelaia",
+          "match": ">>"
+        },
+        {
+          "name": "keyword.operator.flow.nelaia",
+          "match": ">"
+        }
+      ]
+    }
+  }
+}

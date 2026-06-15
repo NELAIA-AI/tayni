@@ -1,0 +1,32 @@
+-- NELAIA Standard Library - Graph Element Generators
+-- Include by copying content to your .nela file
+
+-- ITS1: Integer to String (single digit 0-9)
+-- Generates nodes that convert digit n to char in buffer buf
+#ITS1 buf n:
+  .zero_char: 48
+  .c: ADD .n .zero_char
+  .p: PUT .buf 0 .c
+  .null: PUT .buf 1 0
+#END
+
+-- DBL: Double a number
+-- Generates nodes that compute n * 2
+#DBL x:
+  .two: 2
+  .r: MUL .x .two
+#END
+
+-- INC: Increment
+-- Generates nodes that compute n + 1
+#INC n:
+  .one: 1
+  .r: ADD .n .one
+#END
+
+-- DEC: Decrement
+-- Generates nodes that compute n - 1
+#DEC n:
+  .one: 1
+  .r: SUB .n .one
+#END
