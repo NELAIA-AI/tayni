@@ -1,6 +1,6 @@
 # NELAIA source files
 # Until NELAIA is officially registered in GitHub Linguist,
-# we mark .nts files to not be counted in language statistics
+# we mark .nela files to not be counted in language statistics
 # (they would otherwise be detected as unknown or wrong language)
-*.nts linguist-detectable=false
-*.nts linguist-language=NELAIA
+*.nela linguist-detectable=false
+*.nela linguist-language=NELAIA

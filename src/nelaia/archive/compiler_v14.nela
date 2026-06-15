@@ -1,0 +1,294 @@
+-- NELAIA Self-Hosted Compiler v1.4
+-- Supports 3 nodes, multi-digit numbers
+-- Pattern: .a: NUM, .b: OP .a NUM, .c: OP .b NUM
+
+.zero: 0
+.one: 1
+.two: 2
+.three: 3
+.bufsize: 2048
+
+-- Op comparison strings
+.op_add: "ADD"
+.op_sub: "SUB"
+.op_mul: "MUL"
+.op_div: "DIV"
+.op_mod: "MOD"
+
+-- Read source
+.path: "test_input.nela"
+.handle: FOP .path .zero
+.srcbuf: ALC .bufsize
+.slen: FRD .handle .srcbuf .bufsize
+.closed: FCL .handle
+
+-- Tokenize
+.tokens: FSM .srcbuf .slen
+.tptr: ADD .tokens .zero
+
+-- ============ NODE 0 ============
+.n0_id: ADD .tptr 12
+.n0_id_st: GET .n0_id 1
+.n0_val: ADD .tptr 20
+.n0_val_st: GET .n0_val 1
+.n0_val_len: GET .n0_val 2
+.n0_name: CHR .srcbuf .n0_id_st
+
+-- Extract number (up to 3 digits)
+.n0buf: ALC 8
+.n0d0: CHR .srcbuf .n0_val_st
+.n0w0: PUT .n0buf 0 .n0d0
+.n0d1p: ADD .n0_val_st 1
+.n0d1: CHR .srcbuf .n0d1p
+.n0w1: PUT .n0buf 1 .n0d1
+.n0d2p: ADD .n0_val_st 2
+.n0d2: CHR .srcbuf .n0d2p
+.n0w2: PUT .n0buf 2 .n0d2
+
+-- ============ NODE 1 ============
+.n1_id: ADD .tptr 32
+.n1_id_st: GET .n1_id 1
+.n1_name: CHR .srcbuf .n1_id_st
+
+.n1_op: ADD .tptr 40
+.n1_op_st: GET .n1_op 1
+
+.n1_opbuf: ALC 8
+.n1oc0: CHR .srcbuf .n1_op_st
+.n1op0: PUT .n1_opbuf 0 .n1oc0
+.n1os1: ADD .n1_op_st 1
+.n1oc1: CHR .srcbuf .n1os1
+.n1op1: PUT .n1_opbuf 1 .n1oc1
+.n1os2: ADD .n1_op_st 2
+.n1oc2: CHR .srcbuf .n1os2
+.n1op2: PUT .n1_opbuf 2 .n1oc2
+
+.n1_is_add: SCM .n1_opbuf .op_add .three
+.n1_is_sub: SCM .n1_opbuf .op_sub .three
+.n1_is_mul: SCM .n1_opbuf .op_mul .three
+.n1_is_div: SCM .n1_opbuf .op_div .three
+.n1_is_mod: SCM .n1_opbuf .op_mod .three
+
+.n1_a1: ADD .tptr 48
+.n1_a1_st: GET .n1_a1 1
+.n1_arg1: CHR .srcbuf .n1_a1_st
+
+.n1_a2: ADD .tptr 52
+.n1_a2_st: GET .n1_a2 1
+.n1_a2_len: GET .n1_a2 2
+
+.n1_a2buf: ALC 8
+.n1a2d0: CHR .srcbuf .n1_a2_st
+.n1a2w0: PUT .n1_a2buf 0 .n1a2d0
+.n1a2d1p: ADD .n1_a2_st 1
+.n1a2d1: CHR .srcbuf .n1a2d1p
+.n1a2w1: PUT .n1_a2buf 1 .n1a2d1
+.n1a2d2p: ADD .n1_a2_st 2
+.n1a2d2: CHR .srcbuf .n1a2d2p
+.n1a2w2: PUT .n1_a2buf 2 .n1a2d2
+
+-- ============ NODE 2 ============
+-- n1 pattern: id=32(t8), op=40(t10), a1=48(t12), a2=52(t13)
+-- n2 should follow same pattern offset by line
+-- If n1 starts at t8 and n0 at t3, diff=5 tokens
+-- n2 should start at t13+1+5 = t19? No...
+-- Let's try: n2_id = 52 + 8 = 60 (after newline)
+-- Actually the issue might be that line 2 has more tokens
+-- Line 2: DOT, ID, COLON, ID(op), DOT, ID, NUM = 7 tokens
+-- So n2 starts at 52 + 4 = 56 (newline), then 60 (DOT), 64 (ID)
+.n2_id: ADD .tptr 64
+.n2_id_st: GET .n2_id 1
+.n2_name: CHR .srcbuf .n2_id_st
+
+.n2_op: ADD .tptr 72
+.n2_op_st: GET .n2_op 1
+
+.n2_opbuf: ALC 8
+.n2oc0: CHR .srcbuf .n2_op_st
+.n2op0: PUT .n2_opbuf 0 .n2oc0
+.n2os1: ADD .n2_op_st 1
+.n2oc1: CHR .srcbuf .n2os1
+.n2op1: PUT .n2_opbuf 1 .n2oc1
+.n2os2: ADD .n2_op_st 2
+.n2oc2: CHR .srcbuf .n2os2
+.n2op2: PUT .n2_opbuf 2 .n2oc2
+
+.n2_is_add: SCM .n2_opbuf .op_add .three
+.n2_is_sub: SCM .n2_opbuf .op_sub .three
+.n2_is_mul: SCM .n2_opbuf .op_mul .three
+.n2_is_div: SCM .n2_opbuf .op_div .three
+.n2_is_mod: SCM .n2_opbuf .op_mod .three
+
+.n2_a1: ADD .tptr 80
+.n2_a1_st: GET .n2_a1 1
+.n2_arg1: CHR .srcbuf .n2_a1_st
+
+.n2_a2: ADD .tptr 84
+.n2_a2_st: GET .n2_a2 1
+.n2_a2_len: GET .n2_a2 2
+
+.n2_a2buf: ALC 8
+.n2a2d0: CHR .srcbuf .n2_a2_st
+.n2a2w0: PUT .n2_a2buf 0 .n2a2d0
+.n2a2d1p: ADD .n2_a2_st 1
+.n2a2d1: CHR .srcbuf .n2a2d1p
+.n2a2w1: PUT .n2_a2buf 1 .n2a2d1
+.n2a2d2p: ADD .n2_a2_st 2
+.n2a2d2: CHR .srcbuf .n2a2d2p
+.n2a2w2: PUT .n2_a2buf 2 .n2a2d2
+
+-- ============ CHAR CODES ============
+.sp: 32
+.ch_a: 97
+.ch_b: 98
+.ch_d: 100
+.ch_e: 101
+.ch_i: 105
+.ch_l: 108
+.ch_m: 109
+.ch_r: 114
+.ch_s: 115
+.ch_u: 117
+.ch_v: 118
+
+-- ============ EMIT IR ============
+.out: ALC 4096
+
+.hdr: "target triple = \"x86_64-pc-windows-msvc\"\n\ndefine i64 @main() {\nentry:\n"
+.p0: WRT .out .zero .hdr 72
+
+-- NODE 0: "  %a = add i64 NUM, 0\n"
+.ln0a: "  %"
+.p1: WRT .out .p0 .ln0a 3
+.nbuf: ALC 8
+.pn0: PUT .nbuf 0 .n0_name
+.p2: WRT .out .p1 .nbuf 1
+.ln0b: " = add i64 "
+.p3: WRT .out .p2 .ln0b 11
+.n0_len1: SUB .n0_val_len 1
+.n0_len2: SUB .n0_val_len 2
+.p4_1: WRT .out .p3 .n0buf 1
+.p4_2: WRT .out .p3 .n0buf 2
+.p4_3: WRT .out .p3 .n0buf 3
+.p4_s1: IFZ .n0_len2 .p4_2 .p4_3
+.p4: IFZ .n0_len1 .p4_1 .p4_s1
+.ln0c: ", 0\n"
+.p5: WRT .out .p4 .ln0c 4
+
+-- NODE 1: "  %b = OP i64 %a, NUM\n"
+.p6: WRT .out .p5 .ln0a 3
+.pn1: PUT .nbuf 0 .n1_name
+.p7: WRT .out .p6 .nbuf 1
+.eqsp: " = "
+.p8: WRT .out .p7 .eqsp 3
+
+-- Build op string for node 1
+.n1_opstr: ALC 8
+.n1c0_dm: IFZ .n1_is_div .ch_s .ch_s
+.n1c0_m: IFZ .n1_is_mod .ch_s .n1c0_dm
+.n1c0_mul: IFZ .n1_is_mul .ch_m .n1c0_m
+.n1c0_sub: IFZ .n1_is_sub .ch_s .n1c0_mul
+.n1c0: IFZ .n1_is_add .ch_a .n1c0_sub
+.n1wo0: PUT .n1_opstr 0 .n1c0
+
+.n1c1_dm: IFZ .n1_is_div .ch_d .ch_r
+.n1c1_m: IFZ .n1_is_mod .ch_r .n1c1_dm
+.n1c1_mul: IFZ .n1_is_mul .ch_u .n1c1_m
+.n1c1_sub: IFZ .n1_is_sub .ch_u .n1c1_mul
+.n1c1: IFZ .n1_is_add .ch_d .n1c1_sub
+.n1wo1: PUT .n1_opstr 1 .n1c1
+
+.n1c2_dm: IFZ .n1_is_div .ch_i .ch_e
+.n1c2_m: IFZ .n1_is_mod .ch_e .n1c2_dm
+.n1c2_mul: IFZ .n1_is_mul .ch_l .n1c2_m
+.n1c2_sub: IFZ .n1_is_sub .ch_b .n1c2_mul
+.n1c2: IFZ .n1_is_add .ch_d .n1c2_sub
+.n1wo2: PUT .n1_opstr 2 .n1c2
+
+.n1c3_dm: IFZ .n1_is_div .ch_v .ch_m
+.n1c3_m: IFZ .n1_is_mod .ch_m .n1c3_dm
+.n1c3_3: IFZ .n1_is_mul .sp .n1c3_m
+.n1c3_sub: IFZ .n1_is_sub .sp .n1c3_3
+.n1c3: IFZ .n1_is_add .sp .n1c3_sub
+.n1wo3: PUT .n1_opstr 3 .n1c3
+
+.p9: WRT .out .p8 .n1_opstr 4
+.i64pct: " i64 %"
+.p10: WRT .out .p9 .i64pct 6
+.pa1: PUT .nbuf 0 .n1_arg1
+.p11: WRT .out .p10 .nbuf 1
+.comma: ", "
+.p12: WRT .out .p11 .comma 2
+
+.n1a2_len1: SUB .n1_a2_len 1
+.n1a2_len2: SUB .n1_a2_len 2
+.p13_1: WRT .out .p12 .n1_a2buf 1
+.p13_2: WRT .out .p12 .n1_a2buf 2
+.p13_3: WRT .out .p12 .n1_a2buf 3
+.p13_s1: IFZ .n1a2_len2 .p13_2 .p13_3
+.p13: IFZ .n1a2_len1 .p13_1 .p13_s1
+.nl: "\n"
+.p14: WRT .out .p13 .nl 1
+
+-- NODE 2: "  %c = OP i64 %b, NUM\n"
+.p15: WRT .out .p14 .ln0a 3
+.pn2: PUT .nbuf 0 .n2_name
+.p16: WRT .out .p15 .nbuf 1
+.p17: WRT .out .p16 .eqsp 3
+
+-- Build op string for node 2
+.n2_opstr: ALC 8
+.n2c0_dm: IFZ .n2_is_div .ch_s .ch_s
+.n2c0_m: IFZ .n2_is_mod .ch_s .n2c0_dm
+.n2c0_mul: IFZ .n2_is_mul .ch_m .n2c0_m
+.n2c0_sub: IFZ .n2_is_sub .ch_s .n2c0_mul
+.n2c0: IFZ .n2_is_add .ch_a .n2c0_sub
+.n2wo0: PUT .n2_opstr 0 .n2c0
+
+.n2c1_dm: IFZ .n2_is_div .ch_d .ch_r
+.n2c1_m: IFZ .n2_is_mod .ch_r .n2c1_dm
+.n2c1_mul: IFZ .n2_is_mul .ch_u .n2c1_m
+.n2c1_sub: IFZ .n2_is_sub .ch_u .n2c1_mul
+.n2c1: IFZ .n2_is_add .ch_d .n2c1_sub
+.n2wo1: PUT .n2_opstr 1 .n2c1
+
+.n2c2_dm: IFZ .n2_is_div .ch_i .ch_e
+.n2c2_m: IFZ .n2_is_mod .ch_e .n2c2_dm
+.n2c2_mul: IFZ .n2_is_mul .ch_l .n2c2_m
+.n2c2_sub: IFZ .n2_is_sub .ch_b .n2c2_mul
+.n2c2: IFZ .n2_is_add .ch_d .n2c2_sub
+.n2wo2: PUT .n2_opstr 2 .n2c2
+
+.n2c3_dm: IFZ .n2_is_div .ch_v .ch_m
+.n2c3_m: IFZ .n2_is_mod .ch_m .n2c3_dm
+.n2c3_3: IFZ .n2_is_mul .sp .n2c3_m
+.n2c3_sub: IFZ .n2_is_sub .sp .n2c3_3
+.n2c3: IFZ .n2_is_add .sp .n2c3_sub
+.n2wo3: PUT .n2_opstr 3 .n2c3
+
+.p18: WRT .out .p17 .n2_opstr 4
+.p19: WRT .out .p18 .i64pct 6
+.pa2: PUT .nbuf 0 .n2_arg1
+.p20: WRT .out .p19 .nbuf 1
+.p21: WRT .out .p20 .comma 2
+
+.n2a2_len1: SUB .n2_a2_len 1
+.n2a2_len2: SUB .n2_a2_len 2
+.p22_1: WRT .out .p21 .n2_a2buf 1
+.p22_2: WRT .out .p21 .n2_a2buf 2
+.p22_3: WRT .out .p21 .n2_a2buf 3
+.p22_s1: IFZ .n2a2_len2 .p22_2 .p22_3
+.p22: IFZ .n2a2_len1 .p22_1 .p22_s1
+.p23: WRT .out .p22 .nl 1
+
+-- Return last node
+.ftr1: "  ret i64 %"
+.p24: WRT .out .p23 .ftr1 11
+.retbuf: ALC 4
+.pret: PUT .retbuf 0 .n2_name
+.p25: WRT .out .p24 .retbuf 1
+.ftr2: "\n}\n\ndefine i64 @mainCRTStartup() {\n  %r = call i64 @main()\n  ret i64 %r\n}\n"
+.p26: WRT .out .p25 .ftr2 76
+
+.oout: PRT .out .p26
+.result: ADD .oout .zero

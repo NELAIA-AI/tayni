@@ -78,7 +78,7 @@ STRING TABLE:
 
 ```
 -- Compile to binary
-nelaia-c program.nts --emit-bin program.nbin
+nelaia-c program.nela --emit-bin program.nbin
 
 -- Load and execute binary
 nelaia-c program.nbin output

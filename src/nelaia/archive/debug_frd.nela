@@ -1,0 +1,10 @@
+.path: "input.nela"
+.zero: 0
+.handle: FOP .path .zero
+.srcbuf: ALC 64
+.slen: FRD .handle .srcbuf 64
+.closed: FCL .handle
+.out: ALC 64
+.r1: PUT .out 0 .slen
+.r2: PUT .out 8 .handle
+.p: PRT .out 16

@@ -32,7 +32,7 @@ NELAIA is designed for AIs to generate.
 - gui_windows: Windows GUI (MessageBox, windows)
 
 ## Input Format
-.nts files (NELAIA source)
+.nela files (NELAIA source)
 Graph-based syntax with nodes and data flow.
 
 Example:
@@ -52,16 +52,16 @@ JSON compilation results available with --json flag.
 ## Invoke
 ```
 # Basic compilation
-nelaia-c input.nts -o output
+nelaia-c input.nela -o output
 
 # With JSON output (for programmatic use)
-nelaia-c input.nts -o output --json
+nelaia-c input.nela -o output --json
 
 # Direct PE emission (no Clang needed)
-nelaia-c input.nts --emit-pe
+nelaia-c input.nela --emit-pe
 
 # Direct ELF emission
-nelaia-c input.nts --emit-elf
+nelaia-c input.nela --emit-elf
 ```
 
 ## Training Data

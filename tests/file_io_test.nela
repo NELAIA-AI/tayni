@@ -1,0 +1,50 @@
+-- Test File I/O for self-hosted compiler
+-- Read a .nela file and display its contents
+
+.zero: 0
+.bufsize: 1024
+
+-- Open file
+.path: "examples/hello_simple.nela"
+.mode: 0
+.handle: FOP .path .mode
+
+-- Allocate buffer
+.buf: ALC .bufsize
+
+-- Read file
+.bytes: FRD .handle .buf .bufsize
+
+-- Close file
+.closed: FCL .handle
+
+-- Output
+.msg1: "=== File I/O Test ===\n"
+.o1: PRT .msg1 22
+
+.msg2: "File: examples/hello_simple.nela\n"
+.o2: PRT .msg2 32
+
+.msg3: "Bytes read: "
+.o3: PRT .msg3 12
+
+-- Convert bytes to string (simple: assume < 100)
+.d1: DIV .bytes 10
+.d2: MOD .bytes 10
+.c1: ADD .d1 48
+.c2: ADD .d2 48
+.nbuf: ALC 4
+.p1: PUT .nbuf 0 .c1
+.p2: PUT .nbuf 1 .c2
+.p3: PUT .nbuf 2 10
+.o4: PRT .nbuf 3
+
+.msg4: "\nContent:\n"
+.o5: PRT .msg4 10
+
+.o6: PRT .buf .bytes
+
+.done: "\n\nFile I/O works!\n"
+.od: PRT .done 18
+
+.result: ADD .o1 .o2 .o3 .o4 .o5 .o6 .od

@@ -1,0 +1,20 @@
+.zero: 0
+.bufsize: 64
+.path: "boot.nela"
+.handle: FOP .path .zero
+.srcbuf: ALC .bufsize
+.dummy: FRD .handle .srcbuf .bufsize
+.closed: FCL .handle
+.nl: 10
+.c7: CHR .srcbuf 7
+.d7: SUB .c7 .nl
+.nl1: IFZ .d7 7 99
+.l2_start: ADD .nl1 1
+.inputlen: 24
+.l2_len: SUB .inputlen .l2_start
+.l2_ptr: ADD .srcbuf .l2_start
+.tok2: FSM .l2_ptr .l2_len
+.tok2_cnt: GET .tok2 0
+.out: ALC 64
+.w0: PUT .out 0 .tok2_cnt
+.result: PRT .out 1

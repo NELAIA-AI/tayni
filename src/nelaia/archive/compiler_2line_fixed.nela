@@ -1,0 +1,171 @@
+-- NELAIA 2-Line Compiler (String + Unary) - Fixed positions
+-- Input: Line 1 = string literal, Line 2 = unary op
+-- For input.nela: ".path: "test.nela"\n.buf: ALC 64"
+
+.zero: 0
+.bufsize: 64
+
+-- Read source
+.path: "input.nela"
+.handle: FOP .path .zero
+.srcbuf: ALC .bufsize
+.dummy: FRD .handle .srcbuf .bufsize
+.closed: FCL .handle
+
+-- Fixed positions (known from input)
+.nlpos: 17
+.line2_start: 18
+.line2_len: 12
+
+-- Tokenize line 1 (string literal): ".path: "test.nela""
+.tok1: FSM .srcbuf .nlpos
+
+-- Get line 1 tokens: DOT(0), ID(1), COLON(2), STR(3)
+.t1_1: ADD .tok1 12
+.t1_name_st: GET .t1_1 1
+.t1_name_len: GET .t1_1 2
+
+.t1_3: ADD .tok1 20
+.t1_str_st: GET .t1_3 1
+.t1_str_len_raw: GET .t1_3 2
+.t1_str_len: ADD .t1_str_len_raw 1
+
+-- Tokenize line 2 (unary op): ".buf: ALC 64"
+.line2_ptr: ADD .srcbuf .line2_start
+.tok2: FSM .line2_ptr .line2_len
+
+-- Get line 2 tokens: DOT(0), ID(1), COLON(2), ID(3), NUM(4)
+.t2_1: ADD .tok2 12
+.t2_name_st: GET .t2_1 1
+.t2_name_len: GET .t2_1 2
+
+.t2_3: ADD .tok2 20
+.t2_op_st: GET .t2_3 1
+.t2_op_len: GET .t2_3 2
+
+.t2_4: ADD .tok2 24
+.t2_arg_st: GET .t2_4 1
+.t2_arg_len: GET .t2_4 2
+
+-- Output buffer
+.out: ALC 128
+.dot: 46
+.colon: 58
+.space: 32
+.newline: 10
+
+-- === EMIT LINE 1 ===
+-- .path: "test.nela"
+.w0: PUT .out 0 .dot
+
+-- Copy name "path" (4 chars)
+.n1_0: CHR .srcbuf .t1_name_st
+.w1: PUT .out 1 .n1_0
+
+.n1_1p: ADD .t1_name_st 1
+.n1_1: CHR .srcbuf .n1_1p
+.w2: PUT .out 2 .n1_1
+
+.n1_2p: ADD .t1_name_st 2
+.n1_2: CHR .srcbuf .n1_2p
+.w3: PUT .out 3 .n1_2
+
+.n1_3p: ADD .t1_name_st 3
+.n1_3: CHR .srcbuf .n1_3p
+.w4: PUT .out 4 .n1_3
+
+-- Colon and space at positions 5, 6
+.wc1: PUT .out 5 .colon
+.ws1: PUT .out 6 .space
+
+-- Copy string "test.nela" with quotes (10 chars)
+.s1_0: CHR .srcbuf .t1_str_st
+.ws1_0: PUT .out 7 .s1_0
+
+.s1_1p: ADD .t1_str_st 1
+.s1_1: CHR .srcbuf .s1_1p
+.ws1_1: PUT .out 8 .s1_1
+
+.s1_2p: ADD .t1_str_st 2
+.s1_2: CHR .srcbuf .s1_2p
+.ws1_2: PUT .out 9 .s1_2
+
+.s1_3p: ADD .t1_str_st 3
+.s1_3: CHR .srcbuf .s1_3p
+.ws1_3: PUT .out 10 .s1_3
+
+.s1_4p: ADD .t1_str_st 4
+.s1_4: CHR .srcbuf .s1_4p
+.ws1_4: PUT .out 11 .s1_4
+
+.s1_5p: ADD .t1_str_st 5
+.s1_5: CHR .srcbuf .s1_5p
+.ws1_5: PUT .out 12 .s1_5
+
+.s1_6p: ADD .t1_str_st 6
+.s1_6: CHR .srcbuf .s1_6p
+.ws1_6: PUT .out 13 .s1_6
+
+.s1_7p: ADD .t1_str_st 7
+.s1_7: CHR .srcbuf .s1_7p
+.ws1_7: PUT .out 14 .s1_7
+
+.s1_8p: ADD .t1_str_st 8
+.s1_8: CHR .srcbuf .s1_8p
+.ws1_8: PUT .out 15 .s1_8
+
+.s1_9p: ADD .t1_str_st 9
+.s1_9: CHR .srcbuf .s1_9p
+.ws1_9: PUT .out 16 .s1_9
+
+-- Newline after line 1
+.wnl1: PUT .out 17 .newline
+
+-- === EMIT LINE 2 ===
+-- .buf: ALC 64
+.w2_0: PUT .out 18 .dot
+
+-- Copy name "buf" (3 chars)
+.n2_0: CHR .line2_ptr .t2_name_st
+.w2_1: PUT .out 19 .n2_0
+
+.n2_1p: ADD .t2_name_st 1
+.n2_1: CHR .line2_ptr .n2_1p
+.w2_2: PUT .out 20 .n2_1
+
+.n2_2p: ADD .t2_name_st 2
+.n2_2: CHR .line2_ptr .n2_2p
+.w2_3: PUT .out 21 .n2_2
+
+-- Colon and space at positions 22, 23
+.wc2: PUT .out 22 .colon
+.ws2: PUT .out 23 .space
+
+-- Copy OP "ALC" (3 chars)
+.op0: CHR .line2_ptr .t2_op_st
+.wop0: PUT .out 24 .op0
+
+.op1p: ADD .t2_op_st 1
+.op1: CHR .line2_ptr .op1p
+.wop1: PUT .out 25 .op1
+
+.op2p: ADD .t2_op_st 2
+.op2: CHR .line2_ptr .op2p
+.wop2: PUT .out 26 .op2
+
+-- Space at position 27
+.wops: PUT .out 27 .space
+
+-- Copy arg "64" (2 chars)
+.arg0: CHR .line2_ptr .t2_arg_st
+.warg0: PUT .out 28 .arg0
+
+.arg1p: ADD .t2_arg_st 1
+.arg1: CHR .line2_ptr .arg1p
+.warg1: PUT .out 29 .arg1
+
+-- Newline
+.wnl2: PUT .out 30 .newline
+
+-- Print 31 bytes
+.result: PRT .out 31

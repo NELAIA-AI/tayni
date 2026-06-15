@@ -299,7 +299,7 @@ Everything in NELAIA is a node with identifier `.id`:
 
 ### 8.3 Compile-Time
 ```
-nelaia-c program.nts -o program.exe
+nelaia-c program.nela -o program.exe
 ```
 
 ---
@@ -356,16 +356,16 @@ nelaia-c program.nts -o program.exe
 ### 10.1 Commands
 ```bash
 # Compile to executable
-nelaia-c program.nts -o program.exe
+nelaia-c program.nela -o program.exe
 
 # Emit LLVM IR
-nelaia-c program.nts --emit-ll
+nelaia-c program.nela --emit-ll
 
 # Generate Windows PE directly (no clang)
-nelaia-c program.nts --emit-pe
+nelaia-c program.nela --emit-pe
 
 # Generate Linux ELF
-nelaia-c program.nts --emit-elf
+nelaia-c program.nela --emit-elf
 
 # GUI MessageBox
 nelaia-c --gui "Title" "Message"

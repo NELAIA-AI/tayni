@@ -171,6 +171,6 @@ THR func arg          -- create thread running func(arg)
 
 ## Compile
 ```
-nelaia-c program.nts output
+nelaia-c program.nela output
 ./output
 ```

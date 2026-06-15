@@ -111,4 +111,4 @@ declare void @sys_exit(i32 %code)
 
 ## Next Steps
 
-The NELAIA compiler will generate these `.ll` files from graph source code (`.nts` files). For now, you can write LLVM IR directly to test the syscall layer.
+The NELAIA compiler will generate these `.ll` files from graph source code (`.nela` files). For now, you can write LLVM IR directly to test the syscall layer.

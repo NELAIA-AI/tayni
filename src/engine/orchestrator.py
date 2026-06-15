@@ -74,7 +74,7 @@ class NelaiaNativeOrchestrator:
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: python orchestrator.py <stream.nts>")
+        print("Usage: python orchestrator.py <stream.nela>")
         sys.exit(1)
         
     core = NelaiaNativeOrchestrator()

@@ -1,0 +1,346 @@
+-- NELAIA Mini-Compiler v1
+-- Compiles simple NELAIA programs (up to 8 lines)
+-- Supports: literals, strings, unary ops (ALC, PRT)
+-- AI-Native: specific compiler for bootstrap pattern
+
+.zero: 0
+.bufsize: 256
+.maxlines: 8
+
+-- Read source
+.path: "boot.nela"
+.handle: FOP .path .zero
+.srcbuf: ALC .bufsize
+.dummy: FRD .handle .srcbuf .bufsize
+.closed: FCL .handle
+
+-- Character constants
+.nl: 10
+.dot: 46
+.colon: 58
+.space: 32
+
+-- Find newline positions (scan first 200 chars)
+-- Line 0 starts at 0
+-- Line N starts at (newline[N-1] + 1)
+
+-- Read chars
+.c0: CHR .srcbuf 0
+.c1: CHR .srcbuf 1
+.c2: CHR .srcbuf 2
+.c3: CHR .srcbuf 3
+.c4: CHR .srcbuf 4
+.c5: CHR .srcbuf 5
+.c6: CHR .srcbuf 6
+.c7: CHR .srcbuf 7
+.c8: CHR .srcbuf 8
+.c9: CHR .srcbuf 9
+.c10: CHR .srcbuf 10
+.c11: CHR .srcbuf 11
+.c12: CHR .srcbuf 12
+.c13: CHR .srcbuf 13
+.c14: CHR .srcbuf 14
+.c15: CHR .srcbuf 15
+.c16: CHR .srcbuf 16
+.c17: CHR .srcbuf 17
+.c18: CHR .srcbuf 18
+.c19: CHR .srcbuf 19
+.c20: CHR .srcbuf 20
+.c21: CHR .srcbuf 21
+.c22: CHR .srcbuf 22
+.c23: CHR .srcbuf 23
+.c24: CHR .srcbuf 24
+.c25: CHR .srcbuf 25
+.c26: CHR .srcbuf 26
+.c27: CHR .srcbuf 27
+.c28: CHR .srcbuf 28
+.c29: CHR .srcbuf 29
+.c30: CHR .srcbuf 30
+.c31: CHR .srcbuf 31
+.c32: CHR .srcbuf 32
+.c33: CHR .srcbuf 33
+.c34: CHR .srcbuf 34
+.c35: CHR .srcbuf 35
+.c36: CHR .srcbuf 36
+.c37: CHR .srcbuf 37
+.c38: CHR .srcbuf 38
+.c39: CHR .srcbuf 39
+
+-- Check for newlines
+.d0: SUB .c0 .nl
+.d1: SUB .c1 .nl
+.d2: SUB .c2 .nl
+.d3: SUB .c3 .nl
+.d4: SUB .c4 .nl
+.d5: SUB .c5 .nl
+.d6: SUB .c6 .nl
+.d7: SUB .c7 .nl
+.d8: SUB .c8 .nl
+.d9: SUB .c9 .nl
+.d10: SUB .c10 .nl
+.d11: SUB .c11 .nl
+.d12: SUB .c12 .nl
+.d13: SUB .c13 .nl
+.d14: SUB .c14 .nl
+.d15: SUB .c15 .nl
+.d16: SUB .c16 .nl
+.d17: SUB .c17 .nl
+.d18: SUB .c18 .nl
+.d19: SUB .c19 .nl
+.d20: SUB .c20 .nl
+.d21: SUB .c21 .nl
+.d22: SUB .c22 .nl
+.d23: SUB .c23 .nl
+.d24: SUB .c24 .nl
+.d25: SUB .c25 .nl
+.d26: SUB .c26 .nl
+.d27: SUB .c27 .nl
+.d28: SUB .c28 .nl
+.d29: SUB .c29 .nl
+.d30: SUB .c30 .nl
+.d31: SUB .c31 .nl
+.d32: SUB .c32 .nl
+.d33: SUB .c33 .nl
+.d34: SUB .c34 .nl
+.d35: SUB .c35 .nl
+.d36: SUB .c36 .nl
+.d37: SUB .c37 .nl
+.d38: SUB .c38 .nl
+.d39: SUB .c39 .nl
+
+-- Find first newline (line 1 end)
+.p0: IFZ .d0 0 99
+.p1: IFZ .d1 1 .p0
+.p2: IFZ .d2 2 .p1
+.p3: IFZ .d3 3 .p2
+.p4: IFZ .d4 4 .p3
+.p5: IFZ .d5 5 .p4
+.p6: IFZ .d6 6 .p5
+.p7: IFZ .d7 7 .p6
+.p8: IFZ .d8 8 .p7
+.p9: IFZ .d9 9 .p8
+.p10: IFZ .d10 10 .p9
+.p11: IFZ .d11 11 .p10
+.p12: IFZ .d12 12 .p11
+.p13: IFZ .d13 13 .p12
+.p14: IFZ .d14 14 .p13
+.p15: IFZ .d15 15 .p14
+.p16: IFZ .d16 16 .p15
+.p17: IFZ .d17 17 .p16
+.p18: IFZ .d18 18 .p17
+.p19: IFZ .d19 19 .p18
+.nl1: IFZ .d20 20 .p19
+
+-- Line 1 length = nl1
+-- Line 2 starts at nl1 + 1
+.l2_start: ADD .nl1 1
+
+-- Find second newline (starting from l2_start)
+-- We need to check positions l2_start to l2_start+20
+.l2_c0: CHR .srcbuf .l2_start
+.l2_1: ADD .l2_start 1
+.l2_c1: CHR .srcbuf .l2_1
+.l2_2: ADD .l2_start 2
+.l2_c2: CHR .srcbuf .l2_2
+.l2_3: ADD .l2_start 3
+.l2_c3: CHR .srcbuf .l2_3
+.l2_4: ADD .l2_start 4
+.l2_c4: CHR .srcbuf .l2_4
+.l2_5: ADD .l2_start 5
+.l2_c5: CHR .srcbuf .l2_5
+.l2_6: ADD .l2_start 6
+.l2_c6: CHR .srcbuf .l2_6
+.l2_7: ADD .l2_start 7
+.l2_c7: CHR .srcbuf .l2_7
+.l2_8: ADD .l2_start 8
+.l2_c8: CHR .srcbuf .l2_8
+.l2_9: ADD .l2_start 9
+.l2_c9: CHR .srcbuf .l2_9
+.l2_10: ADD .l2_start 10
+.l2_c10: CHR .srcbuf .l2_10
+.l2_11: ADD .l2_start 11
+.l2_c11: CHR .srcbuf .l2_11
+.l2_12: ADD .l2_start 12
+.l2_c12: CHR .srcbuf .l2_12
+.l2_13: ADD .l2_start 13
+.l2_c13: CHR .srcbuf .l2_13
+.l2_14: ADD .l2_start 14
+.l2_c14: CHR .srcbuf .l2_14
+.l2_15: ADD .l2_start 15
+.l2_c15: CHR .srcbuf .l2_15
+
+.l2_d0: SUB .l2_c0 .nl
+.l2_d1: SUB .l2_c1 .nl
+.l2_d2: SUB .l2_c2 .nl
+.l2_d3: SUB .l2_c3 .nl
+.l2_d4: SUB .l2_c4 .nl
+.l2_d5: SUB .l2_c5 .nl
+.l2_d6: SUB .l2_c6 .nl
+.l2_d7: SUB .l2_c7 .nl
+.l2_d8: SUB .l2_c8 .nl
+.l2_d9: SUB .l2_c9 .nl
+.l2_d10: SUB .l2_c10 .nl
+.l2_d11: SUB .l2_c11 .nl
+.l2_d12: SUB .l2_c12 .nl
+.l2_d13: SUB .l2_c13 .nl
+.l2_d14: SUB .l2_c14 .nl
+.l2_d15: SUB .l2_c15 .nl
+
+.l2_p0: IFZ .l2_d0 0 99
+.l2_p1: IFZ .l2_d1 1 .l2_p0
+.l2_p2: IFZ .l2_d2 2 .l2_p1
+.l2_p3: IFZ .l2_d3 3 .l2_p2
+.l2_p4: IFZ .l2_d4 4 .l2_p3
+.l2_p5: IFZ .l2_d5 5 .l2_p4
+.l2_p6: IFZ .l2_d6 6 .l2_p5
+.l2_p7: IFZ .l2_d7 7 .l2_p6
+.l2_p8: IFZ .l2_d8 8 .l2_p7
+.l2_p9: IFZ .l2_d9 9 .l2_p8
+.l2_p10: IFZ .l2_d10 10 .l2_p9
+.l2_p11: IFZ .l2_d11 11 .l2_p10
+.l2_p12: IFZ .l2_d12 12 .l2_p11
+.l2_p13: IFZ .l2_d13 13 .l2_p12
+.l2_p14: IFZ .l2_d14 14 .l2_p13
+.nl2_rel: IFZ .l2_d15 15 .l2_p14
+
+-- Line 2 length = nl2_rel
+.l2_len: ADD .nl2_rel 0
+
+-- Tokenize line 1
+.tok1: FSM .srcbuf .nl1
+
+-- Tokenize line 2
+.l2_ptr: ADD .srcbuf .l2_start
+.tok2: FSM .l2_ptr .l2_len
+
+-- Get token info for line 1
+.t1_1: ADD .tok1 12
+.t1_name_st: GET .t1_1 1
+.t1_name_len: GET .t1_1 2
+
+.t1_3: ADD .tok1 20
+.t1_val_st: GET .t1_3 1
+.t1_val_len: GET .t1_3 2
+
+-- Get token info for line 2
+.t2_1: ADD .tok2 12
+.t2_name_st: GET .t2_1 1
+.t2_name_len: GET .t2_1 2
+
+.t2_3: ADD .tok2 20
+.t2_val_st: GET .t2_3 1
+.t2_val_len: GET .t2_3 2
+
+-- Output buffer
+.out: ALC 256
+.outpos: 0
+
+-- === EMIT LINE 1 ===
+.w0: PUT .out 0 .dot
+
+-- Copy name
+.n1_0: CHR .srcbuf .t1_name_st
+.w1: PUT .out 1 .n1_0
+
+.n1_1p: ADD .t1_name_st 1
+.n1_1: CHR .srcbuf .n1_1p
+.w2: PUT .out 2 .n1_1
+
+.n1_2p: ADD .t1_name_st 2
+.n1_2: CHR .srcbuf .n1_2p
+.w3: PUT .out 3 .n1_2
+
+.n1_3p: ADD .t1_name_st 3
+.n1_3: CHR .srcbuf .n1_3p
+.w4: PUT .out 4 .n1_3
+
+-- Colon space
+.pos1_c: ADD 1 .t1_name_len
+.wc1: PUT .out .pos1_c .colon
+.pos1_s: ADD .pos1_c 1
+.ws1: PUT .out .pos1_s .space
+
+-- Copy value
+.pos1_v: ADD .pos1_s 1
+.v1_0: CHR .srcbuf .t1_val_st
+.wv1_0: PUT .out .pos1_v .v1_0
+
+.v1_1p: ADD .t1_val_st 1
+.v1_1: CHR .srcbuf .v1_1p
+.pv1_1: ADD .pos1_v 1
+.wv1_1: PUT .out .pv1_1 .v1_1
+
+.v1_2p: ADD .t1_val_st 2
+.v1_2: CHR .srcbuf .v1_2p
+.pv1_2: ADD .pos1_v 2
+.wv1_2: PUT .out .pv1_2 .v1_2
+
+.v1_3p: ADD .t1_val_st 3
+.v1_3: CHR .srcbuf .v1_3p
+.pv1_3: ADD .pos1_v 3
+.wv1_3: PUT .out .pv1_3 .v1_3
+
+-- Newline
+.pos1_end: ADD .pos1_v .t1_val_len
+.wnl1: PUT .out .pos1_end .nl
+
+-- === EMIT LINE 2 ===
+.pos2_start: ADD .pos1_end 1
+.w2_0: PUT .out .pos2_start .dot
+
+-- Copy name
+.n2_0: CHR .l2_ptr .t2_name_st
+.pos2_n: ADD .pos2_start 1
+.w2_1: PUT .out .pos2_n .n2_0
+
+.n2_1p: ADD .t2_name_st 1
+.n2_1: CHR .l2_ptr .n2_1p
+.pos2_n1: ADD .pos2_n 1
+.w2_2: PUT .out .pos2_n1 .n2_1
+
+.n2_2p: ADD .t2_name_st 2
+.n2_2: CHR .l2_ptr .n2_2p
+.pos2_n2: ADD .pos2_n 2
+.w2_3: PUT .out .pos2_n2 .n2_2
+
+.n2_3p: ADD .t2_name_st 3
+.n2_3: CHR .l2_ptr .n2_3p
+.pos2_n3: ADD .pos2_n 3
+.w2_4: PUT .out .pos2_n3 .n2_3
+
+-- Colon space
+.pos2_c: ADD .pos2_start 1
+.pos2_c2: ADD .pos2_c .t2_name_len
+.wc2: PUT .out .pos2_c2 .colon
+.pos2_s: ADD .pos2_c2 1
+.ws2: PUT .out .pos2_s .space
+
+-- Copy value
+.pos2_v: ADD .pos2_s 1
+.v2_0: CHR .l2_ptr .t2_val_st
+.wv2_0: PUT .out .pos2_v .v2_0
+
+.v2_1p: ADD .t2_val_st 1
+.v2_1: CHR .l2_ptr .v2_1p
+.pv2_1: ADD .pos2_v 1
+.wv2_1: PUT .out .pv2_1 .v2_1
+
+.v2_2p: ADD .t2_val_st 2
+.v2_2: CHR .l2_ptr .v2_2p
+.pv2_2: ADD .pos2_v 2
+.wv2_2: PUT .out .pv2_2 .v2_2
+
+.v2_3p: ADD .t2_val_st 3
+.v2_3: CHR .l2_ptr .v2_3p
+.pv2_3: ADD .pos2_v 3
+.wv2_3: PUT .out .pv2_3 .v2_3
+
+-- Newline
+.pos2_end: ADD .pos2_v .t2_val_len
+.wnl2: PUT .out .pos2_end .nl
+
+-- Total length
+.total: ADD .pos2_end 1
+
+-- Print
+.result: PRT .out .total

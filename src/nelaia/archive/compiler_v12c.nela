@@ -1,0 +1,207 @@
+-- NELAIA Self-Hosted Compiler v1.2c
+-- Supports ADD/SUB/MUL/DIV/MOD
+-- Single opstr with correct construction
+
+.zero: 0
+.one: 1
+.three: 3
+.bufsize: 2048
+
+-- Op comparison strings
+.op_add: "ADD"
+.op_sub: "SUB"
+.op_mul: "MUL"
+.op_div: "DIV"
+.op_mod: "MOD"
+
+-- Read source
+.path: "test_input.nela"
+.handle: FOP .path .zero
+.srcbuf: ALC .bufsize
+.slen: FRD .handle .srcbuf .bufsize
+.closed: FCL .handle
+
+-- Tokenize
+.tokens: FSM .srcbuf .slen
+.tptr: ADD .tokens .zero
+
+-- Parse Node 0
+.n0_id: ADD .tptr 12
+.n0_id_st: GET .n0_id 1
+.n0_val: ADD .tptr 20
+.n0_val_st: GET .n0_val 1
+.n0_name: CHR .srcbuf .n0_id_st
+.n0_v: CHR .srcbuf .n0_val_st
+
+-- Parse Node 1
+.n1_id: ADD .tptr 32
+.n1_id_st: GET .n1_id 1
+.n1_name: CHR .srcbuf .n1_id_st
+
+.n1_op: ADD .tptr 40
+.n1_op_st: GET .n1_op 1
+
+-- Extract op (3 chars)
+.opbuf: ALC 8
+.oc0: CHR .srcbuf .n1_op_st
+.op0: PUT .opbuf 0 .oc0
+.os1: ADD .n1_op_st 1
+.oc1: CHR .srcbuf .os1
+.op1: PUT .opbuf 1 .oc1
+.os2: ADD .n1_op_st 2
+.oc2: CHR .srcbuf .os2
+.op2: PUT .opbuf 2 .oc2
+
+-- Compare (0 = match)
+.is_add: SCM .opbuf .op_add .three
+.is_sub: SCM .opbuf .op_sub .three
+.is_mul: SCM .opbuf .op_mul .three
+.is_div: SCM .opbuf .op_div .three
+.is_mod: SCM .opbuf .op_mod .three
+
+-- Args
+.n1_a1: ADD .tptr 48
+.n1_a1_st: GET .n1_a1 1
+.n1_a2: ADD .tptr 52
+.n1_a2_st: GET .n1_a2 1
+.n1_arg1: CHR .srcbuf .n1_a1_st
+.n1_arg2: CHR .srcbuf .n1_a2_st
+
+-- Char codes
+.sp: 32
+.eq: 61
+.pct: 37
+.ch_a: 97
+.ch_b: 98
+.ch_d: 100
+.ch_e: 101
+.ch_i: 105
+.ch_l: 108
+.ch_m: 109
+.ch_r: 114
+.ch_s: 115
+.ch_u: 117
+.ch_v: 118
+.ch_4: 52
+.ch_6: 54
+
+-- Emit LLVM IR
+.out: ALC 4096
+
+.hdr: "target triple = \"x86_64-pc-windows-msvc\"\n\ndefine i64 @main() {\nentry:\n"
+.p0: WRT .out .zero .hdr 72
+
+-- Node 0
+.ln0a: "  %"
+.p1: WRT .out .p0 .ln0a 3
+.nbuf: ALC 8
+.pn0: PUT .nbuf 0 .n0_name
+.p2: WRT .out .p1 .nbuf 1
+.ln0b: " = add i64 "
+.p3: WRT .out .p2 .ln0b 11
+.pv0: PUT .nbuf 0 .n0_v
+.p4: WRT .out .p3 .nbuf 1
+.ln0c: ", 0\n"
+.p5: WRT .out .p4 .ln0c 4
+
+-- Node 1: write "  %" then name then " = "
+.p6: WRT .out .p5 .ln0a 3
+.pn1: PUT .nbuf 0 .n1_name
+.p7: WRT .out .p6 .nbuf 1
+.eqsp: " = "
+.p8: WRT .out .p7 .eqsp 3
+
+-- Write op name based on type
+-- Use pre-built strings
+.str_add: "add"
+.str_sub: "sub"
+.str_mul: "mul"
+.str_div: "sdiv"
+.str_mod: "srem"
+
+-- Write the correct op string
+-- For ADD: write "add" (3 chars)
+-- For SUB: write "sub" (3 chars)
+-- For MUL: write "mul" (3 chars)
+-- For DIV: write "sdiv" (4 chars)
+-- For MOD: write "srem" (4 chars)
+
+-- We need to write only one. Use conditional position advancement.
+-- Start with p8, write based on which op matches
+
+-- Check if 4-char op (is_div=0 or is_mod=0 means it IS that op)
+.is_4char: MUL .is_div .is_mod
+
+-- Write op: use IFZ to select which string to write
+-- Problem: all WRT execute. Need different approach.
+
+-- Build op string char by char into opbuf2
+.opbuf2: ALC 8
+
+-- Char 0: a(add), s(sub/sdiv/srem), m(mul)
+.c0_dm: IFZ .is_div .ch_s .ch_s
+.c0_m: IFZ .is_mod .ch_s .c0_dm
+.c0_mul: IFZ .is_mul .ch_m .c0_m
+.c0_sub: IFZ .is_sub .ch_s .c0_mul
+.c0: IFZ .is_add .ch_a .c0_sub
+.wo0: PUT .opbuf2 0 .c0
+
+-- Char 1: d(add/sdiv), u(sub/mul), r(srem)
+.c1_dm: IFZ .is_div .ch_d .ch_r
+.c1_m: IFZ .is_mod .ch_r .c1_dm
+.c1_mul: IFZ .is_mul .ch_u .c1_m
+.c1_sub: IFZ .is_sub .ch_u .c1_mul
+.c1: IFZ .is_add .ch_d .c1_sub
+.wo1: PUT .opbuf2 1 .c1
+
+-- Char 2: d(add), b(sub), l(mul), i(sdiv), e(srem)
+.c2_dm: IFZ .is_div .ch_i .ch_e
+.c2_m: IFZ .is_mod .ch_e .c2_dm
+.c2_mul: IFZ .is_mul .ch_l .c2_m
+.c2_sub: IFZ .is_sub .ch_b .c2_mul
+.c2: IFZ .is_add .ch_d .c2_sub
+.wo2: PUT .opbuf2 2 .c2
+
+-- Op length: always use 4 (null byte for 3-char ops is harmless in middle of string)
+-- Actually, null byte would terminate string. Use space instead for 3-char ops.
+.c3_dm: IFZ .is_div .ch_v .ch_m
+.c3_m: IFZ .is_mod .ch_m .c3_dm
+.c3_3: IFZ .is_mul .sp .c3_m
+.c3_sub: IFZ .is_sub .sp .c3_3
+.c3: IFZ .is_add .sp .c3_sub
+.wo3: PUT .opbuf2 3 .c3
+
+-- Write op (always 4 chars, space padding for 3-char ops)
+.p9: WRT .out .p8 .opbuf2 4
+
+-- Write " i64 %"
+.i64pct: " i64 %"
+.p10: WRT .out .p9 .i64pct 6
+
+-- Write arg1
+.pa1: PUT .nbuf 0 .n1_arg1
+.p11: WRT .out .p10 .nbuf 1
+
+-- Write ", "
+.comma: ", "
+.p12: WRT .out .p11 .comma 2
+
+-- Write arg2
+.pa2: PUT .nbuf 0 .n1_arg2
+.p13: WRT .out .p12 .nbuf 1
+
+-- Write newline
+.nl: "\n"
+.p14: WRT .out .p13 .nl 1
+
+-- Return
+.ftr1: "  ret i64 %"
+.p15: WRT .out .p14 .ftr1 11
+.retbuf: ALC 4
+.pret: PUT .retbuf 0 .n1_name
+.p16: WRT .out .p15 .retbuf 1
+.ftr2: "\n}\n\ndefine i64 @mainCRTStartup() {\n  %r = call i64 @main()\n  ret i64 %r\n}\n"
+.p17: WRT .out .p16 .ftr2 76
+
+.oout: PRT .out .p17
+.result: ADD .oout .zero

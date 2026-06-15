@@ -1,0 +1,210 @@
+-- NELAIA Self-Hosted Compiler v1.2
+-- Supports ADD/SUB/MUL/DIV/MOD
+-- Uses dynamic opstr construction
+
+.zero: 0
+.three: 3
+.bufsize: 2048
+
+-- Op comparison strings
+.op_add: "ADD"
+.op_sub: "SUB"
+.op_mul: "MUL"
+.op_div: "DIV"
+.op_mod: "MOD"
+
+-- Read source
+.path: "test_input.nela"
+.handle: FOP .path .zero
+.srcbuf: ALC .bufsize
+.slen: FRD .handle .srcbuf .bufsize
+.closed: FCL .handle
+
+-- Tokenize
+.tokens: FSM .srcbuf .slen
+.tptr: ADD .tokens .zero
+
+-- Parse Node 0
+.n0_id: ADD .tptr 12
+.n0_id_st: GET .n0_id 1
+.n0_val: ADD .tptr 20
+.n0_val_st: GET .n0_val 1
+.n0_name: CHR .srcbuf .n0_id_st
+.n0_v: CHR .srcbuf .n0_val_st
+
+-- Parse Node 1
+.n1_id: ADD .tptr 32
+.n1_id_st: GET .n1_id 1
+.n1_name: CHR .srcbuf .n1_id_st
+
+.n1_op: ADD .tptr 40
+.n1_op_st: GET .n1_op 1
+
+-- Extract op (3 chars)
+.opbuf: ALC 8
+.oc0: CHR .srcbuf .n1_op_st
+.op0: PUT .opbuf 0 .oc0
+.os1: ADD .n1_op_st 1
+.oc1: CHR .srcbuf .os1
+.op1: PUT .opbuf 1 .oc1
+.os2: ADD .n1_op_st 2
+.oc2: CHR .srcbuf .os2
+.op2: PUT .opbuf 2 .oc2
+
+-- Compare (0 = match)
+.is_add: SCM .opbuf .op_add .three
+.is_sub: SCM .opbuf .op_sub .three
+.is_mul: SCM .opbuf .op_mul .three
+.is_div: SCM .opbuf .op_div .three
+.is_mod: SCM .opbuf .op_mod .three
+
+-- Args
+.n1_a1: ADD .tptr 48
+.n1_a1_st: GET .n1_a1 1
+.n1_a2: ADD .tptr 52
+.n1_a2_st: GET .n1_a2 1
+.n1_arg1: CHR .srcbuf .n1_a1_st
+.n1_arg2: CHR .srcbuf .n1_a2_st
+
+-- Build opstr: " = XXX i64 %" or " = XXXX i64 %"
+.opstr: ALC 16
+.sp: 32
+.eq: 61
+.pct: 37
+
+-- Char codes for ops
+.ch_a: 97
+.ch_b: 98
+.ch_d: 100
+.ch_e: 101
+.ch_i: 105
+.ch_l: 108
+.ch_m: 109
+.ch_r: 114
+.ch_s: 115
+.ch_u: 117
+.ch_v: 118
+.ch_4: 52
+.ch_6: 54
+
+-- " = " (positions 0-2)
+.w0: PUT .opstr 0 .sp
+.w1: PUT .opstr 1 .eq
+.w2: PUT .opstr 2 .sp
+
+-- Position 3: first char of op
+-- add->a, sub->s, mul->m, sdiv->s, srem->s
+.c3_dm: IFZ .is_div .ch_s .ch_s
+.c3_m: IFZ .is_mod .ch_s .c3_dm
+.c3_mul: IFZ .is_mul .ch_m .c3_m
+.c3_sub: IFZ .is_sub .ch_s .c3_mul
+.c3: IFZ .is_add .ch_a .c3_sub
+.w3: PUT .opstr 3 .c3
+
+-- Position 4: second char
+-- add->d, sub->u, mul->u, sdiv->d, srem->r
+.c4_dm: IFZ .is_div .ch_d .ch_r
+.c4_m: IFZ .is_mod .ch_r .c4_dm
+.c4_mul: IFZ .is_mul .ch_u .c4_m
+.c4_sub: IFZ .is_sub .ch_u .c4_mul
+.c4: IFZ .is_add .ch_d .c4_sub
+.w4: PUT .opstr 4 .c4
+
+-- Position 5: third char
+-- add->d, sub->b, mul->l, sdiv->i, srem->e
+.c5_dm: IFZ .is_div .ch_i .ch_e
+.c5_m: IFZ .is_mod .ch_e .c5_dm
+.c5_mul: IFZ .is_mul .ch_l .c5_m
+.c5_sub: IFZ .is_sub .ch_b .c5_mul
+.c5: IFZ .is_add .ch_d .c5_sub
+.w5: PUT .opstr 5 .c5
+
+-- Position 6: fourth char or space
+-- add->sp, sub->sp, mul->sp, sdiv->v, srem->m
+.c6_dm: IFZ .is_div .ch_v .ch_m
+.c6_m: IFZ .is_mod .ch_m .c6_dm
+.c6_3char: IFZ .is_mul .sp .c6_m
+.c6_sub: IFZ .is_sub .sp .c6_3char
+.c6: IFZ .is_add .sp .c6_sub
+.w6: PUT .opstr 6 .c6
+
+-- Check if 4-char op (div or mod)
+-- is_div=0 means IS div, is_mod=0 means IS mod
+-- MUL gives 0 if either is 0 (is 4-char)
+.is_4char: MUL .is_div .is_mod
+-- is_4char=0 means IS 4-char, is_4char!=0 means 3-char
+
+-- Position 7: space for 4-char, 'i' for 3-char
+-- IFZ returns first val if cond=0
+.c7: IFZ .is_4char .sp .ch_i
+.w7: PUT .opstr 7 .c7
+
+-- Position 8: 'i' for 4-char, '6' for 3-char
+.c8: IFZ .is_4char .ch_i .ch_6
+.w8: PUT .opstr 8 .c8
+
+-- Position 9: '6' for 4-char, '4' for 3-char
+.c9: IFZ .is_4char .ch_6 .ch_4
+.w9: PUT .opstr 9 .c9
+
+-- Position 10: '4' for 4-char, space for 3-char
+.c10: IFZ .is_4char .ch_4 .sp
+.w10: PUT .opstr 10 .c10
+
+-- Position 11: space for 4-char, '%' for 3-char
+.c11: IFZ .is_4char .sp .pct
+.w11: PUT .opstr 11 .c11
+
+-- Position 12: '%' for 4-char, null (0) for 3-char
+.null: 0
+.c12: IFZ .is_4char .pct .null
+.w12: PUT .opstr 12 .c12
+
+-- Op string length: always use 12 for base
+-- For 4-char ops, we'll add the extra '%' separately
+.oplen: 12
+
+-- Emit LLVM IR
+.out: ALC 4096
+
+.hdr: "target triple = \"x86_64-pc-windows-msvc\"\n\ndefine i64 @main() {\nentry:\n"
+.p0: WRT .out .zero .hdr 72
+
+-- Node 0
+.ln0a: "  %"
+.p1: WRT .out .p0 .ln0a 3
+.nbuf: ALC 8
+.pn0: PUT .nbuf 0 .n0_name
+.p2: WRT .out .p1 .nbuf 1
+.ln0b: " = add i64 "
+.p3: WRT .out .p2 .ln0b 11
+.pv0: PUT .nbuf 0 .n0_v
+.p4: WRT .out .p3 .nbuf 1
+.ln0c: ", 0\n"
+.p5: WRT .out .p4 .ln0c 4
+
+-- Node 1
+.p6: WRT .out .p5 .ln0a 3
+.pn1: PUT .nbuf 0 .n1_name
+.p7: WRT .out .p6 .nbuf 1
+.p8: WRT .out .p7 .opstr .oplen
+.pa1: PUT .nbuf 0 .n1_arg1
+.p9: WRT .out .p8 .nbuf 1
+.ln1c: ", "
+.p10: WRT .out .p9 .ln1c 2
+.pa2: PUT .nbuf 0 .n1_arg2
+.p11: WRT .out .p10 .nbuf 1
+.nl: "\n"
+.p12: WRT .out .p11 .nl 1
+
+-- Return
+.ftr1: "  ret i64 %"
+.p13: WRT .out .p12 .ftr1 11
+.retbuf: ALC 4
+.pret: PUT .retbuf 0 .n1_name
+.p14: WRT .out .p13 .retbuf 1
+.ftr2: "\n}\n\ndefine i64 @mainCRTStartup() {\n  %r = call i64 @main()\n  ret i64 %r\n}\n"
+.p15: WRT .out .p14 .ftr2 76
+
+.oout: PRT .out .p15
+.result: ADD .oout .zero

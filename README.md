@@ -15,14 +15,14 @@ chmod +x nelaia-c-linux-x64
 # Get nelaia-c-windows-x64.exe from Releases
 
 # Compile a program
-./nelaia-c-linux-x64 hello.nts -o hello --emit-elf
+./nelaia-c-linux-x64 hello.nela -o hello --emit-elf
 ./hello
 ```
 
 ## Example Program
 
 ```nelaia
--- hello.nts
+-- hello.nela
 .msg: "Hello from NELAIA!\n"
 .len: 20
 .out: PRT .msg .len
@@ -68,16 +68,16 @@ chmod +x nelaia-c-linux-x64
 nelaia-c --version
 
 # Syntax check only
-nelaia-c program.nts --check
+nelaia-c program.nela --check
 
 # Compile to Windows PE
-nelaia-c program.nts -o program --emit-pe
+nelaia-c program.nela -o program --emit-pe
 
 # Compile to Linux ELF
-nelaia-c program.nts -o program --emit-elf
+nelaia-c program.nela -o program --emit-elf
 
 # JSON output for programmatic use
-nelaia-c program.nts --check --json
+nelaia-c program.nela --check --json
 ```
 
 ## Project Structure

@@ -1,0 +1,59 @@
+-- Debug: check all tokens for line 4
+.zero: 0
+.bufsize: 256
+
+.path: "minimal.nela"
+.handle: FOP .path .zero
+.srcbuf: ALC .bufsize
+.dummy: FRD .handle .srcbuf .bufsize
+.closed: FCL .handle
+
+.l4_start: 32
+.l4_len: 18
+
+.l4_ptr: ADD .srcbuf .l4_start
+.tok4: FSM .l4_ptr .l4_len
+
+.tok4_cnt: GET .tok4 0
+
+-- Token 0 (DOT)
+.t4_0: ADD .tok4 8
+.t4_0_ty: GET .t4_0 0
+.t4_0_st: GET .t4_0 1
+.t4_0_len: GET .t4_0 2
+
+-- Token 1 (ID or NUM?)
+.t4_1: ADD .tok4 12
+.t4_1_ty: GET .t4_1 0
+.t4_1_st: GET .t4_1 1
+.t4_1_len: GET .t4_1 2
+
+-- Token 2
+.t4_2: ADD .tok4 16
+.t4_2_ty: GET .t4_2 0
+.t4_2_st: GET .t4_2 1
+.t4_2_len: GET .t4_2 2
+
+-- Token 3
+.t4_3: ADD .tok4 20
+.t4_3_ty: GET .t4_3 0
+.t4_3_st: GET .t4_3 1
+.t4_3_len: GET .t4_3 2
+
+-- Output: cnt, then type/start/len for each token
+.out: ALC 64
+.w0: PUT .out 0 .tok4_cnt
+.w1: PUT .out 1 .t4_0_ty
+.w2: PUT .out 2 .t4_0_st
+.w3: PUT .out 3 .t4_0_len
+.w4: PUT .out 4 .t4_1_ty
+.w5: PUT .out 5 .t4_1_st
+.w6: PUT .out 6 .t4_1_len
+.w7: PUT .out 7 .t4_2_ty
+.w8: PUT .out 8 .t4_2_st
+.w9: PUT .out 9 .t4_2_len
+.w10: PUT .out 10 .t4_3_ty
+.w11: PUT .out 11 .t4_3_st
+.w12: PUT .out 12 .t4_3_len
+
+.result: PRT .out 13

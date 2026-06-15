@@ -13,7 +13,7 @@ This architecture is designed for AI agents to:
 - **IR is sacred**: The Intermediate Representation never changes structure
 - **Backends are isolated**: Each target platform is independent
 - **Domains are additive**: New opcodes extend, never modify
-- **Compatibility is mandatory**: Old .nts files always work
+- **Compatibility is mandatory**: Old .nela files always work
 
 ---
 
@@ -40,11 +40,11 @@ This architecture is designed for AI agents to:
 │                    (Text → IR Transform)                        │
 ├─────────────────────────────────────────────────────────────────┤
 │  nelaia-parser/                                                 │
-│  ├── lexer.rs      Tokenize .nts files                         │
+│  ├── lexer.rs      Tokenize .nela files                         │
 │  ├── parser.rs     Build IR Graph from tokens                  │
 │  └── error.rs      Parse error handling                        │
 │                                                                 │
-│  INPUT:  .nts text file                                         │
+│  INPUT:  .nela text file                                         │
 │  OUTPUT: nelaia_ir::Graph                                       │
 └─────────────────────────────────────────────────────────────────┘
                               │
@@ -110,7 +110,7 @@ This architecture is designed for AI agents to:
 │  ├── renderer.rs       Canvas/WebGL rendering                  │
 │  └── bridge.rs         JS interop                              │
 │                                                                 │
-│  Compiled to WASM, loaded by browser, interprets .nts graphs   │
+│  Compiled to WASM, loaded by browser, interprets .nela graphs   │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 
@@ -284,8 +284,8 @@ impl Backend for WasmBackend {
 
 ## Compatibility Guarantees
 
-1. **Source Compatibility**: All .nts files that compile today will compile forever
-2. **Binary Compatibility**: Same .nts produces same binary (bit-for-bit when possible)
+1. **Source Compatibility**: All .nela files that compile today will compile forever
+2. **Binary Compatibility**: Same .nela produces same binary (bit-for-bit when possible)
 3. **API Stability**: Public traits and structs follow semver
 4. **Deprecation Policy**: Old features deprecated for 2 major versions before removal
 
@@ -297,15 +297,15 @@ When an AI generates NELAIA code:
 
 1. **Detect target platform** from user request
 2. **Select minimal domains** needed (don't include UI for CLI tools)
-3. **Generate graph** in .nts format
+3. **Generate graph** in .nela format
 4. **Specify backend** in compilation command
 
 Example:
 ```
 User: "Create a web calculator"
 AI detects: UI needed, WASM target
-AI generates: calculator.nts using domain-ui ops
-AI compiles: nelaia compile calculator.nts --backend=wasm --domains=core,ui
+AI generates: calculator.nela using domain-ui ops
+AI compiles: nelaia compile calculator.nela --backend=wasm --domains=core,ui
 Output: calculator.wasm (5KB) + runtime.wasm (300KB cached)
 ```
 

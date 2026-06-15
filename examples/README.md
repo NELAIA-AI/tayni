@@ -1,44 +1,31 @@
 # NELAIA Examples
 
-Ejemplos de programas NELAIA organizados por categoría.
+Example programs organized by category.
 
-## Estructura
+## Structure
 
 ```
 examples/
-├── basic/          # Ejemplos básicos (hello world, aritmética, etc.)
-├── benchmarks/     # Programas de benchmark
-├── fileio/         # Operaciones de archivo
-├── gui/            # Interfaces gráficas (Win32)
-├── networking/     # Servidores y clientes TCP/UDP
-├── v0.3/           # Ejemplos para spec v0.3
-└── v0.4/           # Ejemplos para spec v0.4
+├── hello.nela       # Hello World (CI test)
+├── basic/          # Basic examples (arithmetic, memory, etc.)
+├── network/        # TCP/UDP, HTTP servers
+├── files/          # File I/O operations
+├── gui/            # GUI applications (Win32)
+└── capabilities/   # HTTP, SQL, JSON capabilities
 ```
 
-## Ejemplos Destacados
+## Quick Examples
 
-### basic/
-- `hello.nts` - Hello World básico
-- `fibonacci.nts` - Secuencia de Fibonacci
-- `boot.nts` - Programa quine (se imprime a sí mismo)
+### Hello World
+- `hello.nela` - Basic Hello World
 
-### networking/
-- `http_server.nts` - Servidor HTTP completo
-- `webserver.nts` - Servidor web optimizado
-- `tcp_client.nts` - Cliente TCP
+### Arithmetic
+- `add.nela` - Addition
+- `calc.nela` - Calculator
 
-### gui/
-- `gui_final.nts` - Aplicación GUI completa
+### Network
+- `tcp_server.nela` - TCP server
+- `http_server.nela` - HTTP server
 
-## Uso
-
-```bash
-# Compilar ejemplo
-cargo run --release -- examples/basic/hello.nts -o hello
-
-# Compilar a PE nativo
-cargo run --release -- examples/basic/hello.nts -o hello --emit-pe
-
-# Ejecutar
-./hello.exe
-```
+### GUI
+- `gui_final.nela` - Complete GUI application

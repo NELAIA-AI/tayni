@@ -1,0 +1,157 @@
+-- NELAIA Compiler v8 - With String and FOP support
+-- Line 1: string literal (.p: "test")
+-- Line 2: FOP (.h: FOP .p 0)
+
+.zero: 0
+.bufsize: 64
+
+.path: "boot.nela"
+.handle: FOP .path .zero
+.srcbuf: ALC .bufsize
+.dummy: FRD .handle .srcbuf .bufsize
+.closed: FCL .handle
+
+.nl: 10
+.dot: 46
+.colon: 58
+.space: 32
+.quote: 34
+
+-- Find newline (string ends around pos 11)
+.c10: CHR .srcbuf 10
+.c11: CHR .srcbuf 11
+.c12: CHR .srcbuf 12
+
+.d10: SUB .c10 .nl
+.d11: SUB .c11 .nl
+.d12: SUB .c12 .nl
+
+.p10: IFZ .d10 10 99
+.p11: IFZ .d11 11 .p10
+.nl1: IFZ .d12 12 .p11
+
+.l2_start: ADD .nl1 1
+.inputlen: 23
+.l2_len: SUB .inputlen .l2_start
+
+-- Tokenize
+.tok1: FSM .srcbuf .nl1
+.l2_ptr: ADD .srcbuf .l2_start
+.tok2: FSM .l2_ptr .l2_len
+
+-- Line 1: DOT, ID, COLON, STR
+.t1_1: ADD .tok1 12
+.t1_name_st: GET .t1_1 1
+.t1_name_len: GET .t1_1 2
+
+.t1_3: ADD .tok1 20
+.t1_str_st: GET .t1_3 1
+.t1_str_len_raw: GET .t1_3 2
+.t1_str_len: ADD .t1_str_len_raw 1
+
+-- Line 2: DOT, ID, COLON, ID(FOP), DOT, ID(ref), NUM
+.t2_1: ADD .tok2 12
+.t2_name_st: GET .t2_1 1
+.t2_name_len: GET .t2_1 2
+
+.t2_3: ADD .tok2 20
+.t2_op_st: GET .t2_3 1
+.t2_op_len: GET .t2_3 2
+
+.t2_5: ADD .tok2 28
+.t2_ref_st: GET .t2_5 1
+.t2_ref_len: GET .t2_5 2
+
+.t2_6: ADD .tok2 32
+.t2_arg_st: GET .t2_6 1
+.t2_arg_len: GET .t2_6 2
+
+-- Output
+.out: ALC 128
+
+-- LINE 1: .p: "test"
+.w0: PUT .out 0 .dot
+.n1: CHR .srcbuf .t1_name_st
+.w1: PUT .out 1 .n1
+.w2: PUT .out 2 .colon
+.w3: PUT .out 3 .space
+
+-- Copy string with quotes
+.s0: CHR .srcbuf .t1_str_st
+.w4: PUT .out 4 .s0
+
+.s1p: ADD .t1_str_st 1
+.s1: CHR .srcbuf .s1p
+.w5: PUT .out 5 .s1
+
+.s2p: ADD .t1_str_st 2
+.s2: CHR .srcbuf .s2p
+.w6: PUT .out 6 .s2
+
+.s3p: ADD .t1_str_st 3
+.s3: CHR .srcbuf .s3p
+.w7: PUT .out 7 .s3
+
+.s4p: ADD .t1_str_st 4
+.s4: CHR .srcbuf .s4p
+.w8: PUT .out 8 .s4
+
+.s5p: ADD .t1_str_st 5
+.s5: CHR .srcbuf .s5p
+.w9: PUT .out 9 .s5
+
+.pos1_end: ADD 4 .t1_str_len
+.wnl1: PUT .out .pos1_end .nl
+
+-- LINE 2: .h: FOP .p 0
+.pos2_start: ADD .pos1_end 1
+.w2_0: PUT .out .pos2_start .dot
+
+.n2: CHR .l2_ptr .t2_name_st
+.pos2_n: ADD .pos2_start 1
+.w2_1: PUT .out .pos2_n .n2
+
+.pos2_c: ADD .pos2_n 1
+.w2_c: PUT .out .pos2_c .colon
+.pos2_s: ADD .pos2_c 1
+.w2_s: PUT .out .pos2_s .space
+
+-- OP (FOP = 3 chars)
+.op0: CHR .l2_ptr .t2_op_st
+.pos2_op: ADD .pos2_s 1
+.wop0: PUT .out .pos2_op .op0
+
+.op1p: ADD .t2_op_st 1
+.op1: CHR .l2_ptr .op1p
+.pos2_op1: ADD .pos2_op 1
+.wop1: PUT .out .pos2_op1 .op1
+
+.op2p: ADD .t2_op_st 2
+.op2: CHR .l2_ptr .op2p
+.pos2_op2: ADD .pos2_op 2
+.wop2: PUT .out .pos2_op2 .op2
+
+.pos2_ops: ADD .pos2_op 3
+.wops: PUT .out .pos2_ops .space
+
+-- Dot + ref
+.pos2_dot: ADD .pos2_ops 1
+.wdot: PUT .out .pos2_dot .dot
+
+.ref0: CHR .l2_ptr .t2_ref_st
+.pos2_ref: ADD .pos2_dot 1
+.wref0: PUT .out .pos2_ref .ref0
+
+.pos2_refs: ADD .pos2_ref .t2_ref_len
+.wrefs: PUT .out .pos2_refs .space
+
+-- Arg
+.arg0: CHR .l2_ptr .t2_arg_st
+.pos2_arg: ADD .pos2_refs 1
+.warg0: PUT .out .pos2_arg .arg0
+
+.pos2_end: ADD .pos2_arg .t2_arg_len
+.wnl2: PUT .out .pos2_end .nl
+
+.total: ADD .pos2_end 1
+.result: PRT .out .total

@@ -94,9 +94,9 @@ def main():
     print()
     
     servers = [
-        ('NELAIA Ultra', 8092, 'solar_nelaia_ultra.nts', 'solar_nelaia_ultra.exe'),
-        ('NELAIA Opt', 8084, 'solar_nelaia_opt.nts', 'solar_nelaia_opt.exe'),
-        ('NELAIA Fair', 8090, 'solar_nelaia_fair.nts', 'solar_nelaia_fair.exe'),
+        ('NELAIA Ultra', 8092, 'solar_nelaia_ultra.nela', 'solar_nelaia_ultra.exe'),
+        ('NELAIA Opt', 8084, 'solar_nelaia_opt.nela', 'solar_nelaia_opt.exe'),
+        ('NELAIA Fair', 8090, 'solar_nelaia_fair.nela', 'solar_nelaia_fair.exe'),
         ('Go 1.22', 8083, 'solar_go.go', 'solar_go.exe'),
         ('Rust 1.78', 8086, 'solar_rust.rs', 'solar_rust.exe'),
         ('C (Clang)', 8085, 'solar_c.c', 'solar_c.exe'),

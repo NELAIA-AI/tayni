@@ -1,9 +1,0 @@
-.zero: 0
-.bufsize: 256
-.path: "boot.nts"
-.handle: FOP .path .zero
-.srcbuf: ALC .bufsize
-.dummy: FRD .handle .srcbuf .bufsize
-.closed: FCL .handle
-.len: 182
-.result: PRT .srcbuf .len

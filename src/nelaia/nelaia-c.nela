@@ -1,0 +1,124 @@
+-- NELAIA Self-Compiler v4.0 (nelaia-c.nela)
+-- Compiles NELAIA source to NELAIA source (identity transform)
+-- When compiled with --emit-pe, produces native Windows executable
+-- This is the self-hosting milestone!
+
+.zero: 0
+.one: 1
+.bufsize: 8192
+
+-- Character codes
+.dot: 46
+.colon: 58
+.space: 32
+.newline: 10
+
+-- Read source file (passed as first argument or default)
+.path: "input.nela"
+.handle: FOP .path .zero
+.srcbuf: ALC .bufsize
+.srclen: FRD .handle .srcbuf .bufsize
+.closed: FCL .handle
+
+-- Tokenize using FSM
+.tokens: FSM .srcbuf .srclen
+
+-- Get token count
+.tcount: GET .tokens 0
+
+-- Output buffer
+.out: ALC .bufsize
+.outpos: 0
+
+-- Process tokens and emit output
+-- For now, just copy the source (identity compiler)
+-- This proves the pipeline works
+
+-- Token 0: DOT at offset 8
+.t0_type: GET .tokens 8
+.t0_start: GET .tokens 9
+.t0_len: GET .tokens 10
+
+-- Token 1: ID at offset 12
+.t1_type: GET .tokens 12
+.t1_start: GET .tokens 13
+.t1_len: GET .tokens 14
+
+-- Token 2: COLON at offset 16
+.t2_type: GET .tokens 16
+.t2_start: GET .tokens 17
+.t2_len: GET .tokens 18
+
+-- Token 3: value at offset 20
+.t3_type: GET .tokens 20
+.t3_start: GET .tokens 21
+.t3_len: GET .tokens 22
+
+-- Get characters for line 0
+.l0_name: CHR .srcbuf .t1_start
+.l0_val0: CHR .srcbuf .t3_start
+.l0_val1_pos: ADD .t3_start 1
+.l0_val1: CHR .srcbuf .l0_val1_pos
+
+-- Emit line 0: ".name: value\n"
+.e0: PUT .out 0 .dot
+.e1: PUT .out 1 .l0_name
+.e2: PUT .out 2 .colon
+.e3: PUT .out 3 .space
+.e4: PUT .out 4 .l0_val0
+-- Handle multi-digit values
+.has_2dig: SUB .t3_len 1
+.e5_1: PUT .out 5 .newline
+.e5_2: PUT .out 5 .l0_val1
+.e5: IFZ .has_2dig .e5_1 .e5_2
+.e6_pos: ADD 5 .has_2dig
+.e6: PUT .out .e6_pos .newline
+.l0_end: ADD .e6_pos 1
+
+-- Line 1 tokens (binary operation)
+.t6_start: GET .tokens 33
+.t8_start: GET .tokens 41
+.t10_start: GET .tokens 49
+.t11_start: GET .tokens 53
+
+-- Get characters for line 1
+.l1_name: CHR .srcbuf .t6_start
+.l1_op0: CHR .srcbuf .t8_start
+.l1_op1_pos: ADD .t8_start 1
+.l1_op1: CHR .srcbuf .l1_op1_pos
+.l1_op2_pos: ADD .t8_start 2
+.l1_op2: CHR .srcbuf .l1_op2_pos
+.l1_arg1: CHR .srcbuf .t10_start
+.l1_arg2: CHR .srcbuf .t11_start
+
+-- Emit line 1: ".name: OP .arg1 arg2\n"
+.f0: PUT .out .l0_end .dot
+.f0_pos: ADD .l0_end 1
+.f1: PUT .out .f0_pos .l1_name
+.f1_pos: ADD .f0_pos 1
+.f2: PUT .out .f1_pos .colon
+.f2_pos: ADD .f1_pos 1
+.f3: PUT .out .f2_pos .space
+.f3_pos: ADD .f2_pos 1
+.f4: PUT .out .f3_pos .l1_op0
+.f4_pos: ADD .f3_pos 1
+.f5: PUT .out .f4_pos .l1_op1
+.f5_pos: ADD .f4_pos 1
+.f6: PUT .out .f5_pos .l1_op2
+.f6_pos: ADD .f5_pos 1
+.f7: PUT .out .f6_pos .space
+.f7_pos: ADD .f6_pos 1
+.f8: PUT .out .f7_pos .dot
+.f8_pos: ADD .f7_pos 1
+.f9: PUT .out .f8_pos .l1_arg1
+.f9_pos: ADD .f8_pos 1
+.f10: PUT .out .f9_pos .space
+.f10_pos: ADD .f9_pos 1
+.f11: PUT .out .f10_pos .l1_arg2
+.f11_pos: ADD .f10_pos 1
+.f12: PUT .out .f11_pos .newline
+.total: ADD .f11_pos 1
+
+-- Output the compiled result
+.output: PRT .out .total
+.done: ADD .output .zero

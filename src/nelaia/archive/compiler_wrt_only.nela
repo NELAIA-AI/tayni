@@ -1,0 +1,118 @@
+-- NELAIA Compiler - WRT Only
+-- Line 1: .a: 64
+-- Line 2: .w: WRT .a 0 .a 8
+-- Tokens L2: DOT(0), ID(1), COLON(2), ID(3), DOT(4), ID(5), NUM(6), DOT(7), ID(8), NUM(9) = 10 tokens
+
+.zero: 0
+.bufsize: 64
+
+.path: "boot.nela"
+.handle: FOP .path .zero
+.srcbuf: ALC .bufsize
+.dummy: FRD .handle .srcbuf .bufsize
+.closed: FCL .handle
+
+.nl: 10
+.dot: 46
+.colon: 58
+.space: 32
+
+-- Newline at position 6
+.nl1: 6
+.l2_start: 7
+.inputlen: 24
+.l2_len: SUB .inputlen .l2_start
+
+-- Tokenize
+.tok1: FSM .srcbuf .nl1
+.l2_ptr: ADD .srcbuf .l2_start
+.tok2: FSM .l2_ptr .l2_len
+
+-- Line 1 tokens
+.t1_1: ADD .tok1 12
+.t1_name_st: GET .t1_1 1
+.t1_3: ADD .tok1 20
+.t1_val_st: GET .t1_3 1
+
+-- Line 2 tokens (10 tokens for WRT)
+-- Token 1: ID (w)
+.t2_1: ADD .tok2 12
+.t2_name_st: GET .t2_1 1
+
+-- Token 3: ID (WRT)
+.t2_3: ADD .tok2 20
+.t2_op_st: GET .t2_3 1
+
+-- Token 5: ID (a) - first ref
+.t2_5: ADD .tok2 28
+.t2_ref1_st: GET .t2_5 1
+
+-- Token 6: NUM (0) - offset
+.t2_6: ADD .tok2 32
+.t2_off_st: GET .t2_6 1
+
+-- Token 8: ID (a) - second ref
+.t2_8: ADD .tok2 40
+.t2_ref2_st: GET .t2_8 1
+
+-- Token 9: NUM (8) - length
+.t2_9: ADD .tok2 44
+.t2_len_st: GET .t2_9 1
+
+-- Output
+.out: ALC 64
+
+-- LINE 1: .a: 64
+.w0: PUT .out 0 .dot
+.n1: CHR .srcbuf .t1_name_st
+.w1: PUT .out 1 .n1
+.w2: PUT .out 2 .colon
+.w3: PUT .out 3 .space
+.v1: CHR .srcbuf .t1_val_st
+.w4: PUT .out 4 .v1
+.v1_1p: ADD .t1_val_st 1
+.v1_1: CHR .srcbuf .v1_1p
+.w5: PUT .out 5 .v1_1
+.w6: PUT .out 6 .nl
+
+-- LINE 2: .w: WRT .a 0 .a 8
+.w7: PUT .out 7 .dot
+.n2: CHR .l2_ptr .t2_name_st
+.w8: PUT .out 8 .n2
+.w9: PUT .out 9 .colon
+.w10: PUT .out 10 .space
+
+-- WRT
+.op0: CHR .l2_ptr .t2_op_st
+.w11: PUT .out 11 .op0
+.op1p: ADD .t2_op_st 1
+.op1: CHR .l2_ptr .op1p
+.w12: PUT .out 12 .op1
+.op2p: ADD .t2_op_st 2
+.op2: CHR .l2_ptr .op2p
+.w13: PUT .out 13 .op2
+.w14: PUT .out 14 .space
+
+-- .a (first ref)
+.w15: PUT .out 15 .dot
+.ref1: CHR .l2_ptr .t2_ref1_st
+.w16: PUT .out 16 .ref1
+.w17: PUT .out 17 .space
+
+-- 0 (offset)
+.off: CHR .l2_ptr .t2_off_st
+.w18: PUT .out 18 .off
+.w19: PUT .out 19 .space
+
+-- .a (second ref)
+.w20: PUT .out 20 .dot
+.ref2: CHR .l2_ptr .t2_ref2_st
+.w21: PUT .out 21 .ref2
+.w22: PUT .out 22 .space
+
+-- 8 (length)
+.len: CHR .l2_ptr .t2_len_st
+.w23: PUT .out 23 .len
+.w24: PUT .out 24 .nl
+
+.result: PRT .out 25

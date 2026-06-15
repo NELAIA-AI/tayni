@@ -1,0 +1,174 @@
+-- NELAIA Compiler v7 - IFZ Character Selection
+-- Each character is selected via IFZ before writing
+
+.zero: 0
+.bufsize: 64
+
+.path: "boot.nela"
+.handle: FOP .path .zero
+.srcbuf: ALC .bufsize
+.dummy: FRD .handle .srcbuf .bufsize
+.closed: FCL .handle
+
+.nl: 10
+.dot: 46
+.colon: 58
+.space: 32
+
+-- Find newline
+.c6: CHR .srcbuf 6
+.d6: SUB .c6 .nl
+.nl1: IFZ .d6 6 99
+
+.l2_start: ADD .nl1 1
+.inputlen: 21
+.l2_len: SUB .inputlen .l2_start
+
+-- Tokenize
+.tok1: FSM .srcbuf .nl1
+.l2_ptr: ADD .srcbuf .l2_start
+.tok2: FSM .l2_ptr .l2_len
+
+.tok2_cnt: GET .tok2 0
+
+-- Line 1 tokens
+.t1_1: ADD .tok1 12
+.t1_name_st: GET .t1_1 1
+.t1_3: ADD .tok1 20
+.t1_val_st: GET .t1_3 1
+.t1_val_len: GET .t1_3 2
+
+-- Line 2 tokens
+.t2_1: ADD .tok2 12
+.t2_name_st: GET .t2_1 1
+
+.t2_3: ADD .tok2 20
+.t2_3_st: GET .t2_3 1
+.t2_3_len: GET .t2_3 2
+
+.t2_4: ADD .tok2 24
+.t2_4_st: GET .t2_4 1
+.t2_4_len: GET .t2_4 2
+
+.t2_5: ADD .tok2 28
+.t2_5_st: GET .t2_5 1
+
+.t2_6: ADD .tok2 32
+.t2_6_st: GET .t2_6 1
+.t2_6_len: GET .t2_6 2
+
+.t2_7: ADD .tok2 36
+.t2_7_st: GET .t2_7 1
+.t2_7_len: GET .t2_7 2
+
+-- Type detection
+.four: 4
+.five: 5
+.seven: 7
+.is_lit: SUB .tok2_cnt .four
+.is_un: SUB .tok2_cnt .five
+.is_bin: SUB .tok2_cnt .seven
+
+-- Output
+.out: ALC 128
+
+-- LINE 1: .a: NN
+.w0: PUT .out 0 .dot
+.n1: CHR .srcbuf .t1_name_st
+.w1: PUT .out 1 .n1
+.w2: PUT .out 2 .colon
+.w3: PUT .out 3 .space
+.v1_0: CHR .srcbuf .t1_val_st
+.w4: PUT .out 4 .v1_0
+.v1_1p: ADD .t1_val_st 1
+.v1_1: CHR .srcbuf .v1_1p
+.w5: PUT .out 5 .v1_1
+.w6: PUT .out 6 .nl
+
+-- LINE 2: .b: ...
+.w7: PUT .out 7 .dot
+.n2: CHR .l2_ptr .t2_name_st
+.w8: PUT .out 8 .n2
+.w9: PUT .out 9 .colon
+.w10: PUT .out 10 .space
+
+-- Pos 11-13: token 3 (value for lit, op for others)
+.c11: CHR .l2_ptr .t2_3_st
+.w11: PUT .out 11 .c11
+
+.c12p: ADD .t2_3_st 1
+.c12: CHR .l2_ptr .c12p
+.w12: PUT .out 12 .c12
+
+.c13p: ADD .t2_3_st 2
+.c13_raw: CHR .l2_ptr .c13p
+-- For literal with 2-char value, pos 13 should be newline
+.c13: IFZ .is_lit .nl .c13_raw
+.w13: PUT .out 13 .c13
+
+-- Pos 14: space (for non-literal) or nothing
+.c14: IFZ .is_lit .zero .space
+.w14: PUT .out 14 .c14
+
+-- Pos 15+: depends on type
+-- Unary: arg starts here
+-- Binary/Ternary: dot here
+
+-- For unary: read arg
+.un_arg0: CHR .l2_ptr .t2_4_st
+.un_arg1p: ADD .t2_4_st 1
+.un_arg1: CHR .l2_ptr .un_arg1p
+.un_arg2p: ADD .t2_4_st 2
+.un_arg2: CHR .l2_ptr .un_arg2p
+
+-- For binary/ternary: read ref and args
+.bt_ref0: CHR .l2_ptr .t2_5_st
+.bt_arg0: CHR .l2_ptr .t2_6_st
+.bt_arg1p: ADD .t2_6_st 1
+.bt_arg1: CHR .l2_ptr .bt_arg1p
+.ter_arg2_0: CHR .l2_ptr .t2_7_st
+
+-- Pos 15: unary=arg0, binary/ternary=dot
+.c15_un: IFZ .is_un .un_arg0 .dot
+.c15: IFZ .is_lit .zero .c15_un
+.w15: PUT .out 15 .c15
+
+-- Pos 16: unary=arg1, binary/ternary=ref0
+.c16_un: IFZ .is_un .un_arg1 .bt_ref0
+.c16: IFZ .is_lit .zero .c16_un
+.w16: PUT .out 16 .c16
+
+-- Pos 17: unary=arg2, binary/ternary=space
+.c17_un: IFZ .is_un .un_arg2 .space
+.c17: IFZ .is_lit .zero .c17_un
+.w17: PUT .out 17 .c17
+
+-- Pos 18: unary=nl, binary/ternary=arg0
+.c18_un: IFZ .is_un .nl .bt_arg0
+.c18: IFZ .is_lit .zero .c18_un
+.w18: PUT .out 18 .c18
+
+-- Pos 19: binary=nl, ternary=space
+.c19_bin: IFZ .is_bin .nl .space
+.c19: IFZ .is_lit .zero .c19_bin
+.w19: PUT .out 19 .c19
+
+-- Pos 20: ternary=arg2_0
+.c20: IFZ .is_bin .zero .ter_arg2_0
+.w20: PUT .out 20 .c20
+
+-- Pos 21: ternary=nl
+.c21: IFZ .is_bin .zero .nl
+.w21: PUT .out 21 .c21
+
+-- Calculate total length
+.len_lit: 14
+.len_un: ADD 15 .t2_4_len
+.len_bin: ADD 18 .t2_6_len
+.len_ter: ADD 20 .t2_7_len
+
+.len_bt: IFZ .is_bin .len_bin .len_ter
+.len_ubt: IFZ .is_un .len_un .len_bt
+.total: IFZ .is_lit .len_lit .len_ubt
+
+.result: PRT .out .total

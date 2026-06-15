@@ -96,14 +96,14 @@ def main():
     
     # FAIR implementations (single-threaded blocking)
     fair_servers = [
-        ('NELAIA v0.10', 8090, 'solar_nelaia_fair.nts', 'solar_nelaia_fair.exe'),
+        ('NELAIA v0.10', 8090, 'solar_nelaia_fair.nela', 'solar_nelaia_fair.exe'),
         ('Python 3.12', 8091, 'solar_python_fair.py', None),
         ('Node.js v24', 8092, 'solar_node_fair.js', None),
     ]
     
     # OPTIMIZED implementations (async/multi-threaded)
     opt_servers = [
-        ('NELAIA Opt', 8084, 'solar_nelaia_opt.nts', 'solar_nelaia_opt.exe'),
+        ('NELAIA Opt', 8084, 'solar_nelaia_opt.nela', 'solar_nelaia_opt.exe'),
         ('Python Async', 8081, 'solar_python_opt.py', None),
         ('Node Cluster', 8082, 'solar_node_opt.js', None),
         ('Go (goroutines)', 8083, 'solar_go.go', 'solar_go.exe'),

@@ -88,7 +88,7 @@ def benchmark_server(port, name, requests=REQUESTS):
 
 def main():
     servers = [
-        ('NELAIA v0.10', 8080, 'solar_nelaia.nts', 'solar_nelaia.exe'),
+        ('NELAIA v0.10', 8080, 'solar_nelaia.nela', 'solar_nelaia.exe'),
         ('Python 3.12', 8081, 'solar_python.py', None),
         ('Node.js v24', 8082, 'solar_node.js', None),
         ('Go 1.22', 8083, 'solar_go.go', 'solar_go.exe'),

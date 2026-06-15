@@ -36,7 +36,7 @@ fn main() {
         println!("nelaia-c {} - NELAIA Compiler", VERSION);
         println!();
         println!("USAGE:");
-        println!("  nelaia-c <file.nts|file.nbin> [options]");
+        println!("  nelaia-c <file.nela|file.nbin> [options]");
         println!();
         println!("OPTIONS:");
         println!("  -o <file>       Output file name");
@@ -59,16 +59,16 @@ fn main() {
         println!("  --tiny          Generate minimal PE (~1KB)");
         println!();
         println!("EXAMPLES:");
-        println!("  nelaia-c hello.nts -o hello --emit-pe");
-        println!("  nelaia-c program.nts -o program --emit-elf");
-        println!("  nelaia-c code.nts --check");
+        println!("  nelaia-c hello.nela -o hello --emit-pe");
+        println!("  nelaia-c program.nela -o program --emit-elf");
+        println!("  nelaia-c code.nela --check");
         return;
     }
     
     if args.len() < 2 {
         if !quiet {
             eprintln!("nelaia-c {}", VERSION);
-            eprintln!("usage: nelaia-c <file.nts|file.nbin> [output] [options]");
+            eprintln!("usage: nelaia-c <file.nela|file.nbin> [output] [options]");
             eprintln!("Try 'nelaia-c --help' for more information.");
         }
         return;
@@ -170,7 +170,7 @@ fn main() {
             }
             i += 1;
         }
-        out.unwrap_or_else(|| input_file.replace(".nts", "").replace(".nbin", ""))
+        out.unwrap_or_else(|| input_file.replace(".nela", "").replace(".nbin", ""))
     };
     
     // Read input file (text or binary)

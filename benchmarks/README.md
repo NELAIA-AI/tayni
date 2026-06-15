@@ -69,7 +69,7 @@ clang -O2 -o solar_c_opt.exe solar_c_opt.c -lws2_32
 
 # NELAIA
 cd ..
-cargo run --release -- benchmarks/solar_nelaia_16w.nts
+cargo run --release -- benchmarks/solar_nelaia_16w.nela
 ```
 
 ## Troubleshooting

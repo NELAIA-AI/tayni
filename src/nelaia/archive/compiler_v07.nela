@@ -1,0 +1,131 @@
+-- NELAIA Self-Hosted Compiler v0.7
+-- Reads source from file, compiles to LLVM IR
+-- Usage: nelaia_cc.exe < input.nela > output.ll
+
+.zero: 0
+.bufsize: 4096
+
+-- Allocate input buffer
+.inbuf: ALC .bufsize
+
+-- Read from stdin (handle -10)
+.stdin: -10
+.handle: ADD .stdin 0
+.hptr: ALC 8
+
+-- For now, use embedded source (FRD from stdin not working yet)
+-- TODO: implement stdin reading
+
+.src: ".a: 5\n.b: MUL .a 2\n.c: ADD .b 3"
+.slen: 32
+
+-- Tokenize
+.tokens: FSM .src .slen
+.tptr: ADD .tokens .zero
+
+-- Count tokens
+.tcnt: GET .tptr 0
+
+-- Parse and emit for 3 nodes
+-- Node 1: .a: 5
+.t1: ADD .tptr 12
+.t1_st: GET .t1 1
+.n1: CHR .src .t1_st
+
+.t3: ADD .tptr 20
+.t3_st: GET .t3 1
+.v1: CHR .src .t3_st
+
+-- Node 2: .b: MUL .a 2
+.t6: ADD .tptr 32
+.t6_st: GET .t6 1
+.n2: CHR .src .t6_st
+
+.t8: ADD .tptr 40
+.t8_st: GET .t8 1
+
+.t10: ADD .tptr 48
+.t10_st: GET .t10 1
+.a2_1: CHR .src .t10_st
+
+.t11: ADD .tptr 52
+.t11_st: GET .t11 1
+.a2_2: CHR .src .t11_st
+
+-- Node 3: .c: ADD .b 3
+.t14: ADD .tptr 64
+.t14_st: GET .t14 1
+.n3: CHR .src .t14_st
+
+.t16: ADD .tptr 72
+.t16_st: GET .t16 1
+
+.t18: ADD .tptr 80
+.t18_st: GET .t18 1
+.a3_1: CHR .src .t18_st
+
+.t19: ADD .tptr 84
+.t19_st: GET .t19 1
+.a3_2: CHR .src .t19_st
+
+-- Emit LLVM IR
+.out: ALC 2048
+
+-- Header
+.hdr: "target triple = \"x86_64-pc-windows-msvc\"\n\ndefine i64 @main() {\nentry:\n"
+.p0: WRT .out .zero .hdr 72
+
+-- Node 1: %a = add i64 5, 0
+.ln1a: "  %"
+.p1: WRT .out .p0 .ln1a 3
+.nbuf: ALC 4
+.pn1: PUT .nbuf 0 .n1
+.p2: WRT .out .p1 .nbuf 1
+.ln1b: " = add i64 "
+.p3: WRT .out .p2 .ln1b 11
+.pv1: PUT .nbuf 0 .v1
+.p4: WRT .out .p3 .nbuf 1
+.ln1c: ", 0\n"
+.p5: WRT .out .p4 .ln1c 4
+
+-- Node 2: %b = mul i64 %a, 2
+.p6: WRT .out .p5 .ln1a 3
+.pn2: PUT .nbuf 0 .n2
+.p7: WRT .out .p6 .nbuf 1
+.ln2b: " = mul i64 %"
+.p8: WRT .out .p7 .ln2b 12
+.pa1: PUT .nbuf 0 .a2_1
+.p9: WRT .out .p8 .nbuf 1
+.ln2c: ", "
+.p10: WRT .out .p9 .ln2c 2
+.pa2: PUT .nbuf 0 .a2_2
+.p11: WRT .out .p10 .nbuf 1
+.nl: "\n"
+.p12: WRT .out .p11 .nl 1
+
+-- Node 3: %c = add i64 %b, 3
+.p13: WRT .out .p12 .ln1a 3
+.pn3: PUT .nbuf 0 .n3
+.p14: WRT .out .p13 .nbuf 1
+.ln3b: " = add i64 %"
+.p15: WRT .out .p14 .ln3b 12
+.pb1: PUT .nbuf 0 .a3_1
+.p16: WRT .out .p15 .nbuf 1
+.p17: WRT .out .p16 .ln2c 2
+.pb2: PUT .nbuf 0 .a3_2
+.p18: WRT .out .p17 .nbuf 1
+.p19: WRT .out .p18 .nl 1
+
+-- Return
+.ftr1: "  ret i64 %"
+.p20: WRT .out .p19 .ftr1 11
+.retbuf: ALC 4
+.pret: PUT .retbuf 0 .n3
+.p21: WRT .out .p20 .retbuf 1
+.ftr2: "\n}\n\ndefine i64 @mainCRTStartup() {\n  %r = call i64 @main()\n  ret i64 %r\n}\n"
+.p22: WRT .out .p21 .ftr2 76
+
+-- Output
+.oout: PRT .out .p22
+
+.result: ADD .oout .zero

@@ -95,7 +95,7 @@ def main():
     implementations = [
         {
             'name': 'NELAIA v0.10',
-            'source': 'solar_nelaia.nts',
+            'source': 'solar_nelaia.nela',
             'binary': 'solar_nelaia.exe',
             'port': 8080,
             'runtime': 'Native (Pure Syscalls)'

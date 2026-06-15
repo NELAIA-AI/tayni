@@ -1,28 +1,28 @@
-# NELAIA Self-Hosted Compilers
+# NELAIA Self-Hosting Compilers
 
-Compiladores NELAIA escritos en NELAIA.
+This directory contains NELAIA compilers written in NELAIA itself.
 
-## Archivos Principales
+## Files
 
-| Archivo | Descripción |
-|---------|-------------|
-| `nelaia-c.nts` | **Compilador principal auto-hospedado** - Compila .nts a .nts |
-| `compiler_v32.nts` | Parser/compiler funcional para programas de 2 líneas |
-| `boot_compiler.nts` | Bootstrap compiler - compila `boot.nts` |
-| `parser_v1.nts` | Parser básico con FSM |
-| `pe_emitter_simple.nts` | Ejemplo de emisión PE |
+| File | Description |
+|------|-------------|
+| `compiler_v33.nela` | Current version - Full parser with FSM |
+| `compiler_v32.nela` | Functional parser/compiler for 2-line programs |
+| `compiler_v31.nela` | Modular version |
+| `parser_v1.nela` | Basic parser with FSM |
+| `pe_emitter_simple.nela` | PE emission example |
 
-## Uso
+## Usage
 
 ```bash
-# Compilar nelaia-c.nts a ejecutable nativo
-cargo run --release -- src/nelaia/nelaia-c.nts -o nelaia-c --emit-pe
+# Compile the self-hosted compiler
+cargo run --release -- src/nelaia/compiler_v33.nela --emit-pe
 
-# Ejecutar el compilador auto-hospedado
-./nelaia-c.exe < input.nts
+# Use the self-hosted compiler
+./compiler_v33.exe input.nela -o output.exe
 ```
 
-## archive/
+## Archive
 
-Contiene versiones anteriores de desarrollo (v02-v31, debug, módulos).
-Mantenido como referencia histórica del proceso de bootstrap.
+The `archive/` folder contains previous development versions (v02-v31, debug, modules).
+Maintained as historical reference of the bootstrap process.
