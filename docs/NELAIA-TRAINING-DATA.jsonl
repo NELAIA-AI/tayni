@@ -108,6 +108,11 @@
 {"input": "Check if number is in range 0 to 100", "output": ".x: 50\n.ge_zero: GE .x 0\n.le_hundred: LE .x 100\n.in_range: AND .ge_zero .le_hundred"}
 {"input": "Build HTTP response with JSON body", "output": ".caps: REQUIRES { http, json }\n.data: JSON.ENCODE .result\n.resp: HTTP.RESPOND .req 200 .data"}
 {"input": "REST API endpoint returning JSON", "output": ".caps: REQUIRES { http, json }\n.server: HTTP.LISTEN 8080\n.req: HTTP.ACCEPT .server\n.path: HTTP.PATH .req\n.data: \"{ \\\"status\\\": \\\"ok\\\" }\"\n.resp: HTTP.RESPOND .req 200 .data"}
+{"input": "HTTP server with loop (persistent)", "output": ".caps: REQUIRES { http }\n.server: HTTP.LISTEN 8080\n.loop: HTTP.ACCEPT .server\n.resp: HTTP.RESPOND .loop 200 \"Hello!\"\n.loop >> .loop"}
+{"input": "REST API server with loop", "output": ".caps: REQUIRES { http, json }\n.server: HTTP.LISTEN 8080\n.loop: HTTP.ACCEPT .server\n.data: \"{\\\"status\\\":\\\"ok\\\"}\"\n.resp: HTTP.RESPOND .loop 200 .data\n.loop >> .loop"}
+{"input": "Persistent HTTP server", "output": ".caps: REQUIRES { http }\n.server: HTTP.LISTEN 8080\n.loop: HTTP.ACCEPT .server\n.resp: HTTP.RESPOND .loop 200 \"OK\"\n.loop >> .loop"}
+{"input": "Create loop in NELAIA", "output": ".start: OP .args\n.end >> .start"}
+{"input": "How to make a server persistent", "output": "-- Use >> to loop back\\n.loop: HTTP.ACCEPT .server\\n.resp: HTTP.RESPOND .loop 200 \\\"OK\\\"\\n.loop >> .loop"}
 {"input": "Query database and return as JSON", "output": ".caps: REQUIRES { sql, json }\n.conn: SQL.CONNECT \"...\"\n.result: SQL.QUERY .conn \"SELECT name FROM users\"\n.has_row: SQL.NEXT .result\n.name: SQL.GET .result 0\n.json: JSON.SET .obj \"name\" .name\n.close: SQL.CLOSE .conn"}
 {"input": "HTTP client fetching JSON API", "output": ".caps: REQUIRES { http, json }\n.response: HTTP.GET \"http://api.example.com/data\"\n.data: JSON.PARSE .response\n.value: JSON.GET .data \"result\""}
 {"input": "Allocate buffer and write string", "output": ".buf: ALC 100\n.w0: PUT .buf 0 72\n.w1: PUT .buf 1 105\n.w2: PUT .buf 2 0\n.out: PRT .buf 2"}

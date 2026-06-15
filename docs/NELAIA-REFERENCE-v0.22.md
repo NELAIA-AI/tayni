@@ -198,13 +198,23 @@ comment        = "--" { character } newline ;
 .out: PRT .msg .len
 ```
 
-### Pattern 2: HTTP Server
+### Pattern 2: HTTP Server (Single Request)
 ```nelaia
 .caps: REQUIRES { http }
 .server: HTTP.LISTEN 8080
 .req: HTTP.ACCEPT .server
 .resp: HTTP.RESPOND .req 200 "OK"
 ```
+
+### Pattern 2b: HTTP Server (Persistent with Loop)
+```nelaia
+.caps: REQUIRES { http }
+.server: HTTP.LISTEN 8080
+.loop: HTTP.ACCEPT .server
+.resp: HTTP.RESPOND .loop 200 "OK"
+.loop >> .loop
+```
+**IMPORTANT:** Use `>>` to create a loop. Without `.loop >> .loop`, the server handles only one request and exits.
 
 ### Pattern 3: SQL Query
 ```nelaia
