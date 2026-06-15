@@ -1,0 +1,149 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "NELAIA",
+  "scopeName": "source.nela",
+  "fileTypes": ["nela"],
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#strings" },
+    { "include": "#numbers" },
+    { "include": "#operators" },
+    { "include": "#keywords" },
+    { "include": "#capabilities" },
+    { "include": "#nodes" },
+    { "include": "#flow" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.double-dash.nela",
+          "match": "--.*$"
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.nela",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.nela",
+              "match": "\\\\."
+            }
+          ]
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.hex.nela",
+          "match": "\\b0x[0-9A-Fa-f]+\\b"
+        },
+        {
+          "name": "constant.numeric.float.nela",
+          "match": "\\b[0-9]+\\.[0-9]+\\b"
+        },
+        {
+          "name": "constant.numeric.integer.nela",
+          "match": "\\b[0-9]+\\b"
+        }
+      ]
+    },
+    "operators": {
+      "patterns": [
+        {
+          "name": "keyword.operator.arithmetic.nela",
+          "match": "\\b(ADD|SUB|MUL|DIV|MOD|NEG)\\b"
+        },
+        {
+          "name": "keyword.operator.comparison.nela",
+          "match": "\\b(EQ|NE|LT|GT|LE|GE)\\b"
+        },
+        {
+          "name": "keyword.operator.logical.nela",
+          "match": "\\b(AND|OR|NOT)\\b"
+        },
+        {
+          "name": "keyword.operator.memory.nela",
+          "match": "\\b(ALC|FRE|PUT|GET|CPY|SLN)\\b"
+        },
+        {
+          "name": "keyword.operator.io.nela",
+          "match": "\\b(PRT|INP|ERR|FOP|FRD|FWR|FCL)\\b"
+        },
+        {
+          "name": "keyword.operator.network.nela",
+          "match": "\\b(TCP|UDP|BND|LST|ACC|XMT|RCV|CLS)\\b"
+        },
+        {
+          "name": "keyword.operator.control.nela",
+          "match": "\\b(BRN|IFZ|SEL|TRN)\\b"
+        },
+        {
+          "name": "keyword.operator.contract.nela",
+          "match": "\\b(CONTRACT|GUARANTEE|LIMIT|SANDBOX|PROVIDES|NEGOTIATE)\\b"
+        },
+        {
+          "name": "keyword.operator.test.nela",
+          "match": "\\b(PROPERTY|GENTESTS|VERIFY)\\b"
+        },
+        {
+          "name": "keyword.operator.cache.nela",
+          "match": "\\b(HASH|CACHE_GET|CACHE_PUT|CACHE_VERIFY)\\b"
+        },
+        {
+          "name": "keyword.operator.sen.nela",
+          "match": "\\b(DISCOVER|CAPABILITY_INFO|CAPABILITY_COST|PUBLISH)\\b"
+        }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.nela",
+          "match": "\\b(REQUIRES)\\b"
+        },
+        {
+          "name": "constant.language.nela",
+          "match": "\\b(true|false|null)\\b"
+        }
+      ]
+    },
+    "capabilities": {
+      "patterns": [
+        {
+          "name": "support.function.capability.nela",
+          "match": "\\b(HTTP|SQL|JSON)\\.(LISTEN|ACCEPT|RESPOND|GET|POST|CONNECT|QUERY|CLOSE|PARSE|ENCODE|SET)\\b"
+        },
+        {
+          "name": "support.type.capability.nela",
+          "match": "\\b(http|sql|json|file|network|gui|thread)\\b"
+        }
+      ]
+    },
+    "nodes": {
+      "patterns": [
+        {
+          "name": "variable.other.node.nela",
+          "match": "\\.[a-zA-Z_][a-zA-Z0-9_]*"
+        }
+      ]
+    },
+    "flow": {
+      "patterns": [
+        {
+          "name": "keyword.operator.flow.nela",
+          "match": ">"
+        },
+        {
+          "name": "keyword.operator.cyclic.nela",
+          "match": ">>"
+        }
+      ]
+    }
+  }
+}
