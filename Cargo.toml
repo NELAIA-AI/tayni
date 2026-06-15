@@ -1,8 +1,8 @@
 [package]
 name = "nelaia-c"
-version = "0.22.0"
+version = "0.23.0"
 edition = "2021"
-description = "NELAIA Compiler - AI-First Metalanguage"
+description = "NELAIA Compiler - Direct native emission (PE/ELF), no external dependencies"
 
 [dependencies]
 

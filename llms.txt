@@ -1,27 +1,29 @@
 # NELAIA - AI-First Compiler
-# The last programming language. The first AI language.
-# https://github.com/NELAIA-AI/nelaia-core
+# Graph-based language optimized for AI code generation
+# https://github.com/NELAIA-AI/nelaia
 
 ## What
 NELAIA is a compiler that generates optimal native executables from graph-based source code.
-Designed by AIs, for AIs.
+Optimized for AI systems to generate and consume.
 
 ## For
 AI agents that need to generate compiled programs.
-AIs that want token-efficient code generation.
-Systems that need minimal, dependency-free executables.
+Systems that benefit from token-efficient code generation.
+Applications requiring minimal, dependency-free executables.
 
 ## Why
-Traditional languages are designed for humans to write.
-NELAIA is designed for AIs to generate.
-- Graph-based paradigm (how AIs think about computation)
+Traditional languages have syntax overhead that increases token usage in AI contexts.
+NELAIA addresses this with:
+- Graph-based paradigm (natural for dependency modeling)
 - Token-efficient syntax (minimal tokens, maximum information)
-- Tiny output (Hello World = 1KB, HTTP server = 5KB)
+- Tiny output (Hello World = 2KB, HTTP server = 5KB)
 - No runtime dependencies
 
 ## Capabilities
 - compile_to_windows_pe: Generate Windows x64 executables
 - compile_to_linux_elf: Generate Linux x64 executables
+- compile_to_macos_macho: Generate macOS x64 (Intel) executables
+- compile_to_macos_arm64: Generate macOS ARM64 (Apple Silicon) executables
 - http_server: Create HTTP servers
 - http_client: Make HTTP requests
 - sql_database: Connect to SQL databases (ODBC)
@@ -46,22 +48,24 @@ Example:
 Native executables:
 - Windows: PE format (.exe)
 - Linux: ELF format
+- macOS: Mach-O format (Intel x64 and ARM64 Apple Silicon)
 
 JSON compilation results available with --json flag.
 
 ## Invoke
 ```
-# Basic compilation
+# Basic compilation (auto-detects platform, no external dependencies)
 nelaia-c input.nela -o output
 
 # With JSON output (for programmatic use)
 nelaia-c input.nela -o output --json
 
-# Direct PE emission (no Clang needed)
-nelaia-c input.nela --emit-pe
+# Force specific format
+nelaia-c input.nela --emit-pe    # Windows PE
+nelaia-c input.nela --emit-elf   # Linux ELF
 
-# Direct ELF emission
-nelaia-c input.nela --emit-elf
+# Use LLVM+Clang flow (optional)
+nelaia-c input.nela --use-clang
 ```
 
 ## Training Data
@@ -94,10 +98,10 @@ Structured error format for programmatic handling.
 See: docs/NELAIA-SEMANTICS-v0.22.md#error-codes
 
 ## Version
-Current: 0.22
+Current: 0.23
 
 ## Repository
-https://github.com/NELAIA-AI/nelaia-core
+https://github.com/NELAIA-AI/nelaia
 
 ## License
-Open source
+MIT

@@ -1,22 +1,60 @@
-﻿# NELAIA Core
+﻿# NELAIA
 
-NELAIA Compiler v0.22 - Metalanguage designed by AIs, for AIs.
+[![Build](https://github.com/NELAIA-AI/nelaia/actions/workflows/build.yml/badge.svg)](https://github.com/NELAIA-AI/nelaia/actions/workflows/build.yml)
 
-> **The last programming language. The first AI language.**
+NELAIA Compiler v0.23 - A graph-based language optimized for AI code generation.
 
-## Quick Start
+> **Minimal syntax. Direct native compilation. Zero dependencies.**
+
+## Quick Start (5 Steps)
+
+### 1. Download
 
 ```bash
-# Download (Linux)
-curl -LO https://github.com/NELAIA-AI/nelaia-core/releases/latest/download/nelaia-c-linux-x64
+# Linux x64
+curl -LO https://github.com/NELAIA-AI/nelaia/releases/latest/download/nelaia-c-linux-x64
 chmod +x nelaia-c-linux-x64
 
-# Download (Windows)
-# Get nelaia-c-windows-x64.exe from Releases
+# macOS Apple Silicon
+curl -LO https://github.com/NELAIA-AI/nelaia/releases/latest/download/nelaia-c-macos-arm64
+chmod +x nelaia-c-macos-arm64
 
-# Compile a program
-./nelaia-c-linux-x64 hello.nela -o hello --emit-elf
+# macOS Intel
+curl -LO https://github.com/NELAIA-AI/nelaia/releases/latest/download/nelaia-c-macos-x64
+chmod +x nelaia-c-macos-x64
+
+# Windows: Download nelaia-c-windows-x64.exe from Releases
+```
+
+### 2. Verify Installation
+
+```bash
+./nelaia-c-linux-x64 --version
+# Output: nelaia-c 0.23.0
+```
+
+### 3. Create a Program
+
+```bash
+cat > hello.nela << 'EOF'
+.msg: "Hello from NELAIA!\n"
+.len: 20
+.out: PRT .msg .len
+EOF
+```
+
+### 4. Compile
+
+```bash
+./nelaia-c-linux-x64 hello.nela -o hello
+# Output: OK:ELF:hello:2048 bytes (direct emission, no clang)
+```
+
+### 5. Run
+
+```bash
 ./hello
+# Output: Hello from NELAIA!
 ```
 
 ## Example Program
@@ -44,7 +82,7 @@ chmod +x nelaia-c-linux-x64
 - **Graph-based paradigm** - How AIs think about computation
 - **Token-efficient syntax** - Minimal tokens, maximum information
 - **Tiny executables** - Hello World = 2KB, HTTP server = 5KB
-- **No dependencies** - Direct PE/ELF emission, no Clang required
+- **Zero dependencies** - Direct PE/ELF emission, no Clang/GCC required
 - **Capability system** - HTTP, SQL, JSON, Files, Network, GUI
 
 ## Available Operators
@@ -70,11 +108,21 @@ nelaia-c --version
 # Syntax check only
 nelaia-c program.nela --check
 
-# Compile to Windows PE
-nelaia-c program.nela -o program --emit-pe
+# Compile to native executable (auto-detects platform)
+nelaia-c program.nela -o program
 
-# Compile to Linux ELF
-nelaia-c program.nela -o program --emit-elf
+# Force specific format
+nelaia-c program.nela -o program --emit-pe           # Windows PE
+nelaia-c program.nela -o program --emit-elf          # Linux ELF
+nelaia-c program.nela -o program --emit-macho        # macOS x64 (Intel)
+nelaia-c program.nela -o program --emit-macho-arm64  # macOS ARM64 (Apple Silicon)
+
+# Cross-compile
+nelaia-c program.nela --target=linux      # From any OS to Linux
+nelaia-c program.nela --target=macos-arm64 # From any OS to macOS ARM64
+
+# Use LLVM+Clang flow (optional, requires clang)
+nelaia-c program.nela -o program --use-clang
 
 # JSON output for programmatic use
 nelaia-c program.nela --check --json
@@ -89,7 +137,8 @@ nelaia-core/
 │   ├── parser.rs          # NELAIA parser
 │   ├── ir.rs              # Intermediate representation
 │   ├── pe.rs              # Windows PE generator
-│   └── elf.rs             # Linux ELF generator
+│   ├── elf.rs             # Linux ELF generator
+│   └── macho.rs           # macOS Mach-O generator
 ├── examples/              # Example programs
 ├── docs/                  # Documentation
 └── .github/workflows/     # CI/CD
@@ -107,10 +156,91 @@ cargo test
 # The compiler binary will be at target/release/nelaia-c
 ```
 
+## Troubleshooting
+
+### "Permission denied" on Linux/macOS
+
+```bash
+chmod +x nelaia-c-linux-x64
+```
+
+### "command not found"
+
+Use the full path or add to PATH:
+
+```bash
+./nelaia-c-linux-x64 --version
+# or
+export PATH=$PATH:$(pwd)
+nelaia-c-linux-x64 --version
+```
+
+### "E:PARSE: Unrecognized syntax"
+
+Check your NELAIA syntax:
+- Comments use `--` (not `//` or `#`)
+- Nodes start with `.` (e.g., `.x: 42`)
+- Strings use double quotes
+
+```nelaia
+-- This is a comment
+.x: 42
+.msg: "Hello"
+```
+
+### "E:UNDEF: undefined reference"
+
+All referenced nodes must be defined:
+
+```nelaia
+-- Wrong: .y is not defined
+.result: ADD .x .y
+
+-- Correct: define all nodes
+.x: 10
+.y: 20
+.result: ADD .x .y
+```
+
+### "E:CYCLE: circular dependency"
+
+NELAIA graphs must be acyclic:
+
+```nelaia
+-- Wrong: circular reference
+.a: ADD .b 1
+.b: ADD .a 1
+
+-- Correct: no cycles
+.a: 10
+.b: ADD .a 1
+```
+
+### Binary doesn't run on target OS
+
+Use the correct binary for your platform:
+- Windows: `nelaia-c-windows-x64.exe`
+- Linux: `nelaia-c-linux-x64`
+- macOS Intel: `nelaia-c-macos-x64`
+- macOS Apple Silicon: `nelaia-c-macos-arm64`
+
+Or cross-compile with `--target`:
+
+```bash
+./nelaia-c-linux-x64 program.nela --target=windows -o program
+```
+
+### Need more help?
+
+```bash
+nelaia-c --help
+nelaia-c program.nela --check --json  # Machine-readable errors
+```
+
 ## License
 
-Open source
+MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
-*NELAIA - Designed for AI code generation*
+*NELAIA - Graph-based compilation for AI systems*

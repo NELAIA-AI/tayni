@@ -1,0 +1,58 @@
+name: Bug Report
+description: Report a bug in the NELAIA compiler
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Please fill out the information below.
+
+  - type: input
+    id: version
+    attributes:
+      label: NELAIA Version
+      description: Output of `nelaia-c --version`
+      placeholder: "nelaia-c 0.23.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      options:
+        - Windows x64
+        - Linux x64
+        - macOS x64 (Intel)
+        - macOS ARM64 (Apple Silicon)
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: What happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: code
+    attributes:
+      label: NELAIA Code
+      description: Minimal code that reproduces the issue
+      render: nelaia
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened? Include error messages.

@@ -72,8 +72,8 @@ jobs:
       - name: Test Compilation (if examples exist)
         run: |
           if (Test-Path "examples/hello.nela") {
-            ./target/debug/nelaia-c.exe examples/hello.nela -o hello_test.exe --emit-pe
-            Write-Host "Compilation successful"
+            ./target/debug/nelaia-c.exe examples/hello.nela -o hello_test
+            Write-Host "Compilation successful (default PE emission)"
           } else {
             Write-Host "No examples/hello.nela found, skipping"
           }
@@ -136,8 +136,8 @@ jobs:
       - name: Test Compilation (if examples exist)
         run: |
           if [ -f "examples/hello.nela" ]; then
-            ./target/debug/nelaia-c examples/hello.nela -o hello_test --emit-elf
-            echo "Compilation successful"
+            ./target/debug/nelaia-c examples/hello.nela -o hello_test
+            echo "Compilation successful (default ELF emission)"
           else
             echo "No examples/hello.nela found, skipping"
           fi
@@ -155,6 +155,83 @@ jobs:
         with:
           name: nelaia-c-linux-x64-release
           path: target/release/nelaia-c
+          retention-days: 30
+
+  # ============================================
+  # BUILD - macOS (Intel x64 + Apple Silicon ARM64)
+  # ============================================
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-apple-darwin,aarch64-apple-darwin
+
+      - name: Cache Cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - name: Build (Debug - native)
+        run: cargo build --verbose
+
+      - name: Build (Release - ARM64)
+        if: ${{ inputs.build_release }}
+        run: cargo build --release --target aarch64-apple-darwin --verbose
+
+      - name: Build (Release - x64)
+        if: ${{ inputs.build_release }}
+        run: cargo build --release --target x86_64-apple-darwin --verbose
+
+      - name: Run Tests
+        run: cargo test --verbose
+
+      - name: Verify Compiler
+        run: |
+          ./target/debug/nelaia-c --version
+          ./target/debug/nelaia-c --help
+
+      - name: Test Compilation (if examples exist)
+        run: |
+          if [ -f "examples/hello.nela" ]; then
+            ./target/debug/nelaia-c examples/hello.nela -o hello_test
+            echo "Compilation successful (default Mach-O emission)"
+          else
+            echo "No examples/hello.nela found, skipping"
+          fi
+
+      - name: Upload Debug Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nelaia-c-macos-debug
+          path: target/debug/nelaia-c
+          retention-days: 7
+
+      - name: Upload Release Artifact (ARM64)
+        if: ${{ inputs.build_release }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: nelaia-c-macos-arm64-release
+          path: target/aarch64-apple-darwin/release/nelaia-c
+          retention-days: 30
+
+      - name: Upload Release Artifact (x64)
+        if: ${{ inputs.build_release }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: nelaia-c-macos-x64-release
+          path: target/x86_64-apple-darwin/release/nelaia-c
           retention-days: 30
 
   # ============================================
@@ -204,7 +281,7 @@ jobs:
   release:
     if: ${{ inputs.build_release }}
     runs-on: ubuntu-latest
-    needs: [build-windows, build-linux]
+    needs: [build-windows, build-linux, build-macos]
     permissions:
       contents: write
     steps:
@@ -223,6 +300,18 @@ jobs:
           name: nelaia-c-linux-x64-release
           path: ./release/linux
 
+      - name: Download macOS ARM64 Release
+        uses: actions/download-artifact@v4
+        with:
+          name: nelaia-c-macos-arm64-release
+          path: ./release/macos-arm64
+
+      - name: Download macOS x64 Release
+        uses: actions/download-artifact@v4
+        with:
+          name: nelaia-c-macos-x64-release
+          path: ./release/macos-x64
+
       - name: Prepare Release Assets
         run: |
           cd release
@@ -233,6 +322,14 @@ jobs:
           mv linux/nelaia-c nelaia-c-linux-x64
           chmod +x nelaia-c-linux-x64
           sha256sum nelaia-c-linux-x64 > nelaia-c-linux-x64.sha256
+          # macOS ARM64 (Apple Silicon)
+          mv macos-arm64/nelaia-c nelaia-c-macos-arm64
+          chmod +x nelaia-c-macos-arm64
+          sha256sum nelaia-c-macos-arm64 > nelaia-c-macos-arm64.sha256
+          # macOS x64 (Intel)
+          mv macos-x64/nelaia-c nelaia-c-macos-x64
+          chmod +x nelaia-c-macos-x64
+          sha256sum nelaia-c-macos-x64 > nelaia-c-macos-x64.sha256
 
       - name: Get Version
         id: version
@@ -245,35 +342,44 @@ jobs:
         with:
           tag_name: v${{ steps.version.outputs.version }}
           name: NELAIA v${{ steps.version.outputs.version }}
-          draft: true  # Creates as draft, you publish manually
+          draft: true
           files: |
             release/nelaia-c-windows-x64.exe
             release/nelaia-c-windows-x64.exe.sha256
             release/nelaia-c-linux-x64
             release/nelaia-c-linux-x64.sha256
+            release/nelaia-c-macos-arm64
+            release/nelaia-c-macos-arm64.sha256
+            release/nelaia-c-macos-x64
+            release/nelaia-c-macos-x64.sha256
           body: |
             ## NELAIA Compiler v${{ steps.version.outputs.version }}
             
             ### Downloads
-            - **Windows x64**: `nelaia-c-windows-x64.exe`
-            - **Linux x64**: `nelaia-c-linux-x64`
+            | Platform | Binary | Checksum |
+            |----------|--------|----------|
+            | Windows x64 | `nelaia-c-windows-x64.exe` | `.sha256` |
+            | Linux x64 | `nelaia-c-linux-x64` | `.sha256` |
+            | macOS ARM64 (Apple Silicon) | `nelaia-c-macos-arm64` | `.sha256` |
+            | macOS x64 (Intel) | `nelaia-c-macos-x64` | `.sha256` |
             
             ### Verification
             ```bash
-            # Verify SHA256
+            # Verify SHA256 (Linux/macOS)
             sha256sum -c nelaia-c-linux-x64.sha256
             ```
             
             ### Quick Start
             ```bash
-            # Download and run (Linux)
-            chmod +x nelaia-c-linux-x64
-            ./nelaia-c-linux-x64 --version
+            # Download and run (example for macOS ARM64)
+            chmod +x nelaia-c-macos-arm64
+            ./nelaia-c-macos-arm64 --version
             
-            # Compile a program
-            ./nelaia-c-linux-x64 hello.nela -o hello --emit-elf
+            # Compile a program (no flags needed!)
+            ./nelaia-c-macos-arm64 hello.nela -o hello
             ./hello
             ```
             
-            ### No Dependencies Required
-            The compiler produces native executables directly. No Clang or other tools needed.
+            ### Zero Dependencies
+            The compiler produces native executables directly.
+            No Clang, GCC, or other tools required.

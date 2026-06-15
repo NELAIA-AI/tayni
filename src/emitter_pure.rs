@@ -8,6 +8,8 @@ use crate::ir::*;
 pub enum TargetPlatform {
     Linux,
     Windows,
+    MacOS,
+    MacOSArm64,
 }
 
 pub struct PureEmitter {
@@ -58,6 +60,8 @@ impl PureEmitter {
         match self.target {
             TargetPlatform::Linux => ir.push_str("target triple = \"x86_64-pc-linux-gnu\"\n\n"),
             TargetPlatform::Windows => ir.push_str("target triple = \"x86_64-pc-windows-msvc\"\n\n"),
+            TargetPlatform::MacOS => ir.push_str("target triple = \"x86_64-apple-darwin\"\n\n"),
+            TargetPlatform::MacOSArm64 => ir.push_str("target triple = \"arm64-apple-darwin\"\n\n"),
         }
         
         // Collect strings from all nodes including function bodies
@@ -93,7 +97,7 @@ impl PureEmitter {
         
         // Emit syscall layer (only what's needed)
         match self.target {
-            TargetPlatform::Linux => ir.push_str(&self.emit_linux_syscalls()),
+            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => ir.push_str(&self.emit_linux_syscalls()),
             TargetPlatform::Windows => ir.push_str(&self.emit_windows_syscalls_optimized()),
         }
         
@@ -484,7 +488,7 @@ impl PureEmitter {
     fn emit_alloc(&self, id: &str, args: &[Arg]) -> Result<String, String> {
         let size = self.emit_arg(&args[0])?;
         match self.target {
-            TargetPlatform::Linux => {
+            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
                 // mmap(NULL, size, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0)
                 Ok(format!("  %{} = call i64 @sys_mmap(i64 0, i64 {}, i64 3, i64 34, i64 -1, i64 0)\n", id, size))
             }
@@ -497,7 +501,7 @@ impl PureEmitter {
     fn emit_free(&self, id: &str, args: &[Arg]) -> Result<String, String> {
         let ptr = self.emit_arg(&args[0])?;
         match self.target {
-            TargetPlatform::Linux => {
+            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
                 Ok(format!("  %{} = call i64 @sys_munmap(i64 {}, i64 4096)\n", id, ptr))
             }
             TargetPlatform::Windows => {
@@ -572,7 +576,7 @@ impl PureEmitter {
     fn emit_syscall_socket(&self, id: &str, sock_type: i32) -> Result<String, String> {
         // socket(AF_INET=2, type, 0) + setsockopt(SO_REUSEADDR)
         match self.target {
-            TargetPlatform::Linux => {
+            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
                 // Linux: SOL_SOCKET=1, SO_REUSEADDR=2
                 Ok(format!(
                     "  %{} = call i64 @sys_socket(i64 2, i64 {}, i64 0)\n  %{}_one = alloca i32\n  store i32 1, i32* %{}_one\n  %{}_oneptr = bitcast i32* %{}_one to i8*\n  call i64 @sys_setsockopt(i64 %{}, i64 1, i64 2, i8* %{}_oneptr, i64 4)\n",
@@ -595,7 +599,7 @@ impl PureEmitter {
         let fd = self.emit_arg(&args[0])?;
         let addr = self.emit_arg(&args[1])?;
         match self.target {
-            TargetPlatform::Linux => {
+            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
                 Ok(format!("  %{}_addr = inttoptr i64 {} to i8*\n  %{} = call i64 @sys_bind(i64 {}, i8* %{}_addr, i64 16)\n", id, addr, id, fd, id))
             }
             TargetPlatform::Windows => {
@@ -608,7 +612,7 @@ impl PureEmitter {
         let fd = self.emit_arg(&args[0])?;
         let backlog = if args.len() > 1 { self.emit_arg(&args[1])? } else { "10".to_string() };
         match self.target {
-            TargetPlatform::Linux => {
+            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
                 Ok(format!("  %{} = call i64 @sys_listen(i64 {}, i64 {})\n", id, fd, backlog))
             }
             TargetPlatform::Windows => {
@@ -620,7 +624,7 @@ impl PureEmitter {
     fn emit_syscall_accept(&self, id: &str, args: &[Arg]) -> Result<String, String> {
         let fd = self.emit_arg(&args[0])?;
         match self.target {
-            TargetPlatform::Linux => {
+            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
                 Ok(format!("  %{} = call i64 @sys_accept(i64 {}, i8* null, i64* null)\n", id, fd))
             }
             TargetPlatform::Windows => {
@@ -637,7 +641,7 @@ impl PureEmitter {
                 let ptr = self.emit_arg(&args[1])?;
                 let len = s.len();
                 match self.target {
-                    TargetPlatform::Linux => {
+                    TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
                         Ok(format!("  %{} = call i64 @sys_sendto(i64 {}, i8* {}, i64 {}, i64 0, i8* null, i64 0)\n", id, fd, ptr, len))
                     }
                     TargetPlatform::Windows => {
@@ -654,7 +658,7 @@ impl PureEmitter {
                 // Use emit_arg to resolve the reference (handles string globals)
                 let ptr = self.emit_arg(&args[1])?;
                 match self.target {
-                    TargetPlatform::Linux => {
+                    TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
                         Ok(format!("  %{} = call i64 @sys_sendto(i64 {}, i8* {}, i64 {}, i64 0, i8* null, i64 0)\n", id, fd, ptr, len))
                     }
                     TargetPlatform::Windows => {
@@ -673,7 +677,7 @@ impl PureEmitter {
         let buf = self.emit_arg(&args[1])?;
         let len = self.emit_arg(&args[2])?;
         match self.target {
-            TargetPlatform::Linux => {
+            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
                 Ok(format!("  %{}_ptr = inttoptr i64 {} to i8*\n  %{} = call i64 @sys_recvfrom(i64 {}, i8* %{}_ptr, i64 {}, i64 0, i8* null, i64* null)\n", id, buf, id, fd, id, len))
             }
             TargetPlatform::Windows => {
@@ -685,7 +689,7 @@ impl PureEmitter {
     fn emit_syscall_close(&self, id: &str, args: &[Arg]) -> Result<String, String> {
         let fd = self.emit_arg(&args[0])?;
         match self.target {
-            TargetPlatform::Linux => {
+            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
                 Ok(format!("  %{} = call i64 @sys_close(i64 {})\n", id, fd))
             }
             TargetPlatform::Windows => {
@@ -705,7 +709,7 @@ impl PureEmitter {
         let timeout_ms = self.emit_arg(&args[1])?;
         
         match self.target {
-            TargetPlatform::Linux => {
+            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
                 // Linux: use poll syscall (simpler than select)
                 // struct pollfd { int fd; short events; short revents; } = 8 bytes
                 // POLLIN = 1
@@ -768,7 +772,7 @@ impl PureEmitter {
         let mode = self.emit_arg(&args[1])?;
         
         match self.target {
-            TargetPlatform::Linux => {
+            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
                 // Linux: fcntl(fd, F_SETFL, O_NONBLOCK) or fcntl(fd, F_SETFL, 0)
                 // F_GETFL = 3, F_SETFL = 4, O_NONBLOCK = 2048
                 let mut code = String::new();
@@ -804,7 +808,7 @@ impl PureEmitter {
         let mode = self.emit_arg(&args[1])?;
         
         match self.target {
-            TargetPlatform::Linux => {
+            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
                 // setsockopt(fd, IPPROTO_TCP=6, TCP_NODELAY=1, &val, 4)
                 let mut code = String::new();
                 code.push_str(&format!("  %{}_val = alloca i32\n", id));
@@ -838,7 +842,7 @@ impl PureEmitter {
         let mode = self.emit_arg(&args[1])?;
         
         match self.target {
-            TargetPlatform::Linux => {
+            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
                 // setsockopt(fd, IPPROTO_TCP=6, TCP_QUICKACK=12, &val, 4)
                 let mut code = String::new();
                 code.push_str(&format!("  %{}_val = alloca i32\n", id));
@@ -865,7 +869,7 @@ impl PureEmitter {
         let size = self.emit_arg(&args[1])?;
         
         match self.target {
-            TargetPlatform::Linux => {
+            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
                 // SO_SNDBUF=7, SO_RCVBUF=8, SOL_SOCKET=1
                 let mut code = String::new();
                 code.push_str(&format!("  %{}_val = alloca i32\n", id));
@@ -901,7 +905,7 @@ impl PureEmitter {
         let mode = self.emit_arg(&args[1])?;
         
         match self.target {
-            TargetPlatform::Linux => {
+            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
                 // SO_KEEPALIVE=9, SOL_SOCKET=1
                 let mut code = String::new();
                 code.push_str(&format!("  %{}_val = alloca i32\n", id));
@@ -929,7 +933,7 @@ impl PureEmitter {
     fn emit_epoll_create(&self, id: &str, _args: &[Arg]) -> Result<String, String> {
         // EPL - Create epoll instance (Linux) or IOCP (Windows)
         match self.target {
-            TargetPlatform::Linux => {
+            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
                 // epoll_create1(0) - syscall 291
                 Ok(format!("  %{} = call i64 @sys_epoll_create1(i32 0)\n", id))
             }
@@ -951,7 +955,7 @@ impl PureEmitter {
         let events = self.emit_arg(&args[3])?;
         
         match self.target {
-            TargetPlatform::Linux => {
+            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
                 // struct epoll_event { uint32_t events; epoll_data_t data; } = 12 bytes
                 let mut code = String::new();
                 code.push_str(&format!("  %{}_ev = alloca [12 x i8]\n", id));
@@ -988,7 +992,7 @@ impl PureEmitter {
         let timeout = self.emit_arg(&args[3])?;
         
         match self.target {
-            TargetPlatform::Linux => {
+            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
                 let mut code = String::new();
                 code.push_str(&format!("  %{}_epfd32 = trunc i64 {} to i32\n", id, epfd));
                 code.push_str(&format!("  %{}_bufptr = inttoptr i64 {} to i8*\n", id, buf));
@@ -1027,7 +1031,7 @@ impl PureEmitter {
         let arg = self.emit_arg(&args[1])?;
         
         match self.target {
-            TargetPlatform::Linux => {
+            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
                 // For Linux, we need to use clone() which is complex
                 // For now, emit a placeholder that calls the function directly (single-threaded)
                 // TODO: Implement proper clone() with stack setup
@@ -1055,7 +1059,7 @@ impl PureEmitter {
         let handle = self.emit_arg(&args[0])?;
         
         match self.target {
-            TargetPlatform::Linux => {
+            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
                 // waitpid or futex wait
                 Ok(format!("  %{} = call i64 @sys_wait4(i64 {}, i32* null, i64 0, i8* null)\n", id, handle))
             }
@@ -1073,7 +1077,7 @@ impl PureEmitter {
     fn emit_mutex_create(&self, id: &str, _args: &[Arg]) -> Result<String, String> {
         // MTX - Create a mutex
         match self.target {
-            TargetPlatform::Linux => {
+            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
                 // Allocate futex (4 bytes, initialized to 0 = unlocked)
                 let mut code = String::new();
                 code.push_str(&format!("  %{}_ptr = call i64 @sys_mmap(i64 0, i64 4, i64 3, i64 34, i64 -1, i64 0)\n", id));
@@ -1100,7 +1104,7 @@ impl PureEmitter {
         let mutex = self.emit_arg(&args[0])?;
         
         match self.target {
-            TargetPlatform::Linux => {
+            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
                 // Spinlock with futex fallback (simplified: just atomic exchange)
                 let mut code = String::new();
                 code.push_str(&format!("  %{}_ptr = inttoptr i64 {} to i32*\n", id, mutex));
@@ -1127,7 +1131,7 @@ impl PureEmitter {
         let mutex = self.emit_arg(&args[0])?;
         
         match self.target {
-            TargetPlatform::Linux => {
+            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
                 // Atomic store 0
                 let mut code = String::new();
                 code.push_str(&format!("  %{}_ptr = inttoptr i64 {} to i32*\n", id, mutex));
@@ -1156,7 +1160,7 @@ impl PureEmitter {
         let capacity = self.emit_arg(&args[0])?;
         
         match self.target {
-            TargetPlatform::Linux => {
+            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
                 let mut code = String::new();
                 // Calculate size: 32 + capacity*8
                 code.push_str(&format!("  %{}_datasize = mul i64 {}, 8\n", id, capacity));
@@ -1425,7 +1429,7 @@ impl PureEmitter {
         };
         
         match self.target {
-            TargetPlatform::Linux | TargetPlatform::Windows => {
+            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 | TargetPlatform::Windows => {
                 // Allocate output buffer
                 code.push_str(&format!("  %{}_out = call i8* @VirtualAlloc(i8* null, i64 {}, i32 12288, i32 4)\n", id, len));
                 code.push_str(&format!("  %{}_outptr = ptrtoint i8* %{}_out to i64\n", id, id));
@@ -1690,7 +1694,7 @@ impl PureEmitter {
                 code.push_str(&format!("  %{} = ptrtoint i8* %{}_ptr to i64\n", id, id));
                 Ok(code)
             }
-            TargetPlatform::Linux => {
+            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
                 let mut code = String::new();
                 code.push_str(&format!("  %{}_dpy = call i8* @XOpenDisplay(i8* null)\n", id));
                 code.push_str(&format!("  store i8* %{}_dpy, i8** @.x11_display\n", id));
@@ -1727,7 +1731,7 @@ impl PureEmitter {
                 code.push_str(&format!("  %{} = sext i32 %{}_r to i64\n", id, id));
                 Ok(code)
             }
-            TargetPlatform::Linux => {
+            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
                 let mut code = String::new();
                 code.push_str(&format!("  %{}_dpy = load i8*, i8** @.x11_display\n", id));
                 code.push_str(&format!("  %{}_r = call i32 @XMapWindow(i8* %{}_dpy, i64 {})\n", id, id, handle));
@@ -1754,7 +1758,7 @@ impl PureEmitter {
                 code.push_str(&format!("  %{} = sext i32 %{}_r to i64\n", id, id));
                 Ok(code)
             }
-            TargetPlatform::Linux => {
+            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
                 let mut code = String::new();
                 code.push_str(&format!("  %{}_dpy = load i8*, i8** @.x11_display\n", id));
                 code.push_str(&format!("  %{}_r = call i32 @XUnmapWindow(i8* %{}_dpy, i64 {})\n", id, id, handle));
@@ -1818,7 +1822,7 @@ impl PureEmitter {
                     id, id, id, id, id));
                 Ok(code)
             }
-            TargetPlatform::Linux => {
+            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
                 let mut code = String::new();
                 // XEvent is 192 bytes
                 code.push_str(&format!("  %{}_ev = alloca [192 x i8]\n", id));
@@ -1917,7 +1921,7 @@ impl PureEmitter {
                 code.push_str(&format!("  %{} = add i64 0, 0\n", id));
                 Ok(code)
             }
-            TargetPlatform::Linux => {
+            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
                 // Simplified for Linux - just return
                 Ok(format!("  %{} = add i64 0, 0\n", id))
             }
@@ -1953,7 +1957,7 @@ impl PureEmitter {
                 code.push_str(&format!("  %{} = ptrtoint i8* %{}_ptr to i64\n", id, id));
                 Ok(code)
             }
-            TargetPlatform::Linux => {
+            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
                 // X11 doesn't have native controls - we'll draw text directly
                 let mut code = String::new();
                 code.push_str(&format!("  ; X11 label at ({}, {}) - text drawn on expose\n", x, y));
@@ -1991,7 +1995,7 @@ impl PureEmitter {
                 code.push_str(&format!("  %{} = ptrtoint i8* %{}_ptr to i64\n", id, id));
                 Ok(code)
             }
-            TargetPlatform::Linux => {
+            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
                 let mut code = String::new();
                 code.push_str(&format!("  ; X11 textbox placeholder\n"));
                 code.push_str(&format!("  %{} = add i64 0, 0\n", id));
@@ -2032,7 +2036,7 @@ impl PureEmitter {
                 code.push_str(&format!("  %{} = ptrtoint i8* %{}_ptr to i64\n", id, id));
                 Ok(code)
             }
-            TargetPlatform::Linux => {
+            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
                 let mut code = String::new();
                 code.push_str(&format!("  ; X11 button placeholder\n"));
                 code.push_str(&format!("  %{} = add i64 0, 0\n", id));
@@ -2057,7 +2061,7 @@ impl PureEmitter {
                 code.push_str(&format!("  %{} = sext i32 %{}_r to i64\n", id, id));
                 Ok(code)
             }
-            TargetPlatform::Linux => {
+            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
                 // X11 doesn't have native dialogs - print to console
                 let mut code = String::new();
                 code.push_str(&format!("  ; X11 alert dialog - printing to console\n"));
@@ -2086,7 +2090,7 @@ impl PureEmitter {
                 code.push_str(&format!("  %{} = sext i32 %{}_r to i64\n", id, id));
                 Ok(code)
             }
-            TargetPlatform::Linux => {
+            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
                 let mut code = String::new();
                 code.push_str(&format!("  %{} = add i64 0, 0\n", id));
                 Ok(code)
@@ -2110,7 +2114,7 @@ impl PureEmitter {
                 code.push_str(&format!("  %{} = sext i32 %{}_r to i64\n", id, id));
                 Ok(code)
             }
-            TargetPlatform::Linux => {
+            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
                 let mut code = String::new();
                 code.push_str(&format!("  %{} = add i64 0, 0\n", id));
                 Ok(code)
@@ -2577,7 +2581,7 @@ end:
     
     fn emit_entry(&self) -> String {
         match self.target {
-            TargetPlatform::Linux => r#"
+            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => r#"
 define void @_start() {
   %r = call i32 @nelaia_main()
   call void @sys_exit(i32 %r)
@@ -2915,7 +2919,7 @@ end:
         let b = self.emit_arg(&args[1])?;
         let len = self.emit_arg(&args[2])?;
         match self.target {
-            TargetPlatform::Linux => {
+            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
                 Ok(format!(
                     "  %{}_a = inttoptr i64 {} to i8*\n  %{}_b = inttoptr i64 {} to i8*\n  %{}_r = call i32 @memcmp(i8* %{}_a, i8* %{}_b, i64 {})\n  %{} = sext i32 %{}_r to i64\n",
                     id, a, id, b, id, id, id, len, id, id
@@ -2968,7 +2972,7 @@ end:
         let path = self.emit_arg(&args[0])?;
         let mode = self.emit_arg(&args[1])?;
         match self.target {
-            TargetPlatform::Linux => {
+            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
                 // open(path, flags, mode) - flags: 0=O_RDONLY, 1=O_WRONLY|O_CREAT|O_TRUNC, 2=O_WRONLY|O_CREAT|O_APPEND
                 Ok(format!(
                     "  %{}_path = inttoptr i64 {} to i8*\n  %{}_isread = icmp eq i64 {}, 0\n  %{}_iswrite = icmp eq i64 {}, 1\n  %{}_flags_w = select i1 %{}_iswrite, i64 577, i64 1089\n  %{}_flags = select i1 %{}_isread, i64 0, i64 %{}_flags_w\n  %{} = call i64 @sys_open(i8* %{}_path, i64 %{}_flags, i64 420)\n",
@@ -3000,7 +3004,7 @@ end:
         let buf = self.emit_arg(&args[1])?;
         let len = self.emit_arg(&args[2])?;
         match self.target {
-            TargetPlatform::Linux => {
+            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
                 Ok(format!(
                     "  %{}_buf = inttoptr i64 {} to i8*\n  %{} = call i64 @sys_read(i64 {}, i8* %{}_buf, i64 {})\n",
                     id, buf, id, handle, id, len
@@ -3024,7 +3028,7 @@ end:
         let buf = self.emit_arg(&args[1])?;
         let len = self.emit_arg(&args[2])?;
         match self.target {
-            TargetPlatform::Linux => {
+            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
                 Ok(format!(
                     "  %{}_buf = inttoptr i64 {} to i8*\n  %{} = call i64 @sys_write(i32 {}, i8* %{}_buf, i64 {})\n",
                     id, buf, id, handle, id, len
@@ -3046,7 +3050,7 @@ end:
         }
         let handle = self.emit_arg(&args[0])?;
         match self.target {
-            TargetPlatform::Linux => {
+            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
                 Ok(format!(
                     "  %{} = call i64 @sys_close(i64 {})\n",
                     id, handle
@@ -3071,7 +3075,7 @@ end:
         let cap = if args.is_empty() { "16".to_string() } else { self.emit_arg(&args[0])? };
         // Allocate: 16 bytes header + capacity * 8 bytes data
         match self.target {
-            TargetPlatform::Linux => {
+            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
                 Ok(format!(
                     "  %{}_size = mul i64 {}, 8\n  %{}_total = add i64 %{}_size, 16\n  %{} = call i64 @sys_mmap(i64 0, i64 %{}_total, i64 3, i64 34, i64 -1, i64 0)\n  %{}_cap_ptr = inttoptr i64 %{} to i64*\n  store i64 {}, i64* %{}_cap_ptr\n  %{}_len_ptr = getelementptr i64, i64* %{}_cap_ptr, i32 1\n  store i64 0, i64* %{}_len_ptr\n",
                     id, cap, id, id, id, id, id, id, cap, id, id, id, id
@@ -3162,7 +3166,7 @@ end:
         // Each bucket: 32 bytes (hash:8 + key_ptr:8 + key_len:8 + value:8)
         // Header: 16 bytes (capacity:8 + count:8)
         match self.target {
-            TargetPlatform::Linux => {
+            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
                 Ok(format!(
                     "  %{}_bsize = mul i64 {}, 32\n  %{}_total = add i64 %{}_bsize, 16\n  %{} = call i64 @sys_mmap(i64 0, i64 %{}_total, i64 3, i64 34, i64 -1, i64 0)\n  %{}_cap_ptr = inttoptr i64 %{} to i64*\n  store i64 {}, i64* %{}_cap_ptr\n  %{}_cnt_ptr = getelementptr i64, i64* %{}_cap_ptr, i32 1\n  store i64 0, i64* %{}_cnt_ptr\n",
                     id, cap, id, id, id, id, id, id, cap, id, id, id, id
@@ -3533,7 +3537,7 @@ end:
   call i32 @listen(i64 %{id}_sock, i32 128)
   %{id} = add i64 %{id}_sock, 0
 "#, id = id, port = port)),
-            TargetPlatform::Linux => Ok(format!(r#"
+            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => Ok(format!(r#"
   ; HTTP.LISTEN {port} - Linux
   %{id}_sock = call i32 @socket(i32 2, i32 1, i32 0)
   %{id}_addr = alloca [16 x i8], align 8
@@ -3559,7 +3563,7 @@ end:
         match self.target {
             TargetPlatform::Windows => Ok(format!(
                 "  %{} = call i64 @accept(i64 {}, i8* null, i32* null)\n", id, server)),
-            TargetPlatform::Linux => Ok(format!(
+            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => Ok(format!(
                 "  %{}_i32 = call i32 @accept(i32 {}, i8* null, i32* null)\n  %{} = sext i32 %{}_i32 to i64\n", 
                 id, server, id, id)),
         }
@@ -3596,7 +3600,7 @@ end:
   call i32 @closesocket(i64 {client})
   %{id} = add i64 0, 0
 "#, id = id, client = client, body = body)),
-            TargetPlatform::Linux => Ok(format!(r#"
+            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => Ok(format!(r#"
   ; HTTP.RESPOND
   %{id}_body_ptr = inttoptr i64 {body} to i8*
   %{id}_len = call i64 @strlen(i8* %{id}_body_ptr)

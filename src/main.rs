@@ -1,7 +1,7 @@
-//! NELAIA Compiler v0.22
-//! Pure Syscalls Only - Self-Hosting Ready
-//! Supports: Windows PE, Linux ELF, Capability System (SCN)
-//! Phase 8-11: Contracts, Negotiation, Testing, Cache, SEN Ecosystem (IA-first)
+//! NELAIA Compiler v0.23
+//! Direct Native Emission (PE/ELF/Mach-O) - No External Dependencies
+//! Supports: Windows PE, Linux ELF, macOS Mach-O, Capability System (SCN)
+//! Phase 12: Product Ready - Direct emission as DEFAULT
 
 mod ir;
 mod parser;
@@ -10,6 +10,7 @@ mod binary;
 mod native_emitter;
 mod pe;
 mod elf;
+mod macho;
 mod capabilities;
 
 use parser::Parser;
@@ -18,7 +19,7 @@ use std::env;
 use std::fs;
 use std::process::Command;
 
-const VERSION: &str = "0.22.0";
+const VERSION: &str = "0.23.0";
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -38,30 +39,50 @@ fn main() {
         println!("USAGE:");
         println!("  nelaia-c <file.nela|file.nbin> [options]");
         println!();
-        println!("OPTIONS:");
-        println!("  -o <file>       Output file name");
-        println!("  --emit-llvm     Output LLVM IR only (requires clang)");
-        println!("  --emit-bin      Output binary format (.nbin)");
-        println!("  --emit-pe       Output Windows PE executable (no clang)");
-        println!("  --emit-elf      Output Linux ELF executable (no clang)");
-        println!("  --target=<os>   Target platform: linux, windows");
-        println!("  --check         Syntax check only (no output)");
-        println!("  --json          Output errors in JSON format");
-        println!("  --quiet, -q     Suppress warnings");
-        println!("  --no-warn       Suppress warnings");
-        println!("  --version, -V   Show version");
-        println!("  --help, -h      Show this help");
+        println!("OUTPUT OPTIONS:");
+        println!("  -o <file>           Output file name");
+        println!("  --emit-pe           Force Windows PE output (default on Windows)");
+        println!("  --emit-elf          Force Linux ELF output (default on Linux)");
+        println!("  --emit-macho        Force macOS Mach-O x64 output");
+        println!("  --emit-macho-arm64  Force macOS Mach-O ARM64 output (Apple Silicon)");
+        println!("  --emit-bin          Output binary format (.nbin)");
+        println!("  --emit-llvm         Output LLVM IR only (.ll file)");
+        println!("  --use-clang         Use LLVM+Clang flow (requires clang installed)");
+        println!();
+        println!("TARGET PLATFORMS:");
+        println!("  --target=windows    Windows x64");
+        println!("  --target=linux      Linux x64");
+        println!("  --target=macos      macOS x64 (Intel)");
+        println!("  --target=macos-arm64  macOS ARM64 (Apple Silicon)");
+        println!();
+        println!("VALIDATION OPTIONS:");
+        println!("  --check             Syntax check only (no output)");
+        println!("  --json              Output errors in JSON format");
+        println!("  --quiet, -q         Suppress informational messages");
+        println!("  --no-warn           Suppress warnings");
+        println!();
+        println!("INFO:");
+        println!("  --version, -V       Show version");
+        println!("  --help, -h          Show this help");
         println!();
         println!("SPECIAL COMMANDS:");
-        println!("  --test-pe       Generate test PE executable");
-        println!("  --tcp-server    Generate TCP server PE");
-        println!("  --gui           Generate GUI PE");
-        println!("  --tiny          Generate minimal PE (~1KB)");
+        println!("  --test-pe           Generate test PE executable");
+        println!("  --tcp-server        Generate TCP server PE");
+        println!("  --gui               Generate GUI PE");
+        println!("  --tiny              Generate minimal PE (~1KB)");
         println!();
         println!("EXAMPLES:");
-        println!("  nelaia-c hello.nela -o hello --emit-pe");
-        println!("  nelaia-c program.nela -o program --emit-elf");
-        println!("  nelaia-c code.nela --check");
+        println!("  nelaia-c hello.nela                    # Compile to native (auto-detect)");
+        println!("  nelaia-c hello.nela -o hello           # Specify output name");
+        println!("  nelaia-c hello.nela --emit-macho-arm64 # macOS Apple Silicon");
+        println!("  nelaia-c hello.nela --target=linux     # Cross-compile to Linux");
+        println!("  nelaia-c code.nela --check             # Validate syntax only");
+        println!();
+        println!("SUPPORTED PLATFORMS:");
+        println!("  Windows x64, Linux x64, macOS x64 (Intel), macOS ARM64 (Apple Silicon)");
+        println!();
+        println!("NOTE: Default compilation produces native executables directly,");
+        println!("      with NO external dependencies (no clang/gcc required).");
         return;
     }
     
@@ -137,23 +158,39 @@ fn main() {
         return;
     }
     
-    let emit_only = args.contains(&"--emit-llvm".to_string());
+    let emit_llvm = args.contains(&"--emit-llvm".to_string());
     let emit_bin = args.contains(&"--emit-bin".to_string());
-    let emit_pe = args.contains(&"--emit-pe".to_string());
-    let emit_elf = args.contains(&"--emit-elf".to_string());
+    let use_clang = args.contains(&"--use-clang".to_string());
     let no_warn = args.contains(&"--no-warn".to_string());
     let check_only = args.contains(&"--check".to_string());
     let json_output = args.contains(&"--json".to_string());
+    
+    // Explicit format flags (override auto-detection)
+    let force_pe = args.contains(&"--emit-pe".to_string());
+    let force_elf = args.contains(&"--emit-elf".to_string());
+    let force_macho = args.contains(&"--emit-macho".to_string());
+    let force_macho_arm64 = args.contains(&"--emit-macho-arm64".to_string());
     
     // Parse target platform
     let target = if args.iter().any(|a| a == "--target=linux") {
         TargetPlatform::Linux
     } else if args.iter().any(|a| a == "--target=windows") {
         TargetPlatform::Windows
+    } else if args.iter().any(|a| a == "--target=macos" || a == "--target=darwin") {
+        TargetPlatform::MacOS
+    } else if args.iter().any(|a| a == "--target=macos-arm64" || a == "--target=darwin-arm64") {
+        TargetPlatform::MacOSArm64
     } else {
         #[cfg(target_os = "windows")]
         { TargetPlatform::Windows }
-        #[cfg(not(target_os = "windows"))]
+        #[cfg(target_os = "macos")]
+        { 
+            #[cfg(target_arch = "aarch64")]
+            { TargetPlatform::MacOSArm64 }
+            #[cfg(not(target_arch = "aarch64"))]
+            { TargetPlatform::MacOS }
+        }
+        #[cfg(all(not(target_os = "windows"), not(target_os = "macos")))]
         { TargetPlatform::Linux }
     };
     
@@ -261,50 +298,7 @@ fn main() {
         return;
     }
     
-    // Emit native executable if requested
-    let emit_native = args.contains(&"--emit-native".to_string());
-    if emit_native {
-        let exe_data = native_emitter::emit_native_exe(&graph);
-        let exe_file = format!("{}.exe", output_name);
-        if let Err(e) = fs::write(&exe_file, &exe_data) {
-            eprintln!("E:WRITE:{}", e);
-            std::process::exit(1);
-        }
-        if !quiet {
-            eprintln!("OK:NATIVE:{}:{} bytes", exe_file, exe_data.len());
-        }
-        return;
-    }
-    
-    // Emit PE executable directly (no clang)
-    if emit_pe {
-        let exe_data = pe::generate_pe_from_graph(&graph);
-        let exe_file = format!("{}.exe", output_name);
-        if let Err(e) = fs::write(&exe_file, &exe_data) {
-            eprintln!("E:WRITE:{}", e);
-            std::process::exit(1);
-        }
-        if !quiet {
-            eprintln!("OK:PE:{}:{} bytes", exe_file, exe_data.len());
-        }
-        return;
-    }
-    
-    // Emit ELF executable directly (no clang)
-    if emit_elf {
-        let exe_data = elf::generate_elf_from_graph(&graph);
-        let exe_file = output_name.clone();
-        if let Err(e) = fs::write(&exe_file, &exe_data) {
-            eprintln!("E:WRITE:{}", e);
-            std::process::exit(1);
-        }
-        if !quiet {
-            eprintln!("OK:ELF:{}:{} bytes", exe_file, exe_data.len());
-        }
-        return;
-    }
-    
-    // Phase 1.5: Analyze graph
+    // Analyze graph for errors
     let analysis = graph.analyze();
     
     // Report cycles (errors)
@@ -324,73 +318,172 @@ fn main() {
         eprintln!("W:DEAD:{}", analysis.dead_nodes.join(","));
     }
     
-    // Phase 2: Emit LLVM IR
-    let llvm_ir = match PureEmitter::emit(&graph, target) {
-        Ok(ir) => ir,
-        Err(e) => {
-            eprintln!("E:EMIT:{}", e);
+    // =========================================================================
+    // EMISSION STRATEGY (v0.22+):
+    // DEFAULT: Direct native emission (PE/ELF) - NO external dependencies
+    // OPTIONAL: --emit-llvm for LLVM IR output, --use-clang for legacy flow
+    // =========================================================================
+    
+    // Option 1: LLVM IR only (requires clang to compile separately)
+    if emit_llvm && !use_clang {
+        let llvm_ir = match PureEmitter::emit(&graph, target) {
+            Ok(ir) => ir,
+            Err(e) => {
+                eprintln!("E:EMIT:{}", e);
+                std::process::exit(1);
+            }
+        };
+        let ll_file = format!("{}.ll", output_name);
+        if let Err(e) = fs::write(&ll_file, &llvm_ir) {
+            eprintln!("E:WRITE:{}", e);
             std::process::exit(1);
         }
-    };
-    
-    // Write LLVM IR
-    let ll_file = format!("{}.ll", output_name);
-    if let Err(e) = fs::write(&ll_file, &llvm_ir) {
-        eprintln!("E:WRITE:{}", e);
-        std::process::exit(1);
-    }
-    
-    if emit_only {
+        if !quiet {
+            eprintln!("OK:LLVM:{}:{} bytes", ll_file, llvm_ir.len());
+            eprintln!("Note: Use 'clang {} -o {}' to compile", ll_file, output_name);
+        }
         return;
     }
     
-    // Phase 3: Compile with clang
-    let compile_result = match target {
-        TargetPlatform::Linux => {
-            Command::new("clang")
-                .args(&[
-                    "-nostdlib",
-                    "-static",
-                    "-O2",
-                    "-o", &output_name,
-                    &ll_file,
-                ])
-                .output()
+    // Option 2: Legacy LLVM+Clang flow (explicit opt-in)
+    if use_clang {
+        let llvm_ir = match PureEmitter::emit(&graph, target) {
+            Ok(ir) => ir,
+            Err(e) => {
+                eprintln!("E:EMIT:{}", e);
+                std::process::exit(1);
+            }
+        };
+        let ll_file = format!("{}.ll", output_name);
+        if let Err(e) = fs::write(&ll_file, &llvm_ir) {
+            eprintln!("E:WRITE:{}", e);
+            std::process::exit(1);
         }
-        TargetPlatform::Windows => {
-            let exe_name = format!("{}.exe", output_name);
-            let subsystem = if args.contains(&"--gui".to_string()) {
-                "/SUBSYSTEM:WINDOWS"
-            } else {
-                "/SUBSYSTEM:CONSOLE"
-            };
-            Command::new("clang")
-                .args(&[
-                    "-O2",
-                    "-Wl,/ENTRY:mainCRTStartup",
-                    &format!("-Wl,{}", subsystem),
-                    "-lkernel32",
-                    "-lws2_32",
-                    "-luser32",
-                    "-lgdi32",
-                    "-o", &exe_name,
-                    &ll_file,
-                ])
-                .output()
+        
+        // Compile with clang
+        let compile_result = match target {
+            TargetPlatform::Linux => {
+                Command::new("clang")
+                    .args(&[
+                        "-nostdlib",
+                        "-static",
+                        "-O2",
+                        "-o", &output_name,
+                        &ll_file,
+                    ])
+                    .output()
+            }
+            TargetPlatform::Windows => {
+                let exe_name = format!("{}.exe", output_name);
+                let subsystem = if args.iter().any(|a| a == "--subsystem=windows") {
+                    "/SUBSYSTEM:WINDOWS"
+                } else {
+                    "/SUBSYSTEM:CONSOLE"
+                };
+                Command::new("clang")
+                    .args(&[
+                        "-O2",
+                        "-Wl,/ENTRY:mainCRTStartup",
+                        &format!("-Wl,{}", subsystem),
+                        "-lkernel32",
+                        "-lws2_32",
+                        "-luser32",
+                        "-lgdi32",
+                        "-o", &exe_name,
+                        &ll_file,
+                    ])
+                    .output()
+            }
+            TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
+                Command::new("clang")
+                    .args(&[
+                        "-O2",
+                        "-o", &output_name,
+                        &ll_file,
+                    ])
+                    .output()
+            }
+        };
+        
+        match compile_result {
+            Ok(output) if output.status.success() => {
+                if !quiet {
+                    eprintln!("OK:CLANG:{}", output_name);
+                }
+            }
+            Ok(output) => {
+                eprintln!("E:CLANG:{}", output.status);
+                if !output.stderr.is_empty() {
+                    eprintln!("{}", String::from_utf8_lossy(&output.stderr));
+                }
+                std::process::exit(1);
+            }
+            Err(e) => {
+                eprintln!("E:CLANG:{}. Install clang or use default direct emission.", e);
+                std::process::exit(1);
+            }
         }
-    };
+        return;
+    }
     
-    match compile_result {
-        Ok(output) if output.status.success() => {
-            // Success - silent
-        }
-        Ok(output) => {
-            eprintln!("E:CLANG:{}", output.status);
+    // =========================================================================
+    // DEFAULT: Direct native emission (no external dependencies)
+    // Automatically selects PE (Windows), ELF (Linux), or Mach-O (macOS)
+    // =========================================================================
+    
+    let emit_pe = force_pe || (!force_elf && !force_macho && !force_macho_arm64 && matches!(target, TargetPlatform::Windows));
+    let emit_elf = force_elf || (!force_pe && !force_macho && !force_macho_arm64 && matches!(target, TargetPlatform::Linux));
+    let emit_macho = force_macho || (!force_pe && !force_elf && !force_macho_arm64 && matches!(target, TargetPlatform::MacOS));
+    let emit_macho_arm64 = force_macho_arm64 || (!force_pe && !force_elf && !force_macho && matches!(target, TargetPlatform::MacOSArm64));
+    
+    if emit_pe {
+        let exe_data = pe::generate_pe_from_graph(&graph);
+        let exe_file = format!("{}.exe", output_name);
+        if let Err(e) = fs::write(&exe_file, &exe_data) {
+            eprintln!("E:WRITE:{}", e);
             std::process::exit(1);
         }
-        Err(e) => {
-            eprintln!("E:CLANG:{}", e);
+        if !quiet {
+            eprintln!("OK:PE:{}:{} bytes (direct emission, no clang)", exe_file, exe_data.len());
+        }
+        return;
+    }
+    
+    if emit_macho {
+        let exe_data = macho::generate_macho_from_graph(&graph, macho::MacOSArch::X86_64);
+        let exe_file = output_name.clone();
+        if let Err(e) = fs::write(&exe_file, &exe_data) {
+            eprintln!("E:WRITE:{}", e);
             std::process::exit(1);
+        }
+        if !quiet {
+            eprintln!("OK:MACHO:{}:{} bytes (x86-64, direct emission)", exe_file, exe_data.len());
+        }
+        return;
+    }
+    
+    if emit_macho_arm64 {
+        let exe_data = macho::generate_macho_from_graph(&graph, macho::MacOSArch::ARM64);
+        let exe_file = output_name.clone();
+        if let Err(e) = fs::write(&exe_file, &exe_data) {
+            eprintln!("E:WRITE:{}", e);
+            std::process::exit(1);
+        }
+        if !quiet {
+            eprintln!("OK:MACHO:{}:{} bytes (ARM64 Apple Silicon, direct emission)", exe_file, exe_data.len());
+        }
+        return;
+    }
+    
+    if emit_elf {
+        let exe_data = elf::generate_elf_from_graph(&graph);
+        let exe_file = output_name.clone();
+        if let Err(e) = fs::write(&exe_file, &exe_data) {
+            eprintln!("E:WRITE:{}", e);
+            std::process::exit(1);
+        }
+        if !quiet {
+            eprintln!("OK:ELF:{}:{} bytes (direct emission, no clang)", exe_file, exe_data.len());
         }
     }
 }
