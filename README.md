@@ -3,7 +3,7 @@
 [![Build](https://github.com/NELAIA-AI/nelaia/actions/workflows/build.yml/badge.svg)](https://github.com/NELAIA-AI/nelaia/actions/workflows/build.yml)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20695531.svg)](https://doi.org/10.5281/zenodo.20695531)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Rust](https://img.shields.io/badge/Rust-1.70+-orange.svg)](https://www.rust-lang.org/)
+[![Rust](https://img.shields.io/badge/Rust-1.95+-orange.svg)](https://www.rust-lang.org/)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20|%20Linux%20|%20macOS-blue.svg)](https://github.com/NELAIA-AI/nelaia/releases)
 
 NELAIA Compiler v0.23 - A graph-based language optimized for AI code generation.
@@ -85,9 +85,10 @@ EOF
 
 - **Graph-based paradigm** - How AIs think about computation
 - **Token-efficient syntax** - Minimal tokens, maximum information
-- **Tiny executables** - Hello World = 2KB, HTTP server = 5KB
-- **Zero dependencies** - Direct PE/ELF emission, no Clang/GCC required
+- **Tiny executables** - Hello World: 145 bytes (Linux), 1KB (Windows), 4KB (macOS)
+- **Zero dependencies** - Direct PE/ELF/Mach-O emission, no Clang/GCC required
 - **Capability system** - HTTP, SQL, JSON, Files, Network, GUI
+- **MCP Server** - AI agents can invoke NELAIA directly
 
 ## Available Operators
 

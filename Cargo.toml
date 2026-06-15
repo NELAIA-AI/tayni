@@ -2,7 +2,8 @@
 name = "nelaia-c"
 version = "0.23.0"
 edition = "2021"
-description = "NELAIA Compiler - Direct native emission (PE/ELF), no external dependencies"
+description = "NELAIA Compiler - Direct native emission (PE/ELF/Mach-O), no external dependencies"
+rust-version = "1.95"
 
 [dependencies]
 
