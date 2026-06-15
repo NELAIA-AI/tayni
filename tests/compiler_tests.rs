@@ -423,7 +423,7 @@ fn test_capability_sql() {
 
 #[test]
 fn test_capability_json() {
-    let path = write_temp_nela(".caps: REQUIRES { json }\n.data: JSON.PARSE .input", "json");
+    let path = write_temp_nela(".caps: REQUIRES { json }\n.input: \"{}\"\n.data: JSON.PARSE .input", "json");
     let (code, _, stderr) = run_compiler(&[&path, "--check"]);
     assert_eq!(code, 0, "JSON capability failed: {}", stderr);
 }
