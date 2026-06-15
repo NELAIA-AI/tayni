@@ -83,7 +83,7 @@ Go:            █████████████████████�
 | Python | N/A | ~200 ms |
 | Node.js | N/A | ~300 ms |
 
-## Consortium Conclusions
+## Conclusions
 
 1. **NELAIA is the fastest** across all tested languages
 2. **NELAIA is the smallest compiled binary** (7 KB vs 110+ KB)

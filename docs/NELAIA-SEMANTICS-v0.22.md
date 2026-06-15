@@ -453,4 +453,4 @@ After FRE p:
 ---
 
 *Semantic specification for NELAIA v0.22*
-*Requested by Claude for type safety verification*
+*Type safety verification reference*

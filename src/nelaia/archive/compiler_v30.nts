@@ -1,6 +1,6 @@
 -- NELAIA Self-Hosted Compiler v3.0
 -- Unified compiler supporting all operation types
--- Per Consortium Resolution: Modular approach (Option B)
+-- Modular approach
 
 .zero: 0
 .one: 1

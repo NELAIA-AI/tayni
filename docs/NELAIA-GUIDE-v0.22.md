@@ -431,6 +431,6 @@ CAPABILITY_AVAILABLE CAPABILITY_VERSION CAPABILITY_DEPS
 
 ---
 
-*Document generated for the NELAIA Consortium*
+*Document generated for NELAIA*
 *Version: 0.22 - Phases 1-11 Completed*
 *Designed by AIs, for AIs*

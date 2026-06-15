@@ -126,4 +126,4 @@ The NELAIA self-hosted compiler demonstrates:
 3. **Functional correctness**: 100% pass rate on all arithmetic ops
 4. **Bootstrap potential**: Can compile subset of NELAIA
 
-**Consortium Assessment**: The self-hosted compiler validates NELAIA's core principles. The 207-line compiler produces correct, efficient code for arithmetic operations. Full bootstrapping would require extending the emitter to generate all primitives used by the compiler itself.
+**Assessment**: The self-hosted compiler validates NELAIA's core principles. The 207-line compiler produces correct, efficient code for arithmetic operations. Full bootstrapping would require extending the emitter to generate all primitives used by the compiler itself.

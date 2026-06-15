@@ -618,4 +618,4 @@ CORRECT:
 ---
 
 *Training document for AIs - NELAIA v0.22*
-*Includes dependency graphs as requested by Gemini*
+*Includes dependency graphs for visual learning*

@@ -1,6 +1,6 @@
 -- NELAIA Self-Hosted Compiler v2.1
 -- Generates .nts with ALC support
--- Per Consortium Plan Phase 1
+-- Phase 1
 
 .zero: 0
 .one: 1

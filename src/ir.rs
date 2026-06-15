@@ -146,7 +146,7 @@ pub struct CompilationCache {
     pub misses: u64,
 }
 
-/// Capability cost information (IA-first: Mistral's efficiency proposal)
+/// Capability cost information
 #[derive(Debug, Clone, Default)]
 pub struct CapabilityCost {
     pub memory_bytes: u64,
@@ -160,10 +160,10 @@ pub struct CapabilityMetadata {
     pub name: String,
     pub version: String,
     pub description: String,
-    pub guarantees: Vec<String>,      // Claude's constitutional contracts
-    pub cost: CapabilityCost,         // Mistral's efficiency
+    pub guarantees: Vec<String>,      // Constitutional contracts
+    pub cost: CapabilityCost,         // Efficiency metrics
     pub dependencies: Vec<String>,
-    pub regions: Vec<String>,         // Qwen's regionalization (empty = global)
+    pub regions: Vec<String>,         // Regionalization (empty = global)
     pub keywords: Vec<String>,        // For DISCOVER search
 }
 
@@ -271,12 +271,12 @@ impl EcosystemRegistry {
         results.into_iter().map(|(cap, _)| cap).collect()
     }
     
-    /// PUBLISH - Register a new capability (Llama's open ecosystem)
+    /// PUBLISH - Register a new capability (open ecosystem)
     pub fn publish(&mut self, metadata: CapabilityMetadata) {
         self.capabilities.insert(metadata.name.clone(), metadata);
     }
     
-    /// Check if capability is available in region (Qwen's regionalization)
+    /// Check if capability is available in region (regionalization)
     pub fn is_available(&self, name: &str, region: &str) -> bool {
         if let Some(cap) = self.capabilities.get(name) {
             cap.regions.is_empty() || cap.regions.contains(&region.to_string())
@@ -467,7 +467,7 @@ pub enum Op {
     And, Or, Not,
     // Collections
     Seq, Map, Fld, Flt, Len, Fst, Snd,
-    // Control (BRN only - LOOP/BRK/CNT deprecated per Consortium 2026-06-13)
+    // Control (BRN only - LOOP/BRK/CNT deprecated)
     Brn,
     // Conditional Jump (for real loops)
     Jmp,  // JMP cond label_true label_false -> conditional branch

@@ -3994,10 +3994,10 @@ end:
     }
     
     fn emit_cap_info(&self, id: &str, args: &[Arg]) -> Result<String, String> {
-        // CAPABILITY_INFO returns metadata about a capability (Claude's contracts)
+        // CAPABILITY_INFO returns metadata about a capability
         let cap_name = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
         Ok(format!(r#"
-  ; CAPABILITY_INFO - Get capability metadata (IA-first: Claude's constitutional contracts)
+  ; CAPABILITY_INFO - Get capability metadata
   ; Capability: {cap_name}
   ; Returns pointer to metadata struct {{ name, version, guarantees, cost }}
   %{id}_info = call i8* @VirtualAlloc(i8* null, i64 512, i32 12288, i32 4)
@@ -4006,10 +4006,10 @@ end:
     }
     
     fn emit_cap_cost(&self, id: &str, args: &[Arg]) -> Result<String, String> {
-        // CAPABILITY_COST returns cost information (Mistral's efficiency)
+        // CAPABILITY_COST returns cost information
         let cap_name = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
         Ok(format!(r#"
-  ; CAPABILITY_COST - Get capability cost (IA-first: Mistral's efficiency proposal)
+  ; CAPABILITY_COST - Get capability cost
   ; Capability: {cap_name}
   ; Returns pointer to cost struct {{ memory_bytes, time_ms, tokens }}
   %{id}_cost = call i8* @VirtualAlloc(i8* null, i64 64, i32 12288, i32 4)
@@ -4018,19 +4018,19 @@ end:
     }
     
     fn emit_cap_publish(&self, id: &str, args: &[Arg]) -> Result<String, String> {
-        // PUBLISH registers a capability in the ecosystem (Llama's open ecosystem)
+        // PUBLISH registers a capability in the ecosystem
         let cap = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
         Ok(format!(r#"
-  ; PUBLISH - Register capability in ecosystem (IA-first: Llama's open ecosystem)
+  ; PUBLISH - Register capability in ecosystem
   ; Capability: {cap}
   %{id}_cap = add i64 {cap}, 0
-  ; Would register in federated registry (Gemini's proposal)
+  ; Would register in federated registry
   %{id} = add i64 1, 0  ; 1 = published successfully
 "#, id = id, cap = cap))
     }
     
     fn emit_cap_available(&self, id: &str, args: &[Arg]) -> Result<String, String> {
-        // CAPABILITY_AVAILABLE checks regional availability (Qwen's regionalization)
+        // CAPABILITY_AVAILABLE checks regional availability
         let cap_name = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
         let region = if args.len() < 2 { "0".to_string() } else { self.emit_arg(&args[1])? };
         
@@ -4047,7 +4047,7 @@ end:
         };
         
         Ok(format!(r#"
-  ; CAPABILITY_AVAILABLE - Check regional availability (IA-first: Qwen's regionalization)
+  ; CAPABILITY_AVAILABLE - Check regional availability
   %{id}_cap = {cap_val}
   %{id}_region = {region_val}
   ; Would check federated registry for regional restrictions

@@ -258,7 +258,7 @@ impl Backend for WasmBackend {
 
 ### Phase 0: Document (NOW)
 - [x] Create ARCHITECTURE.md
-- [ ] Consortium review and approval
+- [ ] Review and approval
 
 ### Phase 1: Extract IR (When needed)
 - [ ] Create workspace Cargo.toml
@@ -313,11 +313,11 @@ Output: calculator.wasm (5KB) + runtime.wasm (300KB cached)
 
 ---
 
-## Consortium Review (v2.1 Revisions)
+## Architecture Review (v2.1 Revisions)
 
 ### Changes from v2.0 to v2.1
 
-Based on AI-native reasoning, the following simplifications were approved:
+Based on AI-native reasoning, the following simplifications were made:
 
 1. **Unified Op Enum**: Instead of separate domain crates, all opcodes live in one enum with a `domain()` method. This reduces complexity while maintaining organization.
 
@@ -378,6 +378,6 @@ impl Op {
 
 | Version | Date | Changes |
 |---------|------|---------|
-| 2.1 | 2026-06-13 | Consortium review: simplified to 4 crates, unified Op enum |
+| 2.1 | 2026-06-13 | Simplified to 4 crates, unified Op enum |
 | 2.0 | 2026-06-13 | Initial modular architecture proposal |
 | 1.x | 2026-06-xx | Monolithic nelaia-core |

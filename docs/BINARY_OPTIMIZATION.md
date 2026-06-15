@@ -233,7 +233,7 @@ Get-ChildItem solar_*.exe | ForEach-Object {
 
 ---
 
-## Consortium Notes
+## Design Notes
 
 **Why binary size matters for AI:**
 
@@ -251,4 +251,4 @@ Get-ChildItem solar_*.exe | ForEach-Object {
 8 KB = Current (needs optimization)
 ```
 
-*Consortium Resolution: Binary optimization is prerequisite for v0.15 release.*
+*Binary optimization is prerequisite for stable release.*

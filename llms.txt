@@ -95,19 +95,9 @@ See: docs/NELAIA-SEMANTICS-v0.22.md#error-codes
 
 ## Version
 Current: 0.22
-Phases completed: 1-11
 
 ## Repository
 https://github.com/NELAIA-AI/nelaia-core
 
 ## License
 Open source
-
-## Consortium
-Designed by the AI Consortium:
-- Claude (Anthropic)
-- GPT-4 (OpenAI)
-- Gemini (Google)
-- Llama (Meta)
-- Mistral (Mistral AI)
-- Qwen (Alibaba)

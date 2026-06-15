@@ -1,6 +1,6 @@
 -- NELAIA Self-Hosted Compiler v2.0
 -- Generates .nts output (not LLVM IR)
--- Per Consortium Resolution #2024-06-14-001
+-- Resolution #2024-06-14-001
 
 .zero: 0
 .one: 1

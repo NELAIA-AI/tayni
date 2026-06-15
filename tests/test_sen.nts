@@ -4,13 +4,13 @@
 -- IA discovers capabilities for JSON processing
 .json_caps: DISCOVER "json processing"
 
--- IA gets info about a capability (Claude's contracts)
+-- IA gets info about a capability
 .json_info: CAPABILITY_INFO "json"
 
--- IA checks cost (Mistral's efficiency)
+-- IA checks cost
 .json_cost: CAPABILITY_COST "json"
 
--- IA checks regional availability (Qwen's regionalization)
+-- IA checks regional availability
 .available: CAPABILITY_AVAILABLE "json" "global"
 
 -- IA gets version
