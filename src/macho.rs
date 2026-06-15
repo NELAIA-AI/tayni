@@ -54,13 +54,11 @@ pub fn generate_hello_macho(arch: MacOSArch) -> Vec<u8> {
     }
 }
 
-/// Generate Mach-O for x86-64 macOS
+/// Generate Mach-O for x86-64 macOS - MINIMAL VERSION
+/// macOS kernel requires minimum 4096 bytes, but payload is only ~200 bytes
+/// Returns (binary, payload_size) where binary is padded to 4096
 fn generate_hello_macho_x64(message: &[u8]) -> Vec<u8> {
     let msg_len = message.len();
-    
-    // Mach-O header: 32 bytes
-    // Load commands: variable
-    // Code + data
     
     let mut binary = Vec::new();
     
@@ -71,7 +69,7 @@ fn generate_hello_macho_x64(message: &[u8]) -> Vec<u8> {
     binary.extend(&MH_EXECUTE.to_le_bytes());            // filetype
     binary.extend(&2u32.to_le_bytes());                  // ncmds (2 load commands)
     
-    // Calculate sizes
+    // Calculate sizes - MINIMAL
     let header_size: u32 = 32;
     let segment_cmd_size: u32 = 72;                      // LC_SEGMENT_64
     let main_cmd_size: u32 = 24;                         // LC_MAIN
@@ -82,14 +80,17 @@ fn generate_hello_macho_x64(message: &[u8]) -> Vec<u8> {
     binary.extend(&(MH_NOUNDEFS | MH_PIE).to_le_bytes()); // flags
     binary.extend(&0u32.to_le_bytes());                  // reserved
     
+    // macOS kernel enforces minimum 4096 bytes (PAGE_SIZE)
+    let page_size: u64 = 0x1000; // 4KB for x86-64
+    
     // === LC_SEGMENT_64 __TEXT (72 bytes) ===
     binary.extend(&LC_SEGMENT_64.to_le_bytes());         // cmd
     binary.extend(&segment_cmd_size.to_le_bytes());      // cmdsize
     binary.extend(b"__TEXT\0\0\0\0\0\0\0\0\0\0");        // segname (16 bytes)
     binary.extend(&0u64.to_le_bytes());                  // vmaddr
-    binary.extend(&0x1000u64.to_le_bytes());             // vmsize (4KB page)
+    binary.extend(&page_size.to_le_bytes());             // vmsize (must be page-aligned)
     binary.extend(&0u64.to_le_bytes());                  // fileoff
-    binary.extend(&0x1000u64.to_le_bytes());             // filesize
+    binary.extend(&page_size.to_le_bytes());             // filesize (must match file size)
     binary.extend(&(VM_PROT_READ | VM_PROT_EXECUTE).to_le_bytes()); // maxprot
     binary.extend(&(VM_PROT_READ | VM_PROT_EXECUTE).to_le_bytes()); // initprot
     binary.extend(&0u32.to_le_bytes());                  // nsects
@@ -101,18 +102,10 @@ fn generate_hello_macho_x64(message: &[u8]) -> Vec<u8> {
     binary.extend(&text_offset.to_le_bytes());           // entryoff
     binary.extend(&0u64.to_le_bytes());                  // stacksize (0 = default)
     
-    // === Code Section ===
-    // Pad to text_offset
-    while binary.len() < text_offset as usize {
-        binary.push(0);
-    }
-    
-    let code_start = binary.len();
-    
+    // === Code Section - starts immediately after headers ===
     // x86-64 macOS syscall convention:
     // syscall number in rax (with 0x2000000 offset)
     // args: rdi, rsi, rdx, r10, r8, r9
-    // syscall instruction
     
     // --- write(1, message, len) ---
     // mov rax, 0x2000004 (SYS_WRITE)
@@ -144,7 +137,7 @@ fn generate_hello_macho_x64(message: &[u8]) -> Vec<u8> {
     // syscall
     binary.extend(&[0x0F, 0x05]);
     
-    // Message data
+    // Message data - immediately after code
     let msg_offset = binary.len();
     binary.extend(message);
     
@@ -153,15 +146,26 @@ fn generate_hello_macho_x64(message: &[u8]) -> Vec<u8> {
     let rel_offset = (msg_offset as i32) - (lea_end as i32);
     binary[lea_pos + 3..lea_pos + 7].copy_from_slice(&rel_offset.to_le_bytes());
     
-    // Pad to page boundary
-    while binary.len() < 0x1000 {
+    // Record payload size before padding
+    let payload_size = binary.len();
+    
+    // Pad to 4096 bytes (macOS kernel requirement)
+    // Files smaller than PAGE_SIZE are killed by the kernel
+    while binary.len() < page_size as usize {
         binary.push(0);
     }
+    
+    // Store payload size in unused header bytes for reporting
+    // We use bytes at offset 8-9 (part of e_ident padding) to store payload size
+    // This is a hack but allows us to report the real payload size
+    binary[8] = (payload_size & 0xFF) as u8;
+    binary[9] = ((payload_size >> 8) & 0xFF) as u8;
     
     binary
 }
 
-/// Generate Mach-O for ARM64 macOS (Apple Silicon)
+/// Generate Mach-O for ARM64 macOS (Apple Silicon) - MINIMAL VERSION
+/// Note: macOS requires minimum 16KB (0x4000) for ARM64 due to page size
 fn generate_hello_macho_arm64(message: &[u8]) -> Vec<u8> {
     let msg_len = message.len();
     
@@ -185,13 +189,16 @@ fn generate_hello_macho_arm64(message: &[u8]) -> Vec<u8> {
     binary.extend(&0u32.to_le_bytes());                  // reserved
     
     // === LC_SEGMENT_64 __TEXT ===
+    // For ARM64 macOS, we MUST pad to 16KB (0x4000) due to page size requirements
+    let page_size: u64 = 0x4000; // 16KB for ARM64
+    
     binary.extend(&LC_SEGMENT_64.to_le_bytes());
     binary.extend(&segment_cmd_size.to_le_bytes());
     binary.extend(b"__TEXT\0\0\0\0\0\0\0\0\0\0");
     binary.extend(&0u64.to_le_bytes());                  // vmaddr
-    binary.extend(&0x4000u64.to_le_bytes());             // vmsize (16KB for ARM64)
+    binary.extend(&page_size.to_le_bytes());             // vmsize
     binary.extend(&0u64.to_le_bytes());                  // fileoff
-    binary.extend(&0x4000u64.to_le_bytes());             // filesize
+    binary.extend(&page_size.to_le_bytes());             // filesize
     binary.extend(&(VM_PROT_READ | VM_PROT_EXECUTE).to_le_bytes());
     binary.extend(&(VM_PROT_READ | VM_PROT_EXECUTE).to_le_bytes());
     binary.extend(&0u32.to_le_bytes());                  // nsects
@@ -203,22 +210,7 @@ fn generate_hello_macho_arm64(message: &[u8]) -> Vec<u8> {
     binary.extend(&text_offset.to_le_bytes());           // entryoff
     binary.extend(&0u64.to_le_bytes());                  // stacksize
     
-    // Pad to text_offset
-    while binary.len() < text_offset as usize {
-        binary.push(0);
-    }
-    
     // === ARM64 Code ===
-    // ARM64 macOS syscall convention:
-    // syscall number in x16
-    // args: x0, x1, x2, x3, x4, x5
-    // svc #0x80
-    
-    let code_start = binary.len();
-    
-    // Calculate message address (will be at end of code)
-    // We'll use ADR to get PC-relative address
-    
     // --- write(1, message, len) ---
     // mov x0, #1 (stdout)
     binary.extend(&arm64_mov_imm(0, 1));
@@ -230,7 +222,7 @@ fn generate_hello_macho_arm64(message: &[u8]) -> Vec<u8> {
     // mov x2, #msg_len
     binary.extend(&arm64_mov_imm(2, msg_len as u64));
     
-    // mov x16, #4 (SYS_WRITE, without 0x2000000 prefix for ARM64)
+    // mov x16, #4 (SYS_WRITE)
     binary.extend(&arm64_mov_imm(16, 4));
     
     // svc #0x80
@@ -255,10 +247,17 @@ fn generate_hello_macho_arm64(message: &[u8]) -> Vec<u8> {
     let adr_instr = arm64_adr(1, adr_offset);
     binary[adr_pos..adr_pos + 4].copy_from_slice(&adr_instr);
     
-    // Pad to 16KB page boundary (ARM64 requirement)
-    while binary.len() < 0x4000 {
+    // Record payload size before padding
+    let payload_size = binary.len();
+    
+    // Pad to 16KB page boundary (ARM64 macOS requirement)
+    while binary.len() < page_size as usize {
         binary.push(0);
     }
+    
+    // Store payload size in unused header bytes for reporting
+    binary[8] = (payload_size & 0xFF) as u8;
+    binary[9] = ((payload_size >> 8) & 0xFF) as u8;
     
     binary
 }

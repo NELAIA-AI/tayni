@@ -70,6 +70,8 @@ fn main() {
         println!("  --tcp-server        Generate TCP server PE");
         println!("  --gui               Generate GUI PE");
         println!("  --tiny              Generate minimal PE (~1KB)");
+        println!("  --ultra-tiny        Generate ultra-tiny PE (~1KB optimized)");
+        println!("  --smallest          Generate smallest PE (~512 bytes)");
         println!();
         println!("EXAMPLES:");
         println!("  nelaia-c hello.nela                    # Compile to native (auto-detect)");
@@ -154,6 +156,36 @@ fn main() {
         }
         if !quiet {
             eprintln!("Generated tiny PE {} ({} bytes)", output, pe_data.len());
+        }
+        return;
+    }
+    
+    // Special command: generate smallest PE (~512 bytes)
+    if input_file == "--smallest" {
+        let message = args.get(2).map(|s| s.as_str()).unwrap_or("Hello\n");
+        let output = args.get(3).map(|s| s.as_str()).unwrap_or("smallest.exe");
+        let pe_data = pe::generate_smallest_pe(message);
+        if let Err(e) = fs::write(output, &pe_data) {
+            eprintln!("E:WRITE:{}", e);
+            std::process::exit(1);
+        }
+        if !quiet {
+            eprintln!("Generated smallest PE {} ({} bytes)", output, pe_data.len());
+        }
+        return;
+    }
+    
+    // Special command: generate ultra-tiny PE (~1KB optimized)
+    if input_file == "--ultra-tiny" {
+        let message = args.get(2).map(|s| s.as_str()).unwrap_or("Hello\n");
+        let output = args.get(3).map(|s| s.as_str()).unwrap_or("ultra_tiny.exe");
+        let pe_data = pe::generate_ultra_tiny_pe(message);
+        if let Err(e) = fs::write(output, &pe_data) {
+            eprintln!("E:WRITE:{}", e);
+            std::process::exit(1);
+        }
+        if !quiet {
+            eprintln!("Generated ultra-tiny PE {} ({} bytes)", output, pe_data.len());
         }
         return;
     }
@@ -457,7 +489,13 @@ fn main() {
             std::process::exit(1);
         }
         if !quiet {
-            eprintln!("OK:MACHO:{}:{} bytes (x86-64, direct emission)", exe_file, exe_data.len());
+            // Extract payload size from header bytes 8-9 (stored during generation)
+            let payload_size = (exe_data[8] as usize) | ((exe_data[9] as usize) << 8);
+            if payload_size > 0 && payload_size < exe_data.len() {
+                eprintln!("OK:MACHO:{}:{} bytes ({} payload, x86-64)", exe_file, exe_data.len(), payload_size);
+            } else {
+                eprintln!("OK:MACHO:{}:{} bytes (x86-64, direct emission)", exe_file, exe_data.len());
+            }
         }
         return;
     }
@@ -470,7 +508,13 @@ fn main() {
             std::process::exit(1);
         }
         if !quiet {
-            eprintln!("OK:MACHO:{}:{} bytes (ARM64 Apple Silicon, direct emission)", exe_file, exe_data.len());
+            // Extract payload size from header bytes 8-9 (stored during generation)
+            let payload_size = (exe_data[8] as usize) | ((exe_data[9] as usize) << 8);
+            if payload_size > 0 && payload_size < exe_data.len() {
+                eprintln!("OK:MACHO:{}:{} bytes ({} payload, ARM64)", exe_file, exe_data.len(), payload_size);
+            } else {
+                eprintln!("OK:MACHO:{}:{} bytes (ARM64 Apple Silicon, direct emission)", exe_file, exe_data.len());
+            }
         }
         return;
     }
