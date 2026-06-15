@@ -1,6 +1,7 @@
 ﻿# NELAIA
 
 [![Build](https://github.com/NELAIA-AI/nelaia/actions/workflows/build.yml/badge.svg)](https://github.com/NELAIA-AI/nelaia/actions/workflows/build.yml)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20695531.svg)](https://doi.org/10.5281/zenodo.20695531)
 
 NELAIA Compiler v0.23 - A graph-based language optimized for AI code generation.
 

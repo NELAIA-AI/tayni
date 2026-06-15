@@ -100,6 +100,10 @@ See: docs/NELAIA-SEMANTICS-v0.22.md#error-codes
 ## Version
 Current: 0.23
 
+## DOI
+10.5281/zenodo.20695531
+Citation: https://doi.org/10.5281/zenodo.20695531
+
 ## Repository
 https://github.com/NELAIA-AI/nelaia
 
