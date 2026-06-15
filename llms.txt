@@ -2,6 +2,18 @@
 # Graph-based language optimized for AI code generation
 # https://github.com/NELAIA-AI/nelaia
 
+## CRITICAL - Read First
+Location: docs/CRITICAL-PATTERNS.jsonl
+Format: JSONL with correct/wrong examples
+Purpose: Avoid common mistakes in code generation
+
+Location: docs/COMMON-MISTAKES.md
+Format: Markdown with examples
+Purpose: Human-readable guide to common errors
+
+IMPORTANT: Servers need loops! Use `.loop >> .loop` for persistent servers.
+IMPORTANT: PRT needs TWO arguments: buffer AND length.
+
 ## What
 NELAIA is a compiler that generates optimal native executables from graph-based source code.
 Optimized for AI systems to generate and consume.
@@ -16,8 +28,14 @@ Traditional languages have syntax overhead that increases token usage in AI cont
 NELAIA addresses this with:
 - Graph-based paradigm (natural for dependency modeling)
 - Token-efficient syntax (minimal tokens, maximum information)
-- Tiny output (Hello World = 2KB, HTTP server = 5KB)
+- Tiny output (Hello World = 145 bytes Linux, 1KB Windows)
 - No runtime dependencies
+
+## Critical Syntax Rules
+1. All nodes start with dot: .name: value
+2. PRT requires buffer AND length: PRT .msg .len
+3. Servers need loop: .loop >> .loop
+4. Declare capabilities: REQUIRES { http }
 
 ## Capabilities
 - compile_to_windows_pe: Generate Windows x64 executables
