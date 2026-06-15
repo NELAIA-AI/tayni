@@ -18,21 +18,58 @@ use std::env;
 use std::fs;
 use std::process::Command;
 
+const VERSION: &str = "0.22.0";
+
 fn main() {
     let args: Vec<String> = env::args().collect();
     
     let quiet = args.contains(&"--quiet".to_string()) || args.contains(&"-q".to_string());
     
+    // Handle --version
+    if args.contains(&"--version".to_string()) || args.contains(&"-V".to_string()) {
+        println!("nelaia-c {}", VERSION);
+        return;
+    }
+    
+    // Handle --help
+    if args.contains(&"--help".to_string()) || args.contains(&"-h".to_string()) {
+        println!("nelaia-c {} - NELAIA Compiler", VERSION);
+        println!();
+        println!("USAGE:");
+        println!("  nelaia-c <file.nts|file.nbin> [options]");
+        println!();
+        println!("OPTIONS:");
+        println!("  -o <file>       Output file name");
+        println!("  --emit-llvm     Output LLVM IR only (requires clang)");
+        println!("  --emit-bin      Output binary format (.nbin)");
+        println!("  --emit-pe       Output Windows PE executable (no clang)");
+        println!("  --emit-elf      Output Linux ELF executable (no clang)");
+        println!("  --target=<os>   Target platform: linux, windows");
+        println!("  --check         Syntax check only (no output)");
+        println!("  --json          Output errors in JSON format");
+        println!("  --quiet, -q     Suppress warnings");
+        println!("  --no-warn       Suppress warnings");
+        println!("  --version, -V   Show version");
+        println!("  --help, -h      Show this help");
+        println!();
+        println!("SPECIAL COMMANDS:");
+        println!("  --test-pe       Generate test PE executable");
+        println!("  --tcp-server    Generate TCP server PE");
+        println!("  --gui           Generate GUI PE");
+        println!("  --tiny          Generate minimal PE (~1KB)");
+        println!();
+        println!("EXAMPLES:");
+        println!("  nelaia-c hello.nts -o hello --emit-pe");
+        println!("  nelaia-c program.nts -o program --emit-elf");
+        println!("  nelaia-c code.nts --check");
+        return;
+    }
+    
     if args.len() < 2 {
         if !quiet {
-            eprintln!("nelaia-c 0.18");
+            eprintln!("nelaia-c {}", VERSION);
             eprintln!("usage: nelaia-c <file.nts|file.nbin> [output] [options]");
-            eprintln!("options:");
-            eprintln!("  --emit-llvm    Output LLVM IR only");
-            eprintln!("  --emit-bin     Output binary format (.nbin)");
-            eprintln!("  --emit-pe      Output Windows PE executable");
-            eprintln!("  --emit-elf     Output Linux ELF executable");
-            eprintln!("  --target=linux/windows");
+            eprintln!("Try 'nelaia-c --help' for more information.");
         }
         return;
     }
@@ -105,6 +142,8 @@ fn main() {
     let emit_pe = args.contains(&"--emit-pe".to_string());
     let emit_elf = args.contains(&"--emit-elf".to_string());
     let no_warn = args.contains(&"--no-warn".to_string());
+    let check_only = args.contains(&"--check".to_string());
+    let json_output = args.contains(&"--json".to_string());
     
     // Parse target platform
     let target = if args.iter().any(|a| a == "--target=linux") {
@@ -175,6 +214,38 @@ fn main() {
             }
         }
     };
+    
+    // Check only mode - validate syntax and exit
+    if check_only {
+        // Analyze graph for errors
+        let analysis = graph.analyze();
+        
+        if !analysis.cycles.is_empty() {
+            if json_output {
+                eprintln!("{{\"error\":\"cycle\",\"details\":\"{}\"}}", 
+                    analysis.cycles.iter().map(|c| c.join(">")).collect::<Vec<_>>().join(","));
+            } else {
+                eprintln!("E:CYCLE:{}", analysis.cycles.iter().map(|c| c.join(">")).collect::<Vec<_>>().join(","));
+            }
+            std::process::exit(1);
+        }
+        
+        if !analysis.undefined_refs.is_empty() {
+            if json_output {
+                eprintln!("{{\"error\":\"undefined\",\"details\":\"{}\"}}", analysis.undefined_refs.join(","));
+            } else {
+                eprintln!("E:UNDEF:{}", analysis.undefined_refs.join(","));
+            }
+            std::process::exit(1);
+        }
+        
+        if json_output {
+            println!("{{\"status\":\"ok\",\"nodes\":{}}}", graph.nodes.len());
+        } else if !quiet {
+            println!("OK:CHECK:{} nodes", graph.nodes.len());
+        }
+        return;
+    }
     
     // Emit binary format if requested
     if emit_bin {

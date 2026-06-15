@@ -1,0 +1,6 @@
+-- NELAIA Hello World
+-- Minimal example for CI testing
+
+.msg: "Hello from NELAIA!\n"
+.len: 20
+.out: PRT .msg .len

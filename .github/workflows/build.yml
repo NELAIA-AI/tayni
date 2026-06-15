@@ -1,0 +1,279 @@
+# NELAIA Build Workflow
+# 
+# IMPORTANT: This workflow is MANUAL ONLY (workflow_dispatch)
+# It does NOT run automatically on push/PR to save GitHub Actions credits.
+#
+# To run: Go to Actions tab → "Build and Test" → "Run workflow"
+#
+# Once the project is stable and we want automatic CI, uncomment the 
+# push/pull_request triggers below.
+
+name: Build and Test
+
+on:
+  # MANUAL TRIGGER ONLY - saves GitHub Actions credits
+  workflow_dispatch:
+    inputs:
+      build_release:
+        description: 'Build release binaries for GitHub Release'
+        required: false
+        default: false
+        type: boolean
+
+  # DISABLED - Uncomment when ready for automatic CI
+  # push:
+  #   branches: [ main, master ]
+  # pull_request:
+  #   branches: [ main, master ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # ============================================
+  # BUILD - Windows x64
+  # ============================================
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-action@stable
+
+      - name: Cache Cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - name: Build (Debug)
+        run: cargo build --verbose
+
+      - name: Build (Release)
+        if: ${{ inputs.build_release }}
+        run: cargo build --release --verbose
+
+      - name: Run Tests
+        run: cargo test --verbose
+
+      - name: Verify Compiler
+        run: |
+          ./target/debug/nelaia-c.exe --version
+          ./target/debug/nelaia-c.exe --help
+
+      - name: Test Compilation (if examples exist)
+        run: |
+          if (Test-Path "examples/hello.nts") {
+            ./target/debug/nelaia-c.exe examples/hello.nts -o hello_test.exe --emit-pe
+            Write-Host "Compilation successful"
+          } else {
+            Write-Host "No examples/hello.nts found, skipping"
+          }
+        shell: pwsh
+
+      - name: Upload Debug Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nelaia-c-windows-x64-debug
+          path: target/debug/nelaia-c.exe
+          retention-days: 7
+
+      - name: Upload Release Artifact
+        if: ${{ inputs.build_release }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: nelaia-c-windows-x64-release
+          path: target/release/nelaia-c.exe
+          retention-days: 30
+
+  # ============================================
+  # BUILD - Linux x64
+  # ============================================
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-action@stable
+
+      - name: Cache Cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - name: Build (Debug)
+        run: cargo build --verbose
+
+      - name: Build (Release)
+        if: ${{ inputs.build_release }}
+        run: cargo build --release --verbose
+
+      - name: Run Tests
+        run: cargo test --verbose
+
+      - name: Verify Compiler
+        run: |
+          ./target/debug/nelaia-c --version
+          ./target/debug/nelaia-c --help
+
+      - name: Test Compilation (if examples exist)
+        run: |
+          if [ -f "examples/hello.nts" ]; then
+            ./target/debug/nelaia-c examples/hello.nts -o hello_test --emit-elf
+            echo "Compilation successful"
+          else
+            echo "No examples/hello.nts found, skipping"
+          fi
+
+      - name: Upload Debug Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nelaia-c-linux-x64-debug
+          path: target/debug/nelaia-c
+          retention-days: 7
+
+      - name: Upload Release Artifact
+        if: ${{ inputs.build_release }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: nelaia-c-linux-x64-release
+          path: target/release/nelaia-c
+          retention-days: 30
+
+  # ============================================
+  # VALIDATION - Documentation Examples
+  # ============================================
+  validate-examples:
+    runs-on: ubuntu-latest
+    needs: build-linux
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download Compiler
+        uses: actions/download-artifact@v4
+        with:
+          name: nelaia-c-linux-x64-debug
+          path: ./bin
+
+      - name: Make Executable
+        run: chmod +x ./bin/nelaia-c
+
+      - name: Validate JSONL Examples (syntax only)
+        run: |
+          echo "Validating training data examples..."
+          if [ -f "docs/NELAIA-TRAINING-DATA.jsonl" ]; then
+            count=0
+            errors=0
+            while IFS= read -r line; do
+              count=$((count + 1))
+              code=$(echo "$line" | jq -r '.output // empty')
+              if [ -n "$code" ]; then
+                echo "$code" > /tmp/test_$count.nts
+                if ! ./bin/nelaia-c /tmp/test_$count.nts --check 2>/dev/null; then
+                  echo "Warning: Example $count may have issues"
+                  errors=$((errors + 1))
+                fi
+              fi
+            done < docs/NELAIA-TRAINING-DATA.jsonl
+            echo "Validated $count examples, $errors warnings"
+          else
+            echo "No training data found"
+          fi
+
+  # ============================================
+  # RELEASE - Create GitHub Release (manual only)
+  # ============================================
+  release:
+    if: ${{ inputs.build_release }}
+    runs-on: ubuntu-latest
+    needs: [build-windows, build-linux]
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download Windows Release
+        uses: actions/download-artifact@v4
+        with:
+          name: nelaia-c-windows-x64-release
+          path: ./release/windows
+
+      - name: Download Linux Release
+        uses: actions/download-artifact@v4
+        with:
+          name: nelaia-c-linux-x64-release
+          path: ./release/linux
+
+      - name: Prepare Release Assets
+        run: |
+          cd release
+          # Windows
+          mv windows/nelaia-c.exe nelaia-c-windows-x64.exe
+          sha256sum nelaia-c-windows-x64.exe > nelaia-c-windows-x64.exe.sha256
+          # Linux
+          mv linux/nelaia-c nelaia-c-linux-x64
+          chmod +x nelaia-c-linux-x64
+          sha256sum nelaia-c-linux-x64 > nelaia-c-linux-x64.sha256
+
+      - name: Get Version
+        id: version
+        run: |
+          VERSION=$(grep '^version' Cargo.toml | head -1 | sed 's/.*"\(.*\)".*/\1/')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: NELAIA v${{ steps.version.outputs.version }}
+          draft: true  # Creates as draft, you publish manually
+          files: |
+            release/nelaia-c-windows-x64.exe
+            release/nelaia-c-windows-x64.exe.sha256
+            release/nelaia-c-linux-x64
+            release/nelaia-c-linux-x64.sha256
+          body: |
+            ## NELAIA Compiler v${{ steps.version.outputs.version }}
+            
+            ### Downloads
+            - **Windows x64**: `nelaia-c-windows-x64.exe`
+            - **Linux x64**: `nelaia-c-linux-x64`
+            
+            ### Verification
+            ```bash
+            # Verify SHA256
+            sha256sum -c nelaia-c-linux-x64.sha256
+            ```
+            
+            ### Quick Start
+            ```bash
+            # Download and run (Linux)
+            chmod +x nelaia-c-linux-x64
+            ./nelaia-c-linux-x64 --version
+            
+            # Compile a program
+            ./nelaia-c-linux-x64 hello.nts -o hello --emit-elf
+            ./hello
+            ```
+            
+            ### No Dependencies Required
+            The compiler produces native executables directly. No Clang or other tools needed.
