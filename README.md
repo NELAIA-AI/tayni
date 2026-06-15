@@ -2,6 +2,9 @@
 
 [![Build](https://github.com/NELAIA-AI/nelaia/actions/workflows/build.yml/badge.svg)](https://github.com/NELAIA-AI/nelaia/actions/workflows/build.yml)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20695531.svg)](https://doi.org/10.5281/zenodo.20695531)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Rust](https://img.shields.io/badge/Rust-1.70+-orange.svg)](https://www.rust-lang.org/)
+[![Platform](https://img.shields.io/badge/Platform-Windows%20|%20Linux%20|%20macOS-blue.svg)](https://github.com/NELAIA-AI/nelaia/releases)
 
 NELAIA Compiler v0.23 - A graph-based language optimized for AI code generation.
 
