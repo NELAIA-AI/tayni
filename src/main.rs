@@ -19,7 +19,7 @@ use std::env;
 use std::fs;
 use std::process::Command;
 
-const VERSION: &str = "0.23.0";
+const VERSION: &str = "0.24.0";
 
 fn main() {
     let args: Vec<String> = env::args().collect();
