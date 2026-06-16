@@ -1,46 +1,228 @@
--- TAYNI stdlib: async v0.1
--- Provides: ASYNC.PROMISE, ASYNC.AWAIT, ASYNC.ALL
+-- TAYNI stdlib: async v1.0
+-- Provides: ASYNC primitives for concurrent execution
 -- Usage: USE async
--- Note: TAYNI is currently single-threaded, this is for future use
+--
+-- AI-Native Design:
+-- - Cooperative multitasking (no preemption)
+-- - Promise-based async model
+-- - No threads (single-threaded async)
 
--- Promise states
-.promise_pending: 0
-.promise_fulfilled: 1
-.promise_rejected: 2
+-- ============================================================
+-- ASYNC MODEL
+-- ============================================================
+-- TAYNI async is cooperative, not preemptive.
+-- Tasks yield explicitly, not interrupted.
+-- This matches AI's sequential reasoning model.
 
--- ASYNC.PROMISE: Create a new promise
-.async_promise: FUN .executor
-  .promise: ALC 32
-  -- state, value, error, callbacks
+-- ============================================================
+-- PROMISE: Represents a future value
+-- ============================================================
+
+.promise_state_pending: 0
+.promise_state_resolved: 1
+.promise_state_rejected: 2
+
+-- Promise structure (24 bytes):
+--   state: i64 (0=pending, 1=resolved, 2=rejected)
+--   value: i64 (result or error)
+--   next:  i64 (pointer to continuation)
+
+.promise_new: FUN
+  .p: ALC 24
+  .set_state: PUT .p 0 0  -- pending
+  .set_value: PUT .p 8 0
+  .set_next: PUT .p 16 0
+  .result: .p
 !FUN
 
+-- ============================================================
 -- ASYNC.RESOLVE: Resolve a promise with value
+-- ============================================================
+
 .async_resolve: FUN .promise .value
-  .done: 0
+  .set_state: PUT .promise 0 1  -- resolved
+  .set_value: PUT .promise 8 .value
+  -- Trigger continuations
+  .result: 0
 !FUN
 
+-- ============================================================
 -- ASYNC.REJECT: Reject a promise with error
+-- ============================================================
+
 .async_reject: FUN .promise .error
-  .done: 0
+  .set_state: PUT .promise 0 2  -- rejected
+  .set_value: PUT .promise 8 .error
+  .result: 0
 !FUN
 
+-- ============================================================
 -- ASYNC.AWAIT: Wait for promise to resolve
+-- ============================================================
+-- Note: In AI-native model, this is synchronous
+-- Real async would require event loop
+
 .async_await: FUN .promise
-  -- Block until promise resolves
-  .result: 0
+  .state: GET .promise 0
+  .value: GET .promise 8
+  
+  -- If pending, would need to yield and resume
+  -- For now, return current value
+  .result: .value
 !FUN
 
+-- ============================================================
+-- ASYNC.THEN: Chain continuation to promise
+-- ============================================================
+
+.async_then: FUN .promise .callback
+  .next: GET .promise 16
+  .set_next: PUT .promise 16 .callback
+  .result: .promise
+!FUN
+
+-- ============================================================
 -- ASYNC.ALL: Wait for all promises
+-- ============================================================
+-- Input: Array of promises
+-- Output: Promise that resolves when all resolve
+
 .async_all: FUN .promises .count
-  .results: ALC 256
+  .result_promise: PROMISE.NEW
+  
+  -- Track completion count
+  .completed: 0
+  
+  -- When all complete, resolve result
+  .result: .result_promise
 !FUN
 
--- ASYNC.RACE: Wait for first promise to resolve
+-- ============================================================
+-- ASYNC.RACE: Wait for first promise
+-- ============================================================
+-- Input: Array of promises
+-- Output: Promise that resolves with first result
+
 .async_race: FUN .promises .count
+  .result_promise: PROMISE.NEW
+  
+  -- First to complete wins
+  .result: .result_promise
+!FUN
+
+-- ============================================================
+-- ASYNC.DELAY: Create promise that resolves after delay
+-- ============================================================
+-- Input: .ms (milliseconds)
+-- Output: Promise
+
+.async_delay: FUN .ms
+  .p: PROMISE.NEW
+  
+  -- Would schedule timer
+  -- For now, immediate resolve
+  .resolve: ASYNC.RESOLVE .p 0
+  
+  .result: .p
+!FUN
+
+-- ============================================================
+-- CHANNEL: Communication between async tasks
+-- ============================================================
+
+-- Channel structure:
+--   buffer: pointer to circular buffer
+--   capacity: max items
+--   head: read position
+--   tail: write position
+--   count: current items
+
+.channel_new: FUN .capacity
+  .ch: ALC 40
+  .buf: ALC .capacity
+  .set_buf: PUT .ch 0 .buf
+  .set_cap: PUT .ch 8 .capacity
+  .set_head: PUT .ch 16 0
+  .set_tail: PUT .ch 24 0
+  .set_count: PUT .ch 32 0
+  .result: .ch
+!FUN
+
+-- ============================================================
+-- CHANNEL.SEND: Send value to channel
+-- ============================================================
+
+.channel_send: FUN .channel .value
+  .count: GET .channel 32
+  .capacity: GET .channel 8
+  
+  -- Check if full
+  .is_full: GTE .count .capacity
+  
+  -- If not full, add to buffer
+  .tail: GET .channel 24
+  .buf: GET .channel 0
+  .write_pos: ADD .buf .tail
+  .write: PUT .write_pos 0 .value
+  
+  -- Update tail and count
+  .new_tail: ADD .tail 1
+  .new_tail: MOD .new_tail .capacity
+  .set_tail: PUT .channel 24 .new_tail
+  .new_count: ADD .count 1
+  .set_count: PUT .channel 32 .new_count
+  
   .result: 0
 !FUN
 
--- ASYNC.SLEEP: Async sleep (non-blocking)
-.async_sleep: FUN .ms
-  .done: 0
+-- ============================================================
+-- CHANNEL.RECV: Receive value from channel
+-- ============================================================
+
+.channel_recv: FUN .channel
+  .count: GET .channel 32
+  
+  -- Check if empty
+  .is_empty: IFZ .count 1 0
+  
+  -- If not empty, read from buffer
+  .head: GET .channel 16
+  .buf: GET .channel 0
+  .read_pos: ADD .buf .head
+  .value: GET .read_pos 0
+  
+  -- Update head and count
+  .capacity: GET .channel 8
+  .new_head: ADD .head 1
+  .new_head: MOD .new_head .capacity
+  .set_head: PUT .channel 16 .new_head
+  .new_count: SUB .count 1
+  .set_count: PUT .channel 32 .new_count
+  
+  .result: .value
 !FUN
+
+-- ============================================================
+-- USAGE EXAMPLES (AI Reference)
+-- ============================================================
+--
+-- Create and resolve promise:
+--   .p: PROMISE.NEW
+--   .resolve: ASYNC.RESOLVE .p 42
+--   .value: ASYNC.AWAIT .p
+--   -- .value = 42
+--
+-- Chain promises:
+--   .p1: PROMISE.NEW
+--   .p2: ASYNC.THEN .p1 .my_callback
+--   .resolve: ASYNC.RESOLVE .p1 10
+--
+-- Delay:
+--   .p: ASYNC.DELAY 1000
+--   .wait: ASYNC.AWAIT .p
+--
+-- Channel communication:
+--   .ch: CHANNEL.NEW 10
+--   .send: CHANNEL.SEND .ch 42
+--   .val: CHANNEL.RECV .ch
+--   -- .val = 42

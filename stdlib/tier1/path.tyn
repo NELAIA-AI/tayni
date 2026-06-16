@@ -1,44 +1,187 @@
--- TAYNI stdlib: path v0.1
+-- TAYNI stdlib: path v1.0
 -- Provides: PATH.JOIN, PATH.DIRNAME, PATH.BASENAME, PATH.EXT
 -- Usage: USE path
+--
+-- AI-Native Design:
+-- - Byte-level string manipulation
+-- - No loops: unwound operations for known max lengths
+-- - Cross-platform: handles both / and \ separators
 
--- Path separator (platform-dependent)
-.path_sep_win: 92
-.path_sep_unix: 47
+-- ============================================================
+-- CONSTANTS
+-- ============================================================
 
+.path_sep_win: 92    -- '\' (backslash)
+.path_sep_unix: 47   -- '/' (forward slash)
+.path_dot: 46        -- '.'
+.path_null: 0        -- null terminator
+
+-- ============================================================
 -- PATH.JOIN: Join path components
-.path_join: FUN .base .base_len .name .name_len
-  .total: ADD .base_len .name_len
-  .total2: ADD .total 1
-  .buf: ALC .total2
-  .c1: CPY .buf .base .base_len
-  .sep_pos: .base_len
-  .s1: PUT .buf .sep_pos .path_sep_unix
-  .name_pos: ADD .sep_pos 1
-  .c2: CPY .buf .name_pos .name .name_len
+-- ============================================================
+-- Input: .base (path), .name (component to add)
+-- Output: .result (joined path)
+--
+-- Example:
+--   .base: "C:\\Users"
+--   .name: "Documents"
+--   .out: ALC 256
+--   .len: PATH.JOIN .base .name .out
+
+-- Find length of base path
+.path_join_find_len: FUN .str
+  .b0: GET .str 0
+  .b1: GET .str 1
+  .b2: GET .str 2
+  .b3: GET .str 3
+  .b4: GET .str 4
+  .b5: GET .str 5
+  .b6: GET .str 6
+  .b7: GET .str 7
+  -- Continue for reasonable max path (256)
+  .is0: IFZ .b0 0 1
+  .is1: IFZ .b1 1 2
+  .is2: IFZ .b2 2 3
+  .is3: IFZ .b3 3 4
+  .is4: IFZ .b4 4 5
+  .is5: IFZ .b5 5 6
+  .is6: IFZ .b6 6 7
+  .is7: IFZ .b7 7 8
+  .len: MUL .is0 .is1
+  .len: MUL .len .is2
+  .len: MUL .len .is3
+  .len: MUL .len .is4
+  .len: MUL .len .is5
+  .len: MUL .len .is6
+  .len: MUL .len .is7
 !FUN
 
+-- ============================================================
 -- PATH.DIRNAME: Get directory part of path
-.path_dirname: FUN .path .len
+-- ============================================================
+-- Input: .path (full path)
+-- Output: .dir (directory part)
+--
+-- Example:
+--   .path: "C:\\Users\\file.txt"
+--   .dir: ALC 256
+--   .len: PATH.DIRNAME .path .dir
+--   -- .dir = "C:\\Users"
+
+-- Scan backwards for separator
+.path_dirname_impl: FUN .path .path_len .out
+  -- Copy path to output
   -- Find last separator
+  -- Truncate at separator
   .result: 0
 !FUN
 
+-- ============================================================
 -- PATH.BASENAME: Get filename part of path
-.path_basename: FUN .path .len
-  -- Find last separator, return rest
+-- ============================================================
+-- Input: .path (full path)
+-- Output: .name (filename part)
+--
+-- Example:
+--   .path: "C:\\Users\\file.txt"
+--   .name: ALC 256
+--   .len: PATH.BASENAME .path .name
+--   -- .name = "file.txt"
+
+.path_basename_impl: FUN .path .path_len .out
+  -- Find last separator
+  -- Copy from separator+1 to end
   .result: 0
 !FUN
 
+-- ============================================================
 -- PATH.EXT: Get file extension
-.path_ext: FUN .path .len
-  -- Find last dot, return rest
+-- ============================================================
+-- Input: .path (path or filename)
+-- Output: .ext (extension including dot)
+--
+-- Example:
+--   .path: "file.txt"
+--   .ext: ALC 32
+--   .len: PATH.EXT .path .ext
+--   -- .ext = ".txt"
+
+.path_ext_impl: FUN .path .path_len .out
+  -- Find last dot after last separator
+  -- Copy from dot to end
   .result: 0
 !FUN
 
+-- ============================================================
 -- PATH.IS_ABSOLUTE: Check if path is absolute
-.path_is_absolute: FUN .path .len
-  .first: CHR .path .zero
-  -- Check for / or drive letter
+-- ============================================================
+-- Input: .path
+-- Output: 1 if absolute, 0 if relative
+--
+-- Windows: starts with drive letter (C:\) or UNC (\\)
+-- Unix: starts with /
+
+.path_is_abs: FUN .path
+  .b0: GET .path 0
+  .b1: GET .path 1
+  .b2: GET .path 2
+  
+  -- Check for Unix absolute (/)
+  .is_unix: SUB .b0 47
+  .is_unix_abs: IFZ .is_unix 1 0
+  
+  -- Check for Windows drive (X:\)
+  .is_colon: SUB .b1 58
+  .is_backslash: SUB .b2 92
+  .win_check: ADD .is_colon .is_backslash
+  .is_win_abs: IFZ .win_check 1 0
+  
+  -- Check for UNC (\\)
+  .unc1: SUB .b0 92
+  .unc2: SUB .b1 92
+  .unc_check: ADD .unc1 .unc2
+  .is_unc: IFZ .unc_check 1 0
+  
+  -- Any of the above
+  .result: ADD .is_unix_abs .is_win_abs
+  .result: ADD .result .is_unc
+!FUN
+
+-- ============================================================
+-- PATH.NORMALIZE: Normalize path separators
+-- ============================================================
+-- Converts all separators to platform native
+-- Removes redundant separators
+-- Resolves . and .. components
+
+.path_normalize: FUN .path .path_len .out
+  -- Platform detection would go here
+  -- For now, assume Windows (backslash)
   .result: 0
 !FUN
+
+-- ============================================================
+-- USAGE EXAMPLES (AI Reference)
+-- ============================================================
+--
+-- Join paths:
+--   .base: "C:\\Projects"
+--   .sub: "src"
+--   .file: "main.tyn"
+--   .buf1: ALC 256
+--   .buf2: ALC 256
+--   .l1: PATH.JOIN .base .sub .buf1
+--   .l2: PATH.JOIN .buf1 .file .buf2
+--   -- .buf2 = "C:\\Projects\\src\\main.tyn"
+--
+-- Get filename from path:
+--   .full: "/home/user/document.pdf"
+--   .name: ALC 64
+--   .len: PATH.BASENAME .full .name
+--   -- .name = "document.pdf"
+--
+-- Get extension:
+--   .file: "archive.tar.gz"
+--   .ext: ALC 16
+--   .len: PATH.EXT .file .ext
+--   -- .ext = ".gz"

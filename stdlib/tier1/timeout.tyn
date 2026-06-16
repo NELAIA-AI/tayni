@@ -1,35 +1,230 @@
--- TAYNI stdlib: timeout v0.1
--- Provides: TIMEOUT.SET, TIMEOUT.CLEAR, TIMEOUT.WRAP
+-- TAYNI stdlib: timeout v1.0
+-- Provides: TIMEOUT.SET, TIMEOUT.CANCEL, TIMEOUT.REMAINING
 -- Usage: USE timeout
+-- Depends: USE time
+--
+-- AI-Native Design:
+-- - Simple deadline-based timeouts
+-- - No callback complexity
+-- - Polling-based checking
 
--- TIMEOUT.SET: Set a timeout callback
--- Returns: timeout ID
-.timeout_set: FUN .callback .ms
-  .id: 0
+-- ============================================================
+-- TIMEOUT STRUCTURE
+-- ============================================================
+-- deadline: Unix timestamp when timeout expires
+-- cancelled: 0 or 1
+
+.timeout_struct_size: 16
+
+-- ============================================================
+-- TIMEOUT.SET: Create a timeout
+-- ============================================================
+-- Input: .ms (milliseconds until timeout)
+-- Output: Timeout handle
+--
+-- Example:
+--   .t: TIMEOUT.SET 5000  -- 5 second timeout
+
+.timeout_set: FUN .ms
+  .handle: ALC 16
+  
+  -- Get current time
+  .now: TIME.NOW_MS
+  
+  -- Calculate deadline
+  .deadline: ADD .now .ms
+  
+  -- Store in handle
+  .set_deadline: PUT .handle 0 .deadline
+  .set_cancelled: PUT .handle 8 0
+  
+  .result: .handle
 !FUN
 
--- TIMEOUT.CLEAR: Cancel a timeout
-.timeout_clear: FUN .id
-  .done: 0
+-- ============================================================
+-- TIMEOUT.CANCEL: Cancel a timeout
+-- ============================================================
+-- Input: .handle
+-- Output: 1 if cancelled, 0 if already expired
+
+.timeout_cancel: FUN .handle
+  .cancelled: GET .handle 8
+  
+  -- If already cancelled, return 0
+  .already: IFZ .cancelled 0 1
+  
+  -- Mark as cancelled
+  .set: PUT .handle 8 1
+  
+  -- Return success if not already cancelled
+  .result: IFZ .cancelled 1 0
 !FUN
 
--- TIMEOUT.WRAP: Wrap operation with timeout
--- Returns: result or error if timeout
-.timeout_wrap: FUN .operation .ms
-  .result: 0
+-- ============================================================
+-- TIMEOUT.EXPIRED: Check if timeout has expired
+-- ============================================================
+-- Input: .handle
+-- Output: 1 if expired, 0 if still valid
+
+.timeout_expired: FUN .handle
+  .cancelled: GET .handle 8
+  
+  -- If cancelled, not expired (cancelled != expired)
+  .is_cancelled: IFZ .cancelled 0 1
+  
+  -- Check deadline
+  .deadline: GET .handle 0
+  .now: TIME.NOW_MS
+  
+  .past_deadline: GT .now .deadline
+  
+  -- Expired if past deadline and not cancelled
+  .not_cancelled: IFZ .cancelled 1 0
+  .result: MUL .past_deadline .not_cancelled
 !FUN
 
--- TIMEOUT.WITH_RETRY: Operation with timeout and retry
-.timeout_with_retry: FUN .operation .ms .max_retries
-  .result: 0
+-- ============================================================
+-- TIMEOUT.REMAINING: Get remaining time
+-- ============================================================
+-- Input: .handle
+-- Output: Milliseconds remaining (0 if expired)
+
+.timeout_remaining: FUN .handle
+  .cancelled: GET .handle 8
+  .deadline: GET .handle 0
+  .now: TIME.NOW_MS
+  
+  .diff: SUB .deadline .now
+  
+  -- If negative or cancelled, return 0
+  .is_positive: GT .diff 0
+  .not_cancelled: IFZ .cancelled 1 0
+  .valid: MUL .is_positive .not_cancelled
+  
+  .result: IFZ .valid 0 .diff
 !FUN
 
--- INTERVAL.SET: Set repeating interval
-.interval_set: FUN .callback .ms
-  .id: 0
+-- ============================================================
+-- TIMEOUT.WAIT: Wait until timeout expires
+-- ============================================================
+-- Input: .handle
+-- Output: 1 if expired normally, 0 if cancelled
+
+.timeout_wait: FUN .handle
+  .remaining: TIMEOUT.REMAINING .handle
+  
+  -- Sleep for remaining time
+  .sleep: TIME.SLEEP .remaining
+  
+  -- Check if cancelled during sleep
+  .cancelled: GET .handle 8
+  .result: IFZ .cancelled 1 0
 !FUN
 
--- INTERVAL.CLEAR: Cancel interval
-.interval_clear: FUN .id
-  .done: 0
+-- ============================================================
+-- TIMEOUT.WITH: Execute with timeout
+-- ============================================================
+-- Note: In AI-native model, this is cooperative
+-- The operation must check timeout periodically
+
+.timeout_with: FUN .ms .operation
+  .t: TIMEOUT.SET .ms
+  
+  -- Execute operation
+  -- Operation should check TIMEOUT.EXPIRED periodically
+  
+  .expired: TIMEOUT.EXPIRED .t
+  .result: .expired
 !FUN
+
+-- ============================================================
+-- DEADLINE: Absolute time-based timeout
+-- ============================================================
+
+-- Create deadline from Unix timestamp
+.deadline_at: FUN .timestamp_ms
+  .handle: ALC 16
+  .set_deadline: PUT .handle 0 .timestamp_ms
+  .set_cancelled: PUT .handle 8 0
+  .result: .handle
+!FUN
+
+-- Create deadline N seconds from now
+.deadline_in_seconds: FUN .seconds
+  .ms: MUL .seconds 1000
+  .result: TIMEOUT.SET .ms
+!FUN
+
+-- Create deadline N minutes from now
+.deadline_in_minutes: FUN .minutes
+  .seconds: MUL .minutes 60
+  .ms: MUL .seconds 1000
+  .result: TIMEOUT.SET .ms
+!FUN
+
+-- ============================================================
+-- RETRY WITH TIMEOUT
+-- ============================================================
+
+-- Retry configuration
+.retry_max_attempts: 3
+.retry_delay_ms: 1000
+.retry_timeout_ms: 30000
+
+-- Retry with exponential backoff
+.retry_with_backoff: FUN .operation .max_attempts .initial_delay_ms
+  .attempt: 0
+  .delay: .initial_delay_ms
+  
+  -- Would need loop, but AI-native uses unwound attempts
+  -- Attempt 1
+  .r1: 0  -- Call operation
+  .ok1: IFZ .r1 0 1
+  
+  -- If failed, wait and retry
+  .wait1: TIME.SLEEP .delay
+  .delay: MUL .delay 2  -- Double delay
+  
+  -- Attempt 2
+  .r2: 0  -- Call operation
+  .ok2: IFZ .r2 0 1
+  
+  -- Attempt 3
+  .wait2: TIME.SLEEP .delay
+  .r3: 0  -- Call operation
+  .ok3: IFZ .r3 0 1
+  
+  .result: ADD .ok1 .ok2
+  .result: ADD .result .ok3
+!FUN
+
+-- ============================================================
+-- USAGE EXAMPLES (AI Reference)
+-- ============================================================
+--
+-- Simple timeout:
+--   .t: TIMEOUT.SET 5000  -- 5 seconds
+--   -- ... do work ...
+--   .expired: TIMEOUT.EXPIRED .t
+--   -- Check if we ran out of time
+--
+-- Cancel timeout:
+--   .t: TIMEOUT.SET 10000
+--   -- ... work completed early ...
+--   .cancelled: TIMEOUT.CANCEL .t
+--
+-- Check remaining time:
+--   .t: TIMEOUT.SET 5000
+--   -- ... some work ...
+--   .left: TIMEOUT.REMAINING .t
+--   -- .left = milliseconds remaining
+--
+-- Wait for timeout:
+--   .t: TIMEOUT.SET 2000
+--   .done: TIMEOUT.WAIT .t
+--   -- Blocks for 2 seconds
+--
+-- Deadline-based:
+--   .deadline: DEADLINE.IN_MINUTES 5
+--   -- ... long operation ...
+--   .expired: TIMEOUT.EXPIRED .deadline

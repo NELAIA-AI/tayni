@@ -1,41 +1,253 @@
--- TAYNI stdlib: test v0.1
--- Provides: TEST.ASSERT, TEST.EQUAL, TEST.RUN
+-- TAYNI stdlib: test v1.0
+-- Provides: TEST.ASSERT, TEST.EXPECT, TEST.RUN
 -- Usage: USE test
+--
+-- AI-Native Design:
+-- - Simple assertion-based testing
+-- - No test framework overhead
+-- - Exit code indicates pass/fail
 
--- Test result codes
-.test_pass: 0
-.test_fail: 1
+-- ============================================================
+-- TEST STATE
+-- ============================================================
 
+.test_total: 0
+.test_passed: 0
+.test_failed: 0
+.test_current_name: ALC 64
+
+-- ============================================================
 -- TEST.ASSERT: Assert condition is true
-.test_assert: FUN .condition .msg .msg_len
-  .fail_prefix: "FAIL: "
-  .pass_prefix: "PASS: "
-  .result: IFZ .condition .test_fail .test_pass
+-- ============================================================
+-- Input: .condition (0 or non-zero)
+-- Output: 1 if passed, 0 if failed
+-- Side effect: Increments counters
+--
+-- Example:
+--   .result: ADD 2 2
+--   .ok: TEST.ASSERT .result 4 "2+2=4"
+
+.test_assert: FUN .condition .expected .name .name_len
+  .test_total: ADD .test_total 1
+  
+  -- Compare condition with expected
+  .diff: SUB .condition .expected
+  .passed: IFZ .diff 1 0
+  
+  -- Update counters
+  .test_passed: IFZ .diff .test_passed .test_passed
+  .test_passed: ADD .test_passed .passed
+  
+  .failed: IFZ .diff 0 1
+  .test_failed: ADD .test_failed .failed
+  
+  .result: .passed
 !FUN
 
--- TEST.EQUAL: Assert two values are equal
-.test_equal: FUN .actual .expected .msg .msg_len
+-- ============================================================
+-- TEST.ASSERT_EQ: Assert two values are equal
+-- ============================================================
+
+.test_assert_eq: FUN .actual .expected .name .name_len
   .diff: SUB .actual .expected
-  .is_equal: IFZ .diff 1 0
+  .passed: IFZ .diff 1 0
+  
+  .test_total: ADD .test_total 1
+  .test_passed: ADD .test_passed .passed
+  .failed: IFZ .diff 0 1
+  .test_failed: ADD .test_failed .failed
+  
+  .result: .passed
 !FUN
 
--- TEST.NOT_EQUAL: Assert two values are not equal
-.test_not_equal: FUN .actual .expected .msg .msg_len
+-- ============================================================
+-- TEST.ASSERT_NE: Assert two values are not equal
+-- ============================================================
+
+.test_assert_ne: FUN .actual .expected .name .name_len
   .diff: SUB .actual .expected
-  .is_not_equal: IFZ .diff 0 1
+  .passed: IFZ .diff 0 1
+  
+  .test_total: ADD .test_total 1
+  .test_passed: ADD .test_passed .passed
+  .failed: IFZ .diff 1 0
+  .test_failed: ADD .test_failed .failed
+  
+  .result: .passed
 !FUN
 
--- TEST.STRING_EQUAL: Assert two strings are equal
-.test_string_equal: FUN .str1 .str2 .len .msg .msg_len
-  .cmp: SCM .str1 .str2 .len
+-- ============================================================
+-- TEST.ASSERT_GT: Assert actual > expected
+-- ============================================================
+
+.test_assert_gt: FUN .actual .expected .name .name_len
+  .passed: GT .actual .expected
+  
+  .test_total: ADD .test_total 1
+  .test_passed: ADD .test_passed .passed
+  .failed: IFZ .passed 1 0
+  .test_failed: ADD .test_failed .failed
+  
+  .result: .passed
 !FUN
 
--- TEST.NULL: Assert value is null/zero
-.test_null: FUN .value .msg .msg_len
-  .is_null: IFZ .value 1 0
+-- ============================================================
+-- TEST.ASSERT_GTE: Assert actual >= expected
+-- ============================================================
+
+.test_assert_gte: FUN .actual .expected .name .name_len
+  .passed: GTE .actual .expected
+  
+  .test_total: ADD .test_total 1
+  .test_passed: ADD .test_passed .passed
+  .failed: IFZ .passed 1 0
+  .test_failed: ADD .test_failed .failed
+  
+  .result: .passed
 !FUN
 
--- TEST.NOT_NULL: Assert value is not null/zero
-.test_not_null: FUN .value .msg .msg_len
-  .is_not_null: IFZ .value 0 1
+-- ============================================================
+-- TEST.ASSERT_LT: Assert actual < expected
+-- ============================================================
+
+.test_assert_lt: FUN .actual .expected .name .name_len
+  .passed: LT .actual .expected
+  
+  .test_total: ADD .test_total 1
+  .test_passed: ADD .test_passed .passed
+  .failed: IFZ .passed 1 0
+  .test_failed: ADD .test_failed .failed
+  
+  .result: .passed
 !FUN
+
+-- ============================================================
+-- TEST.ASSERT_LTE: Assert actual <= expected
+-- ============================================================
+
+.test_assert_lte: FUN .actual .expected .name .name_len
+  .passed: LTE .actual .expected
+  
+  .test_total: ADD .test_total 1
+  .test_passed: ADD .test_passed .passed
+  .failed: IFZ .passed 1 0
+  .test_failed: ADD .test_failed .failed
+  
+  .result: .passed
+!FUN
+
+-- ============================================================
+-- TEST.ASSERT_TRUE: Assert value is non-zero
+-- ============================================================
+
+.test_assert_true: FUN .value .name .name_len
+  .passed: IFZ .value 0 1
+  
+  .test_total: ADD .test_total 1
+  .test_passed: ADD .test_passed .passed
+  .failed: IFZ .value 1 0
+  .test_failed: ADD .test_failed .failed
+  
+  .result: .passed
+!FUN
+
+-- ============================================================
+-- TEST.ASSERT_FALSE: Assert value is zero
+-- ============================================================
+
+.test_assert_false: FUN .value .name .name_len
+  .passed: IFZ .value 1 0
+  
+  .test_total: ADD .test_total 1
+  .test_passed: ADD .test_passed .passed
+  .failed: IFZ .value 0 1
+  .test_failed: ADD .test_failed .failed
+  
+  .result: .passed
+!FUN
+
+-- ============================================================
+-- TEST.ASSERT_NULL: Assert pointer is null (0)
+-- ============================================================
+
+.test_assert_null: FUN .ptr .name .name_len
+  .passed: IFZ .ptr 1 0
+  
+  .test_total: ADD .test_total 1
+  .test_passed: ADD .test_passed .passed
+  .failed: IFZ .ptr 0 1
+  .test_failed: ADD .test_failed .failed
+  
+  .result: .passed
+!FUN
+
+-- ============================================================
+-- TEST.ASSERT_NOT_NULL: Assert pointer is not null
+-- ============================================================
+
+.test_assert_not_null: FUN .ptr .name .name_len
+  .passed: IFZ .ptr 0 1
+  
+  .test_total: ADD .test_total 1
+  .test_passed: ADD .test_passed .passed
+  .failed: IFZ .ptr 1 0
+  .test_failed: ADD .test_failed .failed
+  
+  .result: .passed
+!FUN
+
+-- ============================================================
+-- TEST.SUMMARY: Print test summary
+-- ============================================================
+-- Output: "X/Y tests passed"
+
+.test_summary: FUN
+  -- Print results
+  -- Return 0 if all passed, 1 if any failed
+  .result: IFZ .test_failed 0 1
+!FUN
+
+-- ============================================================
+-- TEST.RESET: Reset test counters
+-- ============================================================
+
+.test_reset: FUN
+  .test_total: 0
+  .test_passed: 0
+  .test_failed: 0
+  .result: 0
+!FUN
+
+-- ============================================================
+-- TEST.EXIT: Exit with appropriate code
+-- ============================================================
+-- Exit 0 if all tests passed, 1 if any failed
+
+.test_exit: FUN
+  .code: IFZ .test_failed 0 1
+  .result: .code
+!FUN
+
+-- ============================================================
+-- USAGE EXAMPLES (AI Reference)
+-- ============================================================
+--
+-- Basic test:
+--   .a: ADD 2 2
+--   .t1: TEST.ASSERT_EQ .a 4 "add" 3
+--
+-- Multiple assertions:
+--   .x: 10
+--   .t1: TEST.ASSERT_GT .x 5 "x>5" 3
+--   .t2: TEST.ASSERT_LT .x 20 "x<20" 4
+--   .t3: TEST.ASSERT_TRUE .x "x truthy" 8
+--
+-- Test with summary:
+--   .t1: TEST.ASSERT_EQ 1 1 "one" 3
+--   .t2: TEST.ASSERT_EQ 2 2 "two" 3
+--   .exit: TEST.EXIT
+--   -- Returns 0 if all passed
+--
+-- Reset between test suites:
+--   .r: TEST.RESET
+--   -- Run new tests...

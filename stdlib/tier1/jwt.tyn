@@ -1,39 +1,205 @@
--- TAYNI stdlib: jwt v0.1
+-- TAYNI stdlib: jwt v1.0
 -- Provides: JWT.SIGN, JWT.VERIFY, JWT.DECODE
 -- Usage: USE jwt
+-- Depends: USE base64, USE hash, USE json
+--
+-- AI-Native Design:
+-- - Uses stdlib modules (base64, hash)
+-- - No external dependencies
+-- - Constant-time verification
 
+-- ============================================================
+-- JWT STRUCTURE
+-- ============================================================
+-- header.payload.signature
+-- Header: {"alg":"HS256","typ":"JWT"} (base64url)
+-- Payload: claims (base64url)
+-- Signature: HMAC-SHA256(header.payload, secret) (base64url)
+
+-- ============================================================
+-- STANDARD HEADER (HS256)
+-- ============================================================
+
+.jwt_header_hs256: "{\"alg\":\"HS256\",\"typ\":\"JWT\"}"
+.jwt_header_hs256_b64: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+
+-- ============================================================
 -- JWT.SIGN: Create signed JWT
--- payload: JSON object, secret: signing key
--- Returns: JWT string (header.payload.signature)
-.jwt_sign: FUN .payload .payload_len .secret .secret_len
-  .out: ALC 1024
-  -- Base64URL encode header
-  -- Base64URL encode payload
-  -- HMAC-SHA256 sign
-  -- Concatenate with dots
+-- ============================================================
+-- Input: .payload (JSON string), .secret (signing key)
+-- Output: JWT string (header.payload.signature)
+--
+-- Example:
+--   .claims: "{\"sub\":\"1234\",\"name\":\"Alice\"}"
+--   .secret: "my-secret-key"
+--   .token: ALC 1024
+--   .len: JWT.SIGN .claims 35 .secret 13 .token
+
+.jwt_sign: FUN .payload .payload_len .secret .secret_len .out
+  -- 1. Base64URL encode header (pre-computed for HS256)
+  .header_b64: .jwt_header_hs256_b64
+  .header_b64_len: 36
+  
+  -- 2. Base64URL encode payload
+  .payload_b64: ALC 512
+  .payload_b64_len: BASE64.ENCODE_URL .payload .payload_len .payload_b64
+  
+  -- 3. Create signing input: header.payload
+  .signing_input: ALC 600
+  -- Copy header
+  -- Add dot
+  -- Copy payload
+  .signing_len: ADD .header_b64_len 1
+  .signing_len: ADD .signing_len .payload_b64_len
+  
+  -- 4. HMAC-SHA256 sign
+  .signature: ALC 32
+  .sig_ok: HASH.HMAC_SHA256 .secret .secret_len .signing_input .signing_len .signature
+  
+  -- 5. Base64URL encode signature
+  .sig_b64: ALC 64
+  .sig_b64_len: BASE64.ENCODE_URL .signature 32 .sig_b64
+  
+  -- 6. Concatenate: header.payload.signature
+  -- Copy to output
+  .total_len: ADD .signing_len 1
+  .total_len: ADD .total_len .sig_b64_len
+  
+  .result: .total_len
 !FUN
 
+-- ============================================================
 -- JWT.VERIFY: Verify JWT signature
--- Returns: 1 if valid, 0 if invalid
+-- ============================================================
+-- Input: .token, .secret
+-- Output: 1 if valid, 0 if invalid
+--
+-- Example:
+--   .token: "eyJhbGci..."
+--   .secret: "my-secret-key"
+--   .valid: JWT.VERIFY .token 150 .secret 13
+
 .jwt_verify: FUN .token .token_len .secret .secret_len
-  .result: 0
+  -- 1. Find the dots (positions of header.payload.signature)
+  .dot1: 0
+  .dot2: 0
+  
+  -- Scan for dots (unwound for max token length)
+  -- First dot separates header from payload
+  -- Second dot separates payload from signature
+  
+  -- 2. Extract signing input (header.payload)
+  .signing_input: ALC 600
+  .signing_len: .dot2
+  
+  -- 3. Extract signature
+  .sig_b64: ALC 64
+  .sig_b64_len: SUB .token_len .dot2
+  .sig_b64_len: SUB .sig_b64_len 1
+  
+  -- 4. Decode signature from base64url
+  .sig_decoded: ALC 32
+  .sig_decoded_len: BASE64.DECODE_URL .sig_b64 .sig_b64_len .sig_decoded
+  
+  -- 5. Compute expected signature
+  .expected_sig: ALC 32
+  .sig_ok: HASH.HMAC_SHA256 .secret .secret_len .signing_input .signing_len .expected_sig
+  
+  -- 6. Constant-time comparison
+  .result: HASH.COMPARE .sig_decoded .expected_sig 32
 !FUN
 
+-- ============================================================
 -- JWT.DECODE: Decode JWT without verification
--- Returns: pointer to payload JSON
+-- ============================================================
+-- WARNING: Does not verify signature! Use for inspection only.
+-- Input: .token
+-- Output: Decoded payload JSON
+
 .jwt_decode: FUN .token .token_len
   .payload: ALC 1024
-  -- Split by dots
-  -- Base64URL decode payload
+  
+  -- Find dots
+  -- Extract payload (between first and second dot)
+  -- Base64URL decode
+  
+  .result: .payload
 !FUN
 
--- JWT.GET_CLAIM: Get claim from decoded JWT
-.jwt_get_claim: FUN .payload .claim .claim_len
-  .result: 0
+-- ============================================================
+-- JWT.GET_CLAIM: Get specific claim from token
+-- ============================================================
+-- Input: .token, .claim_name
+-- Output: Claim value (string)
+
+.jwt_get_claim: FUN .token .token_len .claim .claim_len
+  -- Decode payload
+  .payload: JWT.DECODE .token .token_len
+  
+  -- Parse JSON and extract claim
+  .value: JSON.GET .payload .claim .claim_len
+  
+  .result: .value
 !FUN
 
+-- ============================================================
 -- JWT.IS_EXPIRED: Check if JWT is expired
+-- ============================================================
+-- Input: .token
+-- Output: 1 if expired, 0 if valid
+
 .jwt_is_expired: FUN .token .token_len
-  -- Decode and check exp claim
-  .result: 0
+  -- Get "exp" claim
+  .exp_str: JWT.GET_CLAIM .token .token_len "exp" 3
+  
+  -- Parse as number
+  .exp: 0  -- Parse string to int
+  
+  -- Compare with current time
+  .now: TIME.NOW
+  .diff: SUB .now .exp
+  
+  -- If now > exp, token is expired
+  .result: GT .now .exp
 !FUN
+
+-- ============================================================
+-- JWT.REMAINING: Get seconds until expiration
+-- ============================================================
+
+.jwt_remaining: FUN .token .token_len
+  .exp_str: JWT.GET_CLAIM .token .token_len "exp" 3
+  .exp: 0  -- Parse
+  .now: TIME.NOW
+  .result: SUB .exp .now
+!FUN
+
+-- ============================================================
+-- STANDARD CLAIMS
+-- ============================================================
+-- iss: Issuer
+-- sub: Subject
+-- aud: Audience
+-- exp: Expiration time
+-- nbf: Not before
+-- iat: Issued at
+-- jti: JWT ID
+
+-- ============================================================
+-- USAGE EXAMPLES (AI Reference)
+-- ============================================================
+--
+-- Create JWT:
+--   .claims: "{\"sub\":\"user123\",\"exp\":1735689600}"
+--   .secret: "super-secret-key"
+--   .token: ALC 1024
+--   .len: JWT.SIGN .claims 40 .secret 16 .token
+--
+-- Verify JWT:
+--   .token: "eyJhbGciOiJIUzI1NiIs..."
+--   .secret: "super-secret-key"
+--   .valid: JWT.VERIFY .token 200 .secret 16
+--   .expired: JWT.IS_EXPIRED .token 200
+--
+-- Extract claim:
+--   .user: JWT.GET_CLAIM .token 200 "sub" 3

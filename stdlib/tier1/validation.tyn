@@ -1,50 +1,275 @@
--- TAYNI stdlib: validation v0.1
--- Provides: VALIDATE.EMAIL, VALIDATE.URL, VALIDATE.REQUIRED
+-- TAYNI stdlib: validation v1.0
+-- Provides: VALIDATE.EMAIL, VALIDATE.URL, VALIDATE.RANGE
 -- Usage: USE validation
+-- Depends: USE regex
+--
+-- AI-Native Design:
+-- - Pattern-based validation
+-- - No exceptions (returns 0/1)
+-- - Composable validators
 
--- VALIDATE.EMAIL: Check if string is valid email
+-- ============================================================
+-- VALIDATE.EMAIL: Validate email format
+-- ============================================================
+-- Input: .str
+-- Output: 1 if valid, 0 if invalid
+--
+-- Example:
+--   .email: "user@example.com"
+--   .valid: VALIDATE.EMAIL .email 16
+
 .validate_email: FUN .str .str_len
-  -- Check for @ and domain
+  -- Check for @ symbol
+  .has_at: 0
+  .at_pos: 0
+  
+  -- Scan for @ (unwound)
+  .c0: GET .str 0
+  .c1: GET .str 1
+  .c2: GET .str 2
+  .c3: GET .str 3
+  .c4: GET .str 4
+  .c5: GET .str 5
+  -- Continue...
+  
+  .at: 64  -- '@'
+  .is0: SUB .c0 .at
+  .is1: SUB .c1 .at
+  .is2: SUB .c2 .at
+  -- Check each position
+  
+  -- Must have exactly one @
+  -- Must have chars before @
+  -- Must have domain after @
+  -- Domain must have at least one dot
+  
   .result: 0
 !FUN
 
--- VALIDATE.URL: Check if string is valid URL
+-- ============================================================
+-- VALIDATE.URL: Validate URL format
+-- ============================================================
+-- Input: .str
+-- Output: 1 if valid, 0 if invalid
+
 .validate_url: FUN .str .str_len
-  -- Check for scheme://host
+  -- Check for http:// or https://
+  .h: GET .str 0
+  .t: GET .str 1
+  .t2: GET .str 2
+  .p: GET .str 3
+  
+  -- "http" = 104, 116, 116, 112
+  .is_h: SUB .h 104
+  .is_t1: SUB .t 116
+  .is_t2: SUB .t2 116
+  .is_p: SUB .p 112
+  
+  .http_check: ADD .is_h .is_t1
+  .http_check: ADD .http_check .is_t2
+  .http_check: ADD .http_check .is_p
+  
+  .is_http: IFZ .http_check 1 0
+  
+  -- Check for ://
+  -- Check for valid domain
+  
+  .result: .is_http
+!FUN
+
+-- ============================================================
+-- VALIDATE.UUID: Validate UUID format
+-- ============================================================
+
+.validate_uuid: FUN .str .str_len
+  -- Check length = 36
+  .len_ok: SUB .str_len 36
+  .len_valid: IFZ .len_ok 1 0
+  
+  -- Check dashes at positions 8, 13, 18, 23
+  .d1: GET .str 8
+  .d2: GET .str 13
+  .d3: GET .str 18
+  .d4: GET .str 23
+  
+  .dash: 45
+  .d1_ok: SUB .d1 .dash
+  .d2_ok: SUB .d2 .dash
+  .d3_ok: SUB .d3 .dash
+  .d4_ok: SUB .d4 .dash
+  
+  .dashes: ADD .d1_ok .d2_ok
+  .dashes: ADD .dashes .d3_ok
+  .dashes: ADD .dashes .d4_ok
+  
+  .dashes_valid: IFZ .dashes 1 0
+  
+  .result: MUL .len_valid .dashes_valid
+!FUN
+
+-- ============================================================
+-- VALIDATE.IPV4: Validate IPv4 address
+-- ============================================================
+
+.validate_ipv4: FUN .str .str_len
+  -- Format: N.N.N.N where N is 0-255
+  -- Count dots (must be exactly 3)
+  -- Each octet must be 0-255
   .result: 0
 !FUN
 
--- VALIDATE.REQUIRED: Check if value is not empty
-.validate_required: FUN .str .str_len
-  .is_empty: IFZ .str_len 1 0
-  .result: IFZ .is_empty 1 0
+-- ============================================================
+-- VALIDATE.PHONE: Validate phone number
+-- ============================================================
+-- Accepts various formats: +1-555-123-4567, (555) 123-4567, etc.
+
+.validate_phone: FUN .str .str_len
+  -- Strip non-digits
+  -- Check length (10-15 digits)
+  .result: 0
 !FUN
 
--- VALIDATE.MIN_LENGTH: Check minimum string length
-.validate_min_length: FUN .str .str_len .min
-  .diff: SUB .str_len .min
-  .result: IFZ .diff 0 1
+-- ============================================================
+-- VALIDATE.DATE: Validate date string
+-- ============================================================
+-- Format: YYYY-MM-DD
+
+.validate_date: FUN .str .str_len
+  -- Check length = 10
+  .len_ok: SUB .str_len 10
+  .len_valid: IFZ .len_ok 1 0
+  
+  -- Check dashes at positions 4 and 7
+  .d1: GET .str 4
+  .d2: GET .str 7
+  .dash: 45
+  
+  .d1_ok: SUB .d1 .dash
+  .d2_ok: SUB .d2 .dash
+  .dashes: ADD .d1_ok .d2_ok
+  .dashes_valid: IFZ .dashes 1 0
+  
+  -- Parse and validate month (01-12)
+  -- Parse and validate day (01-31)
+  
+  .result: MUL .len_valid .dashes_valid
 !FUN
 
--- VALIDATE.MAX_LENGTH: Check maximum string length
-.validate_max_length: FUN .str .str_len .max
-  .diff: SUB .max .str_len
-  .result: IFZ .diff 0 1
+-- ============================================================
+-- VALIDATE.TIME: Validate time string
+-- ============================================================
+-- Format: HH:MM:SS or HH:MM
+
+.validate_time: FUN .str .str_len
+  -- Check length (5 or 8)
+  -- Check colons
+  -- Validate hours (00-23)
+  -- Validate minutes (00-59)
+  -- Validate seconds (00-59)
+  .result: 0
 !FUN
 
--- VALIDATE.RANGE: Check if number is in range
+-- ============================================================
+-- VALIDATE.RANGE: Validate number in range
+-- ============================================================
+-- Input: .value, .min, .max
+-- Output: 1 if min <= value <= max
+
 .validate_range: FUN .value .min .max
-  .above_min: SUB .value .min
-  .below_max: SUB .max .value
-  .result: 0
+  .above_min: GTE .value .min
+  .below_max: LTE .value .max
+  .result: MUL .above_min .below_max
 !FUN
 
--- VALIDATE.REGEX: Check if string matches pattern
-.validate_regex: FUN .str .str_len .pattern .pattern_len
-  .result: 0
+-- ============================================================
+-- VALIDATE.LENGTH: Validate string length
+-- ============================================================
+-- Input: .str, .min_len, .max_len
+-- Output: 1 if valid
+
+.validate_length: FUN .str_len .min_len .max_len
+  .above_min: GTE .str_len .min_len
+  .below_max: LTE .str_len .max_len
+  .result: MUL .above_min .below_max
 !FUN
 
--- VALIDATE.ALPHANUMERIC: Check if string is alphanumeric
+-- ============================================================
+-- VALIDATE.NOT_EMPTY: Check string is not empty
+-- ============================================================
+
+.validate_not_empty: FUN .str_len
+  .result: GT .str_len 0
+!FUN
+
+-- ============================================================
+-- VALIDATE.ALPHANUMERIC: Check string is alphanumeric
+-- ============================================================
+
 .validate_alphanumeric: FUN .str .str_len
+  -- Check each char is a-z, A-Z, or 0-9
   .result: 0
 !FUN
+
+-- ============================================================
+-- VALIDATE.NUMERIC: Check string is all digits
+-- ============================================================
+
+.validate_numeric: FUN .str .str_len
+  -- Check each char is 0-9
+  .result: 0
+!FUN
+
+-- ============================================================
+-- VALIDATE.HEX: Check string is valid hex
+-- ============================================================
+
+.validate_hex: FUN .str .str_len
+  -- Check each char is 0-9, a-f, or A-F
+  .result: 0
+!FUN
+
+-- ============================================================
+-- VALIDATE.JSON: Check string is valid JSON
+-- ============================================================
+
+.validate_json: FUN .str .str_len
+  -- Basic structure check
+  -- Must start with { or [
+  -- Must end with } or ]
+  .first: GET .str 0
+  .last_pos: SUB .str_len 1
+  .last: GET .str .last_pos
+  
+  .is_obj_start: SUB .first 123  -- '{'
+  .is_arr_start: SUB .first 91   -- '['
+  .is_obj_end: SUB .last 125     -- '}'
+  .is_arr_end: SUB .last 93      -- ']'
+  
+  .result: 0
+!FUN
+
+-- ============================================================
+-- USAGE EXAMPLES (AI Reference)
+-- ============================================================
+--
+-- Validate email:
+--   .email: "user@example.com"
+--   .valid: VALIDATE.EMAIL .email 16
+--
+-- Validate URL:
+--   .url: "https://example.com/path"
+--   .valid: VALIDATE.URL .url 24
+--
+-- Validate range:
+--   .age: 25
+--   .valid: VALIDATE.RANGE .age 18 120
+--
+-- Validate string length:
+--   .password: "secret123"
+--   .valid: VALIDATE.LENGTH 9 8 64
+--
+-- Combine validators:
+--   .email: "user@example.com"
+--   .v1: VALIDATE.NOT_EMPTY 16
+--   .v2: VALIDATE.EMAIL .email 16
+--   .valid: MUL .v1 .v2

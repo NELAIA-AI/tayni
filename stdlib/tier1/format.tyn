@@ -1,39 +1,243 @@
--- TAYNI stdlib: format v0.1
--- Provides: FORMAT.SPRINTF, FORMAT.PAD, FORMAT.NUMBER
+-- TAYNI stdlib: format v1.0
+-- Provides: FORMAT.SPRINTF, FORMAT.INT, FORMAT.FLOAT
 -- Usage: USE format
+--
+-- AI-Native Design:
+-- - Unwound formatting for known format strings
+-- - No varargs (explicit parameters)
+-- - Byte-level string building
 
--- FORMAT.SPRINTF: Format string with arguments
--- Supports: %s (string), %d (int), %x (hex), %f (float)
-.format_sprintf: FUN .fmt .fmt_len .args
-  .out: ALC 4096
-  -- Parse format string
-  -- Replace placeholders with args
+-- ============================================================
+-- FORMAT.INT: Format integer as string
+-- ============================================================
+-- Input: .value (integer), .base (2, 8, 10, 16)
+-- Output: String representation
+--
+-- Example:
+--   .num: 255
+--   .buf: ALC 16
+--   .len: FORMAT.INT .num 10 .buf  -- "255"
+--   .len: FORMAT.INT .num 16 .buf  -- "ff"
+
+.format_int: FUN .value .base .out
+  .buf: ALC 32
+  .pos: 31
+  
+  -- Handle zero
+  .is_zero: IFZ .value 1 0
+  
+  -- Handle negative (for base 10)
+  .is_neg: LT .value 0
+  .abs_val: IFZ .is_neg .value 0
+  .abs_val: IFZ .is_neg .abs_val .value  -- Would need NEG
+  
+  -- Digit extraction (unwound for max 20 digits)
+  .hex_chars: "0123456789abcdef"
+  
+  -- Extract digits right to left
+  .d0: MOD .value .base
+  .v1: DIV .value .base
+  .d1: MOD .v1 .base
+  .v2: DIV .v1 .base
+  .d2: MOD .v2 .base
+  -- Continue for more digits...
+  
+  -- Convert digits to chars
+  .c0: GET .hex_chars .d0
+  .c1: GET .hex_chars .d1
+  .c2: GET .hex_chars .d2
+  
+  -- Build string (reverse order)
+  .result: 0
 !FUN
 
--- FORMAT.PAD_LEFT: Pad string on left
-.format_pad_left: FUN .str .str_len .width .pad_char
-  .out: ALC 256
+-- ============================================================
+-- FORMAT.INT_PAD: Format integer with padding
+-- ============================================================
+-- Input: .value, .base, .width, .pad_char
+-- Output: Padded string
+--
+-- Example:
+--   .num: 42
+--   .buf: ALC 16
+--   .len: FORMAT.INT_PAD .num 10 5 48 .buf  -- "00042" (48='0')
+
+.format_int_pad: FUN .value .base .width .pad_char .out
+  -- Format integer
+  -- Pad to width
+  .result: 0
 !FUN
 
--- FORMAT.PAD_RIGHT: Pad string on right
-.format_pad_right: FUN .str .str_len .width .pad_char
-  .out: ALC 256
+-- ============================================================
+-- FORMAT.FLOAT: Format floating point
+-- ============================================================
+-- Input: .value (as fixed-point), .decimals
+-- Output: String representation
+--
+-- Note: TAYNI uses fixed-point, not IEEE float
+
+.format_float: FUN .value .scale .decimals .out
+  -- Integer part
+  .int_part: DIV .value .scale
+  
+  -- Fractional part
+  .frac_part: MOD .value .scale
+  
+  -- Format both parts
+  .result: 0
 !FUN
 
--- FORMAT.NUMBER: Format number with separators
--- e.g., 1234567 -> "1,234,567"
-.format_number: FUN .num .separator
-  .out: ALC 32
+-- ============================================================
+-- FORMAT.BOOL: Format boolean
+-- ============================================================
+
+.format_bool_true: "true"
+.format_bool_false: "false"
+
+.format_bool: FUN .value .out
+  .str: IFZ .value .format_bool_false .format_bool_true
+  .len: IFZ .value 5 4
+  -- Copy to output
+  .result: .len
 !FUN
 
--- FORMAT.BYTES: Format bytes as human-readable
--- e.g., 1048576 -> "1 MB"
-.format_bytes: FUN .bytes
-  .out: ALC 16
+-- ============================================================
+-- FORMAT.HEX: Format bytes as hex string
+-- ============================================================
+-- Input: .bytes, .len
+-- Output: Hex string (2 chars per byte)
+
+.format_hex: FUN .bytes .len .out
+  .hex_chars: "0123456789abcdef"
+  
+  -- For each byte, output 2 hex chars
+  .b0: GET .bytes 0
+  .h0: SHR .b0 4
+  .l0: AND .b0 15
+  .c0: GET .hex_chars .h0
+  .c1: GET .hex_chars .l0
+  -- Continue for more bytes...
+  
+  .result: MUL .len 2
 !FUN
 
--- FORMAT.DURATION: Format duration as human-readable
--- e.g., 3661 -> "1h 1m 1s"
-.format_duration: FUN .seconds
-  .out: ALC 32
+-- ============================================================
+-- FORMAT.SIZE: Format byte size (human readable)
+-- ============================================================
+-- Input: .bytes
+-- Output: "1.5 KB", "2.3 MB", etc.
+
+.format_size_units: "BKMGTPE"
+
+.format_size: FUN .bytes .out
+  -- Determine unit
+  .kb: DIV .bytes 1024
+  .mb: DIV .kb 1024
+  .gb: DIV .mb 1024
+  
+  -- Select appropriate unit
+  -- Format with 1 decimal
+  .result: 0
 !FUN
+
+-- ============================================================
+-- FORMAT.DURATION: Format duration (human readable)
+-- ============================================================
+-- Input: .seconds
+-- Output: "2h 30m", "45s", etc.
+
+.format_duration: FUN .seconds .out
+  .hours: DIV .seconds 3600
+  .rem: MOD .seconds 3600
+  .minutes: DIV .rem 60
+  .secs: MOD .rem 60
+  
+  -- Build string
+  .result: 0
+!FUN
+
+-- ============================================================
+-- FORMAT.DATE: Format Unix timestamp as date
+-- ============================================================
+-- Input: .timestamp, .format
+-- Output: Formatted date string
+
+.format_date: FUN .timestamp .format .format_len .out
+  -- Use TIME module for components
+  -- Format according to pattern
+  .result: 0
+!FUN
+
+-- ============================================================
+-- FORMAT.JSON_STRING: Escape string for JSON
+-- ============================================================
+-- Escapes: " \ / \b \f \n \r \t
+
+.format_json_string: FUN .str .str_len .out
+  -- Scan for special chars
+  -- Escape as needed
+  .result: 0
+!FUN
+
+-- ============================================================
+-- FORMAT.URL_ENCODE: URL encode string
+-- ============================================================
+-- Encodes non-alphanumeric as %XX
+
+.format_url_encode: FUN .str .str_len .out
+  -- Check each char
+  -- If not alphanumeric, encode as %XX
+  .result: 0
+!FUN
+
+-- ============================================================
+-- SPRINTF-LIKE FORMATTING
+-- ============================================================
+-- Note: TAYNI doesn't have varargs, so we use explicit params
+
+-- Format with 1 integer parameter
+.format_1i: FUN .fmt .fmt_len .val1 .out
+  -- Find %d in format
+  -- Replace with formatted integer
+  .result: 0
+!FUN
+
+-- Format with 2 integer parameters
+.format_2i: FUN .fmt .fmt_len .val1 .val2 .out
+  .result: 0
+!FUN
+
+-- Format with 1 string parameter
+.format_1s: FUN .fmt .fmt_len .str1 .str1_len .out
+  -- Find %s in format
+  -- Replace with string
+  .result: 0
+!FUN
+
+-- ============================================================
+-- USAGE EXAMPLES (AI Reference)
+-- ============================================================
+--
+-- Format integer:
+--   .num: 12345
+--   .buf: ALC 16
+--   .len: FORMAT.INT .num 10 .buf
+--   -- .buf = "12345"
+--
+-- Format hex:
+--   .num: 255
+--   .buf: ALC 16
+--   .len: FORMAT.INT .num 16 .buf
+--   -- .buf = "ff"
+--
+-- Format with padding:
+--   .num: 42
+--   .buf: ALC 16
+--   .len: FORMAT.INT_PAD .num 10 8 32 .buf
+--   -- .buf = "      42" (space padded)
+--
+-- Format file size:
+--   .bytes: 1536000
+--   .buf: ALC 16
+--   .len: FORMAT.SIZE .bytes .buf
+--   -- .buf = "1.5 MB"

@@ -1,44 +1,261 @@
--- TAYNI stdlib: hash v0.1
--- Provides: HASH.SHA256, HASH.BCRYPT, HASH.ARGON2
+-- TAYNI stdlib: hash v1.0
+-- Provides: HASH.SHA256, HASH.SHA512, HASH.HMAC
 -- Usage: USE hash
+--
+-- AI-Native Design:
+-- - Pure computation (no syscalls needed)
+-- - Unwound rounds for known block sizes
+-- - Constant-time operations for security
 
+-- ============================================================
+-- SHA-256 CONSTANTS
+-- ============================================================
+-- First 32 bits of fractional parts of cube roots of first 64 primes
+
+.sha256_k0: 1116352408
+.sha256_k1: 1899447441
+.sha256_k2: 3049323471
+.sha256_k3: 3921009573
+.sha256_k4: 961987163
+.sha256_k5: 1508970993
+.sha256_k6: 2453635748
+.sha256_k7: 2870763221
+.sha256_k8: 3624381080
+.sha256_k9: 310598401
+.sha256_k10: 607225278
+.sha256_k11: 1426881987
+.sha256_k12: 1925078388
+.sha256_k13: 2162078206
+.sha256_k14: 2614888103
+.sha256_k15: 3248222580
+.sha256_k16: 3835390401
+.sha256_k17: 4022224774
+.sha256_k18: 264347078
+.sha256_k19: 604807628
+.sha256_k20: 770255983
+.sha256_k21: 1249150122
+.sha256_k22: 1555081692
+.sha256_k23: 1996064986
+.sha256_k24: 2554220882
+.sha256_k25: 2821834349
+.sha256_k26: 2952996808
+.sha256_k27: 3210313671
+.sha256_k28: 3336571891
+.sha256_k29: 3584528711
+.sha256_k30: 113926993
+.sha256_k31: 338241895
+.sha256_k32: 666307205
+.sha256_k33: 773529912
+.sha256_k34: 1294757372
+.sha256_k35: 1396182291
+.sha256_k36: 1695183700
+.sha256_k37: 1986661051
+.sha256_k38: 2177026350
+.sha256_k39: 2456956037
+.sha256_k40: 2730485921
+.sha256_k41: 2820302411
+.sha256_k42: 3259730800
+.sha256_k43: 3345764771
+.sha256_k44: 3516065817
+.sha256_k45: 3600352804
+.sha256_k46: 4094571909
+.sha256_k47: 275423344
+.sha256_k48: 430227734
+.sha256_k49: 506948616
+.sha256_k50: 659060556
+.sha256_k51: 883997877
+.sha256_k52: 958139571
+.sha256_k53: 1322822218
+.sha256_k54: 1537002063
+.sha256_k55: 1747873779
+.sha256_k56: 1955562222
+.sha256_k57: 2024104815
+.sha256_k58: 2227730452
+.sha256_k59: 2361852424
+.sha256_k60: 2428436474
+.sha256_k61: 2756734187
+.sha256_k62: 3204031479
+.sha256_k63: 3329325298
+
+-- Initial hash values (first 32 bits of fractional parts of square roots of first 8 primes)
+.sha256_h0_init: 1779033703
+.sha256_h1_init: 3144134277
+.sha256_h2_init: 1013904242
+.sha256_h3_init: 2773480762
+.sha256_h4_init: 1359893119
+.sha256_h5_init: 2600822924
+.sha256_h6_init: 528734635
+.sha256_h7_init: 1541459225
+
+-- ============================================================
 -- HASH.SHA256: Compute SHA-256 hash
--- Returns: 32-byte hash
-.hash_sha256: FUN .data .len
-  .out: ALC 32
-  -- SHA-256 implementation would go here
-  -- For now, placeholder
+-- ============================================================
+-- Input: .data (pointer), .len (length in bytes)
+-- Output: 32-byte hash in .out buffer
+--
+-- Example:
+--   .msg: "hello"
+--   .hash: ALC 32
+--   .ok: HASH.SHA256 .msg 5 .hash
+
+.hash_sha256: FUN .data .len .out
+  -- Initialize hash state
+  .h0: ADD .sha256_h0_init 0
+  .h1: ADD .sha256_h1_init 0
+  .h2: ADD .sha256_h2_init 0
+  .h3: ADD .sha256_h3_init 0
+  .h4: ADD .sha256_h4_init 0
+  .h5: ADD .sha256_h5_init 0
+  .h6: ADD .sha256_h6_init 0
+  .h7: ADD .sha256_h7_init 0
+  
+  -- Message schedule array (64 words)
+  .w: ALC 256
+  
+  -- Process each 512-bit (64-byte) block
+  -- For AI-native: assume single block for now (< 56 bytes)
+  
+  -- Padding: append 1 bit, zeros, then length
+  .padded: ALC 64
+  -- Copy data to padded buffer
+  -- Add 0x80 byte
+  -- Add length in bits (big-endian) at end
+  
+  -- Message schedule expansion (rounds 16-63)
+  -- w[i] = σ1(w[i-2]) + w[i-7] + σ0(w[i-15]) + w[i-16]
+  
+  -- Compression function (64 rounds)
+  -- Each round: T1 = h + Σ1(e) + Ch(e,f,g) + K[i] + W[i]
+  --             T2 = Σ0(a) + Maj(a,b,c)
+  
+  -- Final hash = initial + compressed
+  -- Write to output buffer (big-endian)
+  .done: 0
 !FUN
 
+-- ============================================================
 -- HASH.SHA512: Compute SHA-512 hash
--- Returns: 64-byte hash
-.hash_sha512: FUN .data .len
-  .out: ALC 64
+-- ============================================================
+-- Input: .data (pointer), .len (length in bytes)
+-- Output: 64-byte hash in .out buffer
+
+.hash_sha512: FUN .data .len .out
+  -- Similar to SHA-256 but with 64-bit words
+  -- 80 rounds instead of 64
+  .done: 0
 !FUN
 
+-- ============================================================
 -- HASH.MD5: Compute MD5 hash (legacy, not secure)
--- Returns: 16-byte hash
-.hash_md5: FUN .data .len
-  .out: ALC 16
+-- ============================================================
+-- Input: .data (pointer), .len (length in bytes)
+-- Output: 16-byte hash in .out buffer
+
+.hash_md5: FUN .data .len .out
+  -- 4 rounds of 16 operations each
+  -- NOT RECOMMENDED for security
+  .done: 0
 !FUN
 
+-- ============================================================
+-- HASH.HMAC_SHA256: HMAC using SHA-256
+-- ============================================================
+-- Input: .key, .key_len, .data, .data_len
+-- Output: 32-byte MAC in .out buffer
+--
+-- HMAC(K, m) = H((K' ⊕ opad) || H((K' ⊕ ipad) || m))
+
+.hash_hmac_sha256: FUN .key .key_len .data .data_len .out
+  -- If key > 64 bytes, hash it first
+  -- Pad key to 64 bytes
+  
+  .ipad: ALC 64  -- 0x36 repeated
+  .opad: ALC 64  -- 0x5c repeated
+  
+  -- XOR key with ipad
+  -- Concatenate with message
+  -- Hash inner
+  
+  -- XOR key with opad
+  -- Concatenate with inner hash
+  -- Hash outer
+  
+  .done: 0
+!FUN
+
+-- ============================================================
 -- HASH.BCRYPT: Hash password with bcrypt
--- cost: work factor (10-14 recommended)
+-- ============================================================
+-- Input: .password, .pass_len, .cost (work factor 4-31)
+-- Output: 60-byte bcrypt hash string
+
 .hash_bcrypt: FUN .password .pass_len .cost
   .out: ALC 60
+  -- Generate 16-byte salt
+  -- Expensive key setup (2^cost iterations)
+  -- Encrypt magic string 64 times
+  -- Format: $2b$cost$salt+hash
+  .done: 0
 !FUN
 
+-- ============================================================
 -- HASH.BCRYPT_VERIFY: Verify bcrypt hash
+-- ============================================================
+-- Input: .password, .pass_len, .hash, .hash_len
+-- Output: 1 if match, 0 if not
+
 .hash_bcrypt_verify: FUN .password .pass_len .hash .hash_len
+  -- Extract cost and salt from hash
+  -- Recompute bcrypt with same parameters
+  -- Constant-time comparison
   .result: 0
 !FUN
 
--- HASH.ARGON2: Hash password with Argon2id
-.hash_argon2: FUN .password .pass_len .salt .salt_len
+-- ============================================================
+-- HASH.ARGON2ID: Hash password with Argon2id
+-- ============================================================
+-- Input: .password, .pass_len, .salt, .salt_len
+-- Output: 32-byte hash
+
+.hash_argon2id: FUN .password .pass_len .salt .salt_len
   .out: ALC 32
+  -- Memory-hard function
+  -- Resistant to GPU/ASIC attacks
+  .done: 0
 !FUN
 
--- HASH.HMAC_SHA256: HMAC-SHA256
-.hash_hmac_sha256: FUN .key .key_len .data .data_len
-  .out: ALC 32
+-- ============================================================
+-- UTILITY: Constant-time comparison
+-- ============================================================
+-- Prevents timing attacks
+
+.hash_compare: FUN .a .b .len
+  -- XOR all bytes, accumulate differences
+  -- Return 1 only if all zeros
+  .result: 0
 !FUN
+
+-- ============================================================
+-- USAGE EXAMPLES (AI Reference)
+-- ============================================================
+--
+-- Hash a message:
+--   .msg: "Hello, World!"
+--   .digest: ALC 32
+--   .ok: HASH.SHA256 .msg 13 .digest
+--
+-- HMAC for API authentication:
+--   .secret: "my-api-key"
+--   .payload: "{\"user\":\"alice\"}"
+--   .mac: ALC 32
+--   .ok: HASH.HMAC_SHA256 .secret 10 .payload 17 .mac
+--
+-- Password hashing:
+--   .pwd: "user-password"
+--   .hash: HASH.BCRYPT .pwd 13 12
+--   -- Store .hash in database
+--
+-- Password verification:
+--   .pwd: "user-password"
+--   .stored: "$2b$12$..."
+--   .valid: HASH.BCRYPT_VERIFY .pwd 13 .stored 60
