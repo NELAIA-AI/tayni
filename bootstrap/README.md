@@ -2,55 +2,53 @@
 
 Este directorio contiene los binarios necesarios para compilar TAYNI desde cero.
 
-## Problema del Huevo y la Gallina
+## Gen15: Zero Rust Compiler
 
-TAYNI es un lenguaje self-hosting: el compilador está escrito en TAYNI. Para compilar TAYNI necesitas un compilador TAYNI. Este es el clásico problema de bootstrap que todos los lenguajes self-hosting enfrentan (Rust, Go, GCC, etc.).
+El bootstrap actual usa **Gen15**, el compilador Zero Rust que genera PE desde cero (sin templates).
 
-## Solución
+## Archivos
 
-Proporcionamos binarios pre-compilados para Windows x64:
-
-| Archivo | Descripción |
-|---------|-------------|
-| `tayni-bootstrap.exe` | Compilador TAYNI mínimo |
-| `mini.exe` | Template PE mínimo |
-| `fileio2.exe.exe` | Template PE con syscalls |
+| Archivo | Descripción | Tamaño |
+|---------|-------------|--------|
+| `tayni-bootstrap.exe` | Compilador Gen15 | ~8 KB |
+| `compiler.exe` | Copia para self-replication | ~8 KB |
 
 ## Uso
 
 ```bash
-# 1. Crear input.tyn con código TAYNI (valor 0-9)
-echo .x: 5 > input.tyn
+# 1. Crear input.tyn con código TAYNI
+echo .x: 42 > input.tyn
 
-# 2. Compilar (compiler.exe debe existir)
+# 2. Compilar
 tayni-bootstrap.exe
 
-# 3. Ejecutar el resultado
+# 3. Ejecutar
 out.exe
-echo %ERRORLEVEL%  # Muestra: 5
-
-# 4. SELF-REPLICATION: out.exe puede compilar también
-copy out.exe compiler.exe
-echo .x: 7 > input.tyn
-compiler.exe
-# Genera nuevo out.exe con valor 7
+echo %ERRORLEVEL%  # Muestra: 42
 ```
 
 ## Self-Replication
 
-El bootstrap compiler es **self-replicating**:
-- `out.exe` generado es idéntico a `compiler.exe`
-- Cada generación puede generar más compiladores
-- Cadena infinita: compiler.exe → out.exe → out.exe → ...
+```bash
+# Si input.tyn empieza con "--", genera copia del compilador
+echo -- TAYNI > input.tyn
+compiler.exe
+# out.exe == compiler.exe (bit-identical)
+```
 
-## Limitaciones del Bootstrap
+## Características
 
-El bootstrap compiler es mínimo:
-- Solo soporta formato `.x: N` donde N es un dígito (0-9)
-- Genera un exe que retorna el valor como exit code
-- Requiere `compiler.exe` en el mismo directorio
+- **Zero Rust**: Genera PE byte-by-byte sin templates
+- **Self-Replicating**: Puede generar copias de sí mismo
+- **Minimal**: Ejecutables de 2,560 bytes
+- **8 Syscalls**: ExitProcess, CreateFileA, ReadFile, WriteFile, CloseHandle, GetStdHandle, VirtualAlloc, VirtualFree
 
-Para funcionalidad completa, usa el compilador principal.
+## Eficiencia
+
+| Métrica | Gen15 | LLVM+Clang |
+|---------|-------|------------|
+| PE mínimo | 2,560 bytes | 3,584 bytes |
+| Ratio | **1x** | 1.4x más grande |
 
 ## Verificación
 
