@@ -40,7 +40,7 @@ chmod +x tayni-c-macos-x64
 ### 3. Create a Program
 
 ```bash
-cat > hello.tayni << 'EOF'
+cat > hello.tyn << 'EOF'
 .msg: "Hello from TAYNI!\n"
 .len: 20
 .out: PRT .msg .len
@@ -50,7 +50,7 @@ EOF
 ### 4. Compile
 
 ```bash
-./tayni-c-linux-x64 hello.tayni -o hello
+./tayni-c-linux-x64 hello.tyn -o hello
 # Output: OK:ELF:hello:2048 bytes (direct emission, no clang)
 ```
 
@@ -64,7 +64,7 @@ EOF
 ## Example Program
 
 ```tayni
--- hello.tayni
+-- hello.tyn
 .msg: "Hello from TAYNI!\n"
 .len: 20
 .out: PRT .msg .len
@@ -111,26 +111,26 @@ EOF
 TAYNI-c --version
 
 # Syntax check only
-TAYNI-c program.tayni --check
+TAYNI-c program.tyn --check
 
 # Compile to native executable (auto-detects platform)
-TAYNI-c program.tayni -o program
+TAYNI-c program.tyn -o program
 
 # Force specific format
-TAYNI-c program.tayni -o program --emit-pe           # Windows PE
-TAYNI-c program.tayni -o program --emit-elf          # Linux ELF
-TAYNI-c program.tayni -o program --emit-macho        # macOS x64 (Intel)
-TAYNI-c program.tayni -o program --emit-macho-arm64  # macOS ARM64 (Apple Silicon)
+TAYNI-c program.tyn -o program --emit-pe           # Windows PE
+TAYNI-c program.tyn -o program --emit-elf          # Linux ELF
+TAYNI-c program.tyn -o program --emit-macho        # macOS x64 (Intel)
+TAYNI-c program.tyn -o program --emit-macho-arm64  # macOS ARM64 (Apple Silicon)
 
 # Cross-compile
-TAYNI-c program.tayni --target=linux      # From any OS to Linux
-TAYNI-c program.tayni --target=macos-arm64 # From any OS to macOS ARM64
+TAYNI-c program.tyn --target=linux      # From any OS to Linux
+TAYNI-c program.tyn --target=macos-arm64 # From any OS to macOS ARM64
 
 # Use LLVM+Clang flow (optional, requires clang)
-TAYNI-c program.tayni -o program --use-clang
+TAYNI-c program.tyn -o program --use-clang
 
 # JSON output for programmatic use
-TAYNI-c program.tayni --check --json
+TAYNI-c program.tyn --check --json
 ```
 
 ## Project Structure
@@ -232,14 +232,14 @@ Use the correct binary for your platform:
 Or cross-compile with `--target`:
 
 ```bash
-./TAYNI-c-linux-x64 program.tayni --target=windows -o program
+./TAYNI-c-linux-x64 program.tyn --target=windows -o program
 ```
 
 ### Need more help?
 
 ```bash
 TAYNI-c --help
-TAYNI-c program.tayni --check --json  # Machine-readable errors
+TAYNI-c program.tyn --check --json  # Machine-readable errors
 ```
 
 ## License

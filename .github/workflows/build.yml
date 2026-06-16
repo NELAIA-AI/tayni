@@ -69,11 +69,11 @@ jobs:
 
       - name: Test Compilation (if examples exist)
         run: |
-          if (Test-Path "examples/hello.tayni") {
-            ./target/debug/tayni-c.exe examples/hello.tayni -o hello_test
+          if (Test-Path "examples/hello.tyn") {
+            ./target/debug/tayni-c.exe examples/hello.tyn -o hello_test
             Write-Host "Compilation successful (default PE emission)"
           } else {
-            Write-Host "No examples/hello.tayni found, skipping"
+            Write-Host "No examples/hello.tyn found, skipping"
           }
         shell: pwsh
 
@@ -133,11 +133,11 @@ jobs:
 
       - name: Test Compilation (if examples exist)
         run: |
-          if [ -f "examples/hello.tayni" ]; then
-            ./target/debug/tayni-c examples/hello.tayni -o hello_test
+          if [ -f "examples/hello.tyn" ]; then
+            ./target/debug/tayni-c examples/hello.tyn -o hello_test
             echo "Compilation successful (default ELF emission)"
           else
-            echo "No examples/hello.tayni found, skipping"
+            echo "No examples/hello.tyn found, skipping"
           fi
 
       - name: Upload Debug Artifact
@@ -202,11 +202,11 @@ jobs:
 
       - name: Test Compilation (if examples exist)
         run: |
-          if [ -f "examples/hello.tayni" ]; then
-            ./target/debug/tayni-c examples/hello.tayni -o hello_test
+          if [ -f "examples/hello.tyn" ]; then
+            ./target/debug/tayni-c examples/hello.tyn -o hello_test
             echo "Compilation successful (default Mach-O emission)"
           else
-            echo "No examples/hello.tayni found, skipping"
+            echo "No examples/hello.tyn found, skipping"
           fi
 
       - name: Upload Debug Artifact
@@ -261,8 +261,8 @@ jobs:
               count=$((count + 1))
               code=$(echo "$line" | jq -r '.output // empty')
               if [ -n "$code" ]; then
-                echo "$code" > /tmp/test_$count.tayni
-                if ! ./bin/tayni-c /tmp/test_$count.tayni --check 2>/dev/null; then
+                echo "$code" > /tmp/test_$count.tyn
+                if ! ./bin/tayni-c /tmp/test_$count.tyn --check 2>/dev/null; then
                   echo "Warning: Example $count may have issues"
                   errors=$((errors + 1))
                 fi
@@ -376,7 +376,7 @@ jobs:
             ./tayni-c-macos-arm64 --version
             
             # Compile a program (no flags needed!)
-            ./tayni-c-macos-arm64 hello.tayni -o hello
+            ./tayni-c-macos-arm64 hello.tyn -o hello
             ./hello
             ```
             

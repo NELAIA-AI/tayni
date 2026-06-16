@@ -111,4 +111,4 @@ declare void @sys_exit(i32 %code)
 
 ## Next Steps
 
-The TAYNI compiler will generate these `.ll` files from graph source code (`.tayni` files). For now, you can write LLVM IR directly to test the syscall layer.
+The TAYNI compiler will generate these `.ll` files from graph source code (`.tyn` files). For now, you can write LLVM IR directly to test the syscall layer.

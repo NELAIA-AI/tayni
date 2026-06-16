@@ -171,6 +171,6 @@ THR func arg          -- create thread running func(arg)
 
 ## Compile
 ```
-TAYNI-c program.tayni output
+TAYNI-c program.tyn output
 ./output
 ```

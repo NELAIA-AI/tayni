@@ -10,7 +10,7 @@ The `vscode/` directory contains a VS Code extension for TAYNI syntax highlighti
 
 1. Copy the `vscode/` folder to `~/.vscode/extensions/TAYNI-0.22.0/`
 2. Restart VS Code
-3. Open any `.tayni` file
+3. Open any `.tyn` file
 
 ### Features
 

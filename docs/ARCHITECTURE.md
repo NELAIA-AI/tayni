@@ -13,7 +13,7 @@ This architecture is designed for AI agents to:
 - **IR is sacred**: The Intermediate Representation never changes structure
 - **Backends are isolated**: Each target platform is independent
 - **Domains are additive**: New opcodes extend, never modify
-- **Compatibility is mandatory**: Old .tayni files always work
+- **Compatibility is mandatory**: Old .tyn files always work
 
 ---
 
@@ -40,11 +40,11 @@ This architecture is designed for AI agents to:
 │                    (Text → IR Transform)                        │
 ├─────────────────────────────────────────────────────────────────┤
 │  TAYNI-parser/                                                 │
-│  ├── lexer.rs      Tokenize .tayni files                         │
+│  ├── lexer.rs      Tokenize .tyn files                         │
 │  ├── parser.rs     Build IR Graph from tokens                  │
 │  └── error.rs      Parse error handling                        │
 │                                                                 │
-│  INPUT:  .tayni text file                                         │
+│  INPUT:  .tyn text file                                         │
 │  OUTPUT: TAYNI_ir::Graph                                       │
 └─────────────────────────────────────────────────────────────────┘
                               │
@@ -110,7 +110,7 @@ This architecture is designed for AI agents to:
 │  ├── renderer.rs       Canvas/WebGL rendering                  │
 │  └── bridge.rs         JS interop                              │
 │                                                                 │
-│  Compiled to WASM, loaded by browser, interprets .tayni graphs   │
+│  Compiled to WASM, loaded by browser, interprets .tyn graphs   │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 
@@ -284,8 +284,8 @@ impl Backend for WasmBackend {
 
 ## Compatibility Guarantees
 
-1. **Source Compatibility**: All .tayni files that compile today will compile forever
-2. **Binary Compatibility**: Same .tayni produces same binary (bit-for-bit when possible)
+1. **Source Compatibility**: All .tyn files that compile today will compile forever
+2. **Binary Compatibility**: Same .tyn produces same binary (bit-for-bit when possible)
 3. **API Stability**: Public traits and structs follow semver
 4. **Deprecation Policy**: Old features deprecated for 2 major versions before removal
 
@@ -297,15 +297,15 @@ When an AI generates TAYNI code:
 
 1. **Detect target platform** from user request
 2. **Select minimal domains** needed (don't include UI for CLI tools)
-3. **Generate graph** in .tayni format
+3. **Generate graph** in .tyn format
 4. **Specify backend** in compilation command
 
 Example:
 ```
 User: "Create a web calculator"
 AI detects: UI needed, WASM target
-AI generates: calculator.tayni using domain-ui ops
-AI compiles: TAYNI compile calculator.tayni --backend=wasm --domains=core,ui
+AI generates: calculator.tyn using domain-ui ops
+AI compiles: TAYNI compile calculator.tyn --backend=wasm --domains=core,ui
 Output: calculator.wasm (5KB) + runtime.wasm (300KB cached)
 ```
 
@@ -327,7 +327,7 @@ Based on AI-native reasoning, the following simplifications were made:
    - `TAYNI-wasm` (Web backend + runtime)
    - `TAYNI-cli` (Command-line tool)
 
-3. **Bytecode Format**: Added `.TAYNI.bin` intermediate format for faster loading in runtime scenarios.
+3. **Bytecode Format**: Added `.tyn.bin` intermediate format for faster loading in runtime scenarios.
 
 4. **JIT Deferred**: Runtime JIT compilation deferred to POC evaluation phase.
 

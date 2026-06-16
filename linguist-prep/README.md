@@ -16,7 +16,7 @@ for official language recognition.
 ## When to Submit
 
 Submit the PR to `github-linguist/linguist` when:
-1. At least 200 unique `user/repo` combinations have `.tayni` files
+1. At least 200 unique `user/repo` combinations have `.tyn` files
 2. Check with: `https://github.com/search?q=extension%3Anela&type=code`
 
 ## Submission Steps
@@ -41,9 +41,9 @@ linguist-prep/
 │   └── TAYNI.tmLanguage.json   # TextMate grammar
 └── samples/
     └── TAYNI/
-        ├── compiler.tayni        # Self-compiler (real code)
-        ├── parser.tayni          # Parser (real code)
-        └── stdlib.tayni          # Standard library (real code)
+        ├── compiler.tyn        # Self-compiler (real code)
+        ├── parser.tyn          # Parser (real code)
+        └── stdlib.tyn          # Standard library (real code)
 ```
 
 ## Grammar Repository
@@ -62,4 +62,4 @@ TAYNI's color in GitHub: `#4A90D9` (blue, representing AI/technology)
 
 - Samples are real production code, not tutorials
 - Grammar covers all TAYNI operators and syntax
-- Extension `.tayni` is unique (no conflicts in languages.yml)
+- Extension `.tyn` is unique (no conflicts in languages.yml)

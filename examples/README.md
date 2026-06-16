@@ -6,7 +6,7 @@ Example programs organized by category.
 
 ```
 examples/
-├── hello.tayni       # Hello World (CI test)
+├── hello.tyn       # Hello World (CI test)
 ├── basic/          # Basic examples (arithmetic, memory, etc.)
 ├── network/        # TCP/UDP, HTTP servers
 ├── files/          # File I/O operations
@@ -17,15 +17,15 @@ examples/
 ## Quick Examples
 
 ### Hello World
-- `hello.tayni` - Basic Hello World
+- `hello.tyn` - Basic Hello World
 
 ### Arithmetic
-- `add.tayni` - Addition
-- `calc.tayni` - Calculator
+- `add.tyn` - Addition
+- `calc.tyn` - Calculator
 
 ### Network
-- `tcp_server.tayni` - TCP server
-- `http_server.tayni` - HTTP server
+- `tcp_server.tyn` - TCP server
+- `http_server.tyn` - HTTP server
 
 ### GUI
-- `gui_final.tayni` - Complete GUI application
+- `gui_final.tyn` - Complete GUI application

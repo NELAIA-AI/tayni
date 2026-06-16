@@ -69,7 +69,7 @@ clang -O2 -o solar_c_opt.exe solar_c_opt.c -lws2_32
 
 # TAYNI
 cd ..
-cargo run --release -- benchmarks/solar_TAYNI_16w.tayni
+cargo run --release -- benchmarks/solar_TAYNI_16w.tyn
 ```
 
 ## Troubleshooting

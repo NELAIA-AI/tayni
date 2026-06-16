@@ -299,7 +299,7 @@ Everything in TAYNI is a node with identifier `.id`:
 
 ### 8.3 Compile-Time
 ```
-TAYNI-c program.tayni -o program.exe
+TAYNI-c program.tyn -o program.exe
 ```
 
 ---
@@ -356,16 +356,16 @@ TAYNI-c program.tayni -o program.exe
 ### 10.1 Commands
 ```bash
 # Compile to executable
-TAYNI-c program.tayni -o program.exe
+TAYNI-c program.tyn -o program.exe
 
 # Emit LLVM IR
-TAYNI-c program.tayni --emit-ll
+TAYNI-c program.tyn --emit-ll
 
 # Generate Windows PE directly (no clang)
-TAYNI-c program.tayni --emit-pe
+TAYNI-c program.tyn --emit-pe
 
 # Generate Linux ELF
-TAYNI-c program.tayni --emit-elf
+TAYNI-c program.tyn --emit-elf
 
 # GUI MessageBox
 TAYNI-c --gui "Title" "Message"

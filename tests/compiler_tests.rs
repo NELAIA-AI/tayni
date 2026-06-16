@@ -30,7 +30,7 @@ fn run_compiler(args: &[&str]) -> (i32, String, String) {
 
 /// Write temp file and return path
 fn write_temp_nela(content: &str, name: &str) -> String {
-    let path = format!("target/test_{}.tayni", name);
+    let path = format!("target/test_{}.tyn", name);
     fs::write(&path, content).expect("Failed to write temp file");
     path
 }
@@ -542,7 +542,7 @@ fn test_jsonl_examples_syntax() {
 // ============================================
 
 #[test]
-fn test_existing_nela_files() {
+fn test_existing_tyn_files() {
     let test_dir = Path::new("tests");
     if !test_dir.exists() {
         return;
@@ -555,7 +555,7 @@ fn test_existing_nela_files() {
         let entry = entry.expect("Failed to read entry");
         let path = entry.path();
         
-        if path.extension().map(|e| e == "tayni").unwrap_or(false) {
+        if path.extension().map(|e| e == "tyn").unwrap_or(false) {
             let path_str = path.to_string_lossy();
             let (code, _, _) = run_compiler(&[&path_str, "--check", "--quiet"]);
             

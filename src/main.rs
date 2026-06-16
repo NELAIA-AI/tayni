@@ -37,7 +37,7 @@ fn main() {
         println!("tayni-c {} - TAYNI Compiler", VERSION);
         println!();
         println!("USAGE:");
-        println!("  tayni-c <file.tayni|file.nbin> [options]");
+        println!("  tayni-c <file.tyn|file.nbin> [options]");
         println!();
         println!("OUTPUT OPTIONS:");
         println!("  -o <file>           Output file name");
@@ -74,11 +74,11 @@ fn main() {
         println!("  --smallest          Generate smallest PE (~512 bytes)");
         println!();
         println!("EXAMPLES:");
-        println!("  tayni-c hello.tayni                    # Compile to native (auto-detect)");
-        println!("  tayni-c hello.tayni -o hello           # Specify output name");
-        println!("  tayni-c hello.tayni --emit-macho-arm64 # macOS Apple Silicon");
-        println!("  tayni-c hello.tayni --target=linux     # Cross-compile to Linux");
-        println!("  tayni-c code.tayni --check             # Validate syntax only");
+        println!("  tayni-c hello.tyn                    # Compile to native (auto-detect)");
+        println!("  tayni-c hello.tyn -o hello           # Specify output name");
+        println!("  tayni-c hello.tyn --emit-macho-arm64 # macOS Apple Silicon");
+        println!("  tayni-c hello.tyn --target=linux     # Cross-compile to Linux");
+        println!("  tayni-c code.tyn --check             # Validate syntax only");
         println!();
         println!("SUPPORTED PLATFORMS:");
         println!("  Windows x64, Linux x64, macOS x64 (Intel), macOS ARM64 (Apple Silicon)");
@@ -91,7 +91,7 @@ fn main() {
     if args.len() < 2 {
         if !quiet {
             eprintln!("tayni-c {}", VERSION);
-            eprintln!("usage: tayni-c <file.tayni|file.nbin> [output] [options]");
+            eprintln!("usage: tayni-c <file.tyn|file.nbin> [output] [options]");
             eprintln!("Try 'tayni-c --help' for more information.");
         }
         return;
@@ -239,7 +239,7 @@ fn main() {
             }
             i += 1;
         }
-        out.unwrap_or_else(|| input_file.replace(".tayni", "").replace(".nbin", ""))
+        out.unwrap_or_else(|| input_file.replace(".tyn", "").replace(".nbin", ""))
     };
     
     // Read input file (text or binary)

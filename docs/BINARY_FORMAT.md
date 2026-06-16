@@ -78,7 +78,7 @@ STRING TABLE:
 
 ```
 -- Compile to binary
-TAYNI-c program.tayni --emit-bin program.nbin
+TAYNI-c program.tyn --emit-bin program.nbin
 
 -- Load and execute binary
 TAYNI-c program.nbin output
