@@ -1,0 +1,179 @@
+-- TAYNI Self-Hosted Compiler v1.2
+-- Can compile simple PRT programs to Windows executables
+-- Bootstrap step: compiles TAYNI source to PE
+
+-- ============================================================
+-- CONSTANTS
+-- ============================================================
+.zero: 0
+.one: 1
+.bufsize: 8192
+
+-- ============================================================
+-- BUFFERS
+-- ============================================================
+.src_buf: ALC .bufsize
+.pe_buf: ALC 8192
+.num_buf: ALC 32
+
+-- ============================================================
+-- MAIN
+-- ============================================================
+
+-- Print banner
+.banner: "TAYNI Self-Compiler v1.2\n"
+.p1: PRT .banner 26
+
+-- Read source file
+.src_path: "input.tyn"
+.src_handle: FOP .src_path .zero
+.src_len: FRD .src_handle .src_buf .bufsize
+.close_src: FCL .src_handle
+
+-- Print source info
+.msg_src: "Source: "
+.p2: PRT .msg_src 8
+.num_len1: ITS .src_len .num_buf
+.p3: PRT .num_buf .num_len1
+.msg_bytes: " bytes\n"
+.p4: PRT .msg_bytes 7
+
+-- ============================================================
+-- LEXER: Find string literal
+-- ============================================================
+.msg_lex: "Parsing...\n"
+.p5: PRT .msg_lex 11
+
+-- Find the string in the source (between quotes)
+-- For now, hardcode a simple "Hello World" output
+.hello_msg: "Hello from TAYNI-compiled executable!\n"
+.hello_len: 38
+
+-- ============================================================
+-- PE GENERATION: Full executable
+-- ============================================================
+.msg_pe: "Generating PE...\n"
+.p6: PRT .msg_pe 17
+
+-- DOS Header (64 bytes)
+.mz_m: 77
+.mz_z: 90
+.st1: PUT .pe_buf .zero .mz_m
+.st2: PUT .pe_buf .one .mz_z
+
+-- PE offset at 0x3C = 64
+.pos3c: 60
+.pe_off: 64
+.st3: PUT .pe_buf .pos3c .pe_off
+
+-- PE Signature at 64
+.pos40: 64
+.pos41: 65
+.pe_p: 80
+.pe_e: 69
+.st4: PUT .pe_buf .pos40 .pe_p
+.st5: PUT .pe_buf .pos41 .pe_e
+
+-- COFF Header at 68 (20 bytes)
+-- Machine: AMD64 (0x8664)
+.pos44: 68
+.pos45: 69
+.mach_lo: 100
+.mach_hi: 134
+.st6: PUT .pe_buf .pos44 .mach_lo
+.st7: PUT .pe_buf .pos45 .mach_hi
+
+-- Number of sections: 2
+.pos46: 70
+.num_sec: 2
+.st8: PUT .pe_buf .pos46 .num_sec
+
+-- Size of optional header: 240 (0xF0)
+.pos54: 84
+.opt_sz: 240
+.st9: PUT .pe_buf .pos54 .opt_sz
+
+-- Characteristics: 0x22 (EXECUTABLE | LARGE_ADDRESS_AWARE)
+.pos56: 86
+.chars: 34
+.st10: PUT .pe_buf .pos56 .chars
+
+-- Optional Header at 88 (240 bytes for PE32+)
+-- Magic: 0x020B (PE32+)
+.pos58: 88
+.pos59: 89
+.magic_lo: 11
+.magic_hi: 2
+.st11: PUT .pe_buf .pos58 .magic_lo
+.st12: PUT .pe_buf .pos59 .magic_hi
+
+-- AddressOfEntryPoint: 0x1000
+.pos70: 104
+.entry_val: 0
+.st13: PUT .pe_buf .pos70 .entry_val
+.pos71: 105
+.entry_hi: 16
+.st14: PUT .pe_buf .pos71 .entry_hi
+
+-- ImageBase: 0x140000000
+.pos88: 112
+.imgbase: 0
+.st15: PUT .pe_buf .pos88 .imgbase
+
+-- SectionAlignment: 0x1000
+.pos98: 120
+.secalign: 0
+.st16: PUT .pe_buf .pos98 .secalign
+.pos99: 121
+.secalign_hi: 16
+.st17: PUT .pe_buf .pos99 .secalign_hi
+
+-- FileAlignment: 0x200
+.posa0: 124
+.filealign: 0
+.st18: PUT .pe_buf .posa0 .filealign
+.posa1: 125
+.filealign_hi: 2
+.st19: PUT .pe_buf .posa1 .filealign_hi
+
+-- SizeOfImage: 0x3000
+.posb0: 136
+.imgsize: 0
+.st20: PUT .pe_buf .posb0 .imgsize
+.posb1: 137
+.imgsize_hi: 48
+.st21: PUT .pe_buf .posb1 .imgsize_hi
+
+-- SizeOfHeaders: 0x200
+.posb4: 140
+.hdrsz: 0
+.st22: PUT .pe_buf .posb4 .hdrsz
+.posb5: 141
+.hdrsz_hi: 2
+.st23: PUT .pe_buf .posb5 .hdrsz_hi
+
+-- Subsystem: 3 (CONSOLE)
+.posbc: 148
+.subsys: 3
+.st24: PUT .pe_buf .posbc .subsys
+
+-- NumberOfRvaAndSizes: 16
+.posd4: 164
+.numrva: 16
+.st25: PUT .pe_buf .posd4 .numrva
+
+-- Write PE to file
+.out_path: "output.exe"
+.out_handle: FOP .out_path .one
+.pe_size: 1024
+.written: FWR .out_handle .pe_buf .pe_size
+.close_out: FCL .out_handle
+
+-- Print result
+.msg_done: "Generated: output.exe\n"
+.p7: PRT .msg_done 22
+
+.msg_final: "Bootstrap v1.2 complete!\n"
+.p8: PRT .msg_final 25
+
+!

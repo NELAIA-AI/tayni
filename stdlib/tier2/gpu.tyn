@@ -1,0 +1,230 @@
+-- TAYNI stdlib: gpu v0.1
+-- Provides: GPU computing primitives
+-- Usage: USE gpu
+--
+-- ARCHITECTURE:
+-- PTX (NVIDIA) and AMDGPU IR (AMD) are the ONLY native GPU executable formats.
+-- Like PE/ELF for CPUs and QIR for QPUs.
+--
+-- Native targets (run directly on hardware):
+--   - NVIDIA CUDA (PTX/CUBIN) - use --target=ptx
+--   - AMD ROCm (AMDGPU IR)    - use --target=amdgpu
+--
+-- Translation targets (export from native):
+--   - OpenCL  - use --export=opencl
+--   - SPIR-V  - use --export=spirv
+--   - WGSL    - use --export=wgsl (WebGPU)
+--   - Metal   - use --export=metal (Apple)
+--
+-- Compile: tayni-c program.tyn --target=ptx
+-- With OpenCL: tayni-c program.tyn --target=ptx --export=opencl
+
+-- ============================================================
+-- GPU KERNEL MANAGEMENT
+-- ============================================================
+
+-- GKERNEL: Define a GPU kernel
+.gpu_kernel: FUN .name .body
+  .kernel: 0
+!FUN
+
+-- GLAUNCH: Launch kernel with grid/block dimensions
+-- grid: number of blocks
+-- block: threads per block
+.gpu_launch: FUN .kernel .grid .block .args
+  .done: 0
+!FUN
+
+-- GSYNC: Synchronize all threads in block
+.gpu_sync: FUN
+  .done: 0
+!FUN
+
+-- GBARRIER: Memory barrier
+.gpu_barrier: FUN
+  .done: 0
+!FUN
+
+-- ============================================================
+-- GPU MEMORY MANAGEMENT
+-- ============================================================
+
+-- GALLOC: Allocate GPU memory
+.gpu_alloc: FUN .size
+  .ptr: 0
+!FUN
+
+-- GFREE: Free GPU memory
+.gpu_free: FUN .ptr
+  .done: 0
+!FUN
+
+-- GH2D: Copy host to device
+.gpu_h2d: FUN .dst .src .size
+  .done: 0
+!FUN
+
+-- GD2H: Copy device to host
+.gpu_d2h: FUN .dst .src .size
+  .done: 0
+!FUN
+
+-- GD2D: Copy device to device
+.gpu_d2d: FUN .dst .src .size
+  .done: 0
+!FUN
+
+-- GSHARED: Allocate shared memory (per block)
+.gpu_shared: FUN .size
+  .ptr: 0
+!FUN
+
+-- ============================================================
+-- GPU THREAD IDENTIFICATION
+-- ============================================================
+
+-- GTID: Get thread ID within block
+.gpu_tid: FUN
+  .id: 0
+!FUN
+
+-- GBID: Get block ID
+.gpu_bid: FUN
+  .id: 0
+!FUN
+
+-- GGID: Get global thread ID
+.gpu_gid: FUN
+  .id: 0
+!FUN
+
+-- GBDIM: Get block dimensions
+.gpu_bdim: FUN
+  .dim: 0
+!FUN
+
+-- GGDIM: Get grid dimensions
+.gpu_gdim: FUN
+  .dim: 0
+!FUN
+
+-- ============================================================
+-- GPU PARALLEL OPERATIONS
+-- ============================================================
+
+-- GMAP: Parallel map over array
+.gpu_map: FUN .data .len .func
+  .done: 0
+!FUN
+
+-- GREDUCE: Parallel reduction
+.gpu_reduce: FUN .data .len .op
+  .result: 0
+!FUN
+
+-- GSCAN: Parallel prefix scan
+.gpu_scan: FUN .data .len .op
+  .done: 0
+!FUN
+
+-- GFILTER: Parallel filter
+.gpu_filter: FUN .data .len .pred
+  .result: 0
+!FUN
+
+-- GSORT: Parallel sort
+.gpu_sort: FUN .data .len
+  .done: 0
+!FUN
+
+-- ============================================================
+-- GPU MATH (SIMD)
+-- ============================================================
+
+-- GFMA: Fused multiply-add (a * b + c)
+.gpu_fma: FUN .a .b .c
+  .result: 0
+!FUN
+
+-- GRSQRT: Fast reciprocal square root
+.gpu_rsqrt: FUN .x
+  .result: 0
+!FUN
+
+-- GEXP: Fast exponential
+.gpu_exp: FUN .x
+  .result: 0
+!FUN
+
+-- GLOG: Fast logarithm
+.gpu_log: FUN .x
+  .result: 0
+!FUN
+
+-- GSIN: Fast sine
+.gpu_sin: FUN .x
+  .result: 0
+!FUN
+
+-- GCOS: Fast cosine
+.gpu_cos: FUN .x
+  .result: 0
+!FUN
+
+-- ============================================================
+-- GPU ATOMICS
+-- ============================================================
+
+-- GADD: Atomic add
+.gpu_atomic_add: FUN .ptr .val
+  .old: 0
+!FUN
+
+-- GSUB: Atomic subtract
+.gpu_atomic_sub: FUN .ptr .val
+  .old: 0
+!FUN
+
+-- GMAX: Atomic max
+.gpu_atomic_max: FUN .ptr .val
+  .old: 0
+!FUN
+
+-- GMIN: Atomic min
+.gpu_atomic_min: FUN .ptr .val
+  .old: 0
+!FUN
+
+-- GCAS: Atomic compare-and-swap
+.gpu_atomic_cas: FUN .ptr .expected .desired
+  .old: 0
+!FUN
+
+-- GXCHG: Atomic exchange
+.gpu_atomic_xchg: FUN .ptr .val
+  .old: 0
+!FUN
+
+-- ============================================================
+-- GPU WARP/WAVEFRONT OPERATIONS
+-- ============================================================
+
+-- GWARP_SYNC: Synchronize warp (NVIDIA) / wavefront (AMD)
+.gpu_warp_sync: FUN
+  .done: 0
+!FUN
+
+-- GWARP_VOTE: Warp vote (all/any/ballot)
+.gpu_warp_vote: FUN .pred .op
+  .result: 0
+!FUN
+
+-- GWARP_SHUFFLE: Warp shuffle
+.gpu_warp_shuffle: FUN .val .lane
+  .result: 0
+!FUN
+
+-- GWARP_REDUCE: Warp-level reduction
+.gpu_warp_reduce: FUN .val .op
+  .result: 0
+!FUN

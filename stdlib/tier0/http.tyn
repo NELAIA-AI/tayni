@@ -1,0 +1,77 @@
+-- TAYNI stdlib: http v0.1
+-- Provides: HTTP.SERVER, HTTP.CLIENT, HTTP.GET, HTTP.POST, HTTP.RESPOND
+-- Usage: USE http
+-- Requires: REQUIRES http capability
+
+.http_req: REQUIRES http
+
+-- HTTP status codes
+.http_ok: 200
+.http_created: 201
+.http_bad_request: 400
+.http_not_found: 404
+.http_internal_error: 500
+
+-- HTTP.SERVER: Create HTTP server on port
+-- Returns: server handle
+-- Note: Requires TCP primitives (NET.LISTEN, NET.ACCEPT, etc.)
+.http_server: FUN .port
+  -- Bind to port using TCP
+  -- .server: NET.LISTEN .port
+  .server: 0
+!FUN
+
+-- HTTP.ACCEPT: Accept incoming connection
+-- Returns: client handle
+.http_accept: FUN .server
+  -- .client: NET.ACCEPT .server
+  .client: 0
+!FUN
+
+-- HTTP.READ_REQUEST: Read HTTP request from client
+-- Returns: request struct pointer
+.http_read_request: FUN .client
+  .buf: ALC 8192
+  -- .len: NET.RECV .client .buf 8192
+  .len: 0
+  -- Parse HTTP request line and headers
+  -- (Simplified - needs proper HTTP parsing)
+!FUN
+
+-- HTTP.RESPOND: Send HTTP response
+-- client, status, content_type, body, body_len
+.http_respond: FUN .client .status .content_type .body .body_len
+  -- Build response: HTTP/1.1 {status} OK\r\n
+  -- Content-Type: {content_type}\r\n
+  -- Content-Length: {body_len}\r\n
+  -- \r\n
+  -- {body}
+  .header: ALC 256
+  .h1: WRT .header "HTTP/1.1 " 9
+  -- Would need to format status code
+  -- .sent: NET.SEND .client .header 256
+  -- .sent2: NET.SEND .client .body .body_len
+  .sent: 0
+!FUN
+
+-- HTTP.GET: Make HTTP GET request
+-- Returns: response body pointer
+.http_get: FUN .url .url_len
+  -- Parse URL to get host and path
+  -- Connect to host
+  -- Send GET request
+  -- Read response
+  .buf: ALC 65536
+!FUN
+
+-- HTTP.POST: Make HTTP POST request
+.http_post: FUN .url .url_len .body .body_len
+  -- Similar to GET but with body
+  .buf: ALC 65536
+!FUN
+
+-- HTTP.CLOSE: Close connection
+.http_close: FUN .handle
+  -- .closed: NET.CLOSE .handle
+  .closed: 0
+!FUN

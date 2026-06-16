@@ -1,0 +1,42 @@
+-- TAYNI stdlib: random v0.1
+-- Provides: RANDOM.INT, RANDOM.BYTES, RANDOM.UUID
+-- Usage: USE random
+
+-- Seed for PRNG (would be initialized from system)
+.random_seed: 12345
+
+-- RANDOM.INT: Generate random integer in range [0, max)
+.random_int: FUN .max
+  -- Simple LCG: seed = (seed * 1103515245 + 12345) mod 2^31
+  .a: 1103515245
+  .c: 12345
+  .m: 2147483648
+  .new_seed: MUL .random_seed .a
+  .new_seed2: ADD .new_seed .c
+  .new_seed3: MOD .new_seed2 .m
+  -- Update seed (would need mutable state)
+  .result: MOD .new_seed3 .max
+!FUN
+
+-- RANDOM.BYTES: Generate random bytes
+.random_bytes: FUN .len
+  .buf: ALC .len
+  -- Would need loop to fill buffer
+!FUN
+
+-- RANDOM.UUID: Generate UUID v4 (random)
+-- Format: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
+.random_uuid: FUN
+  .buf: ALC 37  -- 36 chars + null
+  -- Would need to generate 16 random bytes
+  -- Set version (4) and variant bits
+  -- Format as hex with dashes
+!FUN
+
+-- RANDOM.TOKEN: Generate random alphanumeric token
+.random_token: FUN .len
+  .alphabet: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+  .alphabet_len: 62
+  .buf: ALC .len
+  -- Would need loop to pick random chars
+!FUN

@@ -1,0 +1,44 @@
+-- TAYNI stdlib: postgres v0.1
+-- Provides: PG.CONNECT, PG.QUERY, PG.TRANSACTION
+-- Usage: USE postgres
+
+-- PG.CONNECT: Connect to PostgreSQL database
+-- conn_str: "host=localhost dbname=test user=postgres"
+.pg_connect: FUN .conn_str .conn_str_len
+  .conn: 0
+!FUN
+
+-- PG.QUERY: Execute query
+.pg_query: FUN .conn .query .query_len
+  .result: 0
+!FUN
+
+-- PG.EXECUTE: Execute non-SELECT query
+.pg_execute: FUN .conn .query .query_len
+  .affected: 0
+!FUN
+
+-- PG.BEGIN: Start transaction
+.pg_begin: FUN .conn
+  .done: 0
+!FUN
+
+-- PG.COMMIT: Commit transaction
+.pg_commit: FUN .conn
+  .done: 0
+!FUN
+
+-- PG.ROLLBACK: Rollback transaction
+.pg_rollback: FUN .conn
+  .done: 0
+!FUN
+
+-- PG.CLOSE: Close connection
+.pg_close: FUN .conn
+  .done: 0
+!FUN
+
+-- PG.ESCAPE: Escape string for SQL
+.pg_escape: FUN .str .str_len
+  .escaped: ALC 4096
+!FUN

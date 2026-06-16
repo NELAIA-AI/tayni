@@ -1,0 +1,64 @@
+-- TAYNI stdlib: pqc v0.1
+-- Provides: PQC.ML_KEM, PQC.ML_DSA, PQC.SLH_DSA
+-- Post-Quantum Cryptography (NIST standards 2024)
+-- Usage: USE pqc
+
+-- ML-KEM (Kyber) - Key Encapsulation Mechanism
+-- Replaces RSA/ECDH for key exchange
+
+-- PQC.KEM_KEYGEN: Generate ML-KEM key pair
+.pqc_kem_keygen: FUN
+  .keypair: ALC 4096
+  -- public_key: 1568 bytes (ML-KEM-1024)
+  -- secret_key: 3168 bytes
+!FUN
+
+-- PQC.KEM_ENCAPSULATE: Encapsulate shared secret
+.pqc_kem_encapsulate: FUN .pubkey .pubkey_len
+  .result: ALC 1600
+  -- ciphertext: 1568 bytes
+  -- shared_secret: 32 bytes
+!FUN
+
+-- PQC.KEM_DECAPSULATE: Decapsulate shared secret
+.pqc_kem_decapsulate: FUN .seckey .seckey_len .ciphertext .ct_len
+  .shared_secret: ALC 32
+!FUN
+
+-- ML-DSA (Dilithium) - Digital Signatures
+-- Replaces RSA/ECDSA for signatures
+
+-- PQC.DSA_KEYGEN: Generate ML-DSA key pair
+.pqc_dsa_keygen: FUN
+  .keypair: ALC 8192
+  -- public_key: 2592 bytes (ML-DSA-87)
+  -- secret_key: 4896 bytes
+!FUN
+
+-- PQC.DSA_SIGN: Sign message with ML-DSA
+.pqc_dsa_sign: FUN .seckey .seckey_len .msg .msg_len
+  .signature: ALC 4672
+!FUN
+
+-- PQC.DSA_VERIFY: Verify ML-DSA signature
+.pqc_dsa_verify: FUN .pubkey .pubkey_len .msg .msg_len .sig .sig_len
+  .valid: 0
+!FUN
+
+-- SLH-DSA (SPHINCS+) - Stateless Hash-Based Signatures
+-- Backup/alternative to ML-DSA
+
+-- PQC.SLH_KEYGEN: Generate SLH-DSA key pair
+.pqc_slh_keygen: FUN
+  .keypair: ALC 256
+!FUN
+
+-- PQC.SLH_SIGN: Sign with SLH-DSA
+.pqc_slh_sign: FUN .seckey .seckey_len .msg .msg_len
+  .signature: ALC 49856
+!FUN
+
+-- PQC.SLH_VERIFY: Verify SLH-DSA signature
+.pqc_slh_verify: FUN .pubkey .pubkey_len .msg .msg_len .sig .sig_len
+  .valid: 0
+!FUN

@@ -1,0 +1,39 @@
+-- TAYNI stdlib: format v0.1
+-- Provides: FORMAT.SPRINTF, FORMAT.PAD, FORMAT.NUMBER
+-- Usage: USE format
+
+-- FORMAT.SPRINTF: Format string with arguments
+-- Supports: %s (string), %d (int), %x (hex), %f (float)
+.format_sprintf: FUN .fmt .fmt_len .args
+  .out: ALC 4096
+  -- Parse format string
+  -- Replace placeholders with args
+!FUN
+
+-- FORMAT.PAD_LEFT: Pad string on left
+.format_pad_left: FUN .str .str_len .width .pad_char
+  .out: ALC 256
+!FUN
+
+-- FORMAT.PAD_RIGHT: Pad string on right
+.format_pad_right: FUN .str .str_len .width .pad_char
+  .out: ALC 256
+!FUN
+
+-- FORMAT.NUMBER: Format number with separators
+-- e.g., 1234567 -> "1,234,567"
+.format_number: FUN .num .separator
+  .out: ALC 32
+!FUN
+
+-- FORMAT.BYTES: Format bytes as human-readable
+-- e.g., 1048576 -> "1 MB"
+.format_bytes: FUN .bytes
+  .out: ALC 16
+!FUN
+
+-- FORMAT.DURATION: Format duration as human-readable
+-- e.g., 3661 -> "1h 1m 1s"
+.format_duration: FUN .seconds
+  .out: ALC 32
+!FUN

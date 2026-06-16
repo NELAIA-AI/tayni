@@ -1,0 +1,44 @@
+-- TAYNI stdlib: hash v0.1
+-- Provides: HASH.SHA256, HASH.BCRYPT, HASH.ARGON2
+-- Usage: USE hash
+
+-- HASH.SHA256: Compute SHA-256 hash
+-- Returns: 32-byte hash
+.hash_sha256: FUN .data .len
+  .out: ALC 32
+  -- SHA-256 implementation would go here
+  -- For now, placeholder
+!FUN
+
+-- HASH.SHA512: Compute SHA-512 hash
+-- Returns: 64-byte hash
+.hash_sha512: FUN .data .len
+  .out: ALC 64
+!FUN
+
+-- HASH.MD5: Compute MD5 hash (legacy, not secure)
+-- Returns: 16-byte hash
+.hash_md5: FUN .data .len
+  .out: ALC 16
+!FUN
+
+-- HASH.BCRYPT: Hash password with bcrypt
+-- cost: work factor (10-14 recommended)
+.hash_bcrypt: FUN .password .pass_len .cost
+  .out: ALC 60
+!FUN
+
+-- HASH.BCRYPT_VERIFY: Verify bcrypt hash
+.hash_bcrypt_verify: FUN .password .pass_len .hash .hash_len
+  .result: 0
+!FUN
+
+-- HASH.ARGON2: Hash password with Argon2id
+.hash_argon2: FUN .password .pass_len .salt .salt_len
+  .out: ALC 32
+!FUN
+
+-- HASH.HMAC_SHA256: HMAC-SHA256
+.hash_hmac_sha256: FUN .key .key_len .data .data_len
+  .out: ALC 32
+!FUN

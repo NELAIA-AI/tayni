@@ -4,12 +4,97 @@
 
 use crate::ir::*;
 
+/// Target architecture family
+#[derive(Clone, Copy, PartialEq)]
+pub enum TargetFamily {
+    Classical,  // CPU-based: x86_64, ARM64, RISC-V, WASM
+    Quantum,    // QPU-based: QIR only
+    Gpu,        // GPU-based: PTX (NVIDIA), AMDGPU (AMD)
+}
+
+/// Classical CPU platforms
+#[derive(Clone, Copy, PartialEq)]
+pub enum ClassicalPlatform {
+    // x86_64 family
+    WindowsX64,
+    LinuxX64,
+    MacOSX64,
+    // ARM64 family
+    LinuxArm64,
+    MacOSArm64,
+    // Other architectures
+    Wasm,
+    RiscV64,
+}
+
+/// Quantum platform (QIR is the only native quantum executable format)
+#[derive(Clone, Copy, PartialEq)]
+pub enum QuantumPlatform {
+    Qir,  // Native quantum executable (Microsoft, IonQ, Quantinuum)
+}
+
+/// GPU platforms (native executable formats)
+#[derive(Clone, Copy, PartialEq)]
+pub enum GpuPlatform {
+    Ptx,    // NVIDIA CUDA (native)
+    AmdGpu, // AMD ROCm (native)
+}
+
+/// QIR translation targets (not architectures, just export formats)
+#[derive(Clone, Copy, PartialEq)]
+pub enum QirTranslation {
+    Cirq,   // Google - Python DSL
+    Qasm,   // IBM - OpenQASM 3.0
+    Quil,   // Rigetti - proprietary assembly
+}
+
+/// GPU translation targets (not architectures, just export formats)
+#[derive(Clone, Copy, PartialEq)]
+pub enum GpuTranslation {
+    OpenCL,  // Cross-platform (Khronos)
+    SpirV,   // Vulkan/OpenCL intermediate
+    Wgsl,    // WebGPU shading language
+    Metal,   // Apple (limited support)
+}
+
+/// Unified target platform (backwards compatible)
 #[derive(Clone, Copy, PartialEq)]
 pub enum TargetPlatform {
+    // Classical targets (CPU)
     Linux,
+    LinuxArm64,
     Windows,
     MacOS,
     MacOSArm64,
+    Wasm,
+    RiscV64,
+    // Quantum target (QPU)
+    Qir,
+    // GPU targets
+    Ptx,    // NVIDIA CUDA
+    AmdGpu, // AMD ROCm
+}
+
+impl TargetPlatform {
+    pub fn family(&self) -> TargetFamily {
+        match self {
+            TargetPlatform::Qir | TargetPlatform::Ptx | TargetPlatform::AmdGpu => TargetFamily::Quantum,
+            TargetPlatform::Ptx | TargetPlatform::AmdGpu => TargetFamily::Gpu,
+            _ => TargetFamily::Classical,
+        }
+    }
+    
+    pub fn is_quantum(&self) -> bool {
+        matches!(self, TargetPlatform::Qir)
+    }
+    
+    pub fn is_gpu(&self) -> bool {
+        matches!(self, TargetPlatform::Ptx | TargetPlatform::AmdGpu)
+    }
+    
+    pub fn is_classical(&self) -> bool {
+        !self.is_quantum() && !self.is_gpu()
+    }
 }
 
 pub struct PureEmitter {
@@ -59,9 +144,15 @@ impl PureEmitter {
         ir.push_str("; TAYNI v0.15 Pure - Dead Code Elimination\n");
         match self.target {
             TargetPlatform::Linux => ir.push_str("target triple = \"x86_64-pc-linux-gnu\"\n\n"),
+            TargetPlatform::LinuxArm64 => ir.push_str("target triple = \"aarch64-unknown-linux-gnu\"\n\n"),
             TargetPlatform::Windows => ir.push_str("target triple = \"x86_64-pc-windows-msvc\"\n\n"),
             TargetPlatform::MacOS => ir.push_str("target triple = \"x86_64-apple-darwin\"\n\n"),
             TargetPlatform::MacOSArm64 => ir.push_str("target triple = \"arm64-apple-darwin\"\n\n"),
+            TargetPlatform::Wasm => ir.push_str("target triple = \"wasm32-unknown-unknown\"\n\n"),
+            TargetPlatform::RiscV64 | TargetPlatform::Qir | TargetPlatform::Ptx | TargetPlatform::AmdGpu => ir.push_str("target triple = \"riscv64-unknown-linux-gnu\"\n\n"),
+            TargetPlatform::Qir => ir.push_str("target triple = \"qir-unknown-unknown\"\n\n"),
+            TargetPlatform::Ptx => ir.push_str("target triple = \"nvptx64-nvidia-cuda\"\n\n"),
+            TargetPlatform::AmdGpu => ir.push_str("target triple = \"amdgcn-amd-amdhsa\"\n\n"),
         }
         
         // Collect strings from all nodes including function bodies
@@ -97,7 +188,7 @@ impl PureEmitter {
         
         // Emit syscall layer (only what's needed)
         match self.target {
-            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => ir.push_str(&self.emit_linux_syscalls()),
+            TargetPlatform::Linux | TargetPlatform::LinuxArm64 | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 | TargetPlatform::Wasm | TargetPlatform::RiscV64 | TargetPlatform::Qir | TargetPlatform::Ptx | TargetPlatform::AmdGpu => ir.push_str(&self.emit_linux_syscalls()),
             TargetPlatform::Windows => ir.push_str(&self.emit_windows_syscalls_optimized()),
         }
         
@@ -488,7 +579,7 @@ impl PureEmitter {
     fn emit_alloc(&self, id: &str, args: &[Arg]) -> Result<String, String> {
         let size = self.emit_arg(&args[0])?;
         match self.target {
-            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
+            TargetPlatform::Linux | TargetPlatform::LinuxArm64 | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 | TargetPlatform::Wasm | TargetPlatform::RiscV64 | TargetPlatform::Qir | TargetPlatform::Ptx | TargetPlatform::AmdGpu => {
                 // mmap(NULL, size, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0)
                 Ok(format!("  %{} = call i64 @sys_mmap(i64 0, i64 {}, i64 3, i64 34, i64 -1, i64 0)\n", id, size))
             }
@@ -501,7 +592,7 @@ impl PureEmitter {
     fn emit_free(&self, id: &str, args: &[Arg]) -> Result<String, String> {
         let ptr = self.emit_arg(&args[0])?;
         match self.target {
-            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
+            TargetPlatform::Linux | TargetPlatform::LinuxArm64 | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 | TargetPlatform::Wasm | TargetPlatform::RiscV64 | TargetPlatform::Qir | TargetPlatform::Ptx | TargetPlatform::AmdGpu => {
                 Ok(format!("  %{} = call i64 @sys_munmap(i64 {}, i64 4096)\n", id, ptr))
             }
             TargetPlatform::Windows => {
@@ -576,7 +667,7 @@ impl PureEmitter {
     fn emit_syscall_socket(&self, id: &str, sock_type: i32) -> Result<String, String> {
         // socket(AF_INET=2, type, 0) + setsockopt(SO_REUSEADDR)
         match self.target {
-            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
+            TargetPlatform::Linux | TargetPlatform::LinuxArm64 | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 | TargetPlatform::Wasm | TargetPlatform::RiscV64 | TargetPlatform::Qir | TargetPlatform::Ptx | TargetPlatform::AmdGpu => {
                 // Linux: SOL_SOCKET=1, SO_REUSEADDR=2
                 Ok(format!(
                     "  %{} = call i64 @sys_socket(i64 2, i64 {}, i64 0)\n  %{}_one = alloca i32\n  store i32 1, i32* %{}_one\n  %{}_oneptr = bitcast i32* %{}_one to i8*\n  call i64 @sys_setsockopt(i64 %{}, i64 1, i64 2, i8* %{}_oneptr, i64 4)\n",
@@ -599,7 +690,7 @@ impl PureEmitter {
         let fd = self.emit_arg(&args[0])?;
         let addr = self.emit_arg(&args[1])?;
         match self.target {
-            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
+            TargetPlatform::Linux | TargetPlatform::LinuxArm64 | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 | TargetPlatform::Wasm | TargetPlatform::RiscV64 | TargetPlatform::Qir | TargetPlatform::Ptx | TargetPlatform::AmdGpu => {
                 Ok(format!("  %{}_addr = inttoptr i64 {} to i8*\n  %{} = call i64 @sys_bind(i64 {}, i8* %{}_addr, i64 16)\n", id, addr, id, fd, id))
             }
             TargetPlatform::Windows => {
@@ -612,7 +703,7 @@ impl PureEmitter {
         let fd = self.emit_arg(&args[0])?;
         let backlog = if args.len() > 1 { self.emit_arg(&args[1])? } else { "10".to_string() };
         match self.target {
-            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
+            TargetPlatform::Linux | TargetPlatform::LinuxArm64 | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 | TargetPlatform::Wasm | TargetPlatform::RiscV64 | TargetPlatform::Qir | TargetPlatform::Ptx | TargetPlatform::AmdGpu => {
                 Ok(format!("  %{} = call i64 @sys_listen(i64 {}, i64 {})\n", id, fd, backlog))
             }
             TargetPlatform::Windows => {
@@ -624,7 +715,7 @@ impl PureEmitter {
     fn emit_syscall_accept(&self, id: &str, args: &[Arg]) -> Result<String, String> {
         let fd = self.emit_arg(&args[0])?;
         match self.target {
-            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
+            TargetPlatform::Linux | TargetPlatform::LinuxArm64 | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 | TargetPlatform::Wasm | TargetPlatform::RiscV64 | TargetPlatform::Qir | TargetPlatform::Ptx | TargetPlatform::AmdGpu => {
                 Ok(format!("  %{} = call i64 @sys_accept(i64 {}, i8* null, i64* null)\n", id, fd))
             }
             TargetPlatform::Windows => {
@@ -641,7 +732,7 @@ impl PureEmitter {
                 let ptr = self.emit_arg(&args[1])?;
                 let len = s.len();
                 match self.target {
-                    TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
+                    TargetPlatform::Linux | TargetPlatform::LinuxArm64 | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 | TargetPlatform::Wasm | TargetPlatform::RiscV64 | TargetPlatform::Qir | TargetPlatform::Ptx | TargetPlatform::AmdGpu => {
                         Ok(format!("  %{} = call i64 @sys_sendto(i64 {}, i8* {}, i64 {}, i64 0, i8* null, i64 0)\n", id, fd, ptr, len))
                     }
                     TargetPlatform::Windows => {
@@ -658,7 +749,7 @@ impl PureEmitter {
                 // Use emit_arg to resolve the reference (handles string globals)
                 let ptr = self.emit_arg(&args[1])?;
                 match self.target {
-                    TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
+                    TargetPlatform::Linux | TargetPlatform::LinuxArm64 | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 | TargetPlatform::Wasm | TargetPlatform::RiscV64 | TargetPlatform::Qir | TargetPlatform::Ptx | TargetPlatform::AmdGpu => {
                         Ok(format!("  %{} = call i64 @sys_sendto(i64 {}, i8* {}, i64 {}, i64 0, i8* null, i64 0)\n", id, fd, ptr, len))
                     }
                     TargetPlatform::Windows => {
@@ -677,7 +768,7 @@ impl PureEmitter {
         let buf = self.emit_arg(&args[1])?;
         let len = self.emit_arg(&args[2])?;
         match self.target {
-            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
+            TargetPlatform::Linux | TargetPlatform::LinuxArm64 | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 | TargetPlatform::Wasm | TargetPlatform::RiscV64 | TargetPlatform::Qir | TargetPlatform::Ptx | TargetPlatform::AmdGpu => {
                 Ok(format!("  %{}_ptr = inttoptr i64 {} to i8*\n  %{} = call i64 @sys_recvfrom(i64 {}, i8* %{}_ptr, i64 {}, i64 0, i8* null, i64* null)\n", id, buf, id, fd, id, len))
             }
             TargetPlatform::Windows => {
@@ -689,7 +780,7 @@ impl PureEmitter {
     fn emit_syscall_close(&self, id: &str, args: &[Arg]) -> Result<String, String> {
         let fd = self.emit_arg(&args[0])?;
         match self.target {
-            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
+            TargetPlatform::Linux | TargetPlatform::LinuxArm64 | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 | TargetPlatform::Wasm | TargetPlatform::RiscV64 | TargetPlatform::Qir | TargetPlatform::Ptx | TargetPlatform::AmdGpu => {
                 Ok(format!("  %{} = call i64 @sys_close(i64 {})\n", id, fd))
             }
             TargetPlatform::Windows => {
@@ -709,7 +800,7 @@ impl PureEmitter {
         let timeout_ms = self.emit_arg(&args[1])?;
         
         match self.target {
-            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
+            TargetPlatform::Linux | TargetPlatform::LinuxArm64 | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 | TargetPlatform::Wasm | TargetPlatform::RiscV64 | TargetPlatform::Qir | TargetPlatform::Ptx | TargetPlatform::AmdGpu => {
                 // Linux: use poll syscall (simpler than select)
                 // struct pollfd { int fd; short events; short revents; } = 8 bytes
                 // POLLIN = 1
@@ -772,7 +863,7 @@ impl PureEmitter {
         let mode = self.emit_arg(&args[1])?;
         
         match self.target {
-            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
+            TargetPlatform::Linux | TargetPlatform::LinuxArm64 | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 | TargetPlatform::Wasm | TargetPlatform::RiscV64 | TargetPlatform::Qir | TargetPlatform::Ptx | TargetPlatform::AmdGpu => {
                 // Linux: fcntl(fd, F_SETFL, O_NONBLOCK) or fcntl(fd, F_SETFL, 0)
                 // F_GETFL = 3, F_SETFL = 4, O_NONBLOCK = 2048
                 let mut code = String::new();
@@ -808,7 +899,7 @@ impl PureEmitter {
         let mode = self.emit_arg(&args[1])?;
         
         match self.target {
-            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
+            TargetPlatform::Linux | TargetPlatform::LinuxArm64 | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 | TargetPlatform::Wasm | TargetPlatform::RiscV64 | TargetPlatform::Qir | TargetPlatform::Ptx | TargetPlatform::AmdGpu => {
                 // setsockopt(fd, IPPROTO_TCP=6, TCP_NODELAY=1, &val, 4)
                 let mut code = String::new();
                 code.push_str(&format!("  %{}_val = alloca i32\n", id));
@@ -842,7 +933,7 @@ impl PureEmitter {
         let mode = self.emit_arg(&args[1])?;
         
         match self.target {
-            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
+            TargetPlatform::Linux | TargetPlatform::LinuxArm64 | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 | TargetPlatform::Wasm | TargetPlatform::RiscV64 | TargetPlatform::Qir | TargetPlatform::Ptx | TargetPlatform::AmdGpu => {
                 // setsockopt(fd, IPPROTO_TCP=6, TCP_QUICKACK=12, &val, 4)
                 let mut code = String::new();
                 code.push_str(&format!("  %{}_val = alloca i32\n", id));
@@ -869,7 +960,7 @@ impl PureEmitter {
         let size = self.emit_arg(&args[1])?;
         
         match self.target {
-            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
+            TargetPlatform::Linux | TargetPlatform::LinuxArm64 | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 | TargetPlatform::Wasm | TargetPlatform::RiscV64 | TargetPlatform::Qir | TargetPlatform::Ptx | TargetPlatform::AmdGpu => {
                 // SO_SNDBUF=7, SO_RCVBUF=8, SOL_SOCKET=1
                 let mut code = String::new();
                 code.push_str(&format!("  %{}_val = alloca i32\n", id));
@@ -905,7 +996,7 @@ impl PureEmitter {
         let mode = self.emit_arg(&args[1])?;
         
         match self.target {
-            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
+            TargetPlatform::Linux | TargetPlatform::LinuxArm64 | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 | TargetPlatform::Wasm | TargetPlatform::RiscV64 | TargetPlatform::Qir | TargetPlatform::Ptx | TargetPlatform::AmdGpu => {
                 // SO_KEEPALIVE=9, SOL_SOCKET=1
                 let mut code = String::new();
                 code.push_str(&format!("  %{}_val = alloca i32\n", id));
@@ -933,7 +1024,7 @@ impl PureEmitter {
     fn emit_epoll_create(&self, id: &str, _args: &[Arg]) -> Result<String, String> {
         // EPL - Create epoll instance (Linux) or IOCP (Windows)
         match self.target {
-            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
+            TargetPlatform::Linux | TargetPlatform::LinuxArm64 | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 | TargetPlatform::Wasm | TargetPlatform::RiscV64 | TargetPlatform::Qir | TargetPlatform::Ptx | TargetPlatform::AmdGpu => {
                 // epoll_create1(0) - syscall 291
                 Ok(format!("  %{} = call i64 @sys_epoll_create1(i32 0)\n", id))
             }
@@ -955,7 +1046,7 @@ impl PureEmitter {
         let events = self.emit_arg(&args[3])?;
         
         match self.target {
-            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
+            TargetPlatform::Linux | TargetPlatform::LinuxArm64 | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 | TargetPlatform::Wasm | TargetPlatform::RiscV64 | TargetPlatform::Qir | TargetPlatform::Ptx | TargetPlatform::AmdGpu => {
                 // struct epoll_event { uint32_t events; epoll_data_t data; } = 12 bytes
                 let mut code = String::new();
                 code.push_str(&format!("  %{}_ev = alloca [12 x i8]\n", id));
@@ -992,7 +1083,7 @@ impl PureEmitter {
         let timeout = self.emit_arg(&args[3])?;
         
         match self.target {
-            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
+            TargetPlatform::Linux | TargetPlatform::LinuxArm64 | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 | TargetPlatform::Wasm | TargetPlatform::RiscV64 | TargetPlatform::Qir | TargetPlatform::Ptx | TargetPlatform::AmdGpu => {
                 let mut code = String::new();
                 code.push_str(&format!("  %{}_epfd32 = trunc i64 {} to i32\n", id, epfd));
                 code.push_str(&format!("  %{}_bufptr = inttoptr i64 {} to i8*\n", id, buf));
@@ -1031,7 +1122,7 @@ impl PureEmitter {
         let arg = self.emit_arg(&args[1])?;
         
         match self.target {
-            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
+            TargetPlatform::Linux | TargetPlatform::LinuxArm64 | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 | TargetPlatform::Wasm | TargetPlatform::RiscV64 | TargetPlatform::Qir | TargetPlatform::Ptx | TargetPlatform::AmdGpu => {
                 // For Linux, we need to use clone() which is complex
                 // For now, emit a placeholder that calls the function directly (single-threaded)
                 // TODO: Implement proper clone() with stack setup
@@ -1059,7 +1150,7 @@ impl PureEmitter {
         let handle = self.emit_arg(&args[0])?;
         
         match self.target {
-            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
+            TargetPlatform::Linux | TargetPlatform::LinuxArm64 | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 | TargetPlatform::Wasm | TargetPlatform::RiscV64 | TargetPlatform::Qir | TargetPlatform::Ptx | TargetPlatform::AmdGpu => {
                 // waitpid or futex wait
                 Ok(format!("  %{} = call i64 @sys_wait4(i64 {}, i32* null, i64 0, i8* null)\n", id, handle))
             }
@@ -1077,7 +1168,7 @@ impl PureEmitter {
     fn emit_mutex_create(&self, id: &str, _args: &[Arg]) -> Result<String, String> {
         // MTX - Create a mutex
         match self.target {
-            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
+            TargetPlatform::Linux | TargetPlatform::LinuxArm64 | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 | TargetPlatform::Wasm | TargetPlatform::RiscV64 | TargetPlatform::Qir | TargetPlatform::Ptx | TargetPlatform::AmdGpu => {
                 // Allocate futex (4 bytes, initialized to 0 = unlocked)
                 let mut code = String::new();
                 code.push_str(&format!("  %{}_ptr = call i64 @sys_mmap(i64 0, i64 4, i64 3, i64 34, i64 -1, i64 0)\n", id));
@@ -1104,7 +1195,7 @@ impl PureEmitter {
         let mutex = self.emit_arg(&args[0])?;
         
         match self.target {
-            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
+            TargetPlatform::Linux | TargetPlatform::LinuxArm64 | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 | TargetPlatform::Wasm | TargetPlatform::RiscV64 | TargetPlatform::Qir | TargetPlatform::Ptx | TargetPlatform::AmdGpu => {
                 // Spinlock with futex fallback (simplified: just atomic exchange)
                 let mut code = String::new();
                 code.push_str(&format!("  %{}_ptr = inttoptr i64 {} to i32*\n", id, mutex));
@@ -1131,7 +1222,7 @@ impl PureEmitter {
         let mutex = self.emit_arg(&args[0])?;
         
         match self.target {
-            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
+            TargetPlatform::Linux | TargetPlatform::LinuxArm64 | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 | TargetPlatform::Wasm | TargetPlatform::RiscV64 | TargetPlatform::Qir | TargetPlatform::Ptx | TargetPlatform::AmdGpu => {
                 // Atomic store 0
                 let mut code = String::new();
                 code.push_str(&format!("  %{}_ptr = inttoptr i64 {} to i32*\n", id, mutex));
@@ -1160,7 +1251,7 @@ impl PureEmitter {
         let capacity = self.emit_arg(&args[0])?;
         
         match self.target {
-            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
+            TargetPlatform::Linux | TargetPlatform::LinuxArm64 | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 | TargetPlatform::Wasm | TargetPlatform::RiscV64 | TargetPlatform::Qir | TargetPlatform::Ptx | TargetPlatform::AmdGpu => {
                 let mut code = String::new();
                 // Calculate size: 32 + capacity*8
                 code.push_str(&format!("  %{}_datasize = mul i64 {}, 8\n", id, capacity));
@@ -1429,43 +1520,48 @@ impl PureEmitter {
         };
         
         match self.target {
-            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 | TargetPlatform::Windows => {
+            TargetPlatform::Linux | TargetPlatform::LinuxArm64 | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 | TargetPlatform::Wasm | TargetPlatform::RiscV64 | TargetPlatform::Qir | TargetPlatform::Ptx | TargetPlatform::AmdGpu => {
+                // Allocate output buffer using mmap
+                code.push_str(&format!("  %{}_out = call i8* @sys_mmap(i8* null, i64 {}, i64 3, i64 34, i64 -1, i64 0)\n", id, len));
+                code.push_str(&format!("  %{}_outptr = ptrtoint i8* %{}_out to i64\n", id, id));
+            }
+            TargetPlatform::Windows => {
                 // Allocate output buffer
                 code.push_str(&format!("  %{}_out = call i8* @VirtualAlloc(i8* null, i64 {}, i32 12288, i32 4)\n", id, len));
                 code.push_str(&format!("  %{}_outptr = ptrtoint i8* %{}_out to i64\n", id, id));
-                
-                // Loop setup - use unique setup block to avoid phi predecessor issues
-                code.push_str(&format!("  br label %trn_setup_{}\n", id));
-                code.push_str(&format!("trn_setup_{}:\n", id));
-                code.push_str(&format!("  br label %trn_loop_{}\n", id));
-                code.push_str(&format!("trn_loop_{}:\n", id));
-                code.push_str(&format!("  %{}_i = phi i64 [0, %trn_setup_{}], [%{}_next, %trn_body_{}]\n", id, id, id, id));
-                code.push_str(&format!("  %{}_done = icmp uge i64 %{}_i, {}\n", id, id, len));
-                code.push_str(&format!("  br i1 %{}_done, label %trn_end_{}, label %trn_body_{}\n", id, id, id));
-                
-                // Loop body
-                code.push_str(&format!("trn_body_{}:\n", id));
-                // Read input byte
-                code.push_str(&format!("  %{}_inoff = add i64 {}, %{}_i\n", id, input, id));
-                code.push_str(&format!("  %{}_inptr = inttoptr i64 %{}_inoff to i8*\n", id, id));
-                code.push_str(&format!("  %{}_byte = load i8, i8* %{}_inptr\n", id, id));
-                // Apply rule: dot (46) -> 1, else -> 0
-                code.push_str(&format!("  %{}_bytei = zext i8 %{}_byte to i64\n", id, id));
-                code.push_str(&format!("  %{}_is_dot = icmp eq i64 %{}_bytei, 46\n", id, id));
-                code.push_str(&format!("  %{}_result = select i1 %{}_is_dot, i8 1, i8 0\n", id, id));
-                // Write output byte
-                code.push_str(&format!("  %{}_outoff = add i64 %{}_outptr, %{}_i\n", id, id, id));
-                code.push_str(&format!("  %{}_outaddr = inttoptr i64 %{}_outoff to i8*\n", id, id));
-                code.push_str(&format!("  store i8 %{}_result, i8* %{}_outaddr\n", id, id));
-                // Increment
-                code.push_str(&format!("  %{}_next = add i64 %{}_i, 1\n", id, id));
-                code.push_str(&format!("  br label %trn_loop_{}\n", id));
-                
-                // Loop end
-                code.push_str(&format!("trn_end_{}:\n", id));
-                code.push_str(&format!("  %{} = add i64 %{}_outptr, 0\n", id, id));
             }
         }
+        
+        // Loop setup - use unique setup block to avoid phi predecessor issues
+        code.push_str(&format!("  br label %trn_setup_{}\n", id));
+        code.push_str(&format!("trn_setup_{}:\n", id));
+        code.push_str(&format!("  br label %trn_loop_{}\n", id));
+        code.push_str(&format!("trn_loop_{}:\n", id));
+        code.push_str(&format!("  %{}_i = phi i64 [0, %trn_setup_{}], [%{}_next, %trn_body_{}]\n", id, id, id, id));
+        code.push_str(&format!("  %{}_done = icmp uge i64 %{}_i, {}\n", id, id, len));
+        code.push_str(&format!("  br i1 %{}_done, label %trn_end_{}, label %trn_body_{}\n", id, id, id));
+        
+        // Loop body
+        code.push_str(&format!("trn_body_{}:\n", id));
+        // Read input byte
+        code.push_str(&format!("  %{}_inoff = add i64 {}, %{}_i\n", id, input, id));
+        code.push_str(&format!("  %{}_inptr = inttoptr i64 %{}_inoff to i8*\n", id, id));
+        code.push_str(&format!("  %{}_byte = load i8, i8* %{}_inptr\n", id, id));
+        // Apply rule: dot (46) -> 1, else -> 0
+        code.push_str(&format!("  %{}_bytei = zext i8 %{}_byte to i64\n", id, id));
+        code.push_str(&format!("  %{}_is_dot = icmp eq i64 %{}_bytei, 46\n", id, id));
+        code.push_str(&format!("  %{}_result = select i1 %{}_is_dot, i8 1, i8 0\n", id, id));
+        // Write output byte
+        code.push_str(&format!("  %{}_outoff = add i64 %{}_outptr, %{}_i\n", id, id, id));
+        code.push_str(&format!("  %{}_outaddr = inttoptr i64 %{}_outoff to i8*\n", id, id));
+        code.push_str(&format!("  store i8 %{}_result, i8* %{}_outaddr\n", id, id));
+        // Increment
+        code.push_str(&format!("  %{}_next = add i64 %{}_i, 1\n", id, id));
+        code.push_str(&format!("  br label %trn_loop_{}\n", id));
+        
+        // Loop end
+        code.push_str(&format!("trn_end_{}:\n", id));
+        code.push_str(&format!("  %{} = add i64 %{}_outptr, 0\n", id, id));
         
         Ok(code)
     }
@@ -1694,7 +1790,7 @@ impl PureEmitter {
                 code.push_str(&format!("  %{} = ptrtoint i8* %{}_ptr to i64\n", id, id));
                 Ok(code)
             }
-            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
+            TargetPlatform::Linux | TargetPlatform::LinuxArm64 | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 | TargetPlatform::Wasm | TargetPlatform::RiscV64 | TargetPlatform::Qir | TargetPlatform::Ptx | TargetPlatform::AmdGpu => {
                 let mut code = String::new();
                 code.push_str(&format!("  %{}_dpy = call i8* @XOpenDisplay(i8* null)\n", id));
                 code.push_str(&format!("  store i8* %{}_dpy, i8** @.x11_display\n", id));
@@ -1731,7 +1827,7 @@ impl PureEmitter {
                 code.push_str(&format!("  %{} = sext i32 %{}_r to i64\n", id, id));
                 Ok(code)
             }
-            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
+            TargetPlatform::Linux | TargetPlatform::LinuxArm64 | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 | TargetPlatform::Wasm | TargetPlatform::RiscV64 | TargetPlatform::Qir | TargetPlatform::Ptx | TargetPlatform::AmdGpu => {
                 let mut code = String::new();
                 code.push_str(&format!("  %{}_dpy = load i8*, i8** @.x11_display\n", id));
                 code.push_str(&format!("  %{}_r = call i32 @XMapWindow(i8* %{}_dpy, i64 {})\n", id, id, handle));
@@ -1758,7 +1854,7 @@ impl PureEmitter {
                 code.push_str(&format!("  %{} = sext i32 %{}_r to i64\n", id, id));
                 Ok(code)
             }
-            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
+            TargetPlatform::Linux | TargetPlatform::LinuxArm64 | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 | TargetPlatform::Wasm | TargetPlatform::RiscV64 | TargetPlatform::Qir | TargetPlatform::Ptx | TargetPlatform::AmdGpu => {
                 let mut code = String::new();
                 code.push_str(&format!("  %{}_dpy = load i8*, i8** @.x11_display\n", id));
                 code.push_str(&format!("  %{}_r = call i32 @XUnmapWindow(i8* %{}_dpy, i64 {})\n", id, id, handle));
@@ -1822,7 +1918,7 @@ impl PureEmitter {
                     id, id, id, id, id));
                 Ok(code)
             }
-            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
+            TargetPlatform::Linux | TargetPlatform::LinuxArm64 | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 | TargetPlatform::Wasm | TargetPlatform::RiscV64 | TargetPlatform::Qir | TargetPlatform::Ptx | TargetPlatform::AmdGpu => {
                 let mut code = String::new();
                 // XEvent is 192 bytes
                 code.push_str(&format!("  %{}_ev = alloca [192 x i8]\n", id));
@@ -1921,7 +2017,7 @@ impl PureEmitter {
                 code.push_str(&format!("  %{} = add i64 0, 0\n", id));
                 Ok(code)
             }
-            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
+            TargetPlatform::Linux | TargetPlatform::LinuxArm64 | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 | TargetPlatform::Wasm | TargetPlatform::RiscV64 | TargetPlatform::Qir | TargetPlatform::Ptx | TargetPlatform::AmdGpu => {
                 // Simplified for Linux - just return
                 Ok(format!("  %{} = add i64 0, 0\n", id))
             }
@@ -1957,7 +2053,7 @@ impl PureEmitter {
                 code.push_str(&format!("  %{} = ptrtoint i8* %{}_ptr to i64\n", id, id));
                 Ok(code)
             }
-            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
+            TargetPlatform::Linux | TargetPlatform::LinuxArm64 | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 | TargetPlatform::Wasm | TargetPlatform::RiscV64 | TargetPlatform::Qir | TargetPlatform::Ptx | TargetPlatform::AmdGpu => {
                 // X11 doesn't have native controls - we'll draw text directly
                 let mut code = String::new();
                 code.push_str(&format!("  ; X11 label at ({}, {}) - text drawn on expose\n", x, y));
@@ -1995,7 +2091,7 @@ impl PureEmitter {
                 code.push_str(&format!("  %{} = ptrtoint i8* %{}_ptr to i64\n", id, id));
                 Ok(code)
             }
-            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
+            TargetPlatform::Linux | TargetPlatform::LinuxArm64 | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 | TargetPlatform::Wasm | TargetPlatform::RiscV64 | TargetPlatform::Qir | TargetPlatform::Ptx | TargetPlatform::AmdGpu => {
                 let mut code = String::new();
                 code.push_str(&format!("  ; X11 textbox placeholder\n"));
                 code.push_str(&format!("  %{} = add i64 0, 0\n", id));
@@ -2036,7 +2132,7 @@ impl PureEmitter {
                 code.push_str(&format!("  %{} = ptrtoint i8* %{}_ptr to i64\n", id, id));
                 Ok(code)
             }
-            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
+            TargetPlatform::Linux | TargetPlatform::LinuxArm64 | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 | TargetPlatform::Wasm | TargetPlatform::RiscV64 | TargetPlatform::Qir | TargetPlatform::Ptx | TargetPlatform::AmdGpu => {
                 let mut code = String::new();
                 code.push_str(&format!("  ; X11 button placeholder\n"));
                 code.push_str(&format!("  %{} = add i64 0, 0\n", id));
@@ -2061,7 +2157,7 @@ impl PureEmitter {
                 code.push_str(&format!("  %{} = sext i32 %{}_r to i64\n", id, id));
                 Ok(code)
             }
-            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
+            TargetPlatform::Linux | TargetPlatform::LinuxArm64 | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 | TargetPlatform::Wasm | TargetPlatform::RiscV64 | TargetPlatform::Qir | TargetPlatform::Ptx | TargetPlatform::AmdGpu => {
                 // X11 doesn't have native dialogs - print to console
                 let mut code = String::new();
                 code.push_str(&format!("  ; X11 alert dialog - printing to console\n"));
@@ -2090,7 +2186,7 @@ impl PureEmitter {
                 code.push_str(&format!("  %{} = sext i32 %{}_r to i64\n", id, id));
                 Ok(code)
             }
-            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
+            TargetPlatform::Linux | TargetPlatform::LinuxArm64 | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 | TargetPlatform::Wasm | TargetPlatform::RiscV64 | TargetPlatform::Qir | TargetPlatform::Ptx | TargetPlatform::AmdGpu => {
                 let mut code = String::new();
                 code.push_str(&format!("  %{} = add i64 0, 0\n", id));
                 Ok(code)
@@ -2114,7 +2210,7 @@ impl PureEmitter {
                 code.push_str(&format!("  %{} = sext i32 %{}_r to i64\n", id, id));
                 Ok(code)
             }
-            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
+            TargetPlatform::Linux | TargetPlatform::LinuxArm64 | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 | TargetPlatform::Wasm | TargetPlatform::RiscV64 | TargetPlatform::Qir | TargetPlatform::Ptx | TargetPlatform::AmdGpu => {
                 let mut code = String::new();
                 code.push_str(&format!("  %{} = add i64 0, 0\n", id));
                 Ok(code)
@@ -2581,7 +2677,7 @@ end:
     
     fn emit_entry(&self) -> String {
         match self.target {
-            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => r#"
+            TargetPlatform::Linux | TargetPlatform::LinuxArm64 | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 | TargetPlatform::Wasm | TargetPlatform::RiscV64 | TargetPlatform::Qir | TargetPlatform::Ptx | TargetPlatform::AmdGpu => r#"
 define void @_start() {
   %r = call i32 @TAYNI_main()
   call void @sys_exit(i32 %r)
@@ -2919,7 +3015,7 @@ end:
         let b = self.emit_arg(&args[1])?;
         let len = self.emit_arg(&args[2])?;
         match self.target {
-            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
+            TargetPlatform::Linux | TargetPlatform::LinuxArm64 | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 | TargetPlatform::Wasm | TargetPlatform::RiscV64 | TargetPlatform::Qir | TargetPlatform::Ptx | TargetPlatform::AmdGpu => {
                 Ok(format!(
                     "  %{}_a = inttoptr i64 {} to i8*\n  %{}_b = inttoptr i64 {} to i8*\n  %{}_r = call i32 @memcmp(i8* %{}_a, i8* %{}_b, i64 {})\n  %{} = sext i32 %{}_r to i64\n",
                     id, a, id, b, id, id, id, len, id, id
@@ -2972,7 +3068,7 @@ end:
         let path = self.emit_arg(&args[0])?;
         let mode = self.emit_arg(&args[1])?;
         match self.target {
-            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
+            TargetPlatform::Linux | TargetPlatform::LinuxArm64 | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 | TargetPlatform::Wasm | TargetPlatform::RiscV64 | TargetPlatform::Qir | TargetPlatform::Ptx | TargetPlatform::AmdGpu => {
                 // open(path, flags, mode) - flags: 0=O_RDONLY, 1=O_WRONLY|O_CREAT|O_TRUNC, 2=O_WRONLY|O_CREAT|O_APPEND
                 Ok(format!(
                     "  %{}_path = inttoptr i64 {} to i8*\n  %{}_isread = icmp eq i64 {}, 0\n  %{}_iswrite = icmp eq i64 {}, 1\n  %{}_flags_w = select i1 %{}_iswrite, i64 577, i64 1089\n  %{}_flags = select i1 %{}_isread, i64 0, i64 %{}_flags_w\n  %{} = call i64 @sys_open(i8* %{}_path, i64 %{}_flags, i64 420)\n",
@@ -3004,7 +3100,7 @@ end:
         let buf = self.emit_arg(&args[1])?;
         let len = self.emit_arg(&args[2])?;
         match self.target {
-            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
+            TargetPlatform::Linux | TargetPlatform::LinuxArm64 | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 | TargetPlatform::Wasm | TargetPlatform::RiscV64 | TargetPlatform::Qir | TargetPlatform::Ptx | TargetPlatform::AmdGpu => {
                 Ok(format!(
                     "  %{}_buf = inttoptr i64 {} to i8*\n  %{} = call i64 @sys_read(i64 {}, i8* %{}_buf, i64 {})\n",
                     id, buf, id, handle, id, len
@@ -3028,7 +3124,7 @@ end:
         let buf = self.emit_arg(&args[1])?;
         let len = self.emit_arg(&args[2])?;
         match self.target {
-            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
+            TargetPlatform::Linux | TargetPlatform::LinuxArm64 | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 | TargetPlatform::Wasm | TargetPlatform::RiscV64 | TargetPlatform::Qir | TargetPlatform::Ptx | TargetPlatform::AmdGpu => {
                 Ok(format!(
                     "  %{}_buf = inttoptr i64 {} to i8*\n  %{} = call i64 @sys_write(i32 {}, i8* %{}_buf, i64 {})\n",
                     id, buf, id, handle, id, len
@@ -3036,8 +3132,8 @@ end:
             }
             TargetPlatform::Windows => {
                 Ok(format!(
-                    "  %{}_h = inttoptr i64 {} to i8*\n  %{}_buf = inttoptr i64 {} to i8*\n  %{}_written = alloca i32\n  call i32 @WriteFile(i8* %{}_h, i8* %{}_buf, i32 {}, i32* %{}_written, i8* null)\n  %{}_r = load i32, i32* %{}_written\n  %{} = zext i32 %{}_r to i64\n",
-                    id, handle, id, buf, id, id, id, len, id, id, id, id, id
+                    "  %{}_h = inttoptr i64 {} to i8*\n  %{}_buf = inttoptr i64 {} to i8*\n  %{}_len32 = trunc i64 {} to i32\n  %{}_written = alloca i32\n  call i32 @WriteFile(i8* %{}_h, i8* %{}_buf, i32 %{}_len32, i32* %{}_written, i8* null)\n  %{}_r = load i32, i32* %{}_written\n  %{} = zext i32 %{}_r to i64\n",
+                    id, handle, id, buf, id, len, id, id, id, id, id, id, id, id, id
                 ))
             }
         }
@@ -3050,7 +3146,7 @@ end:
         }
         let handle = self.emit_arg(&args[0])?;
         match self.target {
-            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
+            TargetPlatform::Linux | TargetPlatform::LinuxArm64 | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 | TargetPlatform::Wasm | TargetPlatform::RiscV64 | TargetPlatform::Qir | TargetPlatform::Ptx | TargetPlatform::AmdGpu => {
                 Ok(format!(
                     "  %{} = call i64 @sys_close(i64 {})\n",
                     id, handle
@@ -3075,7 +3171,7 @@ end:
         let cap = if args.is_empty() { "16".to_string() } else { self.emit_arg(&args[0])? };
         // Allocate: 16 bytes header + capacity * 8 bytes data
         match self.target {
-            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
+            TargetPlatform::Linux | TargetPlatform::LinuxArm64 | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 | TargetPlatform::Wasm | TargetPlatform::RiscV64 | TargetPlatform::Qir | TargetPlatform::Ptx | TargetPlatform::AmdGpu => {
                 Ok(format!(
                     "  %{}_size = mul i64 {}, 8\n  %{}_total = add i64 %{}_size, 16\n  %{} = call i64 @sys_mmap(i64 0, i64 %{}_total, i64 3, i64 34, i64 -1, i64 0)\n  %{}_cap_ptr = inttoptr i64 %{} to i64*\n  store i64 {}, i64* %{}_cap_ptr\n  %{}_len_ptr = getelementptr i64, i64* %{}_cap_ptr, i32 1\n  store i64 0, i64* %{}_len_ptr\n",
                     id, cap, id, id, id, id, id, id, cap, id, id, id, id
@@ -3166,7 +3262,7 @@ end:
         // Each bucket: 32 bytes (hash:8 + key_ptr:8 + key_len:8 + value:8)
         // Header: 16 bytes (capacity:8 + count:8)
         match self.target {
-            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => {
+            TargetPlatform::Linux | TargetPlatform::LinuxArm64 | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 | TargetPlatform::Wasm | TargetPlatform::RiscV64 | TargetPlatform::Qir | TargetPlatform::Ptx | TargetPlatform::AmdGpu => {
                 Ok(format!(
                     "  %{}_bsize = mul i64 {}, 32\n  %{}_total = add i64 %{}_bsize, 16\n  %{} = call i64 @sys_mmap(i64 0, i64 %{}_total, i64 3, i64 34, i64 -1, i64 0)\n  %{}_cap_ptr = inttoptr i64 %{} to i64*\n  store i64 {}, i64* %{}_cap_ptr\n  %{}_cnt_ptr = getelementptr i64, i64* %{}_cap_ptr, i32 1\n  store i64 0, i64* %{}_cnt_ptr\n",
                     id, cap, id, id, id, id, id, id, cap, id, id, id, id
@@ -3320,27 +3416,71 @@ end:
     
     fn emit_int_to_str(&self, id: &str, args: &[Arg]) -> Result<String, String> {
         // ITS num buf -> length
-        // Pure implementation without libc
+        // Full implementation for multi-digit numbers
         if args.len() < 2 {
             return Err("ITS requires num, buf".to_string());
         }
         let num = self.emit_arg(&args[0])?;
         let buf = self.emit_arg(&args[1])?;
         
-        // Simple single-digit for now (0-9), handles negative
-        // For full numbers, would need inline loop
+        // Generate code that handles multi-digit numbers
+        // Algorithm: divide by 10 repeatedly, store digits in reverse, then reverse
         Ok(format!(concat!(
-            "  ; ITS: int to string (single digit)\n",
+            "  ; ITS: int to string (multi-digit)\n",
             "  %{id}_buf = inttoptr i64 {buf} to i8*\n",
             "  %{id}_is_neg = icmp slt i64 {num}, 0\n",
-            "  %{id}_abs = select i1 %{id}_is_neg, i64 0, i64 {num}\n",
-            "  %{id}_mod = urem i64 %{id}_abs, 10\n",
-            "  %{id}_digit = add i64 %{id}_mod, 48\n",
-            "  %{id}_char = trunc i64 %{id}_digit to i8\n",
-            "  store i8 %{id}_char, i8* %{id}_buf\n",
-            "  %{id}_next = getelementptr i8, i8* %{id}_buf, i32 1\n",
-            "  store i8 0, i8* %{id}_next\n",
-            "  %{id} = add i64 0, 1\n"),
+            "  %{id}_neg_val = sub i64 0, {num}\n",
+            "  %{id}_abs = select i1 %{id}_is_neg, i64 %{id}_neg_val, i64 {num}\n",
+            "  %{id}_is_zero = icmp eq i64 %{id}_abs, 0\n",
+            "  br i1 %{id}_is_zero, label %{id}_zero, label %{id}_nonzero\n",
+            "{id}_zero:\n",
+            "  store i8 48, i8* %{id}_buf\n",
+            "  %{id}_z1 = getelementptr i8, i8* %{id}_buf, i32 1\n",
+            "  store i8 0, i8* %{id}_z1\n",
+            "  br label %{id}_done\n",
+            "{id}_nonzero:\n",
+            "  %{id}_tmp = alloca [24 x i8]\n",
+            "  %{id}_tmp_ptr = getelementptr [24 x i8], [24 x i8]* %{id}_tmp, i32 0, i32 0\n",
+            "  br label %{id}_loop\n",
+            "{id}_loop:\n",
+            "  %{id}_val = phi i64 [ %{id}_abs, %{id}_nonzero ], [ %{id}_next_val, %{id}_loop ]\n",
+            "  %{id}_pos = phi i32 [ 0, %{id}_nonzero ], [ %{id}_next_pos, %{id}_loop ]\n",
+            "  %{id}_digit = urem i64 %{id}_val, 10\n",
+            "  %{id}_char = add i64 %{id}_digit, 48\n",
+            "  %{id}_char8 = trunc i64 %{id}_char to i8\n",
+            "  %{id}_digit_ptr = getelementptr i8, i8* %{id}_tmp_ptr, i32 %{id}_pos\n",
+            "  store i8 %{id}_char8, i8* %{id}_digit_ptr\n",
+            "  %{id}_next_val = udiv i64 %{id}_val, 10\n",
+            "  %{id}_next_pos = add i32 %{id}_pos, 1\n",
+            "  %{id}_continue = icmp ugt i64 %{id}_next_val, 0\n",
+            "  br i1 %{id}_continue, label %{id}_loop, label %{id}_reverse\n",
+            "{id}_reverse:\n",
+            "  %{id}_len = phi i32 [ %{id}_next_pos, %{id}_loop ]\n",
+            "  %{id}_start = select i1 %{id}_is_neg, i32 1, i32 0\n",
+            "  br i1 %{id}_is_neg, label %{id}_add_minus, label %{id}_copy\n",
+            "{id}_add_minus:\n",
+            "  store i8 45, i8* %{id}_buf\n",
+            "  br label %{id}_copy\n",
+            "{id}_copy:\n",
+            "  %{id}_i = phi i32 [ 0, %{id}_add_minus ], [ 0, %{id}_reverse ], [ %{id}_next_i, %{id}_copy ]\n",
+            "  %{id}_ri = sub i32 %{id}_len, %{id}_i\n",
+            "  %{id}_ri_1 = sub i32 %{id}_ri, 1\n",
+            "  %{id}_src_ptr = getelementptr i8, i8* %{id}_tmp_ptr, i32 %{id}_ri_1\n",
+            "  %{id}_src_char = load i8, i8* %{id}_src_ptr\n",
+            "  %{id}_dst_idx = add i32 %{id}_start, %{id}_i\n",
+            "  %{id}_dst_ptr = getelementptr i8, i8* %{id}_buf, i32 %{id}_dst_idx\n",
+            "  store i8 %{id}_src_char, i8* %{id}_dst_ptr\n",
+            "  %{id}_next_i = add i32 %{id}_i, 1\n",
+            "  %{id}_copy_done = icmp eq i32 %{id}_next_i, %{id}_len\n",
+            "  br i1 %{id}_copy_done, label %{id}_terminate, label %{id}_copy\n",
+            "{id}_terminate:\n",
+            "  %{id}_total_len = add i32 %{id}_start, %{id}_len\n",
+            "  %{id}_term_ptr = getelementptr i8, i8* %{id}_buf, i32 %{id}_total_len\n",
+            "  store i8 0, i8* %{id}_term_ptr\n",
+            "  br label %{id}_done\n",
+            "{id}_done:\n",
+            "  %{id}_final_len = phi i32 [ 1, %{id}_zero ], [ %{id}_total_len, %{id}_terminate ]\n",
+            "  %{id} = zext i32 %{id}_final_len to i64\n"),
             id=id, buf=buf, num=num
         ))
     }
@@ -3537,7 +3677,7 @@ end:
   call i32 @listen(i64 %{id}_sock, i32 128)
   %{id} = add i64 %{id}_sock, 0
 "#, id = id, port = port)),
-            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => Ok(format!(r#"
+            TargetPlatform::Linux | TargetPlatform::LinuxArm64 | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 | TargetPlatform::Wasm | TargetPlatform::RiscV64 | TargetPlatform::Qir | TargetPlatform::Ptx | TargetPlatform::AmdGpu => Ok(format!(r#"
   ; HTTP.LISTEN {port} - Linux
   %{id}_sock = call i32 @socket(i32 2, i32 1, i32 0)
   %{id}_addr = alloca [16 x i8], align 8
@@ -3563,7 +3703,7 @@ end:
         match self.target {
             TargetPlatform::Windows => Ok(format!(
                 "  %{} = call i64 @accept(i64 {}, i8* null, i32* null)\n", id, server)),
-            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => Ok(format!(
+            TargetPlatform::Linux | TargetPlatform::LinuxArm64 | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 | TargetPlatform::Wasm | TargetPlatform::RiscV64 | TargetPlatform::Qir | TargetPlatform::Ptx | TargetPlatform::AmdGpu => Ok(format!(
                 "  %{}_i32 = call i32 @accept(i32 {}, i8* null, i32* null)\n  %{} = sext i32 %{}_i32 to i64\n", 
                 id, server, id, id)),
         }
@@ -3600,7 +3740,7 @@ end:
   call i32 @closesocket(i64 {client})
   %{id} = add i64 0, 0
 "#, id = id, client = client, body = body)),
-            TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => Ok(format!(r#"
+            TargetPlatform::Linux | TargetPlatform::LinuxArm64 | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 | TargetPlatform::Wasm | TargetPlatform::RiscV64 | TargetPlatform::Qir | TargetPlatform::Ptx | TargetPlatform::AmdGpu => Ok(format!(r#"
   ; HTTP.RESPOND
   %{id}_body_ptr = inttoptr i64 {body} to i8*
   %{id}_len = call i64 @strlen(i8* %{id}_body_ptr)

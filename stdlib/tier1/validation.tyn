@@ -1,0 +1,50 @@
+-- TAYNI stdlib: validation v0.1
+-- Provides: VALIDATE.EMAIL, VALIDATE.URL, VALIDATE.REQUIRED
+-- Usage: USE validation
+
+-- VALIDATE.EMAIL: Check if string is valid email
+.validate_email: FUN .str .str_len
+  -- Check for @ and domain
+  .result: 0
+!FUN
+
+-- VALIDATE.URL: Check if string is valid URL
+.validate_url: FUN .str .str_len
+  -- Check for scheme://host
+  .result: 0
+!FUN
+
+-- VALIDATE.REQUIRED: Check if value is not empty
+.validate_required: FUN .str .str_len
+  .is_empty: IFZ .str_len 1 0
+  .result: IFZ .is_empty 1 0
+!FUN
+
+-- VALIDATE.MIN_LENGTH: Check minimum string length
+.validate_min_length: FUN .str .str_len .min
+  .diff: SUB .str_len .min
+  .result: IFZ .diff 0 1
+!FUN
+
+-- VALIDATE.MAX_LENGTH: Check maximum string length
+.validate_max_length: FUN .str .str_len .max
+  .diff: SUB .max .str_len
+  .result: IFZ .diff 0 1
+!FUN
+
+-- VALIDATE.RANGE: Check if number is in range
+.validate_range: FUN .value .min .max
+  .above_min: SUB .value .min
+  .below_max: SUB .max .value
+  .result: 0
+!FUN
+
+-- VALIDATE.REGEX: Check if string matches pattern
+.validate_regex: FUN .str .str_len .pattern .pattern_len
+  .result: 0
+!FUN
+
+-- VALIDATE.ALPHANUMERIC: Check if string is alphanumeric
+.validate_alphanumeric: FUN .str .str_len
+  .result: 0
+!FUN

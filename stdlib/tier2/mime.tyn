@@ -1,0 +1,65 @@
+-- TAYNI stdlib: mime v0.1
+-- Provides: MIME.FROM_EXT, MIME.FROM_PATH, MIME.PARSE
+-- Usage: USE mime
+
+-- Common MIME type constants
+.MIME_HTML: "text/html"
+.MIME_JSON: "application/json"
+.MIME_XML: "application/xml"
+.MIME_TEXT: "text/plain"
+.MIME_CSS: "text/css"
+.MIME_JS: "application/javascript"
+.MIME_PNG: "image/png"
+.MIME_JPG: "image/jpeg"
+.MIME_GIF: "image/gif"
+.MIME_SVG: "image/svg+xml"
+.MIME_PDF: "application/pdf"
+.MIME_ZIP: "application/zip"
+.MIME_OCTET: "application/octet-stream"
+
+-- MIME.FROM_EXT: Get MIME type from file extension
+-- ext: extension without dot (e.g., "html", "json")
+.mime_from_ext: FUN .ext .ext_len
+  .mime: 0
+!FUN
+
+-- MIME.FROM_PATH: Get MIME type from file path
+.mime_from_path: FUN .path .path_len
+  .mime: 0
+!FUN
+
+-- MIME.PARSE: Parse MIME type string
+-- Returns: type, subtype, parameters
+.mime_parse: FUN .mime .mime_len
+  .result: ALC 128
+!FUN
+
+-- MIME.GET_TYPE: Get main type (e.g., "text" from "text/html")
+.mime_get_type: FUN .mime .mime_len
+  .type: 0
+!FUN
+
+-- MIME.GET_SUBTYPE: Get subtype (e.g., "html" from "text/html")
+.mime_get_subtype: FUN .mime .mime_len
+  .subtype: 0
+!FUN
+
+-- MIME.GET_PARAM: Get parameter value (e.g., charset)
+.mime_get_param: FUN .mime .mime_len .param .param_len
+  .value: 0
+!FUN
+
+-- MIME.IS_TEXT: Check if MIME type is text-based
+.mime_is_text: FUN .mime .mime_len
+  .is_text: 0
+!FUN
+
+-- MIME.IS_BINARY: Check if MIME type is binary
+.mime_is_binary: FUN .mime .mime_len
+  .is_binary: 0
+!FUN
+
+-- MIME.WITH_CHARSET: Add charset parameter
+.mime_with_charset: FUN .mime .mime_len .charset .charset_len
+  .result: ALC 128
+!FUN

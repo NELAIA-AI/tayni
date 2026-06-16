@@ -1,0 +1,41 @@
+-- TAYNI stdlib: time v0.1
+-- Provides: TIME.NOW, TIME.SLEEP, TIME.FORMAT
+-- Usage: USE time
+
+-- TIME.NOW: Get current Unix timestamp (seconds)
+.time_now: FUN
+  -- Platform-specific syscall
+  .result: 0
+!FUN
+
+-- TIME.NOW_MS: Get current timestamp in milliseconds
+.time_now_ms: FUN
+  .result: 0
+!FUN
+
+-- TIME.SLEEP: Sleep for N milliseconds
+.time_sleep: FUN .ms
+  -- Platform-specific sleep
+  .done: 0
+!FUN
+
+-- TIME.FORMAT: Format timestamp as string
+-- format: strftime-like format string
+.time_format: FUN .timestamp .format .format_len
+  .out: ALC 64
+!FUN
+
+-- TIME.PARSE: Parse time string to timestamp
+.time_parse: FUN .str .str_len .format .format_len
+  .result: 0
+!FUN
+
+-- TIME.DIFF: Difference between two timestamps
+.time_diff: FUN .t1 .t2
+  .result: SUB .t1 .t2
+!FUN
+
+-- TIME.ADD: Add duration to timestamp
+.time_add: FUN .timestamp .seconds
+  .result: ADD .timestamp .seconds
+!FUN

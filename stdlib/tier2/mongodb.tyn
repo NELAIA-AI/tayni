@@ -1,0 +1,85 @@
+-- TAYNI stdlib: mongodb v0.1
+-- Provides: MONGO.CONNECT, MONGO.FIND, MONGO.INSERT
+-- Usage: USE mongodb
+
+-- MONGO.CONNECT: Connect to MongoDB
+-- conn_str: "mongodb://localhost:27017/dbname"
+.mongo_connect: FUN .conn_str .conn_str_len
+  .client: 0
+!FUN
+
+-- MONGO.DATABASE: Get database handle
+.mongo_database: FUN .client .name .name_len
+  .db: 0
+!FUN
+
+-- MONGO.COLLECTION: Get collection handle
+.mongo_collection: FUN .db .name .name_len
+  .coll: 0
+!FUN
+
+-- MONGO.FIND: Find documents (returns cursor)
+-- filter: JSON query string
+.mongo_find: FUN .coll .filter .filter_len
+  .cursor: 0
+!FUN
+
+-- MONGO.FIND_ONE: Find single document
+.mongo_find_one: FUN .coll .filter .filter_len
+  .doc: 0
+!FUN
+
+-- MONGO.INSERT_ONE: Insert single document
+.mongo_insert_one: FUN .coll .doc .doc_len
+  .id: 0
+!FUN
+
+-- MONGO.INSERT_MANY: Insert multiple documents
+.mongo_insert_many: FUN .coll .docs .count
+  .ids: 0
+!FUN
+
+-- MONGO.UPDATE_ONE: Update single document
+.mongo_update_one: FUN .coll .filter .filter_len .update .update_len
+  .modified: 0
+!FUN
+
+-- MONGO.UPDATE_MANY: Update multiple documents
+.mongo_update_many: FUN .coll .filter .filter_len .update .update_len
+  .modified: 0
+!FUN
+
+-- MONGO.DELETE_ONE: Delete single document
+.mongo_delete_one: FUN .coll .filter .filter_len
+  .deleted: 0
+!FUN
+
+-- MONGO.DELETE_MANY: Delete multiple documents
+.mongo_delete_many: FUN .coll .filter .filter_len
+  .deleted: 0
+!FUN
+
+-- MONGO.AGGREGATE: Run aggregation pipeline
+.mongo_aggregate: FUN .coll .pipeline .pipeline_len
+  .cursor: 0
+!FUN
+
+-- MONGO.COUNT: Count documents
+.mongo_count: FUN .coll .filter .filter_len
+  .count: 0
+!FUN
+
+-- MONGO.CURSOR_NEXT: Get next document from cursor
+.mongo_cursor_next: FUN .cursor
+  .doc: 0
+!FUN
+
+-- MONGO.CURSOR_CLOSE: Close cursor
+.mongo_cursor_close: FUN .cursor
+  .done: 0
+!FUN
+
+-- MONGO.CLOSE: Close client connection
+.mongo_close: FUN .client
+  .done: 0
+!FUN

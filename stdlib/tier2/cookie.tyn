@@ -1,0 +1,48 @@
+-- TAYNI stdlib: cookie v0.1
+-- Provides: COOKIE.GET, COOKIE.SET, COOKIE.DELETE, COOKIE.SESSION
+-- Usage: USE cookie
+
+-- COOKIE.PARSE: Parse Cookie header
+.cookie_parse: FUN .header .header_len
+  .cookies: ALC 1024
+!FUN
+
+-- COOKIE.GET: Get cookie value by name
+.cookie_get: FUN .cookies .name .name_len
+  .value: 0
+!FUN
+
+-- COOKIE.SET: Create Set-Cookie header
+.cookie_set: FUN .name .name_len .value .value_len
+  .header: ALC 256
+!FUN
+
+-- COOKIE.SET_WITH_OPTIONS: Set cookie with options
+.cookie_set_options: FUN .name .name_len .value .value_len .max_age .path .path_len .secure .http_only
+  .header: ALC 512
+!FUN
+
+-- COOKIE.DELETE: Create delete cookie header
+.cookie_delete: FUN .name .name_len
+  .header: ALC 128
+!FUN
+
+-- SESSION.CREATE: Create new session
+.session_create: FUN
+  .session_id: ALC 64
+!FUN
+
+-- SESSION.GET: Get session data
+.session_get: FUN .session_id .session_id_len .key .key_len
+  .value: 0
+!FUN
+
+-- SESSION.SET: Set session data
+.session_set: FUN .session_id .session_id_len .key .key_len .value .value_len
+  .done: 0
+!FUN
+
+-- SESSION.DESTROY: Destroy session
+.session_destroy: FUN .session_id .session_id_len
+  .done: 0
+!FUN

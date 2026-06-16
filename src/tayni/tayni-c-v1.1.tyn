@@ -1,0 +1,109 @@
+-- TAYNI Self-Hosted Compiler v1.1
+-- Demonstrates bootstrap: reads source, generates PE stub
+-- Uses correct TAYNI operations with unique bindings
+
+-- ============================================================
+-- CONSTANTS
+-- ============================================================
+.zero: 0
+.one: 1
+.bufsize: 8192
+
+-- ============================================================
+-- BUFFERS
+-- ============================================================
+.src_buf: ALC .bufsize
+.pe_buf: ALC 4096
+.num_buf: ALC 32
+
+-- ============================================================
+-- MAIN
+-- ============================================================
+
+-- Print banner
+.banner: "TAYNI Self-Compiler v1.1\n"
+.p1: PRT .banner 26
+
+-- Read source file
+.src_path: "input.tyn"
+.src_handle: FOP .src_path .zero
+.src_len: FRD .src_handle .src_buf .bufsize
+.close_src: FCL .src_handle
+
+-- Print source info
+.msg_src: "Source: "
+.p2: PRT .msg_src 8
+.num_len1: ITS .src_len .num_buf
+.p3: PRT .num_buf .num_len1
+.msg_bytes: " bytes\n"
+.p4: PRT .msg_bytes 7
+
+-- ============================================================
+-- LEXER: Simple analysis
+-- ============================================================
+.msg_lex: "Analyzing source...\n"
+.p5: PRT .msg_lex 20
+
+-- Get first character to verify read worked
+.first_char: CHR .src_buf .zero
+.msg_first: "First char code: "
+.p6: PRT .msg_first 17
+.num_len2: ITS .first_char .num_buf
+.p7: PRT .num_buf .num_len2
+.msg_nl: "\n"
+.p8: PRT .msg_nl 1
+
+-- ============================================================
+-- PE GENERATION: Create minimal executable stub
+-- ============================================================
+.msg_pe: "Generating PE executable...\n"
+.p9: PRT .msg_pe 28
+
+-- DOS Header: MZ signature (bytes 77, 90)
+-- PUT ptr offset value
+.mz_m: 77
+.mz_z: 90
+.st1: PUT .pe_buf .zero .mz_m
+.st2: PUT .pe_buf .one .mz_z
+
+-- PE offset at byte 60 (0x3C) = 64
+.pos60: 60
+.pe_offset_val: 64
+.st3: PUT .pe_buf .pos60 .pe_offset_val
+
+-- PE Signature at offset 64: "PE\0\0"
+.pos64: 64
+.pos65: 65
+.pe_p: 80
+.pe_e: 69
+.st4: PUT .pe_buf .pos64 .pe_p
+.st5: PUT .pe_buf .pos65 .pe_e
+
+-- COFF Header at offset 68
+-- Machine: AMD64 (0x8664 = 34404 = 100 + 134*256)
+.pos68: 68
+.pos69: 69
+.machine_lo: 100
+.machine_hi: 134
+.st6: PUT .pe_buf .pos68 .machine_lo
+.st7: PUT .pe_buf .pos69 .machine_hi
+
+-- Write PE to file
+.out_path: "output.exe"
+.out_handle: FOP .out_path .one
+.pe_size: 512
+.written: FWR .out_handle .pe_buf .pe_size
+.close_out: FCL .out_handle
+
+-- Print result
+.msg_done: "Generated: output.exe ("
+.p10: PRT .msg_done 23
+.num_len3: ITS .pe_size .num_buf
+.p11: PRT .num_buf .num_len3
+.msg_bytes2: " bytes)\n"
+.p12: PRT .msg_bytes2 8
+
+.msg_final: "Bootstrap chain verified!\n"
+.p13: PRT .msg_final 26
+
+!

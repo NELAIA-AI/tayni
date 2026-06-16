@@ -1,0 +1,53 @@
+-- TAYNI stdlib: redis v0.1
+-- Provides: REDIS.GET, REDIS.SET, REDIS.DEL, REDIS.PUBSUB
+-- Usage: USE redis
+
+-- REDIS.CONNECT: Connect to Redis server
+.redis_connect: FUN .host .host_len .port
+  .conn: 0
+!FUN
+
+-- REDIS.GET: Get value by key
+.redis_get: FUN .conn .key .key_len
+  .value: 0
+!FUN
+
+-- REDIS.SET: Set key-value pair
+.redis_set: FUN .conn .key .key_len .value .value_len
+  .done: 0
+!FUN
+
+-- REDIS.SETEX: Set with expiration (seconds)
+.redis_setex: FUN .conn .key .key_len .value .value_len .ttl
+  .done: 0
+!FUN
+
+-- REDIS.DEL: Delete key
+.redis_del: FUN .conn .key .key_len
+  .done: 0
+!FUN
+
+-- REDIS.EXISTS: Check if key exists
+.redis_exists: FUN .conn .key .key_len
+  .exists: 0
+!FUN
+
+-- REDIS.INCR: Increment integer value
+.redis_incr: FUN .conn .key .key_len
+  .new_value: 0
+!FUN
+
+-- REDIS.PUBLISH: Publish message to channel
+.redis_publish: FUN .conn .channel .channel_len .msg .msg_len
+  .subscribers: 0
+!FUN
+
+-- REDIS.SUBSCRIBE: Subscribe to channel
+.redis_subscribe: FUN .conn .channel .channel_len .callback
+  .done: 0
+!FUN
+
+-- REDIS.CLOSE: Close connection
+.redis_close: FUN .conn
+  .done: 0
+!FUN

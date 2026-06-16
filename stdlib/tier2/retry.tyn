@@ -1,0 +1,59 @@
+-- TAYNI stdlib: retry v0.1
+-- Provides: RETRY.EXPONENTIAL, RETRY.JITTER, RETRY.WITH_MAX
+-- Usage: USE retry
+
+-- Retry configuration
+.retry_config_size: 32
+
+-- RETRY.NEW: Create retry configuration
+.retry_new: FUN .max_retries .initial_delay_ms
+  .config: ALC .retry_config_size
+!FUN
+
+-- RETRY.EXPONENTIAL: Set exponential backoff
+-- delay = initial * (multiplier ^ attempt)
+.retry_exponential: FUN .config .multiplier
+  .done: 0
+!FUN
+
+-- RETRY.JITTER: Add random jitter to delays
+-- jitter_factor: 0.0-1.0 (e.g., 0.1 = ±10%)
+.retry_jitter: FUN .config .jitter_factor
+  .done: 0
+!FUN
+
+-- RETRY.MAX_DELAY: Set maximum delay cap
+.retry_max_delay: FUN .config .max_delay_ms
+  .done: 0
+!FUN
+
+-- RETRY.ON_ERROR: Set error types to retry
+.retry_on_error: FUN .config .error_codes .count
+  .done: 0
+!FUN
+
+-- RETRY.EXECUTE: Execute operation with retry
+.retry_execute: FUN .config .operation
+  .result: 0
+!FUN
+
+-- RETRY.GET_DELAY: Calculate delay for attempt N
+.retry_get_delay: FUN .config .attempt
+  .delay_ms: 0
+!FUN
+
+-- RETRY.SHOULD_RETRY: Check if should retry error
+.retry_should_retry: FUN .config .error_code .attempt
+  .should: 0
+!FUN
+
+-- Circuit breaker pattern
+-- CIRCUIT.NEW: Create circuit breaker
+.circuit_new: FUN .failure_threshold .reset_timeout_ms
+  .circuit: ALC 64
+!FUN
+
+-- CIRCUIT.CALL: Call through circuit breaker
+.circuit_call: FUN .circuit .operation
+  .result: 0
+!FUN

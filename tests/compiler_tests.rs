@@ -69,6 +69,27 @@ fn test_no_args() {
 // ============================================
 
 #[test]
+fn test_use_directive_parses() {
+    let path = write_temp_nela("USE http\nUSE json\n.x: 42", "use_directive");
+    let (code, _, stderr) = run_compiler(&[&path, "--check"]);
+    assert_eq!(code, 0, "USE directive failed: {}", stderr);
+}
+
+#[test]
+fn test_use_directive_case_insensitive() {
+    let path = write_temp_nela("USE HTTP\nUSE Json\n.x: 42", "use_case");
+    let (code, _, stderr) = run_compiler(&[&path, "--check"]);
+    assert_eq!(code, 0, "USE case insensitive failed: {}", stderr);
+}
+
+#[test]
+fn test_use_directive_empty_module_fails() {
+    let path = write_temp_nela("USE \n.x: 42", "use_empty");
+    let (code, _, _) = run_compiler(&[&path, "--check"]);
+    assert_ne!(code, 0, "USE with empty module should fail");
+}
+
+#[test]
 fn test_check_valid_literal() {
     let path = write_temp_nela(".x: 42", "literal");
     let (code, _, stderr) = run_compiler(&[&path, "--check"]);

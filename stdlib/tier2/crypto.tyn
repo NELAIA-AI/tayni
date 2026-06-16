@@ -1,0 +1,53 @@
+-- TAYNI stdlib: crypto v0.1
+-- Provides: CRYPTO.AES, CRYPTO.RSA, CRYPTO.ECDSA
+-- Usage: USE crypto
+
+-- AES.ENCRYPT: Encrypt with AES-256-GCM
+.aes_encrypt: FUN .key .key_len .plaintext .plaintext_len .nonce
+  .ciphertext: ALC 4096
+!FUN
+
+-- AES.DECRYPT: Decrypt with AES-256-GCM
+.aes_decrypt: FUN .key .key_len .ciphertext .ciphertext_len .nonce
+  .plaintext: ALC 4096
+!FUN
+
+-- RSA.KEYGEN: Generate RSA key pair
+.rsa_keygen: FUN .bits
+  .keypair: ALC 4096
+!FUN
+
+-- RSA.ENCRYPT: Encrypt with RSA public key
+.rsa_encrypt: FUN .pubkey .pubkey_len .plaintext .plaintext_len
+  .ciphertext: ALC 512
+!FUN
+
+-- RSA.DECRYPT: Decrypt with RSA private key
+.rsa_decrypt: FUN .privkey .privkey_len .ciphertext .ciphertext_len
+  .plaintext: ALC 512
+!FUN
+
+-- RSA.SIGN: Sign with RSA private key
+.rsa_sign: FUN .privkey .privkey_len .msg .msg_len
+  .signature: ALC 512
+!FUN
+
+-- RSA.VERIFY: Verify RSA signature
+.rsa_verify: FUN .pubkey .pubkey_len .msg .msg_len .sig .sig_len
+  .valid: 0
+!FUN
+
+-- ECDSA.KEYGEN: Generate ECDSA key pair (P-256)
+.ecdsa_keygen: FUN
+  .keypair: ALC 256
+!FUN
+
+-- ECDSA.SIGN: Sign with ECDSA
+.ecdsa_sign: FUN .privkey .privkey_len .msg .msg_len
+  .signature: ALC 128
+!FUN
+
+-- ECDSA.VERIFY: Verify ECDSA signature
+.ecdsa_verify: FUN .pubkey .pubkey_len .msg .msg_len .sig .sig_len
+  .valid: 0
+!FUN

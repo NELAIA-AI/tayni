@@ -1,0 +1,43 @@
+-- TAYNI stdlib: csv v0.1
+-- Provides: CSV.PARSE, CSV.ENCODE, CSV.STREAM
+-- Usage: USE csv
+
+-- CSV.PARSE: Parse CSV string to rows
+.csv_parse: FUN .str .len
+  .rows: ALC 4096
+!FUN
+
+-- CSV.PARSE_WITH_HEADER: Parse CSV with header row
+.csv_parse_with_header: FUN .str .len
+  .data: ALC 4096
+!FUN
+
+-- CSV.ENCODE: Encode rows to CSV string
+.csv_encode: FUN .rows .row_count .col_count
+  .out: ALC 8192
+!FUN
+
+-- CSV.GET_ROW: Get row by index
+.csv_get_row: FUN .data .index
+  .row: 0
+!FUN
+
+-- CSV.GET_CELL: Get cell value
+.csv_get_cell: FUN .row .col
+  .value: 0
+!FUN
+
+-- CSV.STREAM_OPEN: Open CSV file for streaming
+.csv_stream_open: FUN .path .path_len
+  .stream: 0
+!FUN
+
+-- CSV.STREAM_READ: Read next row from stream
+.csv_stream_read: FUN .stream
+  .row: 0
+!FUN
+
+-- CSV.STREAM_CLOSE: Close stream
+.csv_stream_close: FUN .stream
+  .done: 0
+!FUN

@@ -1,7 +1,7 @@
-//! TAYNI Compiler v0.23
+//! TAYNI Compiler v0.24
 //! Direct Native Emission (PE/ELF/Mach-O) - No External Dependencies
 //! Supports: Windows PE, Linux ELF, macOS Mach-O, Capability System (SCN)
-//! Phase 12: Product Ready - Direct emission as DEFAULT
+//! Phase 12.6a: USE directive and module resolution
 
 mod ir;
 mod parser;
@@ -10,8 +10,16 @@ mod binary;
 mod native_emitter;
 mod pe;
 mod elf;
+mod elf_arm64;
 mod macho;
 mod capabilities;
+mod modules;
+mod wasm;
+mod riscv;
+mod interface;
+mod intent;
+mod qir;
+mod gpu;
 
 use parser::Parser;
 use emitter_pure::{PureEmitter, TargetPlatform};
@@ -49,17 +57,40 @@ fn main() {
         println!("  --emit-llvm         Output LLVM IR only (.ll file)");
         println!("  --use-clang         Use LLVM+Clang flow (requires clang installed)");
         println!();
-        println!("TARGET PLATFORMS:");
-        println!("  --target=windows    Windows x64");
-        println!("  --target=linux      Linux x64");
-        println!("  --target=macos      macOS x64 (Intel)");
-        println!("  --target=macos-arm64  macOS ARM64 (Apple Silicon)");
+    println!("TARGET PLATFORMS:");
+    println!("  --target=windows    Windows x64");
+    println!("  --target=linux      Linux x64");
+    println!("  --target=linux-arm64  Linux ARM64");
+    println!("  --target=macos      macOS x64 (Intel)");
+    println!("  --target=macos-arm64  macOS ARM64 (Apple Silicon)");
+    println!("  --target=wasm       WebAssembly");
+    println!("  --target=riscv64    RISC-V 64-bit");
+    println!();
+    println!("QUANTUM TARGETS:");
+    println!("  --target=qir        QIR (native quantum executable)");
+    println!("                      Runs on: Azure Quantum, IonQ, Quantinuum");
+    println!();
+    println!("QIR TRANSLATIONS (export from QIR, not native targets):");
+    println!("  --export=qasm       Translate QIR to OpenQASM 3.0 (IBM)");
+    println!("  --export=cirq       Translate QIR to Cirq Python (Google)");
+    println!("  --export=quil       Translate QIR to Quil (Rigetti)");
+    println!();
+    println!("GPU TARGETS:");
+    println!("  --target=ptx        PTX (native NVIDIA CUDA executable)");
+    println!("  --target=amdgpu     AMDGPU IR (native AMD ROCm executable)");
+    println!();
+    println!("GPU TRANSLATIONS (export from PTX/AMDGPU, not native targets):");
+    println!("  --export=opencl     Translate to OpenCL C (cross-platform)");
+    println!("  --export=spirv      Translate to SPIR-V (Vulkan/OpenCL)");
+    println!("  --export=wgsl       Translate to WGSL (WebGPU)");
+    println!("  --export=metal      Translate to Metal (Apple)");
         println!();
         println!("VALIDATION OPTIONS:");
         println!("  --check             Syntax check only (no output)");
         println!("  --json              Output errors in JSON format");
         println!("  --quiet, -q         Suppress informational messages");
         println!("  --no-warn           Suppress warnings");
+        println!("  --tree-shake        Remove unused code (dead code elimination)");
         println!();
         println!("INFO:");
         println!("  --version, -V       Show version");
@@ -196,6 +227,7 @@ fn main() {
     let no_warn = args.contains(&"--no-warn".to_string());
     let check_only = args.contains(&"--check".to_string());
     let json_output = args.contains(&"--json".to_string());
+    let tree_shake = args.contains(&"--tree-shake".to_string());
     
     // Explicit format flags (override auto-detection)
     let force_pe = args.contains(&"--emit-pe".to_string());
@@ -206,12 +238,24 @@ fn main() {
     // Parse target platform
     let target = if args.iter().any(|a| a == "--target=linux") {
         TargetPlatform::Linux
+    } else if args.iter().any(|a| a == "--target=linux-arm64") {
+        TargetPlatform::LinuxArm64
     } else if args.iter().any(|a| a == "--target=windows") {
         TargetPlatform::Windows
     } else if args.iter().any(|a| a == "--target=macos" || a == "--target=darwin") {
         TargetPlatform::MacOS
     } else if args.iter().any(|a| a == "--target=macos-arm64" || a == "--target=darwin-arm64") {
         TargetPlatform::MacOSArm64
+    } else if args.iter().any(|a| a == "--target=wasm" || a == "--target=wasm32") {
+        TargetPlatform::Wasm
+    } else if args.iter().any(|a| a == "--target=riscv64" || a == "--target=riscv") {
+        TargetPlatform::RiscV64
+    } else if args.iter().any(|a| a == "--target=qir" || a == "--target=quantum") {
+        TargetPlatform::Qir
+    } else if args.iter().any(|a| a == "--target=ptx" || a == "--target=cuda" || a == "--target=nvidia") {
+        TargetPlatform::Ptx
+    } else if args.iter().any(|a| a == "--target=amdgpu" || a == "--target=rocm" || a == "--target=amd") {
+        TargetPlatform::AmdGpu
     } else {
         #[cfg(target_os = "windows")]
         { TargetPlatform::Windows }
@@ -243,7 +287,7 @@ fn main() {
     };
     
     // Read input file (text or binary)
-    let graph = if input_file.ends_with(".nbin") {
+    let mut graph = if input_file.ends_with(".nbin") {
         // Load binary format
         let data = match fs::read(input_file) {
             Ok(d) => d,
@@ -283,6 +327,59 @@ fn main() {
             }
         }
     };
+    
+    // Resolve USE directives
+    let source_dir = std::path::Path::new(input_file)
+        .parent()
+        .unwrap_or(std::path::Path::new("."));
+    
+    let uses = graph.get_uses();
+    if !uses.is_empty() {
+        let mut resolver = modules::ModuleResolver::with_default_path();
+        
+        for module_name in &uses {
+            match resolver.resolve(module_name, source_dir) {
+                Ok(resolved) => {
+                    if !quiet {
+                        eprintln!("USE:{} from {:?} (tier {:?})", 
+                            resolved.name, resolved.path, resolved.tier);
+                    }
+                    
+                    // Parse the module and merge its nodes
+                    match Parser::parse(&resolved.content) {
+                        Ok(module_graph) => {
+                            // Add module nodes to main graph (prepend)
+                            for node in module_graph.nodes {
+                                // Skip USE nodes from modules (don't re-resolve)
+                                if !matches!(node, ir::Node::Use { .. }) {
+                                    graph.nodes.insert(0, node);
+                                }
+                            }
+                        }
+                        Err(e) => {
+                            eprintln!("E:MODULE:{}:{}", module_name, e);
+                            std::process::exit(1);
+                        }
+                    }
+                }
+                Err(e) => {
+                    eprintln!("E:USE:{}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        
+        // Update node_map after merging
+        graph.rebuild_node_map();
+    }
+    
+    // Apply tree-shaking if requested
+    if tree_shake {
+        let removed = graph.tree_shake_aggressive();
+        if !quiet && removed > 0 {
+            eprintln!("TREE-SHAKE: Removed {} unused nodes", removed);
+        }
+    }
     
     // Check only mode - validate syntax and exit
     if check_only {
@@ -405,6 +502,18 @@ fn main() {
                     ])
                     .output()
             }
+            TargetPlatform::LinuxArm64 => {
+                Command::new("clang")
+                    .args(&[
+                        "-target", "aarch64-unknown-linux-gnu",
+                        "-nostdlib",
+                        "-static",
+                        "-O2",
+                        "-o", &output_name,
+                        &ll_file,
+                    ])
+                    .output()
+            }
             TargetPlatform::Windows => {
                 let exe_name = format!("{}.exe", output_name);
                 let subsystem = if args.iter().any(|a| a == "--subsystem=windows") {
@@ -435,6 +544,60 @@ fn main() {
                     ])
                     .output()
             }
+            TargetPlatform::Wasm => {
+                Command::new("clang")
+                    .args(&[
+                        "-target", "wasm32-unknown-unknown",
+                        "-nostdlib",
+                        "-O2",
+                        "-o", &format!("{}.wasm", output_name),
+                        &ll_file,
+                    ])
+                    .output()
+            }
+            TargetPlatform::RiscV64 => {
+                Command::new("clang")
+                    .args(&[
+                        "-target", "riscv64-unknown-linux-gnu",
+                        "-nostdlib",
+                        "-static",
+                        "-O2",
+                        "-o", &output_name,
+                        &ll_file,
+                    ])
+                    .output()
+            }
+            TargetPlatform::Qir => {
+                // QIR doesn't use clang - it's already in QIR format
+                // Just copy the .ll file to .qir
+                Command::new("cmd")
+                    .args(&["/C", "copy", &ll_file, &format!("{}.qir", output_name)])
+                    .output()
+            }
+            TargetPlatform::Ptx => {
+                // PTX uses NVCC or clang with CUDA target
+                Command::new("clang")
+                    .args(&[
+                        "-target", "nvptx64-nvidia-cuda",
+                        "-S",
+                        "-O2",
+                        "-o", &format!("{}.ptx", output_name),
+                        &ll_file,
+                    ])
+                    .output()
+            }
+            TargetPlatform::AmdGpu => {
+                // AMDGPU uses clang with amdgcn target
+                Command::new("clang")
+                    .args(&[
+                        "-target", "amdgcn-amd-amdhsa",
+                        "-S",
+                        "-O2",
+                        "-o", &format!("{}.amdgpu.s", output_name),
+                        &ll_file,
+                    ])
+                    .output()
+            }
         };
         
         match compile_result {
@@ -460,13 +623,256 @@ fn main() {
     
     // =========================================================================
     // DEFAULT: Direct native emission (no external dependencies)
-    // Automatically selects PE (Windows), ELF (Linux), or Mach-O (macOS)
+    // Automatically selects PE (Windows), ELF (Linux), Mach-O (macOS), WASM, RISC-V
     // =========================================================================
     
     let emit_pe = force_pe || (!force_elf && !force_macho && !force_macho_arm64 && matches!(target, TargetPlatform::Windows));
     let emit_elf = force_elf || (!force_pe && !force_macho && !force_macho_arm64 && matches!(target, TargetPlatform::Linux));
+    let emit_elf_arm64 = matches!(target, TargetPlatform::LinuxArm64);
     let emit_macho = force_macho || (!force_pe && !force_elf && !force_macho_arm64 && matches!(target, TargetPlatform::MacOS));
     let emit_macho_arm64 = force_macho_arm64 || (!force_pe && !force_elf && !force_macho && matches!(target, TargetPlatform::MacOSArm64));
+    let emit_wasm = matches!(target, TargetPlatform::Wasm);
+    let emit_riscv = matches!(target, TargetPlatform::RiscV64);
+    let emit_qir = matches!(target, TargetPlatform::Qir);
+    
+    // QIR translation exports (not native targets)
+    let export_qasm = args.iter().any(|a| a == "--export=qasm");
+    let export_cirq = args.iter().any(|a| a == "--export=cirq");
+    let export_quil = args.iter().any(|a| a == "--export=quil");
+    
+    if emit_qir {
+        // Generate native QIR (the only quantum executable format)
+        let qir_code = match qir::QirEmitter::emit(&graph) {
+            Ok(code) => code,
+            Err(e) => {
+                eprintln!("E:QIR:{}", e);
+                std::process::exit(1);
+            }
+        };
+        
+        // Count qubits for translations (simple heuristic)
+        let num_qubits = qir_code.matches("%q").count().max(2);
+        
+        // Write native QIR
+        let qir_file = format!("{}.qir", output_name);
+        if let Err(e) = fs::write(&qir_file, &qir_code) {
+            eprintln!("E:WRITE:{}", e);
+            std::process::exit(1);
+        }
+        if !quiet {
+            eprintln!("OK:QIR:{}:{} bytes (native quantum executable)", qir_file, qir_code.len());
+            eprintln!("   Targets: Azure Quantum, IonQ, Quantinuum");
+        }
+        
+        // Generate translations if requested
+        if export_qasm {
+            let qasm = qir::QirTranslator::to_qasm(&qir_code, num_qubits);
+            let qasm_file = format!("{}.qasm", output_name);
+            if let Err(e) = fs::write(&qasm_file, &qasm) {
+                eprintln!("E:WRITE:{}", e);
+            } else if !quiet {
+                eprintln!("OK:QASM:{}:{} bytes (IBM OpenQASM 3.0 translation)", qasm_file, qasm.len());
+            }
+        }
+        
+        if export_cirq {
+            let cirq = qir::QirTranslator::to_cirq(&qir_code, num_qubits);
+            let cirq_file = format!("{}.py", output_name);
+            if let Err(e) = fs::write(&cirq_file, &cirq) {
+                eprintln!("E:WRITE:{}", e);
+            } else if !quiet {
+                eprintln!("OK:CIRQ:{}:{} bytes (Google Cirq Python translation)", cirq_file, cirq.len());
+            }
+        }
+        
+        if export_quil {
+            let quil = qir::QirTranslator::to_quil(&qir_code, num_qubits);
+            let quil_file = format!("{}.quil", output_name);
+            if let Err(e) = fs::write(&quil_file, &quil) {
+                eprintln!("E:WRITE:{}", e);
+            } else if !quiet {
+                eprintln!("OK:QUIL:{}:{} bytes (Rigetti Quil translation)", quil_file, quil.len());
+            }
+        }
+        
+        return;
+    }
+    
+    // GPU translation exports
+    let export_opencl = args.iter().any(|a| a == "--export=opencl");
+    let export_spirv = args.iter().any(|a| a == "--export=spirv");
+    let export_wgsl = args.iter().any(|a| a == "--export=wgsl");
+    let export_metal = args.iter().any(|a| a == "--export=metal");
+    
+    let emit_ptx = matches!(target, TargetPlatform::Ptx);
+    let emit_amdgpu = matches!(target, TargetPlatform::AmdGpu);
+    
+    if emit_ptx {
+        // Generate native PTX (NVIDIA CUDA)
+        let ptx_code = match gpu::PtxEmitter::emit(&graph) {
+            Ok(code) => code,
+            Err(e) => {
+                eprintln!("E:PTX:{}", e);
+                std::process::exit(1);
+            }
+        };
+        
+        // Write native PTX
+        let ptx_file = format!("{}.ptx", output_name);
+        if let Err(e) = fs::write(&ptx_file, &ptx_code) {
+            eprintln!("E:WRITE:{}", e);
+            std::process::exit(1);
+        }
+        if !quiet {
+            eprintln!("OK:PTX:{}:{} bytes (native NVIDIA CUDA executable)", ptx_file, ptx_code.len());
+        }
+        
+        // Generate translations if requested
+        if export_opencl {
+            let opencl = gpu::GpuTranslator::to_opencl(256);
+            let cl_file = format!("{}.cl", output_name);
+            if let Err(e) = fs::write(&cl_file, &opencl) {
+                eprintln!("E:WRITE:{}", e);
+            } else if !quiet {
+                eprintln!("OK:OPENCL:{}:{} bytes (cross-platform translation)", cl_file, opencl.len());
+            }
+        }
+        
+        if export_spirv {
+            let spirv = gpu::GpuTranslator::to_spirv();
+            let spirv_file = format!("{}.spvasm", output_name);
+            if let Err(e) = fs::write(&spirv_file, &spirv) {
+                eprintln!("E:WRITE:{}", e);
+            } else if !quiet {
+                eprintln!("OK:SPIRV:{}:{} bytes (Vulkan/OpenCL translation)", spirv_file, spirv.len());
+            }
+        }
+        
+        if export_wgsl {
+            let wgsl = gpu::GpuTranslator::to_wgsl();
+            let wgsl_file = format!("{}.wgsl", output_name);
+            if let Err(e) = fs::write(&wgsl_file, &wgsl) {
+                eprintln!("E:WRITE:{}", e);
+            } else if !quiet {
+                eprintln!("OK:WGSL:{}:{} bytes (WebGPU translation)", wgsl_file, wgsl.len());
+            }
+        }
+        
+        if export_metal {
+            let metal = gpu::GpuTranslator::to_metal();
+            let metal_file = format!("{}.metal", output_name);
+            if let Err(e) = fs::write(&metal_file, &metal) {
+                eprintln!("E:WRITE:{}", e);
+            } else if !quiet {
+                eprintln!("OK:METAL:{}:{} bytes (Apple Metal translation)", metal_file, metal.len());
+            }
+        }
+        
+        return;
+    }
+    
+    if emit_amdgpu {
+        // Generate native AMDGPU IR (AMD ROCm)
+        let amdgpu_code = match gpu::AmdGpuEmitter::emit(&graph) {
+            Ok(code) => code,
+            Err(e) => {
+                eprintln!("E:AMDGPU:{}", e);
+                std::process::exit(1);
+            }
+        };
+        
+        // Write native AMDGPU IR
+        let amdgpu_file = format!("{}.amdgpu.ll", output_name);
+        if let Err(e) = fs::write(&amdgpu_file, &amdgpu_code) {
+            eprintln!("E:WRITE:{}", e);
+            std::process::exit(1);
+        }
+        if !quiet {
+            eprintln!("OK:AMDGPU:{}:{} bytes (native AMD ROCm executable)", amdgpu_file, amdgpu_code.len());
+        }
+        
+        // Generate translations if requested (same as PTX)
+        if export_opencl {
+            let opencl = gpu::GpuTranslator::to_opencl(256);
+            let cl_file = format!("{}.cl", output_name);
+            if let Err(e) = fs::write(&cl_file, &opencl) {
+                eprintln!("E:WRITE:{}", e);
+            } else if !quiet {
+                eprintln!("OK:OPENCL:{}:{} bytes (cross-platform translation)", cl_file, opencl.len());
+            }
+        }
+        
+        if export_spirv {
+            let spirv = gpu::GpuTranslator::to_spirv();
+            let spirv_file = format!("{}.spvasm", output_name);
+            if let Err(e) = fs::write(&spirv_file, &spirv) {
+                eprintln!("E:WRITE:{}", e);
+            } else if !quiet {
+                eprintln!("OK:SPIRV:{}:{} bytes (Vulkan/OpenCL translation)", spirv_file, spirv.len());
+            }
+        }
+        
+        if export_wgsl {
+            let wgsl = gpu::GpuTranslator::to_wgsl();
+            let wgsl_file = format!("{}.wgsl", output_name);
+            if let Err(e) = fs::write(&wgsl_file, &wgsl) {
+                eprintln!("E:WRITE:{}", e);
+            } else if !quiet {
+                eprintln!("OK:WGSL:{}:{} bytes (WebGPU translation)", wgsl_file, wgsl.len());
+            }
+        }
+        
+        if export_metal {
+            let metal = gpu::GpuTranslator::to_metal();
+            let metal_file = format!("{}.metal", output_name);
+            if let Err(e) = fs::write(&metal_file, &metal) {
+                eprintln!("E:WRITE:{}", e);
+            } else if !quiet {
+                eprintln!("OK:METAL:{}:{} bytes (Apple Metal translation)", metal_file, metal.len());
+            }
+        }
+        
+        return;
+    }
+    
+    if emit_wasm {
+        let wasm_data = wasm::generate_wasm_from_graph(&graph);
+        let wasm_file = format!("{}.wasm", output_name);
+        if let Err(e) = fs::write(&wasm_file, &wasm_data) {
+            eprintln!("E:WRITE:{}", e);
+            std::process::exit(1);
+        }
+        if !quiet {
+            eprintln!("OK:WASM:{}:{} bytes", wasm_file, wasm_data.len());
+        }
+        return;
+    }
+    
+    if emit_riscv {
+        let exe_data = riscv::generate_elf_riscv_from_graph(&graph);
+        let exe_file = output_name.clone();
+        if let Err(e) = fs::write(&exe_file, &exe_data) {
+            eprintln!("E:WRITE:{}", e);
+            std::process::exit(1);
+        }
+        if !quiet {
+            eprintln!("OK:ELF-RISCV64:{}:{} bytes", exe_file, exe_data.len());
+        }
+        return;
+    }
+    
+    if emit_elf_arm64 {
+        let exe_data = elf_arm64::generate_elf_arm64_from_graph(&graph);
+        let exe_file = output_name.clone();
+        if let Err(e) = fs::write(&exe_file, &exe_data) {
+            eprintln!("E:WRITE:{}", e);
+            std::process::exit(1);
+        }
+        if !quiet {
+            eprintln!("OK:ELF-ARM64:{}:{} bytes", exe_file, exe_data.len());
+        }
+        return;
+    }
     
     if emit_pe {
         let exe_data = pe::generate_pe_from_graph(&graph);

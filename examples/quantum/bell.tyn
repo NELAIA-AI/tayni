@@ -1,0 +1,19 @@
+-- TAYNI Quantum Example: Bell State
+-- Creates an entangled pair |00⟩ + |11⟩
+-- Compile: tayni-c bell.tyn --target=qir
+-- With IBM: tayni-c bell.tyn --target=qir --export=qasm
+
+-- Create Bell state (maximally entangled pair)
+-- Step 1: Apply Hadamard to qubit 0 (creates superposition)
+.h0: QH 0
+
+-- Step 2: Apply CNOT with qubit 0 as control, qubit 1 as target
+-- This entangles the qubits
+.cx: QCNOT 0 1
+
+-- Step 3: Measure both qubits
+-- Results will be correlated: both 0 or both 1
+.m0: QM 0
+.m1: QM 1
+
+!

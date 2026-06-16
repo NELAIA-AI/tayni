@@ -1,0 +1,236 @@
+-- TAYNI stdlib: quantum v0.1
+-- Provides: Quantum computing primitives
+-- Usage: USE quantum
+--
+-- ARCHITECTURE:
+-- QIR is the ONLY native quantum executable format.
+-- Like PE/ELF for classical CPUs, QIR is the binary format for QPUs.
+--
+-- Native targets (run QIR directly):
+--   - Azure Quantum (Microsoft)
+--   - IonQ
+--   - Quantinuum
+--
+-- Translation targets (export from QIR):
+--   - IBM (OpenQASM 3.0) - use --export=qasm
+--   - Google (Cirq)      - use --export=cirq
+--   - Rigetti (Quil)     - use --export=quil
+--
+-- Compile: tayni-c program.tyn --target=qir
+-- With IBM export: tayni-c program.tyn --target=qir --export=qasm
+
+-- ============================================================
+-- QUBIT MANAGEMENT
+-- ============================================================
+
+-- QUBIT.ALLOC: Allocate N qubits
+-- Returns: qubit register handle
+.qubit_alloc: FUN .count
+  .register: 0
+!FUN
+
+-- QUBIT.FREE: Release qubit register
+.qubit_free: FUN .register
+  .done: 0
+!FUN
+
+-- QUBIT.RESET: Reset qubit to |0⟩ state
+.qubit_reset: FUN .qubit
+  .done: 0
+!FUN
+
+-- ============================================================
+-- SINGLE-QUBIT GATES
+-- ============================================================
+
+-- QH: Hadamard gate - creates superposition
+-- |0⟩ → (|0⟩ + |1⟩)/√2
+-- |1⟩ → (|0⟩ - |1⟩)/√2
+.gate_h: FUN .qubit
+  .done: 0
+!FUN
+
+-- QX: Pauli-X gate (NOT gate)
+-- |0⟩ → |1⟩, |1⟩ → |0⟩
+.gate_x: FUN .qubit
+  .done: 0
+!FUN
+
+-- QY: Pauli-Y gate
+.gate_y: FUN .qubit
+  .done: 0
+!FUN
+
+-- QZ: Pauli-Z gate (phase flip)
+-- |0⟩ → |0⟩, |1⟩ → -|1⟩
+.gate_z: FUN .qubit
+  .done: 0
+!FUN
+
+-- QS: S gate (√Z, phase gate)
+.gate_s: FUN .qubit
+  .done: 0
+!FUN
+
+-- QT: T gate (√S, π/8 gate)
+.gate_t: FUN .qubit
+  .done: 0
+!FUN
+
+-- QRX: Rotation around X-axis
+-- angle: rotation in radians
+.gate_rx: FUN .angle .qubit
+  .done: 0
+!FUN
+
+-- QRY: Rotation around Y-axis
+.gate_ry: FUN .angle .qubit
+  .done: 0
+!FUN
+
+-- QRZ: Rotation around Z-axis
+.gate_rz: FUN .angle .qubit
+  .done: 0
+!FUN
+
+-- ============================================================
+-- TWO-QUBIT GATES
+-- ============================================================
+
+-- QCNOT: Controlled-NOT (CX)
+-- Flips target if control is |1⟩
+.gate_cnot: FUN .control .target
+  .done: 0
+!FUN
+
+-- QCZ: Controlled-Z
+-- Applies Z to target if control is |1⟩
+.gate_cz: FUN .control .target
+  .done: 0
+!FUN
+
+-- QSWAP: Swap two qubits
+.gate_swap: FUN .qubit1 .qubit2
+  .done: 0
+!FUN
+
+-- QCR: Controlled rotation
+.gate_cr: FUN .angle .control .target
+  .done: 0
+!FUN
+
+-- ============================================================
+-- THREE-QUBIT GATES
+-- ============================================================
+
+-- QCCX: Toffoli gate (CCX, CCNOT)
+-- Flips target if both controls are |1⟩
+.gate_toffoli: FUN .control1 .control2 .target
+  .done: 0
+!FUN
+
+-- QCSWAP: Fredkin gate (Controlled-SWAP)
+.gate_fredkin: FUN .control .qubit1 .qubit2
+  .done: 0
+!FUN
+
+-- ============================================================
+-- MEASUREMENT
+-- ============================================================
+
+-- QM: Measure qubit in computational basis
+-- Returns: 0 or 1
+.measure: FUN .qubit
+  .result: 0
+!FUN
+
+-- QM_ALL: Measure all qubits in register
+-- Returns: classical bit string
+.measure_all: FUN .register
+  .results: 0
+!FUN
+
+-- QM_RESET: Measure and reset to |0⟩
+.measure_reset: FUN .qubit
+  .result: 0
+!FUN
+
+-- ============================================================
+-- QUANTUM CIRCUITS
+-- ============================================================
+
+-- CIRCUIT.NEW: Create new quantum circuit
+.circuit_new: FUN .num_qubits
+  .circuit: 0
+!FUN
+
+-- CIRCUIT.ADD: Add gate to circuit
+.circuit_add: FUN .circuit .gate .qubits
+  .done: 0
+!FUN
+
+-- CIRCUIT.RUN: Execute circuit
+.circuit_run: FUN .circuit .shots
+  .results: 0
+!FUN
+
+-- CIRCUIT.DRAW: Get circuit diagram (ASCII)
+.circuit_draw: FUN .circuit
+  .diagram: 0
+!FUN
+
+-- ============================================================
+-- COMMON ALGORITHMS
+-- ============================================================
+
+-- BELL: Create Bell state (entangled pair)
+-- Returns: |00⟩ + |11⟩ (normalized)
+.bell_state: FUN .qubit1 .qubit2
+  .h1: QH .qubit1
+  .cx: QCNOT .qubit1 .qubit2
+!FUN
+
+-- GHZ: Create GHZ state (N-qubit entanglement)
+-- |000...0⟩ + |111...1⟩
+.ghz_state: FUN .register .num_qubits
+  .done: 0
+!FUN
+
+-- QFT: Quantum Fourier Transform
+.qft: FUN .register .num_qubits
+  .done: 0
+!FUN
+
+-- IQFT: Inverse Quantum Fourier Transform
+.iqft: FUN .register .num_qubits
+  .done: 0
+!FUN
+
+-- GROVER: Grover's search iteration
+.grover_iteration: FUN .register .oracle
+  .done: 0
+!FUN
+
+-- ============================================================
+-- QUANTUM ERROR CORRECTION
+-- ============================================================
+
+-- QEC.ENCODE_BIT_FLIP: Encode with bit-flip code (3 qubits)
+.qec_encode_bit_flip: FUN .data_qubit .ancilla1 .ancilla2
+  .done: 0
+!FUN
+
+-- QEC.DECODE_BIT_FLIP: Decode and correct bit-flip errors
+.qec_decode_bit_flip: FUN .qubit1 .qubit2 .qubit3
+  .corrected: 0
+!FUN
+
+-- QEC.ENCODE_PHASE_FLIP: Encode with phase-flip code
+.qec_encode_phase_flip: FUN .data_qubit .ancilla1 .ancilla2
+  .done: 0
+!FUN
+
+-- QEC.SHOR_CODE: Shor's 9-qubit code (corrects any single error)
+.qec_shor_encode: FUN .data_qubit .ancillas
+  .done: 0
+!FUN

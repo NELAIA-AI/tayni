@@ -1,0 +1,46 @@
+-- TAYNI stdlib: uuid v0.1
+-- Provides: UUID.V4, UUID.V7, UUID.PARSE
+-- Usage: USE uuid
+
+-- UUID format: xxxxxxxx-xxxx-Mxxx-Nxxx-xxxxxxxxxxxx
+-- M = version, N = variant
+
+-- UUID.V4: Generate random UUID (version 4)
+.uuid_v4: FUN
+  .buf: ALC 37
+  -- Generate 16 random bytes
+  -- Set version (4) at position 6
+  -- Set variant (8/9/a/b) at position 8
+  -- Format as hex with dashes
+!FUN
+
+-- UUID.V7: Generate time-ordered UUID (version 7)
+-- Better for database indexes
+.uuid_v7: FUN
+  .buf: ALC 37
+  -- First 48 bits: Unix timestamp in ms
+  -- Next 4 bits: version (7)
+  -- Next 12 bits: random
+  -- Next 2 bits: variant
+  -- Last 62 bits: random
+!FUN
+
+-- UUID.PARSE: Parse UUID string to bytes
+.uuid_parse: FUN .str .str_len
+  .bytes: ALC 16
+  -- Remove dashes
+  -- Convert hex to bytes
+!FUN
+
+-- UUID.FORMAT: Format bytes as UUID string
+.uuid_format: FUN .bytes
+  .str: ALC 37
+  -- Convert bytes to hex
+  -- Insert dashes at positions 8, 13, 18, 23
+!FUN
+
+-- UUID.IS_VALID: Check if string is valid UUID
+.uuid_is_valid: FUN .str .str_len
+  -- Check length (36) and format
+  .result: 0
+!FUN

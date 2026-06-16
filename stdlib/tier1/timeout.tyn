@@ -1,0 +1,35 @@
+-- TAYNI stdlib: timeout v0.1
+-- Provides: TIMEOUT.SET, TIMEOUT.CLEAR, TIMEOUT.WRAP
+-- Usage: USE timeout
+
+-- TIMEOUT.SET: Set a timeout callback
+-- Returns: timeout ID
+.timeout_set: FUN .callback .ms
+  .id: 0
+!FUN
+
+-- TIMEOUT.CLEAR: Cancel a timeout
+.timeout_clear: FUN .id
+  .done: 0
+!FUN
+
+-- TIMEOUT.WRAP: Wrap operation with timeout
+-- Returns: result or error if timeout
+.timeout_wrap: FUN .operation .ms
+  .result: 0
+!FUN
+
+-- TIMEOUT.WITH_RETRY: Operation with timeout and retry
+.timeout_with_retry: FUN .operation .ms .max_retries
+  .result: 0
+!FUN
+
+-- INTERVAL.SET: Set repeating interval
+.interval_set: FUN .callback .ms
+  .id: 0
+!FUN
+
+-- INTERVAL.CLEAR: Cancel interval
+.interval_clear: FUN .id
+  .done: 0
+!FUN

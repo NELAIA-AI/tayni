@@ -1,0 +1,46 @@
+-- TAYNI stdlib: async v0.1
+-- Provides: ASYNC.PROMISE, ASYNC.AWAIT, ASYNC.ALL
+-- Usage: USE async
+-- Note: TAYNI is currently single-threaded, this is for future use
+
+-- Promise states
+.promise_pending: 0
+.promise_fulfilled: 1
+.promise_rejected: 2
+
+-- ASYNC.PROMISE: Create a new promise
+.async_promise: FUN .executor
+  .promise: ALC 32
+  -- state, value, error, callbacks
+!FUN
+
+-- ASYNC.RESOLVE: Resolve a promise with value
+.async_resolve: FUN .promise .value
+  .done: 0
+!FUN
+
+-- ASYNC.REJECT: Reject a promise with error
+.async_reject: FUN .promise .error
+  .done: 0
+!FUN
+
+-- ASYNC.AWAIT: Wait for promise to resolve
+.async_await: FUN .promise
+  -- Block until promise resolves
+  .result: 0
+!FUN
+
+-- ASYNC.ALL: Wait for all promises
+.async_all: FUN .promises .count
+  .results: ALC 256
+!FUN
+
+-- ASYNC.RACE: Wait for first promise to resolve
+.async_race: FUN .promises .count
+  .result: 0
+!FUN
+
+-- ASYNC.SLEEP: Async sleep (non-blocking)
+.async_sleep: FUN .ms
+  .done: 0
+!FUN

@@ -1,0 +1,53 @@
+-- TAYNI stdlib: tls v0.1
+-- Provides: TLS.CONNECT, TLS.LISTEN, TLS.HANDSHAKE
+-- Usage: USE tls
+
+-- TLS.CONNECT: Create TLS client connection
+.tls_connect: FUN .host .host_len .port
+  .conn: 0
+!FUN
+
+-- TLS.LISTEN: Create TLS server
+.tls_listen: FUN .port .cert .cert_len .key .key_len
+  .server: 0
+!FUN
+
+-- TLS.ACCEPT: Accept TLS connection
+.tls_accept: FUN .server
+  .client: 0
+!FUN
+
+-- TLS.SEND: Send data over TLS
+.tls_send: FUN .conn .data .data_len
+  .sent: 0
+!FUN
+
+-- TLS.RECV: Receive data over TLS
+.tls_recv: FUN .conn .buf .buf_size
+  .len: 0
+!FUN
+
+-- TLS.CLOSE: Close TLS connection
+.tls_close: FUN .conn
+  .done: 0
+!FUN
+
+-- TLS.GET_PEER_CERT: Get peer certificate
+.tls_get_peer_cert: FUN .conn
+  .cert: 0
+!FUN
+
+-- TLS.VERIFY_CERT: Verify certificate chain
+.tls_verify_cert: FUN .cert .cert_len .ca .ca_len
+  .valid: 0
+!FUN
+
+-- TLS.LOAD_CERT: Load certificate from file
+.tls_load_cert: FUN .path .path_len
+  .cert: 0
+!FUN
+
+-- TLS.LOAD_KEY: Load private key from file
+.tls_load_key: FUN .path .path_len
+  .key: 0
+!FUN

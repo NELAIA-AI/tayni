@@ -1,0 +1,44 @@
+-- TAYNI stdlib: path v0.1
+-- Provides: PATH.JOIN, PATH.DIRNAME, PATH.BASENAME, PATH.EXT
+-- Usage: USE path
+
+-- Path separator (platform-dependent)
+.path_sep_win: 92
+.path_sep_unix: 47
+
+-- PATH.JOIN: Join path components
+.path_join: FUN .base .base_len .name .name_len
+  .total: ADD .base_len .name_len
+  .total2: ADD .total 1
+  .buf: ALC .total2
+  .c1: CPY .buf .base .base_len
+  .sep_pos: .base_len
+  .s1: PUT .buf .sep_pos .path_sep_unix
+  .name_pos: ADD .sep_pos 1
+  .c2: CPY .buf .name_pos .name .name_len
+!FUN
+
+-- PATH.DIRNAME: Get directory part of path
+.path_dirname: FUN .path .len
+  -- Find last separator
+  .result: 0
+!FUN
+
+-- PATH.BASENAME: Get filename part of path
+.path_basename: FUN .path .len
+  -- Find last separator, return rest
+  .result: 0
+!FUN
+
+-- PATH.EXT: Get file extension
+.path_ext: FUN .path .len
+  -- Find last dot, return rest
+  .result: 0
+!FUN
+
+-- PATH.IS_ABSOLUTE: Check if path is absolute
+.path_is_absolute: FUN .path .len
+  .first: CHR .path .zero
+  -- Check for / or drive letter
+  .result: 0
+!FUN

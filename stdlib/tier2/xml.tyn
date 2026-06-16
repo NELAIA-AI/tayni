@@ -1,0 +1,48 @@
+-- TAYNI stdlib: xml v0.1
+-- Provides: XML.PARSE, XML.ENCODE, XML.XPATH
+-- Usage: USE xml
+
+-- XML.PARSE: Parse XML string to DOM tree
+.xml_parse: FUN .str .len
+  .doc: ALC 4096
+!FUN
+
+-- XML.ENCODE: Encode DOM tree to XML string
+.xml_encode: FUN .doc
+  .out: ALC 8192
+!FUN
+
+-- XML.XPATH: Query DOM with XPath
+.xml_xpath: FUN .doc .xpath .xpath_len
+  .nodes: ALC 1024
+!FUN
+
+-- XML.GET_ATTR: Get attribute value
+.xml_get_attr: FUN .node .attr .attr_len
+  .value: 0
+!FUN
+
+-- XML.SET_ATTR: Set attribute value
+.xml_set_attr: FUN .node .attr .attr_len .value .value_len
+  .done: 0
+!FUN
+
+-- XML.GET_TEXT: Get text content
+.xml_get_text: FUN .node
+  .text: 0
+!FUN
+
+-- XML.GET_CHILDREN: Get child nodes
+.xml_get_children: FUN .node
+  .children: 0
+!FUN
+
+-- XML.CREATE_ELEMENT: Create new element
+.xml_create_element: FUN .tag .tag_len
+  .elem: 0
+!FUN
+
+-- XML.APPEND_CHILD: Append child to node
+.xml_append_child: FUN .parent .child
+  .done: 0
+!FUN

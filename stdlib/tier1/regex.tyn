@@ -1,0 +1,36 @@
+-- TAYNI stdlib: regex v0.1
+-- Provides: REGEX.MATCH, REGEX.REPLACE, REGEX.SPLIT
+-- Usage: USE regex
+
+-- REGEX.MATCH: Check if string matches pattern
+-- Returns: 1 if match, 0 if no match
+.regex_match: FUN .str .str_len .pattern .pattern_len
+  .result: 0
+!FUN
+
+-- REGEX.FIND: Find first match in string
+-- Returns: start position, or -1 if not found
+.regex_find: FUN .str .str_len .pattern .pattern_len
+  .result: -1
+!FUN
+
+-- REGEX.FIND_ALL: Find all matches
+-- Returns: array of positions
+.regex_find_all: FUN .str .str_len .pattern .pattern_len
+  .results: ALC 256
+!FUN
+
+-- REGEX.REPLACE: Replace matches with replacement
+.regex_replace: FUN .str .str_len .pattern .pattern_len .repl .repl_len
+  .out: ALC 4096
+!FUN
+
+-- REGEX.SPLIT: Split string by pattern
+.regex_split: FUN .str .str_len .pattern .pattern_len
+  .parts: ALC 1024
+!FUN
+
+-- REGEX.CAPTURE: Get capture groups
+.regex_capture: FUN .str .str_len .pattern .pattern_len
+  .groups: ALC 256
+!FUN

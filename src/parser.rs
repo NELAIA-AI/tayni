@@ -45,6 +45,20 @@ impl Parser {
                 continue;
             }
             
+            // USE directive: USE module_name
+            if line.starts_with("USE ") {
+                let module = line[4..].trim().to_lowercase();
+                if module.is_empty() {
+                    return Err(format!("Line {}: USE requires a module name", i + 1));
+                }
+                if current_function.is_some() {
+                    return Err(format!("Line {}: USE must be at top level, not inside functions", i + 1));
+                }
+                graph.add_node(Node::Use { module });
+                i += 1;
+                continue;
+            }
+            
             // Skip macro definitions (already processed)
             if line.starts_with('#') && !line.starts_with("#END") {
                 while i < lines.len() && !lines[i].trim().starts_with("#END") {
@@ -514,6 +528,31 @@ impl Parser {
             "CAPABILITY_AVAILABLE" | "CAP_AVAIL" => Ok(Op::CapAvailable),
             "CAPABILITY_VERSION" | "CAP_VER" => Ok(Op::CapVersion),
             "CAPABILITY_DEPS" | "CAP_DEPS" => Ok(Op::CapDeps),
+            
+            // === PHASE 19: Quantum Computing (QIR) ===
+            // Single-qubit gates
+            "QH" => Ok(Op::Call("QH".to_string())),       // Hadamard
+            "QX" => Ok(Op::Call("QX".to_string())),       // Pauli-X (NOT)
+            "QY" => Ok(Op::Call("QY".to_string())),       // Pauli-Y
+            "QZ" => Ok(Op::Call("QZ".to_string())),       // Pauli-Z
+            "QS" => Ok(Op::Call("QS".to_string())),       // S gate
+            "QT" => Ok(Op::Call("QT".to_string())),       // T gate
+            "QRX" => Ok(Op::Call("QRX".to_string())),     // Rx rotation
+            "QRY" => Ok(Op::Call("QRY".to_string())),     // Ry rotation
+            "QRZ" => Ok(Op::Call("QRZ".to_string())),     // Rz rotation
+            // Two-qubit gates
+            "QCNOT" | "QCX" => Ok(Op::Call("QCNOT".to_string())),  // CNOT
+            "QCZ" => Ok(Op::Call("QCZ".to_string())),     // CZ
+            "QSWAP" => Ok(Op::Call("QSWAP".to_string())), // SWAP
+            // Three-qubit gates
+            "QCCX" | "QTOFFOLI" => Ok(Op::Call("QCCX".to_string())),  // Toffoli
+            "QCSWAP" | "QFREDKIN" => Ok(Op::Call("QCSWAP".to_string())), // Fredkin
+            // Measurement
+            "QM" | "QMEASURE" => Ok(Op::Call("QM".to_string())),
+            // Qubit management
+            "QALLOC" => Ok(Op::Call("QALLOC".to_string())),
+            "QFREE" => Ok(Op::Call("QFREE".to_string())),
+            "QRESET" => Ok(Op::Call("QRESET".to_string())),
             
             s if s.starts_with('.') => Ok(Op::Call(s[1..].to_string())),
             _ => Err(format!("Unknown operation: {}", s)),

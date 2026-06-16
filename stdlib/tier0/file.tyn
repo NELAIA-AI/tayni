@@ -1,0 +1,42 @@
+-- TAYNI stdlib: file v0.1
+-- Provides: FILE.READ, FILE.WRITE, FILE.EXISTS
+-- Usage: USE file
+
+-- File modes
+.file_mode_read: 0
+.file_mode_write: 1
+.file_mode_append: 2
+
+-- FILE.READ: Read entire file into buffer
+-- Returns: buffer pointer, or 0 on error
+.file_read: FUN .path
+  .handle: FOP .path .file_mode_read
+  .buf: ALC 65536
+  .len: FRD .handle .buf 65536
+  .closed: FCL .handle
+!FUN
+
+-- FILE.WRITE: Write buffer to file
+-- Returns: bytes written, or 0 on error
+.file_write: FUN .path .data .len
+  .handle: FOP .path .file_mode_write
+  .written: FWR .handle .data .len
+  .closed: FCL .handle
+!FUN
+
+-- FILE.EXISTS: Check if file exists
+-- Returns: 1 if exists, 0 if not
+.file_exists: FUN .path
+  .handle: FOP .path .file_mode_read
+  .exists: IFZ .handle 0 1
+  .closed: FCL .handle
+!FUN
+
+-- FILE.SIZE: Get file size
+-- Returns: size in bytes
+.file_size: FUN .path
+  .handle: FOP .path .file_mode_read
+  .buf: ALC 65536
+  .size: FRD .handle .buf 65536
+  .closed: FCL .handle
+!FUN

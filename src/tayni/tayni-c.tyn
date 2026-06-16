@@ -1,0 +1,1399 @@
+-- TAYNI Self-Hosted Compiler v0.9
+-- Full lexer implementation
+-- Next: Parser, Emitter, PE generation
+
+-- ============================================================
+-- CONSTANTS
+-- ============================================================
+.zero: 0
+.one: 1
+.bufsize: 16384
+.tokbuf_size: 8192
+.max_tokens: 1000
+
+-- Character codes
+.CHAR_NL: 10
+.CHAR_CR: 13
+.CHAR_TAB: 9
+.CHAR_SPACE: 32
+.CHAR_DOT: 46
+.CHAR_COLON: 58
+.CHAR_BANG: 33
+.CHAR_QUOTE: 34
+.CHAR_DASH: 45
+.CHAR_ZERO: 48
+.CHAR_NINE: 57
+.CHAR_A: 65
+.CHAR_Z: 90
+.CHAR_a: 97
+.CHAR_z: 122
+.CHAR_UNDERSCORE: 95
+
+-- Token types
+.TOK_EOF: 0
+.TOK_DOT: 1
+.TOK_COLON: 2
+.TOK_IDENT: 3
+.TOK_NUMBER: 4
+.TOK_STRING: 5
+.TOK_NEWLINE: 6
+.TOK_BANG: 7
+.TOK_COMMENT: 8
+
+-- ============================================================
+-- LEXER STATE
+-- ============================================================
+.src_buf: ALC .bufsize
+.src_len: 0
+.src_pos: 0
+
+-- Token buffer: array of [type:4, start:4, len:4] = 12 bytes per token
+.tok_buf: ALC .tokbuf_size
+.tok_count: 0
+.tok_pos: 0
+
+-- Current token
+.cur_type: 0
+.cur_start: 0
+.cur_len: 0
+
+-- ============================================================
+-- HELPER: IS_WHITESPACE
+-- ============================================================
+.is_whitespace: FUN .ch
+  .result: 0
+  .cmp_space: EQ .ch .CHAR_SPACE
+  .cmp_tab: EQ .ch .CHAR_TAB
+  .cmp_cr: EQ .ch .CHAR_CR
+  .result: OR .cmp_space .cmp_tab
+  .result: OR .result .cmp_cr
+!FUN
+
+-- ============================================================
+-- HELPER: IS_DIGIT
+-- ============================================================
+.is_digit: FUN .ch
+  .ge_zero: GE .ch .CHAR_ZERO
+  .le_nine: LE .ch .CHAR_NINE
+  .result: AND .ge_zero .le_nine
+!FUN
+
+-- ============================================================
+-- HELPER: IS_ALPHA
+-- ============================================================
+.is_alpha: FUN .ch
+  .ge_A: GE .ch .CHAR_A
+  .le_Z: LE .ch .CHAR_Z
+  .ge_a: GE .ch .CHAR_a
+  .le_z: LE .ch .CHAR_z
+  .is_upper: AND .ge_A .le_Z
+  .is_lower: AND .ge_a .le_z
+  .is_under: EQ .ch .CHAR_UNDERSCORE
+  .result: OR .is_upper .is_lower
+  .result: OR .result .is_under
+!FUN
+
+-- ============================================================
+-- HELPER: IS_ALNUM
+-- ============================================================
+.is_alnum: FUN .ch
+  .alpha: .is_alpha .ch
+  .digit: .is_digit .ch
+  .result: OR .alpha .digit
+!FUN
+
+-- ============================================================
+-- LEXER: PEEK CHAR
+-- ============================================================
+.peek_char: FUN
+  .at_end: GE .src_pos .src_len
+  .ch: BRN .at_end .zero
+  .ch: VGT .src_buf .src_pos
+!FUN
+
+-- ============================================================
+-- LEXER: ADVANCE
+-- ============================================================
+.advance: FUN
+  .src_pos: ADD .src_pos .one
+!FUN
+
+-- ============================================================
+-- LEXER: SKIP WHITESPACE
+-- ============================================================
+.skip_whitespace: FUN
+  .loop_start: LBL
+  .ch: .peek_char
+  .is_ws: .is_whitespace .ch
+  .done: EQ .is_ws .zero
+  .exit: BRN .done .loop_end
+  .adv: .advance
+  .jmp: JMP .loop_start
+  .loop_end: LBL
+!FUN
+
+-- ============================================================
+-- LEXER: SKIP COMMENT (-- to end of line)
+-- ============================================================
+.skip_comment: FUN
+  .loop_start: LBL
+  .ch: .peek_char
+  .is_nl: EQ .ch .CHAR_NL
+  .is_eof: EQ .ch .zero
+  .done: OR .is_nl .is_eof
+  .exit: BRN .done .loop_end
+  .adv: .advance
+  .jmp: JMP .loop_start
+  .loop_end: LBL
+!FUN
+
+-- ============================================================
+-- LEXER: READ NUMBER
+-- ============================================================
+.read_number: FUN
+  .start: .src_pos
+  .loop_start: LBL
+  .ch: .peek_char
+  .is_d: .is_digit .ch
+  .done: EQ .is_d .zero
+  .exit: BRN .done .loop_end
+  .adv: .advance
+  .jmp: JMP .loop_start
+  .loop_end: LBL
+  .cur_type: .TOK_NUMBER
+  .cur_start: .start
+  .cur_len: SUB .src_pos .start
+!FUN
+
+-- ============================================================
+-- LEXER: READ IDENTIFIER
+-- ============================================================
+.read_ident: FUN
+  .start: .src_pos
+  .loop_start: LBL
+  .ch: .peek_char
+  .is_an: .is_alnum .ch
+  .is_dot: EQ .ch .CHAR_DOT
+  .cont: OR .is_an .is_dot
+  .done: EQ .cont .zero
+  .exit: BRN .done .loop_end
+  .adv: .advance
+  .jmp: JMP .loop_start
+  .loop_end: LBL
+  .cur_type: .TOK_IDENT
+  .cur_start: .start
+  .cur_len: SUB .src_pos .start
+!FUN
+
+-- ============================================================
+-- LEXER: READ STRING
+-- ============================================================
+.read_string: FUN
+  .adv1: .advance
+  .start: .src_pos
+  .loop_start: LBL
+  .ch: .peek_char
+  .is_quote: EQ .ch .CHAR_QUOTE
+  .is_eof: EQ .ch .zero
+  .done: OR .is_quote .is_eof
+  .exit: BRN .done .loop_end
+  .adv: .advance
+  .jmp: JMP .loop_start
+  .loop_end: LBL
+  .cur_type: .TOK_STRING
+  .cur_start: .start
+  .cur_len: SUB .src_pos .start
+  .adv2: .advance
+!FUN
+
+-- ============================================================
+-- LEXER: NEXT TOKEN
+-- ============================================================
+.next_token: FUN
+  .skip: .skip_whitespace
+  .ch: .peek_char
+  
+  -- Check EOF
+  .is_eof: EQ .ch .zero
+  .eof_branch: BRN .is_eof .handle_eof
+  
+  -- Check newline
+  .is_nl: EQ .ch .CHAR_NL
+  .nl_branch: BRN .is_nl .handle_nl
+  
+  -- Check dot
+  .is_dot: EQ .ch .CHAR_DOT
+  .dot_branch: BRN .is_dot .handle_dot
+  
+  -- Check colon
+  .is_colon: EQ .ch .CHAR_COLON
+  .colon_branch: BRN .is_colon .handle_colon
+  
+  -- Check bang
+  .is_bang: EQ .ch .CHAR_BANG
+  .bang_branch: BRN .is_bang .handle_bang
+  
+  -- Check quote (string)
+  .is_quote: EQ .ch .CHAR_QUOTE
+  .quote_branch: BRN .is_quote .handle_string
+  
+  -- Check dash (comment or negative)
+  .is_dash: EQ .ch .CHAR_DASH
+  .dash_branch: BRN .is_dash .handle_dash
+  
+  -- Check digit
+  .is_d: .is_digit .ch
+  .digit_branch: BRN .is_d .handle_number
+  
+  -- Check alpha (identifier)
+  .is_a: .is_alpha .ch
+  .alpha_branch: BRN .is_a .handle_ident
+  
+  -- Unknown char, skip
+  .adv_unknown: .advance
+  .jmp_next: JMP .next_token
+  
+  .handle_eof: LBL
+  .cur_type: .TOK_EOF
+  .cur_start: .src_pos
+  .cur_len: .zero
+  .ret_eof: RET
+  
+  .handle_nl: LBL
+  .cur_type: .TOK_NEWLINE
+  .cur_start: .src_pos
+  .cur_len: .one
+  .adv_nl: .advance
+  .ret_nl: RET
+  
+  .handle_dot: LBL
+  .adv_dot: .advance
+  .ch2: .peek_char
+  .is_a2: .is_alpha .ch2
+  .ident_branch: BRN .is_a2 .read_dot_ident
+  .cur_type: .TOK_DOT
+  .cur_start: SUB .src_pos .one
+  .cur_len: .one
+  .ret_dot: RET
+  
+  .read_dot_ident: LBL
+  .cur_start: SUB .src_pos .one
+  .read_rest: .read_ident
+  .cur_len: ADD .cur_len .one
+  .ret_dot_ident: RET
+  
+  .handle_colon: LBL
+  .cur_type: .TOK_COLON
+  .cur_start: .src_pos
+  .cur_len: .one
+  .adv_colon: .advance
+  .ret_colon: RET
+  
+  .handle_bang: LBL
+  .cur_type: .TOK_BANG
+  .cur_start: .src_pos
+  .cur_len: .one
+  .adv_bang: .advance
+  .ret_bang: RET
+  
+  .handle_string: LBL
+  .read_str: .read_string
+  .ret_string: RET
+  
+  .handle_dash: LBL
+  .adv_dash: .advance
+  .ch3: .peek_char
+  .is_dash2: EQ .ch3 .CHAR_DASH
+  .comment_branch: BRN .is_dash2 .handle_comment
+  -- Negative number or identifier
+  .is_d2: .is_digit .ch3
+  .neg_num_branch: BRN .is_d2 .handle_neg_number
+  .jmp_next2: JMP .next_token
+  
+  .handle_comment: LBL
+  .skip_cmt: .skip_comment
+  .jmp_next3: JMP .next_token
+  
+  .handle_neg_number: LBL
+  .start_neg: SUB .src_pos .one
+  .read_num: .read_number
+  .cur_start: .start_neg
+  .cur_len: ADD .cur_len .one
+  .ret_neg: RET
+  
+  .handle_number: LBL
+  .read_num2: .read_number
+  .ret_num: RET
+  
+  .handle_ident: LBL
+  .read_id: .read_ident
+  .ret_ident: RET
+!FUN
+
+-- ============================================================
+-- LEXER: STORE TOKEN
+-- ============================================================
+.store_token: FUN
+  -- Calculate offset: tok_count * 12
+  .offset: MUL .tok_count 12
+  -- Store type at offset
+  .addr_type: ADD .tok_buf .offset
+  .st1: VST .addr_type .cur_type
+  -- Store start at offset + 4
+  .addr_start: ADD .addr_type 4
+  .st2: VST .addr_start .cur_start
+  -- Store len at offset + 8
+  .addr_len: ADD .addr_start 4
+  .st3: VST .addr_len .cur_len
+  -- Increment count
+  .tok_count: ADD .tok_count .one
+!FUN
+
+-- ============================================================
+-- PARSER: AST NODE TYPES
+-- ============================================================
+.NODE_BINDING: 1
+.NODE_LITERAL: 2
+.NODE_CALL: 3
+.NODE_REF: 4
+
+-- ============================================================
+-- PARSER: AST STORAGE
+-- ============================================================
+-- Node format: [type:4][id_start:4][id_len:4][op_start:4][op_len:4][arg_count:4] = 24 bytes
+.ast_buf: ALC 8192
+.ast_count: 0
+.parse_pos: 0
+
+-- ============================================================
+-- PARSER: GET TOKEN AT INDEX
+-- ============================================================
+.get_token: FUN .idx
+  .offset: MUL .idx 12
+  .addr: ADD .tok_buf .offset
+  .type: VGT .addr .zero
+  .addr2: ADD .addr 4
+  .start: VGT .addr2 .zero
+  .addr3: ADD .addr2 4
+  .len: VGT .addr3 .zero
+!FUN
+
+-- ============================================================
+-- PARSER: CURRENT TOKEN
+-- ============================================================
+.current_token: FUN
+  .get: .get_token .parse_pos
+!FUN
+
+-- ============================================================
+-- PARSER: ADVANCE PARSER
+-- ============================================================
+.parser_advance: FUN
+  .parse_pos: ADD .parse_pos .one
+!FUN
+
+-- ============================================================
+-- PARSER: EXPECT TOKEN TYPE
+-- ============================================================
+.expect: FUN .expected_type
+  .cur: .current_token
+  .match: EQ .type .expected_type
+  .err: BRN .match .expect_ok
+  -- Error: unexpected token
+  .err_msg: "Parse error: unexpected token\n"
+  .perr: PRT .err_msg 30
+  .expect_ok: LBL
+  .adv: .parser_advance
+!FUN
+
+-- ============================================================
+-- PARSER: SKIP NEWLINES
+-- ============================================================
+.skip_newlines: FUN
+  .loop_start: LBL
+  .cur: .current_token
+  .is_nl: EQ .type .TOK_NEWLINE
+  .done: EQ .is_nl .zero
+  .exit: BRN .done .loop_end
+  .adv: .parser_advance
+  .jmp: JMP .loop_start
+  .loop_end: LBL
+!FUN
+
+-- ============================================================
+-- PARSER: STORE AST NODE
+-- ============================================================
+.store_node: FUN .node_type .id_start .id_len .op_start .op_len .arg_count
+  .offset: MUL .ast_count 24
+  .addr: ADD .ast_buf .offset
+  .st1: VST .addr .node_type
+  .addr2: ADD .addr 4
+  .st2: VST .addr2 .id_start
+  .addr3: ADD .addr2 4
+  .st3: VST .addr3 .id_len
+  .addr4: ADD .addr3 4
+  .st4: VST .addr4 .op_start
+  .addr5: ADD .addr4 4
+  .st5: VST .addr5 .op_len
+  .addr6: ADD .addr5 4
+  .st6: VST .addr6 .arg_count
+  .ast_count: ADD .ast_count .one
+!FUN
+
+-- ============================================================
+-- PARSER: PARSE BINDING (.name: value)
+-- ============================================================
+.parse_binding: FUN
+  .skip: .skip_newlines
+  .cur: .current_token
+  
+  -- Check for EOF
+  .is_eof: EQ .type .TOK_EOF
+  .eof_ret: BRN .is_eof .binding_done
+  
+  -- Check for bang (end of program)
+  .is_bang: EQ .type .TOK_BANG
+  .bang_ret: BRN .is_bang .binding_done
+  
+  -- Expect identifier (starts with dot)
+  .is_ident: EQ .type .TOK_IDENT
+  .err_ident: BRN .is_ident .have_ident
+  .err_msg: "Expected identifier\n"
+  .perr: PRT .err_msg 20
+  .jmp_done: JMP .binding_done
+  
+  .have_ident: LBL
+  .id_start: .start
+  .id_len: .len
+  .adv1: .parser_advance
+  
+  -- Expect colon
+  .cur2: .current_token
+  .is_colon: EQ .type .TOK_COLON
+  .err_colon: BRN .is_colon .have_colon
+  .err_msg2: "Expected colon\n"
+  .perr2: PRT .err_msg2 15
+  .jmp_done2: JMP .binding_done
+  
+  .have_colon: LBL
+  .adv2: .parser_advance
+  
+  -- Get value (identifier, number, or string)
+  .cur3: .current_token
+  .op_start: .start
+  .op_len: .len
+  .adv3: .parser_advance
+  
+  -- Store node
+  .store: .store_node .NODE_BINDING .id_start .id_len .op_start .op_len .zero
+  
+  .binding_done: LBL
+!FUN
+
+-- ============================================================
+-- PARSER: PARSE ALL
+-- ============================================================
+.parse: FUN
+  .loop_start: LBL
+  .cur: .current_token
+  .is_eof: EQ .type .TOK_EOF
+  .is_bang: EQ .type .TOK_BANG
+  .done: OR .is_eof .is_bang
+  .exit: BRN .done .loop_end
+  .parse_one: .parse_binding
+  .jmp: JMP .loop_start
+  .loop_end: LBL
+!FUN
+
+-- ============================================================
+-- LEXER: TOKENIZE ALL
+-- ============================================================
+.tokenize: FUN
+  .loop_start: LBL
+  .get_tok: .next_token
+  .store: .store_token
+  .is_eof: EQ .cur_type .TOK_EOF
+  .done: BRN .is_eof .loop_end
+  .jmp: JMP .loop_start
+  .loop_end: LBL
+!FUN
+
+-- ============================================================
+-- MAIN
+-- ============================================================
+
+-- Print banner
+.banner: "TAYNI Self-Compiler v0.9\n"
+.p1: PRT .banner 26
+
+-- Read source file
+.src_path: "input.tyn"
+.src_handle: FOP .src_path .zero
+.src_len: FRD .src_handle .src_buf .bufsize
+.close_src: FCL .src_handle
+
+-- Print source size
+.msg_size: "Source: "
+.p2: PRT .msg_size 8
+.p3: WRT .src_len
+.msg_bytes: " bytes\n"
+.p4: PRT .msg_bytes 7
+
+-- Tokenize
+.msg_tok: "Tokenizing...\n"
+.p5: PRT .msg_tok 14
+.do_tokenize: .tokenize
+
+-- Print token count
+.msg_tokens: "Tokens: "
+.p6: PRT .msg_tokens 8
+.p7: WRT .tok_count
+.msg_nl: "\n"
+.p8: PRT .msg_nl 1
+
+-- Print token types summary
+.msg_done: "Lexer complete.\n"
+.p9: PRT .msg_done 16
+
+-- Parse
+.msg_parse: "Parsing...\n"
+.p10: PRT .msg_parse 11
+.do_parse: .parse
+
+-- Print AST node count
+.msg_nodes: "AST nodes: "
+.p11: PRT .msg_nodes 11
+.p12: WRT .ast_count
+.p13: PRT .msg_nl 1
+
+-- Done
+.msg_final: "Parser complete. Ready for emitter.\n"
+.p14: PRT .msg_final 36
+
+-- ============================================================
+-- EMITTER: CODE BUFFER
+-- ============================================================
+.code_buf: ALC 4096
+.code_pos: 0
+.data_buf: ALC 4096
+.data_pos: 0
+
+-- ============================================================
+-- EMITTER: EMIT BYTE
+-- ============================================================
+.emit_byte: FUN .byte
+  .addr: ADD .code_buf .code_pos
+  .st: VST .addr .byte
+  .code_pos: ADD .code_pos .one
+!FUN
+
+-- ============================================================
+-- EMITTER: EMIT WORD (2 bytes, little-endian)
+-- ============================================================
+.emit_word: FUN .word
+  .lo: MOD .word 256
+  .hi: DIV .word 256
+  .e1: .emit_byte .lo
+  .e2: .emit_byte .hi
+!FUN
+
+-- ============================================================
+-- EMITTER: EMIT DWORD (4 bytes, little-endian)
+-- ============================================================
+.emit_dword: FUN .dword
+  .b0: MOD .dword 256
+  .t1: DIV .dword 256
+  .b1: MOD .t1 256
+  .t2: DIV .t1 256
+  .b2: MOD .t2 256
+  .b3: DIV .t2 256
+  .e1: .emit_byte .b0
+  .e2: .emit_byte .b1
+  .e3: .emit_byte .b2
+  .e4: .emit_byte .b3
+!FUN
+
+-- ============================================================
+-- EMITTER: EMIT STRING TO DATA SECTION
+-- ============================================================
+.emit_string: FUN .str_start .str_len
+  .data_offset: .data_pos
+  .i: 0
+  .loop_start: LBL
+  .done: GE .i .str_len
+  .exit: BRN .done .loop_end
+  .src_addr: ADD .src_buf .str_start
+  .src_addr: ADD .src_addr .i
+  .ch: VGT .src_addr .zero
+  .dst_addr: ADD .data_buf .data_pos
+  .st: VST .dst_addr .ch
+  .data_pos: ADD .data_pos .one
+  .i: ADD .i .one
+  .jmp: JMP .loop_start
+  .loop_end: LBL
+  -- Null terminate
+  .dst_addr2: ADD .data_buf .data_pos
+  .st2: VST .dst_addr2 .zero
+  .data_pos: ADD .data_pos .one
+!FUN
+
+-- ============================================================
+-- EMITTER: EMIT x86-64 INSTRUCTIONS
+-- ============================================================
+
+-- x86-64 opcodes (decimal)
+.OP_REX_W: 72
+.OP_MOV_RAX: 184
+.OP_MOV_RCX: 185
+.OP_MOV_RDX: 186
+.OP_MOV_RDI: 191
+.OP_MOV_RSI: 190
+.OP_REX_WB: 73
+.OP_SYSCALL_0F: 15
+.OP_SYSCALL_05: 5
+.OP_RET: 195
+
+-- MOV RAX, imm64
+.emit_mov_rax_imm: FUN .imm
+  .e1: .emit_byte .OP_REX_W
+  .e2: .emit_byte .OP_MOV_RAX
+  .e3: .emit_dword .imm
+  .e4: .emit_dword 0
+!FUN
+
+-- MOV RCX, imm64
+.emit_mov_rcx_imm: FUN .imm
+  .e1: .emit_byte .OP_REX_W
+  .e2: .emit_byte .OP_MOV_RCX
+  .e3: .emit_dword .imm
+  .e4: .emit_dword 0
+!FUN
+
+-- MOV RDX, imm64
+.emit_mov_rdx_imm: FUN .imm
+  .e1: .emit_byte .OP_REX_W
+  .e2: .emit_byte .OP_MOV_RDX
+  .e3: .emit_dword .imm
+  .e4: .emit_dword 0
+!FUN
+
+-- MOV RDI, imm64
+.emit_mov_rdi_imm: FUN .imm
+  .e1: .emit_byte .OP_REX_W
+  .e2: .emit_byte .OP_MOV_RDI
+  .e3: .emit_dword .imm
+  .e4: .emit_dword 0
+!FUN
+
+-- MOV RSI, imm64
+.emit_mov_rsi_imm: FUN .imm
+  .e1: .emit_byte .OP_REX_W
+  .e2: .emit_byte .OP_MOV_RSI
+  .e3: .emit_dword .imm
+  .e4: .emit_dword 0
+!FUN
+
+-- MOV R8, imm64
+.emit_mov_r8_imm: FUN .imm
+  .e1: .emit_byte .OP_REX_WB
+  .e2: .emit_byte .OP_MOV_RAX
+  .e3: .emit_dword .imm
+  .e4: .emit_dword 0
+!FUN
+
+-- SYSCALL
+.emit_syscall: FUN
+  .e1: .emit_byte .OP_SYSCALL_0F
+  .e2: .emit_byte .OP_SYSCALL_05
+!FUN
+
+-- RET
+.emit_ret: FUN
+  .e1: .emit_byte .OP_RET
+!FUN
+
+-- ============================================================
+-- EMITTER: EMIT HELLO WORLD (test)
+-- ============================================================
+.emit_hello: FUN
+  -- Linux syscall: write(1, msg, len)
+  -- RAX = 1 (sys_write)
+  -- RDI = 1 (stdout)
+  -- RSI = msg address
+  -- RDX = length
+  
+  .msg_len: 33
+  .msg_addr: 4202496
+  
+  -- mov rax, 1 (sys_write)
+  .e1: .emit_mov_rax_imm 1
+  
+  -- mov rdi, 1 (stdout)
+  .e2: .emit_mov_rdi_imm 1
+  
+  -- mov rsi, msg_addr
+  .e3: .emit_mov_rsi_imm .msg_addr
+  
+  -- mov rdx, len
+  .e4: .emit_mov_rdx_imm .msg_len
+  
+  -- syscall
+  .e5: .emit_syscall
+  
+  -- exit(0)
+  -- mov rax, 60 (sys_exit)
+  .e6: .emit_mov_rax_imm 60
+  
+  -- mov rdi, 0 (exit code)
+  .e7: .emit_mov_rdi_imm 0
+  
+  -- syscall
+  .e8: .emit_syscall
+!FUN
+
+-- ============================================================
+-- EMITTER: GENERATE CODE
+-- ============================================================
+.emit_code: FUN
+  -- For now, just emit hello world
+  .hello: .emit_hello
+!FUN
+
+-- ============================================================
+-- PE GENERATOR: CONSTANTS
+-- ============================================================
+.PE_DOS_MAGIC_M: 77
+.PE_DOS_MAGIC_Z: 90
+.PE_SIGNATURE_P: 80
+.PE_SIGNATURE_E: 69
+.PE_MACHINE_AMD64_LO: 100
+.PE_MACHINE_AMD64_HI: 134
+.PE_MAGIC_PE32PLUS_LO: 11
+.PE_MAGIC_PE32PLUS_HI: 2
+.PE_SUBSYSTEM_CONSOLE: 3
+.PE_FILE_ALIGNMENT: 512
+.PE_SECTION_ALIGNMENT: 4096
+.PE_IMAGE_BASE_LO: 0
+.PE_IMAGE_BASE_HI: 5368709120
+
+-- Section characteristics
+.PE_SCN_CODE: 32
+.PE_SCN_INIT_DATA: 64
+.PE_SCN_EXEC: 536870912
+.PE_SCN_READ: 1073741824
+.PE_SCN_WRITE: 2147483648
+
+-- ============================================================
+-- PE GENERATOR: OUTPUT BUFFER
+-- ============================================================
+.pe_buf: ALC 8192
+.pe_pos: 0
+
+-- ============================================================
+-- PE GENERATOR: EMIT PE BYTE
+-- ============================================================
+.pe_emit_byte: FUN .byte
+  .addr: ADD .pe_buf .pe_pos
+  .st: VST .addr .byte
+  .pe_pos: ADD .pe_pos .one
+!FUN
+
+-- ============================================================
+-- PE GENERATOR: EMIT PE WORD (2 bytes)
+-- ============================================================
+.pe_emit_word: FUN .word
+  .lo: MOD .word 256
+  .hi: DIV .word 256
+  .e1: .pe_emit_byte .lo
+  .e2: .pe_emit_byte .hi
+!FUN
+
+-- ============================================================
+-- PE GENERATOR: EMIT PE DWORD (4 bytes)
+-- ============================================================
+.pe_emit_dword: FUN .dword
+  .b0: MOD .dword 256
+  .t1: DIV .dword 256
+  .b1: MOD .t1 256
+  .t2: DIV .t1 256
+  .b2: MOD .t2 256
+  .b3: DIV .t2 256
+  .e1: .pe_emit_byte .b0
+  .e2: .pe_emit_byte .b1
+  .e3: .pe_emit_byte .b2
+  .e4: .pe_emit_byte .b3
+!FUN
+
+-- ============================================================
+-- PE GENERATOR: EMIT PE QWORD (8 bytes)
+-- ============================================================
+.pe_emit_qword: FUN .lo .hi
+  .e1: .pe_emit_dword .lo
+  .e2: .pe_emit_dword .hi
+!FUN
+
+-- ============================================================
+-- PE GENERATOR: PAD TO ALIGNMENT
+-- ============================================================
+.pe_pad_to: FUN .alignment
+  .loop_start: LBL
+  .rem: MOD .pe_pos .alignment
+  .done: EQ .rem .zero
+  .exit: BRN .done .loop_end
+  .pad: .pe_emit_byte .zero
+  .jmp: JMP .loop_start
+  .loop_end: LBL
+!FUN
+
+-- ============================================================
+-- PE GENERATOR: DOS HEADER (64 bytes)
+-- ============================================================
+.emit_dos_header: FUN
+  -- MZ signature
+  .e1: .pe_emit_byte .PE_DOS_MAGIC_M
+  .e2: .pe_emit_byte .PE_DOS_MAGIC_Z
+  
+  -- DOS header fields (minimal)
+  .e3: .pe_emit_word 144
+  .e4: .pe_emit_word 3
+  .e5: .pe_emit_word 0
+  .e6: .pe_emit_word 4
+  .e7: .pe_emit_word 0
+  .e8: .pe_emit_word 65535
+  .e9: .pe_emit_word 0
+  .e10: .pe_emit_word 184
+  .e11: .pe_emit_word 0
+  .e12: .pe_emit_word 0
+  .e13: .pe_emit_word 0
+  .e14: .pe_emit_word 64
+  .e15: .pe_emit_word 0
+  
+  -- Reserved (8 bytes)
+  .e16: .pe_emit_dword 0
+  .e17: .pe_emit_dword 0
+  
+  -- OEM info
+  .e18: .pe_emit_word 0
+  .e19: .pe_emit_word 0
+  
+  -- Reserved (20 bytes)
+  .e20: .pe_emit_dword 0
+  .e21: .pe_emit_dword 0
+  .e22: .pe_emit_dword 0
+  .e23: .pe_emit_dword 0
+  .e24: .pe_emit_dword 0
+  
+  -- PE header offset (at 0x3C = 60)
+  .e25: .pe_emit_dword 64
+!FUN
+
+-- ============================================================
+-- PE GENERATOR: PE SIGNATURE + COFF HEADER
+-- ============================================================
+.emit_pe_header: FUN
+  -- PE signature
+  .e1: .pe_emit_byte .PE_SIGNATURE_P
+  .e2: .pe_emit_byte .PE_SIGNATURE_E
+  .e3: .pe_emit_byte 0
+  .e4: .pe_emit_byte 0
+  
+  -- COFF Header (20 bytes)
+  -- Machine: AMD64
+  .e5: .pe_emit_byte .PE_MACHINE_AMD64_LO
+  .e6: .pe_emit_byte .PE_MACHINE_AMD64_HI
+  
+  -- Number of sections: 2 (.text, .data)
+  .e7: .pe_emit_word 2
+  
+  -- Timestamp
+  .e8: .pe_emit_dword 0
+  
+  -- Symbol table pointer
+  .e9: .pe_emit_dword 0
+  
+  -- Number of symbols
+  .e10: .pe_emit_dword 0
+  
+  -- Optional header size: 240 bytes for PE32+
+  .e11: .pe_emit_word 240
+  
+  -- Characteristics: EXECUTABLE | LARGE_ADDRESS_AWARE
+  .e12: .pe_emit_word 34
+!FUN
+
+-- ============================================================
+-- PE GENERATOR: OPTIONAL HEADER (PE32+)
+-- ============================================================
+.emit_optional_header: FUN .code_size .data_size .entry_rva
+  -- Magic: PE32+
+  .e1: .pe_emit_byte .PE_MAGIC_PE32PLUS_LO
+  .e2: .pe_emit_byte .PE_MAGIC_PE32PLUS_HI
+  
+  -- Linker version
+  .e3: .pe_emit_byte 14
+  .e4: .pe_emit_byte 0
+  
+  -- Size of code
+  .e5: .pe_emit_dword .code_size
+  
+  -- Size of initialized data
+  .e6: .pe_emit_dword .data_size
+  
+  -- Size of uninitialized data
+  .e7: .pe_emit_dword 0
+  
+  -- Entry point RVA
+  .e8: .pe_emit_dword .entry_rva
+  
+  -- Base of code
+  .e9: .pe_emit_dword 4096
+  
+  -- Image base (64-bit)
+  .e10: .pe_emit_qword .PE_IMAGE_BASE_LO .PE_IMAGE_BASE_HI
+  
+  -- Section alignment
+  .e11: .pe_emit_dword .PE_SECTION_ALIGNMENT
+  
+  -- File alignment
+  .e12: .pe_emit_dword .PE_FILE_ALIGNMENT
+  
+  -- OS version
+  .e13: .pe_emit_word 6
+  .e14: .pe_emit_word 0
+  
+  -- Image version
+  .e15: .pe_emit_word 0
+  .e16: .pe_emit_word 0
+  
+  -- Subsystem version
+  .e17: .pe_emit_word 6
+  .e18: .pe_emit_word 0
+  
+  -- Win32 version
+  .e19: .pe_emit_dword 0
+  
+  -- Size of image (must be multiple of section alignment)
+  .e20: .pe_emit_dword 12288
+  
+  -- Size of headers
+  .e21: .pe_emit_dword 512
+  
+  -- Checksum
+  .e22: .pe_emit_dword 0
+  
+  -- Subsystem: Console
+  .e23: .pe_emit_word .PE_SUBSYSTEM_CONSOLE
+  
+  -- DLL characteristics
+  .e24: .pe_emit_word 0
+  
+  -- Stack reserve (64-bit)
+  .e25: .pe_emit_qword 1048576 0
+  
+  -- Stack commit
+  .e26: .pe_emit_qword 4096 0
+  
+  -- Heap reserve
+  .e27: .pe_emit_qword 1048576 0
+  
+  -- Heap commit
+  .e28: .pe_emit_qword 4096 0
+  
+  -- Loader flags
+  .e29: .pe_emit_dword 0
+  
+  -- Number of data directories
+  .e30: .pe_emit_dword 16
+  
+  -- Data directories (16 entries, 8 bytes each = 128 bytes)
+  -- All zeros for minimal PE
+  .i: 0
+  .dir_loop: LBL
+  .dir_done: GE .i 16
+  .dir_exit: BRN .dir_done .dir_end
+  .dir_e1: .pe_emit_dword 0
+  .dir_e2: .pe_emit_dword 0
+  .i: ADD .i .one
+  .dir_jmp: JMP .dir_loop
+  .dir_end: LBL
+!FUN
+
+-- ============================================================
+-- PE GENERATOR: SECTION HEADER
+-- ============================================================
+.emit_section_header: FUN .name1 .name2 .vsize .vrva .rsize .rptr .chars
+  -- Name (8 bytes)
+  .e1: .pe_emit_dword .name1
+  .e2: .pe_emit_dword .name2
+  
+  -- Virtual size
+  .e3: .pe_emit_dword .vsize
+  
+  -- Virtual address (RVA)
+  .e4: .pe_emit_dword .vrva
+  
+  -- Size of raw data
+  .e5: .pe_emit_dword .rsize
+  
+  -- Pointer to raw data
+  .e6: .pe_emit_dword .rptr
+  
+  -- Pointer to relocations
+  .e7: .pe_emit_dword 0
+  
+  -- Pointer to line numbers
+  .e8: .pe_emit_dword 0
+  
+  -- Number of relocations
+  .e9: .pe_emit_word 0
+  
+  -- Number of line numbers
+  .e10: .pe_emit_word 0
+  
+  -- Characteristics
+  .e11: .pe_emit_dword .chars
+!FUN
+
+-- ============================================================
+-- PE GENERATOR: GENERATE COMPLETE PE
+-- ============================================================
+.generate_pe: FUN
+  -- DOS Header
+  .dos: .emit_dos_header
+  
+  -- PE Header
+  .pe: .emit_pe_header
+  
+  -- Optional Header
+  .opt: .emit_optional_header .code_pos 64 4096
+  
+  -- Section headers
+  -- .text section: ".text\0\0\0" = 0x7865742E, 0x00000074
+  .text_name1: 778989614
+  .text_name2: 116
+  .text_chars: 1610612768
+  .text: .emit_section_header .text_name1 .text_name2 .code_pos 4096 512 512 .text_chars
+  
+  -- .data section: ".data\0\0\0" = 0x7461642E, 0x00000061
+  .data_name1: 1952539182
+  .data_name2: 97
+  .data_chars: 3221225536
+  .data: .emit_section_header .data_name1 .data_name2 64 8192 512 1024 .data_chars
+  
+  -- Pad to file alignment (512 bytes)
+  .pad1: .pe_pad_to 512
+  
+  -- Copy code section
+  .code_i: 0
+  .code_loop: LBL
+  .code_done: GE .code_i .code_pos
+  .code_exit: BRN .code_done .code_end
+  .code_addr: ADD .code_buf .code_i
+  .code_byte: VGT .code_addr .zero
+  .code_emit: .pe_emit_byte .code_byte
+  .code_i: ADD .code_i .one
+  .code_jmp: JMP .code_loop
+  .code_end: LBL
+  
+  -- Pad to next section
+  .pad2: .pe_pad_to 1024
+  
+  -- Data section (message)
+  .msg_hello: "Hello from TAYNI self-compiler!\n"
+  .msg_i: 0
+  .msg_loop: LBL
+  .msg_done: GE .msg_i 33
+  .msg_exit: BRN .msg_done .msg_end
+  .msg_addr: ADD .msg_hello .msg_i
+  .msg_byte: VGT .msg_addr .zero
+  .msg_emit: .pe_emit_byte .msg_byte
+  .msg_i: ADD .msg_i .one
+  .msg_jmp: JMP .msg_loop
+  .msg_end: LBL
+  
+  -- Pad to end
+  .pad3: .pe_pad_to 1536
+!FUN
+
+-- ============================================================
+-- PE GENERATOR: WRITE PE TO FILE
+-- ============================================================
+.write_pe: FUN .filename
+  .handle: FOP .filename 1
+  .written: FWR .handle .pe_buf .pe_pos
+  .close: FCL .handle
+!FUN
+
+-- ============================================================
+-- ELF GENERATOR: CONSTANTS
+-- ============================================================
+.ELF_MAGIC_0: 127
+.ELF_MAGIC_E: 69
+.ELF_MAGIC_L: 76
+.ELF_MAGIC_F: 70
+.ELF_CLASS64: 2
+.ELF_DATA_LSB: 1
+.ELF_VERSION: 1
+.ELF_OSABI_NONE: 0
+.ELF_TYPE_EXEC: 2
+.ELF_MACHINE_X64: 62
+.ELF_PT_LOAD: 1
+.ELF_PF_X: 1
+.ELF_PF_W: 2
+.ELF_PF_R: 4
+.ELF_BASE_ADDR: 4194304
+
+-- ============================================================
+-- ELF GENERATOR: OUTPUT BUFFER
+-- ============================================================
+.elf_buf: ALC 4096
+.elf_pos: 0
+
+-- ============================================================
+-- ELF GENERATOR: EMIT ELF BYTE
+-- ============================================================
+.elf_emit_byte: FUN .byte
+  .addr: ADD .elf_buf .elf_pos
+  .st: VST .addr .byte
+  .elf_pos: ADD .elf_pos .one
+!FUN
+
+-- ============================================================
+-- ELF GENERATOR: EMIT ELF WORD (2 bytes)
+-- ============================================================
+.elf_emit_word: FUN .word
+  .lo: MOD .word 256
+  .hi: DIV .word 256
+  .e1: .elf_emit_byte .lo
+  .e2: .elf_emit_byte .hi
+!FUN
+
+-- ============================================================
+-- ELF GENERATOR: EMIT ELF DWORD (4 bytes)
+-- ============================================================
+.elf_emit_dword: FUN .dword
+  .b0: MOD .dword 256
+  .t1: DIV .dword 256
+  .b1: MOD .t1 256
+  .t2: DIV .t1 256
+  .b2: MOD .t2 256
+  .b3: DIV .t2 256
+  .e1: .elf_emit_byte .b0
+  .e2: .elf_emit_byte .b1
+  .e3: .elf_emit_byte .b2
+  .e4: .elf_emit_byte .b3
+!FUN
+
+-- ============================================================
+-- ELF GENERATOR: EMIT ELF QWORD (8 bytes)
+-- ============================================================
+.elf_emit_qword: FUN .lo .hi
+  .e1: .elf_emit_dword .lo
+  .e2: .elf_emit_dword .hi
+!FUN
+
+-- ============================================================
+-- ELF GENERATOR: ELF64 HEADER (64 bytes)
+-- ============================================================
+.emit_elf_header: FUN .entry_offset .phdr_offset .file_size
+  -- Magic: 0x7F 'E' 'L' 'F'
+  .e1: .elf_emit_byte .ELF_MAGIC_0
+  .e2: .elf_emit_byte .ELF_MAGIC_E
+  .e3: .elf_emit_byte .ELF_MAGIC_L
+  .e4: .elf_emit_byte .ELF_MAGIC_F
+  
+  -- Class: 64-bit
+  .e5: .elf_emit_byte .ELF_CLASS64
+  
+  -- Data: Little endian
+  .e6: .elf_emit_byte .ELF_DATA_LSB
+  
+  -- Version
+  .e7: .elf_emit_byte .ELF_VERSION
+  
+  -- OS/ABI
+  .e8: .elf_emit_byte .ELF_OSABI_NONE
+  
+  -- ABI version + padding (8 bytes)
+  .e9: .elf_emit_byte 0
+  .e10: .elf_emit_byte 0
+  .e11: .elf_emit_byte 0
+  .e12: .elf_emit_byte 0
+  .e13: .elf_emit_byte 0
+  .e14: .elf_emit_byte 0
+  .e15: .elf_emit_byte 0
+  .e16: .elf_emit_byte 0
+  
+  -- Type: Executable
+  .e17: .elf_emit_word .ELF_TYPE_EXEC
+  
+  -- Machine: x86-64
+  .e18: .elf_emit_word .ELF_MACHINE_X64
+  
+  -- Version
+  .e19: .elf_emit_dword 1
+  
+  -- Entry point (virtual address)
+  .entry_va: ADD .ELF_BASE_ADDR .entry_offset
+  .e20: .elf_emit_qword .entry_va 0
+  
+  -- Program header offset
+  .e21: .elf_emit_qword .phdr_offset 0
+  
+  -- Section header offset (0 = none)
+  .e22: .elf_emit_qword 0 0
+  
+  -- Flags
+  .e23: .elf_emit_dword 0
+  
+  -- ELF header size
+  .e24: .elf_emit_word 64
+  
+  -- Program header entry size
+  .e25: .elf_emit_word 56
+  
+  -- Program header count
+  .e26: .elf_emit_word 1
+  
+  -- Section header entry size
+  .e27: .elf_emit_word 64
+  
+  -- Section header count
+  .e28: .elf_emit_word 0
+  
+  -- Section name string table index
+  .e29: .elf_emit_word 0
+!FUN
+
+-- ============================================================
+-- ELF GENERATOR: PROGRAM HEADER (56 bytes)
+-- ============================================================
+.emit_elf_phdr: FUN .file_size
+  -- Type: PT_LOAD
+  .e1: .elf_emit_dword .ELF_PT_LOAD
+  
+  -- Flags: R + X
+  .flags: ADD .ELF_PF_R .ELF_PF_X
+  .e2: .elf_emit_dword .flags
+  
+  -- Offset in file
+  .e3: .elf_emit_qword 0 0
+  
+  -- Virtual address
+  .e4: .elf_emit_qword .ELF_BASE_ADDR 0
+  
+  -- Physical address
+  .e5: .elf_emit_qword .ELF_BASE_ADDR 0
+  
+  -- File size
+  .e6: .elf_emit_qword .file_size 0
+  
+  -- Memory size
+  .e7: .elf_emit_qword .file_size 0
+  
+  -- Alignment
+  .e8: .elf_emit_qword 4096 0
+!FUN
+
+-- ============================================================
+-- ELF GENERATOR: GENERATE COMPLETE ELF
+-- ============================================================
+.generate_elf: FUN
+  -- Calculate sizes
+  .ehdr_size: 64
+  .phdr_size: 56
+  .header_total: ADD .ehdr_size .phdr_size
+  .file_size: ADD .header_total .code_pos
+  .file_size: ADD .file_size 64
+  
+  -- ELF Header
+  .elf_hdr: .emit_elf_header .header_total 64 .file_size
+  
+  -- Program Header
+  .elf_phdr: .emit_elf_phdr .file_size
+  
+  -- Copy code
+  .code_i: 0
+  .code_loop: LBL
+  .code_done: GE .code_i .code_pos
+  .code_exit: BRN .code_done .code_end
+  .code_addr: ADD .code_buf .code_i
+  .code_byte: VGT .code_addr .zero
+  .code_emit: .elf_emit_byte .code_byte
+  .code_i: ADD .code_i .one
+  .code_jmp: JMP .code_loop
+  .code_end: LBL
+  
+  -- Data section (message)
+  .msg_hello: "Hello from TAYNI self-compiler!\n"
+  .msg_i: 0
+  .msg_loop: LBL
+  .msg_done: GE .msg_i 33
+  .msg_exit: BRN .msg_done .msg_end
+  .msg_addr: ADD .msg_hello .msg_i
+  .msg_byte: VGT .msg_addr .zero
+  .msg_emit: .elf_emit_byte .msg_byte
+  .msg_i: ADD .msg_i .one
+  .msg_jmp: JMP .msg_loop
+  .msg_end: LBL
+!FUN
+
+-- ============================================================
+-- ELF GENERATOR: WRITE ELF TO FILE
+-- ============================================================
+.write_elf: FUN .filename
+  .handle: FOP .filename 1
+  .written: FWR .handle .elf_buf .elf_pos
+  .close: FCL .handle
+!FUN
+
+-- Emit code
+.msg_emit: "\nEmitting code...\n"
+.p15: PRT .msg_emit 18
+.do_emit: .emit_code
+
+-- Print code size
+.msg_code: "Code size: "
+.p16: PRT .msg_code 11
+.p17: WRT .code_pos
+.msg_bytes2: " bytes\n"
+.p18: PRT .msg_bytes2 7
+
+-- Generate PE
+.msg_pe: "Generating PE...\n"
+.p19: PRT .msg_pe 17
+.do_pe: .generate_pe
+
+-- Print PE size
+.msg_pe_size: "PE size: "
+.p20: PRT .msg_pe_size 9
+.p21: WRT .pe_pos
+.msg_bytes3: " bytes\n"
+.p22: PRT .msg_bytes3 7
+
+-- Write PE to file
+.out_file: "output.exe"
+.do_write: .write_pe .out_file
+
+-- Generate ELF
+.msg_elf: "Generating ELF...\n"
+.p23: PRT .msg_elf 18
+.do_elf: .generate_elf
+
+-- Print ELF size
+.msg_elf_size: "ELF size: "
+.p24: PRT .msg_elf_size 10
+.p25: WRT .elf_pos
+.p26: PRT .msg_bytes3 7
+
+-- Write ELF to file
+.out_elf: "output"
+.do_write_elf: .write_elf .out_elf
+
+-- Final message
+.msg_complete: "Self-compiler v0.9 complete!\n"
+.p27: PRT .msg_complete 29
+.msg_written: "Written: output.exe (PE), output (ELF)\n"
+.p28: PRT .msg_written 39
+
+!

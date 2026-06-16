@@ -1,0 +1,39 @@
+-- TAYNI stdlib: yaml v0.1
+-- Provides: YAML.PARSE, YAML.ENCODE
+-- Usage: USE yaml
+
+-- YAML.PARSE: Parse YAML string to value tree
+.yaml_parse: FUN .str .len
+  .root: ALC 1024
+  -- Parse YAML structure
+!FUN
+
+-- YAML.ENCODE: Encode value tree to YAML string
+.yaml_encode: FUN .value
+  .out: ALC 4096
+!FUN
+
+-- YAML.GET: Get value by path (e.g., "server.port")
+.yaml_get: FUN .root .path .path_len
+  .value: 0
+!FUN
+
+-- YAML.SET: Set value by path
+.yaml_set: FUN .root .path .path_len .value
+  .done: 0
+!FUN
+
+-- YAML.GET_STRING: Get string value
+.yaml_get_string: FUN .value
+  .str: 0
+!FUN
+
+-- YAML.GET_INT: Get integer value
+.yaml_get_int: FUN .value
+  .num: 0
+!FUN
+
+-- YAML.GET_ARRAY: Get array value
+.yaml_get_array: FUN .value
+  .arr: 0
+!FUN

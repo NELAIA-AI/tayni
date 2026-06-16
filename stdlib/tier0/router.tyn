@@ -1,0 +1,53 @@
+-- TAYNI stdlib: router v0.1
+-- Provides: ROUTER.NEW, ROUTER.ADD, ROUTER.MATCH
+-- Usage: USE router
+
+-- Route entry structure
+.route_method_off: 0
+.route_path_off: 8
+.route_handler_off: 16
+.route_size: 24
+
+-- HTTP methods
+.method_get: 0
+.method_post: 1
+.method_put: 2
+.method_delete: 3
+.method_patch: 4
+
+-- ROUTER.NEW: Create new router
+-- Returns: router pointer
+.router_new: FUN
+  .max_routes: 64
+  .size: MUL .max_routes .route_size
+  .router: ALC .size
+  .count_off: 0
+  .init: PUT .router .count_off 0
+!FUN
+
+-- ROUTER.ADD: Add route to router
+-- router, method, path, handler
+.router_add: FUN .router .method .path .handler
+  -- Get current count
+  .count: GET .router 0
+  -- Calculate offset for new route
+  .offset: MUL .count .route_size
+  .offset2: ADD .offset 8
+  -- Store route
+  .m: PUT .router .offset2 .method
+  .p_off: ADD .offset2 8
+  .p: PUT .router .p_off .path
+  .h_off: ADD .p_off 8
+  .h: PUT .router .h_off .handler
+  -- Increment count
+  .new_count: ADD .count 1
+  .upd: PUT .router 0 .new_count
+!FUN
+
+-- ROUTER.MATCH: Find matching route
+-- Returns: handler pointer or 0 if not found
+.router_match: FUN .router .method .path .path_len
+  .count: GET .router 0
+  -- Would need loop to check each route
+  .result: 0
+!FUN

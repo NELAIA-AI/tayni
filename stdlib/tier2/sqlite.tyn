@@ -1,0 +1,105 @@
+-- TAYNI stdlib: sqlite v0.1
+-- Provides: SQLITE.OPEN, SQLITE.QUERY, SQLITE.EXECUTE
+-- Usage: USE sqlite
+
+-- SQLITE.OPEN: Open SQLite database file
+-- path: file path, or ":memory:" for in-memory
+.sqlite_open: FUN .path .path_len
+  .db: 0
+!FUN
+
+-- SQLITE.CLOSE: Close database
+.sqlite_close: FUN .db
+  .done: 0
+!FUN
+
+-- SQLITE.EXECUTE: Execute SQL (no results)
+.sqlite_execute: FUN .db .sql .sql_len
+  .affected: 0
+!FUN
+
+-- SQLITE.QUERY: Execute SELECT query
+.sqlite_query: FUN .db .sql .sql_len
+  .stmt: 0
+!FUN
+
+-- SQLITE.PREPARE: Prepare parameterized statement
+.sqlite_prepare: FUN .db .sql .sql_len
+  .stmt: 0
+!FUN
+
+-- SQLITE.BIND_INT: Bind integer parameter
+.sqlite_bind_int: FUN .stmt .index .value
+  .done: 0
+!FUN
+
+-- SQLITE.BIND_TEXT: Bind text parameter
+.sqlite_bind_text: FUN .stmt .index .value .value_len
+  .done: 0
+!FUN
+
+-- SQLITE.BIND_BLOB: Bind blob parameter
+.sqlite_bind_blob: FUN .stmt .index .data .data_len
+  .done: 0
+!FUN
+
+-- SQLITE.BIND_NULL: Bind NULL parameter
+.sqlite_bind_null: FUN .stmt .index
+  .done: 0
+!FUN
+
+-- SQLITE.STEP: Execute prepared statement / fetch next row
+-- Returns: 1 if row available, 0 if done
+.sqlite_step: FUN .stmt
+  .has_row: 0
+!FUN
+
+-- SQLITE.COLUMN_INT: Get integer column value
+.sqlite_column_int: FUN .stmt .col
+  .value: 0
+!FUN
+
+-- SQLITE.COLUMN_TEXT: Get text column value
+.sqlite_column_text: FUN .stmt .col
+  .value: 0
+!FUN
+
+-- SQLITE.COLUMN_BLOB: Get blob column value
+.sqlite_column_blob: FUN .stmt .col
+  .data: 0
+!FUN
+
+-- SQLITE.COLUMN_TYPE: Get column type (1=INT, 2=FLOAT, 3=TEXT, 4=BLOB, 5=NULL)
+.sqlite_column_type: FUN .stmt .col
+  .type: 0
+!FUN
+
+-- SQLITE.FINALIZE: Finalize prepared statement
+.sqlite_finalize: FUN .stmt
+  .done: 0
+!FUN
+
+-- SQLITE.LAST_INSERT_ID: Get last inserted row ID
+.sqlite_last_insert_id: FUN .db
+  .id: 0
+!FUN
+
+-- SQLITE.CHANGES: Get number of rows changed
+.sqlite_changes: FUN .db
+  .count: 0
+!FUN
+
+-- SQLITE.BEGIN: Begin transaction
+.sqlite_begin: FUN .db
+  .done: 0
+!FUN
+
+-- SQLITE.COMMIT: Commit transaction
+.sqlite_commit: FUN .db
+  .done: 0
+!FUN
+
+-- SQLITE.ROLLBACK: Rollback transaction
+.sqlite_rollback: FUN .db
+  .done: 0
+!FUN

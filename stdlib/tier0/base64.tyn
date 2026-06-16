@@ -1,0 +1,42 @@
+-- TAYNI stdlib: base64 v0.1
+-- Provides: BASE64.ENCODE, BASE64.DECODE
+-- Usage: USE base64
+
+-- Base64 alphabet
+.b64_alphabet: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+.b64_pad: 61  -- '=' character
+
+-- BASE64.ENCODE: Encode binary data to base64 string
+-- Input: data pointer, length
+-- Output: base64 string pointer, output length
+.base64_encode: FUN .data .len
+  -- Output size: ceil(len/3) * 4
+  .groups: DIV .len 3
+  .rem: MOD .len 3
+  .extra: IFZ .rem 0 1
+  .total_groups: ADD .groups .extra
+  .out_len: MUL .total_groups 4
+  .out: ALC .out_len
+  
+  -- Encoding would need loop over input
+  -- Each 3 bytes -> 4 base64 chars
+!FUN
+
+-- BASE64.DECODE: Decode base64 string to binary
+-- Input: base64 string pointer, length
+-- Output: binary data pointer, output length
+.base64_decode: FUN .b64 .len
+  -- Output size: (len/4) * 3 (minus padding)
+  .groups: DIV .len 4
+  .out_len: MUL .groups 3
+  .out: ALC .out_len
+  
+  -- Decoding would need loop over input
+  -- Each 4 base64 chars -> 3 bytes
+!FUN
+
+-- BASE64.ENCODE_URL: URL-safe base64 (+ -> -, / -> _)
+.base64_encode_url: FUN .data .len
+  -- Would call base64_encode and replace chars
+  .out: ALC 256
+!FUN

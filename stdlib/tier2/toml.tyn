@@ -1,0 +1,58 @@
+-- TAYNI stdlib: toml v0.1
+-- Provides: TOML.PARSE, TOML.ENCODE, TOML.GET
+-- Usage: USE toml
+
+-- TOML.PARSE: Parse TOML string to value tree
+.toml_parse: FUN .str .len
+  .root: ALC 4096
+!FUN
+
+-- TOML.ENCODE: Encode value tree to TOML string
+.toml_encode: FUN .value
+  .out: ALC 4096
+!FUN
+
+-- TOML.GET: Get value by dotted path (e.g., "server.port")
+.toml_get: FUN .root .path .path_len
+  .value: 0
+!FUN
+
+-- TOML.GET_STRING: Get string value
+.toml_get_string: FUN .value
+  .str: 0
+!FUN
+
+-- TOML.GET_INT: Get integer value
+.toml_get_int: FUN .value
+  .num: 0
+!FUN
+
+-- TOML.GET_BOOL: Get boolean value
+.toml_get_bool: FUN .value
+  .bool: 0
+!FUN
+
+-- TOML.GET_ARRAY: Get array value
+.toml_get_array: FUN .value
+  .arr: 0
+!FUN
+
+-- TOML.GET_TABLE: Get table (object) value
+.toml_get_table: FUN .value
+  .table: 0
+!FUN
+
+-- TOML.SET: Set value by path
+.toml_set: FUN .root .path .path_len .value
+  .done: 0
+!FUN
+
+-- TOML.FROM_FILE: Load TOML from file
+.toml_from_file: FUN .path .path_len
+  .root: 0
+!FUN
+
+-- TOML.TO_FILE: Save TOML to file
+.toml_to_file: FUN .root .path .path_len
+  .done: 0
+!FUN

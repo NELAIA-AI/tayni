@@ -1,0 +1,45 @@
+-- TAYNI stdlib: gzip v0.1
+-- Provides: GZIP.COMPRESS, GZIP.DECOMPRESS
+-- Usage: USE gzip
+
+-- GZIP.COMPRESS: Compress data with gzip
+.gzip_compress: FUN .data .data_len
+  .out: ALC 65536
+  -- Compressed size typically smaller
+!FUN
+
+-- GZIP.DECOMPRESS: Decompress gzip data
+.gzip_decompress: FUN .data .data_len
+  .out: ALC 262144
+  -- Decompressed size can be much larger
+!FUN
+
+-- DEFLATE.COMPRESS: Compress with raw deflate
+.deflate_compress: FUN .data .data_len .level
+  .out: ALC 65536
+!FUN
+
+-- DEFLATE.DECOMPRESS: Decompress raw deflate
+.deflate_decompress: FUN .data .data_len
+  .out: ALC 262144
+!FUN
+
+-- GZIP.STREAM_COMPRESS: Streaming compression
+.gzip_stream_compress: FUN
+  .stream: ALC 256
+!FUN
+
+-- GZIP.STREAM_WRITE: Write to compression stream
+.gzip_stream_write: FUN .stream .data .data_len
+  .done: 0
+!FUN
+
+-- GZIP.STREAM_FINISH: Finish compression stream
+.gzip_stream_finish: FUN .stream
+  .compressed: 0
+!FUN
+
+-- GZIP.STREAM_DECOMPRESS: Streaming decompression
+.gzip_stream_decompress: FUN
+  .stream: ALC 256
+!FUN

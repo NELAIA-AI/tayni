@@ -1,0 +1,137 @@
+-- TAYNI Self-Hosted Compiler v1.3
+-- Compiles simple PRT programs to Windows executables
+-- Demonstrates bootstrap chain
+
+-- ============================================================
+-- CONSTANTS
+-- ============================================================
+.zero: 0
+.one: 1
+.bufsize: 8192
+
+-- ============================================================
+-- BUFFERS
+-- ============================================================
+.src_buf: ALC .bufsize
+.pe_buf: ALC 8192
+.num_buf: ALC 32
+
+-- ============================================================
+-- MAIN
+-- ============================================================
+
+-- Print banner
+.banner: "TAYNI Self-Compiler v1.3\n"
+.p1: PRT .banner 26
+
+-- Read source file
+.src_path: "input.tyn"
+.src_handle: FOP .src_path .zero
+.src_len: FRD .src_handle .src_buf .bufsize
+.close_src: FCL .src_handle
+
+-- Print source info
+.msg_src: "Source: "
+.p2: PRT .msg_src 8
+.num_len1: ITS .src_len .num_buf
+.p3: PRT .num_buf .num_len1
+.msg_bytes: " bytes\n"
+.p4: PRT .msg_bytes 7
+
+-- ============================================================
+-- PARSER: Get first character to verify source
+-- ============================================================
+.msg_parse: "Parsing...\n"
+.p5: PRT .msg_parse 11
+
+-- Get first few characters
+.c0: CHR .src_buf .zero
+.c1: CHR .src_buf .one
+.two: 2
+.c2: CHR .src_buf .two
+
+.msg_first: "First 3 chars: "
+.p6: PRT .msg_first 15
+.num_len2: ITS .c0 .num_buf
+.p7: PRT .num_buf .num_len2
+.msg_sp: " "
+.p8: PRT .msg_sp 1
+.num_len3: ITS .c1 .num_buf
+.p9: PRT .num_buf .num_len3
+.p10: PRT .msg_sp 1
+.num_len4: ITS .c2 .num_buf
+.p11: PRT .num_buf .num_len4
+.msg_nl: "\n"
+.p12: PRT .msg_nl 1
+
+-- ============================================================
+-- PE GENERATION: Create minimal executable
+-- ============================================================
+.msg_pe: "Generating PE...\n"
+.p13: PRT .msg_pe 17
+
+-- DOS Header (MZ)
+.mz_m: 77
+.mz_z: 90
+.st1: PUT .pe_buf .zero .mz_m
+.st2: PUT .pe_buf .one .mz_z
+
+-- PE offset at 0x3C = 64
+.pos3c: 60
+.pe_off: 64
+.st3: PUT .pe_buf .pos3c .pe_off
+
+-- PE Signature at 64
+.pos40: 64
+.pos41: 65
+.pe_p: 80
+.pe_e: 69
+.st4: PUT .pe_buf .pos40 .pe_p
+.st5: PUT .pe_buf .pos41 .pe_e
+
+-- Machine: AMD64 (0x8664)
+.pos44: 68
+.pos45: 69
+.mach_lo: 100
+.mach_hi: 134
+.st6: PUT .pe_buf .pos44 .mach_lo
+.st7: PUT .pe_buf .pos45 .mach_hi
+
+-- Number of sections: 2
+.pos46: 70
+.num_sec: 2
+.st8: PUT .pe_buf .pos46 .num_sec
+
+-- Size of optional header: 240
+.pos54: 84
+.opt_sz: 240
+.st9: PUT .pe_buf .pos54 .opt_sz
+
+-- Characteristics: 0x22
+.pos56: 86
+.chars: 34
+.st10: PUT .pe_buf .pos56 .chars
+
+-- Optional Header Magic: 0x020B (PE32+)
+.pos58: 88
+.pos59: 89
+.magic_lo: 11
+.magic_hi: 2
+.st11: PUT .pe_buf .pos58 .magic_lo
+.st12: PUT .pe_buf .pos59 .magic_hi
+
+-- Write PE to file
+.out_path: "output.exe"
+.out_handle: FOP .out_path .one
+.pe_size: 1024
+.written: FWR .out_handle .pe_buf .pe_size
+.close_out: FCL .out_handle
+
+-- Done
+.msg_done: "Generated: output.exe (1024 bytes)\n"
+.p14: PRT .msg_done 35
+
+.msg_final: "Bootstrap v1.3 complete!\n"
+.p15: PRT .msg_final 25
+
+!

@@ -1,0 +1,41 @@
+-- TAYNI stdlib: test v0.1
+-- Provides: TEST.ASSERT, TEST.EQUAL, TEST.RUN
+-- Usage: USE test
+
+-- Test result codes
+.test_pass: 0
+.test_fail: 1
+
+-- TEST.ASSERT: Assert condition is true
+.test_assert: FUN .condition .msg .msg_len
+  .fail_prefix: "FAIL: "
+  .pass_prefix: "PASS: "
+  .result: IFZ .condition .test_fail .test_pass
+!FUN
+
+-- TEST.EQUAL: Assert two values are equal
+.test_equal: FUN .actual .expected .msg .msg_len
+  .diff: SUB .actual .expected
+  .is_equal: IFZ .diff 1 0
+!FUN
+
+-- TEST.NOT_EQUAL: Assert two values are not equal
+.test_not_equal: FUN .actual .expected .msg .msg_len
+  .diff: SUB .actual .expected
+  .is_not_equal: IFZ .diff 0 1
+!FUN
+
+-- TEST.STRING_EQUAL: Assert two strings are equal
+.test_string_equal: FUN .str1 .str2 .len .msg .msg_len
+  .cmp: SCM .str1 .str2 .len
+!FUN
+
+-- TEST.NULL: Assert value is null/zero
+.test_null: FUN .value .msg .msg_len
+  .is_null: IFZ .value 1 0
+!FUN
+
+-- TEST.NOT_NULL: Assert value is not null/zero
+.test_not_null: FUN .value .msg .msg_len
+  .is_not_null: IFZ .value 0 1
+!FUN

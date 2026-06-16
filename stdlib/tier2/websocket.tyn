@@ -1,0 +1,53 @@
+-- TAYNI stdlib: websocket v0.1
+-- Provides: WS.SERVER, WS.CLIENT, WS.SEND, WS.RECEIVE
+-- Usage: USE websocket
+
+-- WS.SERVER: Create WebSocket server
+.ws_server: FUN .port
+  .server: 0
+!FUN
+
+-- WS.ACCEPT: Accept WebSocket connection
+.ws_accept: FUN .server
+  .client: 0
+!FUN
+
+-- WS.CLIENT: Connect to WebSocket server
+.ws_client: FUN .url .url_len
+  .conn: 0
+!FUN
+
+-- WS.SEND: Send message
+.ws_send: FUN .conn .msg .msg_len
+  .sent: 0
+!FUN
+
+-- WS.SEND_BINARY: Send binary message
+.ws_send_binary: FUN .conn .data .data_len
+  .sent: 0
+!FUN
+
+-- WS.RECEIVE: Receive message (blocking)
+.ws_receive: FUN .conn .buf .buf_size
+  .len: 0
+!FUN
+
+-- WS.ON_MESSAGE: Set message callback
+.ws_on_message: FUN .conn .callback
+  .done: 0
+!FUN
+
+-- WS.ON_CLOSE: Set close callback
+.ws_on_close: FUN .conn .callback
+  .done: 0
+!FUN
+
+-- WS.CLOSE: Close connection
+.ws_close: FUN .conn
+  .done: 0
+!FUN
+
+-- WS.PING: Send ping frame
+.ws_ping: FUN .conn
+  .done: 0
+!FUN

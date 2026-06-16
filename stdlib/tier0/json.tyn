@@ -1,0 +1,90 @@
+-- TAYNI stdlib: json v0.1
+-- Provides: JSON.PARSE, JSON.ENCODE, JSON.GET, JSON.SET
+-- Usage: USE json
+
+-- JSON value types
+.json_null: 0
+.json_bool: 1
+.json_number: 2
+.json_string: 3
+.json_array: 4
+.json_object: 5
+
+-- JSON value structure
+.json_type_off: 0
+.json_value_off: 8
+.json_len_off: 16
+.json_struct_size: 24
+
+-- JSON.PARSE: Parse JSON string into value tree
+-- Returns: pointer to root JSON value
+.json_parse: FUN .str .len
+  .root: ALC .json_struct_size
+  
+  -- Skip whitespace
+  -- Check first char to determine type:
+  -- { -> object
+  -- [ -> array
+  -- " -> string
+  -- t/f -> bool
+  -- n -> null
+  -- 0-9/- -> number
+  
+  -- (Simplified - needs recursive descent parser)
+!FUN
+
+-- JSON.ENCODE: Encode JSON value to string
+-- Returns: string pointer and length
+.json_encode: FUN .value
+  .buf: ALC 65536
+  .len: 0
+  
+  -- Check type and encode accordingly
+  -- (Simplified - needs recursive encoder)
+!FUN
+
+-- JSON.GET: Get value from object by key
+-- Returns: pointer to value or 0 if not found
+.json_get: FUN .obj .key .key_len
+  -- Iterate object entries
+  -- Compare keys
+  .result: 0
+!FUN
+
+-- JSON.SET: Set value in object by key
+.json_set: FUN .obj .key .key_len .value
+  -- Find or create entry
+  -- Set value
+!FUN
+
+-- JSON.GET_STRING: Get string value
+.json_get_string: FUN .value
+  .type: GET .value .json_type_off
+  -- Check type == json_string
+  .str: GET .value .json_value_off
+!FUN
+
+-- JSON.GET_NUMBER: Get number value
+.json_get_number: FUN .value
+  .type: GET .value .json_type_off
+  -- Check type == json_number
+  .num: GET .value .json_value_off
+!FUN
+
+-- JSON.GET_BOOL: Get boolean value
+.json_get_bool: FUN .value
+  .type: GET .value .json_type_off
+  -- Check type == json_bool
+  .bool: GET .value .json_value_off
+!FUN
+
+-- JSON.ARRAY_LEN: Get array length
+.json_array_len: FUN .arr
+  .len: GET .arr .json_len_off
+!FUN
+
+-- JSON.ARRAY_GET: Get array element by index
+.json_array_get: FUN .arr .index
+  -- Calculate offset and return element
+  .result: 0
+!FUN

@@ -1,0 +1,18 @@
+-- TAYNI stdlib: args v0.1
+-- Provides: ARGS.COUNT, ARGS.GET
+-- Usage: USE args
+-- Note: Uses argc/argv from program entry
+
+-- Get argument count (placeholder - needs runtime support)
+.args_count: FUN
+  -- Returns number of command line arguments
+  -- Implementation depends on platform entry point
+  .result: 0
+!FUN
+
+-- Get argument by index (placeholder - needs runtime support)
+.args_get: FUN .index
+  -- Returns argument at index as string pointer
+  -- Implementation depends on platform entry point
+  .result: 0
+!FUN

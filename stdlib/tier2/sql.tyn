@@ -1,0 +1,40 @@
+-- TAYNI stdlib: sql v0.1
+-- Provides: SQL.QUERY, SQL.EXECUTE, SQL.PREPARE
+-- Usage: USE sql
+
+-- SQL.QUERY: Execute SELECT query
+-- Returns: result set pointer
+.sql_query: FUN .conn .query .query_len
+  .result: 0
+!FUN
+
+-- SQL.EXECUTE: Execute INSERT/UPDATE/DELETE
+-- Returns: affected rows count
+.sql_execute: FUN .conn .query .query_len
+  .affected: 0
+!FUN
+
+-- SQL.PREPARE: Prepare parameterized statement
+.sql_prepare: FUN .conn .query .query_len
+  .stmt: 0
+!FUN
+
+-- SQL.BIND: Bind parameter to prepared statement
+.sql_bind: FUN .stmt .index .value .value_len
+  .done: 0
+!FUN
+
+-- SQL.FETCH: Fetch next row from result set
+.sql_fetch: FUN .result
+  .row: 0
+!FUN
+
+-- SQL.GET: Get column value from row
+.sql_get: FUN .row .column
+  .value: 0
+!FUN
+
+-- SQL.CLOSE: Close result set or statement
+.sql_close: FUN .handle
+  .done: 0
+!FUN

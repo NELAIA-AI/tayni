@@ -189,7 +189,7 @@ impl EcosystemRegistry {
         // HTTP capability
         self.capabilities.insert("http".to_string(), CapabilityMetadata {
             name: "http".to_string(),
-            version: "1.0.0".to_string(),
+            version: "0.1.0".to_string(),
             description: "HTTP server and client operations".to_string(),
             guarantees: vec!["network_access".to_string()],
             cost: CapabilityCost { memory_bytes: 1024 * 1024, time_ms: 100, tokens: 0 },
@@ -201,7 +201,7 @@ impl EcosystemRegistry {
         // SQL capability
         self.capabilities.insert("sql".to_string(), CapabilityMetadata {
             name: "sql".to_string(),
-            version: "1.0.0".to_string(),
+            version: "0.1.0".to_string(),
             description: "SQL database operations via ODBC".to_string(),
             guarantees: vec!["database_access".to_string()],
             cost: CapabilityCost { memory_bytes: 2 * 1024 * 1024, time_ms: 50, tokens: 0 },
@@ -213,7 +213,7 @@ impl EcosystemRegistry {
         // JSON capability
         self.capabilities.insert("json".to_string(), CapabilityMetadata {
             name: "json".to_string(),
-            version: "1.0.0".to_string(),
+            version: "0.1.0".to_string(),
             description: "JSON parsing and encoding".to_string(),
             guarantees: vec!["deterministic".to_string(), "no_side_effects".to_string()],
             cost: CapabilityCost { memory_bytes: 512 * 1024, time_ms: 10, tokens: 0 },
@@ -225,7 +225,7 @@ impl EcosystemRegistry {
         // Threading capability
         self.capabilities.insert("threading".to_string(), CapabilityMetadata {
             name: "threading".to_string(),
-            version: "1.0.0".to_string(),
+            version: "0.1.0".to_string(),
             description: "Multi-threading and synchronization".to_string(),
             guarantees: vec!["concurrent_execution".to_string()],
             cost: CapabilityCost { memory_bytes: 64 * 1024, time_ms: 1, tokens: 0 },
@@ -237,7 +237,7 @@ impl EcosystemRegistry {
         // GUI capability
         self.capabilities.insert("gui".to_string(), CapabilityMetadata {
             name: "gui".to_string(),
-            version: "1.0.0".to_string(),
+            version: "0.1.0".to_string(),
             description: "Graphical user interface".to_string(),
             guarantees: vec!["user_interaction".to_string()],
             cost: CapabilityCost { memory_bytes: 10 * 1024 * 1024, time_ms: 16, tokens: 0 },
@@ -333,6 +333,9 @@ impl CompilationCache {
 /// A node in the data flow graph
 #[derive(Debug, Clone)]
 pub enum Node {
+    /// Module import: USE http
+    Use { module: String },
+    
     /// Literal value: .id: 42 or .id: "string"
     Literal { id: String, value: Value },
     
@@ -405,6 +408,10 @@ impl Node {
             Node::Label(s) => {
                 "Label".hash(&mut hasher);
                 s.hash(&mut hasher);
+            }
+            Node::Use { module } => {
+                "Use".hash(&mut hasher);
+                module.hash(&mut hasher);
             }
             Node::Function { id, params, body } => {
                 "Function".hash(&mut hasher);
@@ -725,6 +732,29 @@ impl Graph {
         }
     }
     
+    /// Get all USE directives (imported modules)
+    pub fn get_uses(&self) -> Vec<String> {
+        self.nodes.iter()
+            .filter_map(|node| {
+                if let Node::Use { module } = node {
+                    Some(module.clone())
+                } else {
+                    None
+                }
+            })
+            .collect()
+    }
+    
+    /// Rebuild node_map after modifying nodes vector
+    pub fn rebuild_node_map(&mut self) {
+        self.node_map.clear();
+        for (idx, node) in self.nodes.iter().enumerate() {
+            if let Some(id) = Self::get_node_id(node) {
+                self.node_map.insert(id, idx);
+            }
+        }
+    }
+    
     /// Analyze the graph for cycles, dead nodes, and undefined references
     pub fn analyze(&self) -> GraphAnalysis {
         let mut analysis = GraphAnalysis {
@@ -845,6 +875,54 @@ impl Graph {
         rec_stack.remove(node);
         path.pop();
         false
+    }
+    
+    /// Tree-shaking: Remove unused nodes from the graph
+    /// Returns the number of nodes removed
+    pub fn tree_shake(&mut self) -> usize {
+        let analysis = self.analyze();
+        let dead_nodes: HashSet<String> = analysis.dead_nodes.into_iter().collect();
+        
+        if dead_nodes.is_empty() {
+            return 0;
+        }
+        
+        let original_count = self.nodes.len();
+        
+        // Remove dead nodes
+        self.nodes.retain(|node| {
+            let id = match node {
+                Node::Literal { id, .. } => Some(id),
+                Node::Reference { id, .. } => Some(id),
+                Node::Operation { id, .. } => Some(id),
+                Node::SubGraph { id, .. } => Some(id),
+                Node::Function { id, .. } => Some(id),
+                _ => None,
+            };
+            
+            match id {
+                Some(node_id) => !dead_nodes.contains(node_id),
+                None => true, // Keep nodes without IDs (Flow, Label, Use)
+            }
+        });
+        
+        // Rebuild node map
+        self.rebuild_node_map();
+        
+        original_count - self.nodes.len()
+    }
+    
+    /// Aggressive tree-shaking: Multiple passes until no more nodes can be removed
+    pub fn tree_shake_aggressive(&mut self) -> usize {
+        let mut total_removed = 0;
+        loop {
+            let removed = self.tree_shake();
+            if removed == 0 {
+                break;
+            }
+            total_removed += removed;
+        }
+        total_removed
     }
 }
 

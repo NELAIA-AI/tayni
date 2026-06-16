@@ -1,0 +1,44 @@
+-- TAYNI stdlib: log v0.1
+-- Provides: LOG.INFO, LOG.WARN, LOG.ERROR, LOG.DEBUG
+-- Usage: USE log
+
+-- Log levels
+.log_level_debug: 0
+.log_level_info: 1
+.log_level_warn: 2
+.log_level_error: 3
+
+-- Prefixes
+.log_prefix_debug: "[DEBUG] "
+.log_prefix_info: "[INFO] "
+.log_prefix_warn: "[WARN] "
+.log_prefix_error: "[ERROR] "
+.log_newline: "\n"
+
+-- LOG.DEBUG: Print debug message
+.log_debug: FUN .msg .len
+  .d1: PRT .log_prefix_debug 8
+  .d2: PRT .msg .len
+  .d3: PRT .log_newline 1
+!FUN
+
+-- LOG.INFO: Print info message
+.log_info: FUN .msg .len
+  .i1: PRT .log_prefix_info 7
+  .i2: PRT .msg .len
+  .i3: PRT .log_newline 1
+!FUN
+
+-- LOG.WARN: Print warning message
+.log_warn: FUN .msg .len
+  .w1: PRT .log_prefix_warn 7
+  .w2: PRT .msg .len
+  .w3: PRT .log_newline 1
+!FUN
+
+-- LOG.ERROR: Print error message
+.log_error: FUN .msg .len
+  .e1: PRT .log_prefix_error 8
+  .e2: PRT .msg .len
+  .e3: PRT .log_newline 1
+!FUN

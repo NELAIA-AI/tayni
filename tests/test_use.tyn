@@ -1,0 +1,6 @@
+-- Test USE directive
+USE hello
+
+.msg: "Main program\n"
+.len: 13
+.out: PRT .msg .len

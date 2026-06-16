@@ -1,0 +1,48 @@
+-- TAYNI stdlib: grpc v0.1
+-- Provides: GRPC.SERVER, GRPC.CLIENT, GRPC.CALL
+-- Usage: USE grpc
+
+-- GRPC.SERVER: Create gRPC server
+.grpc_server: FUN .port
+  .server: 0
+!FUN
+
+-- GRPC.REGISTER: Register service handler
+.grpc_register: FUN .server .service .method .handler
+  .done: 0
+!FUN
+
+-- GRPC.START: Start server
+.grpc_start: FUN .server
+  .done: 0
+!FUN
+
+-- GRPC.CLIENT: Create gRPC client
+.grpc_client: FUN .host .host_len .port
+  .client: 0
+!FUN
+
+-- GRPC.CALL: Make unary RPC call
+.grpc_call: FUN .client .service .method .request .request_len
+  .response: 0
+!FUN
+
+-- GRPC.STREAM: Start streaming call
+.grpc_stream: FUN .client .service .method
+  .stream: 0
+!FUN
+
+-- GRPC.SEND: Send message on stream
+.grpc_send: FUN .stream .msg .msg_len
+  .done: 0
+!FUN
+
+-- GRPC.RECV: Receive message from stream
+.grpc_recv: FUN .stream .buf .buf_size
+  .len: 0
+!FUN
+
+-- GRPC.CLOSE: Close client or stream
+.grpc_close: FUN .handle
+  .done: 0
+!FUN

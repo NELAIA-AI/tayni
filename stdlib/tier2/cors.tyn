@@ -1,0 +1,53 @@
+-- TAYNI stdlib: cors v0.1
+-- Provides: CORS.ALLOW, CORS.HEADERS, CORS.PREFLIGHT
+-- Usage: USE cors
+
+-- CORS configuration structure
+.cors_config_size: 64
+
+-- CORS.NEW: Create CORS configuration
+.cors_new: FUN
+  .config: ALC .cors_config_size
+!FUN
+
+-- CORS.ALLOW_ORIGIN: Set allowed origins
+-- origin: "*" for all, or specific domain
+.cors_allow_origin: FUN .config .origin .origin_len
+  .done: 0
+!FUN
+
+-- CORS.ALLOW_METHODS: Set allowed methods
+-- methods: "GET,POST,PUT,DELETE"
+.cors_allow_methods: FUN .config .methods .methods_len
+  .done: 0
+!FUN
+
+-- CORS.ALLOW_HEADERS: Set allowed headers
+.cors_allow_headers: FUN .config .headers .headers_len
+  .done: 0
+!FUN
+
+-- CORS.ALLOW_CREDENTIALS: Allow credentials
+.cors_allow_credentials: FUN .config .allow
+  .done: 0
+!FUN
+
+-- CORS.MAX_AGE: Set preflight cache duration
+.cors_max_age: FUN .config .seconds
+  .done: 0
+!FUN
+
+-- CORS.HEADERS: Generate CORS response headers
+.cors_headers: FUN .config .origin .origin_len
+  .headers: ALC 512
+!FUN
+
+-- CORS.IS_PREFLIGHT: Check if request is preflight
+.cors_is_preflight: FUN .method .method_len
+  .is_preflight: 0
+!FUN
+
+-- CORS.HANDLE_PREFLIGHT: Handle preflight request
+.cors_handle_preflight: FUN .config
+  .response: ALC 256
+!FUN

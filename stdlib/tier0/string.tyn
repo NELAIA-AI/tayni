@@ -1,0 +1,48 @@
+-- TAYNI stdlib: string v0.1
+-- Provides: STRING.LEN, STRING.CONCAT, STRING.SPLIT, STRING.TRIM
+-- Usage: USE string
+
+-- STRING.LEN: Get string length (count until null byte)
+.string_len: FUN .str
+  .i: 0
+  .c: CHR .str .i
+  -- Loop until null byte (simplified - needs proper loop)
+  .len: .i
+!FUN
+
+-- STRING.CONCAT: Concatenate two strings
+-- Returns: new buffer with concatenated string
+.string_concat: FUN .str1 .len1 .str2 .len2
+  .total: ADD .len1 .len2
+  .buf: ALC .total
+  .c1: CPY .buf .str1 .len1
+  .dst2: ADD .buf .len1
+  .c2: CPY .dst2 .str2 .len2
+!FUN
+
+-- STRING.EQUALS: Compare two strings
+-- Returns: 1 if equal, 0 if not
+.string_equals: FUN .str1 .str2 .len
+  .result: SCM .str1 .str2 .len
+!FUN
+
+-- STRING.CONTAINS: Check if string contains substring
+-- Returns: position if found, -1 if not
+.string_contains: FUN .haystack .hlen .needle .nlen
+  -- Simplified: needs proper implementation
+  .result: -1
+!FUN
+
+-- STRING.UPPER: Convert to uppercase (ASCII only)
+.string_upper: FUN .str .len
+  .buf: ALC .len
+  .c: CPY .buf .str .len
+  -- Would need loop to convert each char
+!FUN
+
+-- STRING.LOWER: Convert to lowercase (ASCII only)
+.string_lower: FUN .str .len
+  .buf: ALC .len
+  .c: CPY .buf .str .len
+  -- Would need loop to convert each char
+!FUN
