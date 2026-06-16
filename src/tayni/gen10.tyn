@@ -1,0 +1,149 @@
+-- TAYNI Gen10 - Compilador Completo con Operaciones
+-- Genera codigo x86-64 para ADD, SUB, MUL
+-- AI-Native: emision directa de bytes
+-- Fecha: 2026-06-16
+
+.zero: 0
+.one: 1
+
+-- Buffers
+.self: ALC 8192
+.template: ALC 4096
+
+-- Leer compiler.exe
+.spath: "compiler.exe"
+.sh: FOP .spath .zero
+.slen: FRD .sh .self 8192
+.sc: FCL .sh
+
+-- Leer mini.exe como template
+.tpath: "mini.exe"
+.th: FOP .tpath .zero
+.tlen: FRD .th .template 4096
+.tc: FCL .th
+
+-- Leer input.tyn
+.ipath: "input.tyn"
+.ih: FOP .ipath .zero
+.ibuf: ALC 512
+.ilen: FRD .ih .ibuf 512
+.ic: FCL .ih
+
+-- ===== PARSER LINEA 1 =====
+.b1: GET .ibuf 1
+.is_x: SUB .b1 120
+
+.d1: GET .ibuf 4
+.d2: GET .ibuf 5
+.d3: GET .ibuf 6
+
+.v1: SUB .d1 48
+.d2_minus_48: SUB .d2 48
+.v1_x10: MUL .v1 10
+.v2_raw: ADD .v1_x10 .d2_minus_48
+.d3_minus_48: SUB .d3 48
+.v2_x10: MUL .v2_raw 10
+.v3_raw: ADD .v2_x10 .d3_minus_48
+
+.d2_is_nl: SUB .d2 10
+.d2_is_cr: SUB .d2 13
+.d2_is_sp: SUB .d2 32
+.d3_is_nl: SUB .d3 10
+.d3_is_cr: SUB .d3 13
+.d3_is_sp: SUB .d3 32
+
+.val_if_d2_nl: IFZ .d2_is_nl .v1 .v2_raw
+.val_if_d2_cr: IFZ .d2_is_cr .v1 .val_if_d2_nl
+.val_after_d2: IFZ .d2_is_sp .v1 .val_if_d2_cr
+.val_if_d3_nl: IFZ .d3_is_nl .val_after_d2 .v3_raw
+.val_if_d3_cr: IFZ .d3_is_cr .val_after_d2 .val_if_d3_nl
+.line1_val: IFZ .d3_is_sp .val_after_d2 .val_if_d3_cr
+
+-- ===== DETECTAR SI HAY LINEA 2 =====
+-- Buscar operacion en bytes 12-14 (para .x: NN\r\n.y: OP)
+.op1: GET .ibuf 12
+.op2: GET .ibuf 13
+.op3: GET .ibuf 14
+
+-- Detectar ADD (65,68,68)
+.is_A: SUB .op1 65
+.is_D1: SUB .op2 68
+.is_D2: SUB .op3 68
+.is_ADD_1: ADD .is_A .is_D1
+.is_ADD: ADD .is_ADD_1 .is_D2
+
+-- Detectar SUB (83,85,66)
+.is_S: SUB .op1 83
+.is_U: SUB .op2 85
+.is_B: SUB .op3 66
+.is_SUB_1: ADD .is_S .is_U
+.is_SUB: ADD .is_SUB_1 .is_B
+
+-- Detectar MUL (77,85,76)
+.is_M: SUB .op1 77
+.is_U2: SUB .op2 85
+.is_L: SUB .op3 76
+.is_MUL_1: ADD .is_M .is_U2
+.is_MUL: ADD .is_MUL_1 .is_L
+
+-- Leer segundo operando (posicion 19-20)
+.n1: GET .ibuf 19
+.n2: GET .ibuf 20
+.nv1: SUB .n1 48
+.n2_minus_48: SUB .n2 48
+.nv1_x10: MUL .nv1 10
+.nv2_raw: ADD .nv1_x10 .n2_minus_48
+
+.n2_is_nl: SUB .n2 10
+.n2_is_cr: SUB .n2 13
+.n2_is_sp: SUB .n2 32
+.op2_val_nl: IFZ .n2_is_nl .nv1 .nv2_raw
+.op2_val_cr: IFZ .n2_is_cr .nv1 .op2_val_nl
+.op2_val: IFZ .n2_is_sp .nv1 .op2_val_cr
+
+-- Ejecutar operacion
+.add_result: ADD .line1_val .op2_val
+.sub_result: SUB .line1_val .op2_val
+.mul_result: MUL .line1_val .op2_val
+
+-- Seleccionar resultado
+.result_if_add: IFZ .is_ADD .add_result .line1_val
+.result_if_sub: IFZ .is_SUB .sub_result .result_if_add
+.val: IFZ .is_MUL .mul_result .result_if_sub
+
+-- ===== GENERAR CODIGO x86-64 =====
+-- mov eax, VAL; ret
+.t0: PUT .template 512 184
+.t1: PUT .template 513 .val
+.t2: PUT .template 514 0
+.t3: PUT .template 515 0
+.t4: PUT .template 516 0
+.t5: PUT .template 517 195
+
+-- Escribir out.exe
+.opath: "out.exe"
+.oh: FOP .opath .one
+.owlen: FWR .oh .template .tlen
+.oc: FCL .oh
+
+-- Output
+.hdr: "Gen10: Compilador TAYNI Completo\n"
+.ph: PRT .hdr 33
+
+.msg_val: "Resultado: "
+.pm: PRT .msg_val 11
+.num: ALC 8
+.its: ITS .val .num
+.pn: PRT .num .its
+.nl: "\n"
+.pnl: PRT .nl 1
+
+.msg_out: "-> out.exe generado\n"
+.pmo: PRT .msg_out 20
+
+.f1: FRE .self
+.f2: FRE .template
+.f3: FRE .ibuf
+.f4: FRE .num
+
+!

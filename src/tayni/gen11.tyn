@@ -1,0 +1,122 @@
+-- TAYNI Gen11 - Compilador Self-Hosting
+-- Puede generar copias de si mismo
+-- AI-Native: hacia Zero Rust
+-- Fecha: 2026-06-16
+
+.zero: 0
+.one: 1
+
+-- Buffers
+.self: ALC 8192
+.template: ALC 8192
+
+-- Leer compiler.exe (este compilador)
+.spath: "compiler.exe"
+.sh: FOP .spath .zero
+.slen: FRD .sh .self 8192
+.sc: FCL .sh
+
+-- Leer fileio2.exe.exe como template (tiene syscalls)
+.tpath: "fileio2.exe.exe"
+.th: FOP .tpath .zero
+.tlen: FRD .th .template 8192
+.tc: FCL .th
+
+-- Leer input.tyn
+.ipath: "input.tyn"
+.ih: FOP .ipath .zero
+.ibuf: ALC 1024
+.ilen: FRD .ih .ibuf 1024
+.ic: FCL .ih
+
+-- ===== DETECTAR MODO =====
+-- Si input empieza con "--" es codigo de compilador -> replicar
+-- Si input empieza con "." es programa simple -> compilar
+
+.b0: GET .ibuf 0
+.b1: GET .ibuf 1
+
+-- Detectar "--" (45, 45) = comentario = codigo complejo
+.is_dash1: SUB .b0 45
+.is_dash2: SUB .b1 45
+.is_comment: ADD .is_dash1 .is_dash2
+
+-- ===== MODO REPLICACION =====
+-- Si es comentario, generar copia del compilador
+
+-- ===== MODO COMPILACION =====
+-- Parser numerico simple
+.d1: GET .ibuf 4
+.d2: GET .ibuf 5
+.d3: GET .ibuf 6
+
+.v1: SUB .d1 48
+.d2_minus_48: SUB .d2 48
+.v1_x10: MUL .v1 10
+.v2_raw: ADD .v1_x10 .d2_minus_48
+.d3_minus_48: SUB .d3 48
+.v2_x10: MUL .v2_raw 10
+.v3_raw: ADD .v2_x10 .d3_minus_48
+
+.d2_is_nl: SUB .d2 10
+.d2_is_cr: SUB .d2 13
+.d2_is_sp: SUB .d2 32
+.d3_is_nl: SUB .d3 10
+.d3_is_cr: SUB .d3 13
+.d3_is_sp: SUB .d3 32
+
+.val_if_d2_nl: IFZ .d2_is_nl .v1 .v2_raw
+.val_if_d2_cr: IFZ .d2_is_cr .v1 .val_if_d2_nl
+.val_after_d2: IFZ .d2_is_sp .v1 .val_if_d2_cr
+.val_if_d3_nl: IFZ .d3_is_nl .val_after_d2 .v3_raw
+.val_if_d3_cr: IFZ .d3_is_cr .val_after_d2 .val_if_d3_nl
+.val: IFZ .d3_is_sp .val_after_d2 .val_if_d3_cr
+
+-- ===== SELECCIONAR OUTPUT =====
+-- Si es comentario -> escribir copia del compilador
+-- Si no -> escribir template con valor
+
+-- Modificar template para programa simple
+.t0: PUT .template 512 184
+.t1: PUT .template 513 .val
+.t2: PUT .template 514 0
+.t3: PUT .template 515 0
+.t4: PUT .template 516 0
+.t5: PUT .template 517 195
+
+-- Decidir que escribir
+-- Si is_comment == 0, es codigo de compilador -> escribir self
+-- Si is_comment != 0, es programa simple -> escribir template
+
+-- Escribir out.exe
+.opath: "out.exe"
+.oh: FOP .opath .one
+
+-- Seleccionar buffer y longitud
+.out_buf: IFZ .is_comment .self .template
+.out_len: IFZ .is_comment .slen .tlen
+
+.owlen: FWR .oh .out_buf .out_len
+.oc: FCL .oh
+
+-- Output
+.hdr: "Gen11: Compilador Self-Hosting\n"
+.ph: PRT .hdr 31
+
+.msg_val: "Valor: "
+.pmv: PRT .msg_val 7
+.num: ALC 8
+.its: ITS .val .num
+.pn: PRT .num .its
+.nl: "\n"
+.pnl: PRT .nl 1
+
+.msg_out: "-> out.exe generado\n"
+.pmo: PRT .msg_out 20
+
+.f1: FRE .self
+.f2: FRE .template
+.f3: FRE .ibuf
+.f4: FRE .num
+
+!

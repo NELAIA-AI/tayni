@@ -1,0 +1,191 @@
+-- TAYNI Gen9.4b - Parser con Operaciones (debug)
+-- Fecha: 2026-06-16
+
+.zero: 0
+.one: 1
+
+-- Buffers
+.self: ALC 8192
+
+-- Leer compiler.exe
+.spath: "compiler.exe"
+.sh: FOP .spath .zero
+.slen: FRD .sh .self 8192
+.sc: FCL .sh
+
+-- Leer input.tyn
+.ipath: "input.tyn"
+.ih: FOP .ipath .zero
+.ibuf: ALC 512
+.ilen: FRD .ih .ibuf 512
+.ic: FCL .ih
+
+-- Debug: mostrar bytes del archivo
+.hdr: "Bytes del archivo:\n"
+.ph: PRT .hdr 19
+
+-- Leer y mostrar primeros 25 bytes
+.b0: GET .ibuf 0
+.b1: GET .ibuf 1
+.b2: GET .ibuf 2
+.b3: GET .ibuf 3
+.b4: GET .ibuf 4
+.b5: GET .ibuf 5
+.b6: GET .ibuf 6
+.b7: GET .ibuf 7
+.b8: GET .ibuf 8
+.b9: GET .ibuf 9
+.b10: GET .ibuf 10
+.b11: GET .ibuf 11
+.b12: GET .ibuf 12
+.b13: GET .ibuf 13
+.b14: GET .ibuf 14
+.b15: GET .ibuf 15
+.b16: GET .ibuf 16
+.b17: GET .ibuf 17
+.b18: GET .ibuf 18
+.b19: GET .ibuf 19
+.b20: GET .ibuf 20
+
+-- Mostrar cada byte
+.num: ALC 8
+.sp: " "
+.nl: "\n"
+
+.msg0: "0:"
+.p0: PRT .msg0 2
+.i0: ITS .b0 .num
+.pi0: PRT .num .i0
+.ps0: PRT .sp 1
+
+.msg1: "1:"
+.p1: PRT .msg1 2
+.i1: ITS .b1 .num
+.pi1: PRT .num .i1
+.ps1: PRT .sp 1
+
+.msg2: "2:"
+.p2: PRT .msg2 2
+.i2: ITS .b2 .num
+.pi2: PRT .num .i2
+.ps2: PRT .sp 1
+
+.msg3: "3:"
+.p3: PRT .msg3 2
+.i3: ITS .b3 .num
+.pi3: PRT .num .i3
+.ps3: PRT .sp 1
+
+.msg4: "4:"
+.p4: PRT .msg4 2
+.i4: ITS .b4 .num
+.pi4: PRT .num .i4
+.ps4: PRT .sp 1
+
+.msg5: "5:"
+.p5: PRT .msg5 2
+.i5: ITS .b5 .num
+.pi5: PRT .num .i5
+.ps5: PRT .sp 1
+
+.msg6: "6:"
+.p6: PRT .msg6 2
+.i6: ITS .b6 .num
+.pi6: PRT .num .i6
+.pnl1: PRT .nl 1
+
+.msg7: "7:"
+.p7: PRT .msg7 2
+.i7: ITS .b7 .num
+.pi7: PRT .num .i7
+.ps7: PRT .sp 1
+
+.msg8: "8:"
+.p8: PRT .msg8 2
+.i8: ITS .b8 .num
+.pi8: PRT .num .i8
+.ps8: PRT .sp 1
+
+.msg9: "9:"
+.p9: PRT .msg9 2
+.i9: ITS .b9 .num
+.pi9: PRT .num .i9
+.ps9: PRT .sp 1
+
+.msg10: "10:"
+.p10: PRT .msg10 3
+.i10: ITS .b10 .num
+.pi10: PRT .num .i10
+.ps10: PRT .sp 1
+
+.msg11: "11:"
+.p11: PRT .msg11 3
+.i11: ITS .b11 .num
+.pi11: PRT .num .i11
+.ps11: PRT .sp 1
+
+.msg12: "12:"
+.p12: PRT .msg12 3
+.i12: ITS .b12 .num
+.pi12: PRT .num .i12
+.pnl2: PRT .nl 1
+
+.msg13: "13:"
+.p13: PRT .msg13 3
+.i13: ITS .b13 .num
+.pi13: PRT .num .i13
+.ps13: PRT .sp 1
+
+.msg14: "14:"
+.p14: PRT .msg14 3
+.i14: ITS .b14 .num
+.pi14: PRT .num .i14
+.ps14: PRT .sp 1
+
+.msg15: "15:"
+.p15: PRT .msg15 3
+.i15: ITS .b15 .num
+.pi15: PRT .num .i15
+.ps15: PRT .sp 1
+
+.msg16: "16:"
+.p16: PRT .msg16 3
+.i16: ITS .b16 .num
+.pi16: PRT .num .i16
+.ps16: PRT .sp 1
+
+.msg17: "17:"
+.p17: PRT .msg17 3
+.i17: ITS .b17 .num
+.pi17: PRT .num .i17
+.ps17: PRT .sp 1
+
+.msg18: "18:"
+.p18: PRT .msg18 3
+.i18: ITS .b18 .num
+.pi18: PRT .num .i18
+.pnl3: PRT .nl 1
+
+.msg19: "19:"
+.p19: PRT .msg19 3
+.i19: ITS .b19 .num
+.pi19: PRT .num .i19
+.ps19: PRT .sp 1
+
+.msg20: "20:"
+.p20: PRT .msg20 3
+.i20: ITS .b20 .num
+.pi20: PRT .num .i20
+.pnl4: PRT .nl 1
+
+-- Escribir out.exe
+.opath: "out.exe"
+.oh: FOP .opath .one
+.owlen: FWR .oh .self .slen
+.oc: FCL .oh
+
+.f1: FRE .self
+.f2: FRE .ibuf
+.f3: FRE .num
+
+!

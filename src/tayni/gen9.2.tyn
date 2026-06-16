@@ -1,0 +1,140 @@
+-- TAYNI Gen9.2 - Parser Multi-Digito Funcional
+-- Parsea .x: NNN (hasta 3 digitos)
+-- AI-Native: codigo desenrollado, sin loops
+-- Fecha: 2026-06-16
+
+.zero: 0
+.one: 1
+.ten: 10
+.ascii_0: 48
+.ascii_9: 57
+
+-- Buffer para el compilador mismo
+.self: ALC 8192
+
+-- Leer compiler.exe
+.spath: "compiler.exe"
+.sh: FOP .spath .zero
+.slen: FRD .sh .self 8192
+.sc: FCL .sh
+
+-- Leer input.tyn
+.ipath: "input.tyn"
+.ih: FOP .ipath .zero
+.ibuf: ALC 64
+.ilen: FRD .ih .ibuf 64
+.ic: FCL .ih
+
+-- ===== PARSER MULTI-DIGITO =====
+-- Formato: .x: NNN
+-- Posiciones: 0='.' 1='x' 2=':' 3=' ' 4+=digitos
+
+-- Leer bytes
+.d1: GET .ibuf 4
+.d2: GET .ibuf 5
+.d3: GET .ibuf 6
+
+-- Convertir a valores
+.v1: SUB .d1 48
+
+-- Verificar si d2 es digito (48-57)
+-- Si d2 < 48, no es digito -> usar v1
+-- Si d2 >= 48 y <= 57, es digito
+
+-- d2 - 48: si es negativo, no es digito
+.d2_minus_48: SUB .d2 48
+
+-- d2 - 58: si es negativo o cero, podria ser digito
+.d2_minus_58: SUB .d2 58
+
+-- Calcular valor con 2 digitos
+.v1_x10: MUL .v1 10
+.v2_raw: ADD .v1_x10 .d2_minus_48
+
+-- Verificar si d3 es digito
+.d3_minus_48: SUB .d3 48
+.d3_minus_58: SUB .d3 58
+
+-- Calcular valor con 3 digitos
+.v2_x10: MUL .v2_raw 10
+.v3_raw: ADD .v2_x10 .d3_minus_48
+
+-- Seleccionar valor correcto usando IFZ
+-- IFZ cond then else: si cond==0 retorna then, sino else
+
+-- Estrategia: usar el hecho de que caracteres no-digito
+-- tienen d2_minus_48 < 0 (para chars < '0') o > 9 (para chars > '9')
+
+-- Para newline (10): 10-48 = -38
+-- Para space (32): 32-48 = -16
+-- Para '0'-'9': 0-9
+
+-- Necesitamos: si d2 NO es digito, usar v1
+--              si d2 ES digito y d3 NO es digito, usar v2_raw
+--              si d2 y d3 son digitos, usar v3_raw
+
+-- Usamos IFZ con comparaciones
+-- IFZ solo chequea == 0, no < 0
+
+-- Alternativa: usar el valor directamente
+-- Si d2 < 48 (no digito), d2_minus_48 es negativo
+-- Podemos usar esto para seleccionar
+
+-- Por ahora, implementamos deteccion simple:
+-- Si d2 es newline (10) o CR (13) o space (32), usar v1
+-- Si d3 es newline o CR o space, usar v2_raw
+-- Sino usar v3_raw
+
+-- Detectar d2 == newline
+.d2_is_nl: SUB .d2 10
+.d2_is_cr: SUB .d2 13
+.d2_is_sp: SUB .d2 32
+
+-- Detectar d3 == newline
+.d3_is_nl: SUB .d3 10
+.d3_is_cr: SUB .d3 13
+.d3_is_sp: SUB .d3 32
+
+-- Usar IFZ para seleccionar
+-- Si d2 es newline -> usar v1
+.val_if_d2_nl: IFZ .d2_is_nl .v1 .v2_raw
+
+-- Si d2 es CR -> usar v1
+.val_if_d2_cr: IFZ .d2_is_cr .v1 .val_if_d2_nl
+
+-- Si d2 es space -> usar v1
+.val_after_d2: IFZ .d2_is_sp .v1 .val_if_d2_cr
+
+-- Ahora verificar d3 (solo si d2 era digito)
+-- Si d3 es newline -> usar val_after_d2 (que es v2_raw si d2 era digito)
+.val_if_d3_nl: IFZ .d3_is_nl .val_after_d2 .v3_raw
+
+-- Si d3 es CR -> usar val_after_d2
+.val_if_d3_cr: IFZ .d3_is_cr .val_after_d2 .val_if_d3_nl
+
+-- Si d3 es space -> usar val_after_d2
+.val: IFZ .d3_is_sp .val_after_d2 .val_if_d3_cr
+
+-- Escribir out.exe
+.opath: "out.exe"
+.oh: FOP .opath .one
+.owlen: FWR .oh .self .slen
+.oc: FCL .oh
+
+-- Output
+.hdr: "Gen9.2: Parser Multi-Digito\n"
+.ph: PRT .hdr 28
+
+.msg: "Valor: "
+.pm: PRT .msg 7
+.num: ALC 8
+.its: ITS .val .num
+.pn: PRT .num .its
+.nl: "\n"
+.pnl: PRT .nl 1
+
+.f1: FRE .self
+.f2: FRE .ibuf
+.f3: FRE .num
+
+!

@@ -1,0 +1,140 @@
+-- TAYNI Gen9.5 - Parser con File I/O
+-- Parsea FOP, FRD, FWR, FCL
+-- AI-Native: codigo desenrollado
+-- Fecha: 2026-06-16
+
+.zero: 0
+.one: 1
+
+-- Buffers
+.self: ALC 8192
+.filebuf: ALC 4096
+
+-- Leer compiler.exe
+.spath: "compiler.exe"
+.sh: FOP .spath .zero
+.slen: FRD .sh .self 8192
+.sc: FCL .sh
+
+-- Leer input.tyn
+.ipath: "input.tyn"
+.ih: FOP .ipath .zero
+.ibuf: ALC 512
+.ilen: FRD .ih .ibuf 512
+.ic: FCL .ih
+
+-- ===== PARSER MULTI-LINEA =====
+-- Buscar operaciones FOP, FRD, FWR, FCL
+
+-- Leer bytes para detectar operaciones
+-- Formato tipico:
+-- .path: "test.txt"
+-- .h: FOP .path 0
+-- .len: FRD .h .buf 100
+-- .c: FCL .h
+
+-- Por ahora, detectamos si hay FOP en el archivo
+-- Buscamos 'F' (70) 'O' (79) 'P' (80)
+
+.b0: GET .ibuf 0
+.b4: GET .ibuf 4
+.b5: GET .ibuf 5
+.b6: GET .ibuf 6
+
+-- Buscar FOP en diferentes posiciones
+-- Linea 2 tipicamente empieza en byte 8+ despues de .x: NN\r\n
+
+-- Buscar en bytes 23-25 (linea 2: .h: FOP)
+-- Linea 1 tiene ~19 bytes, linea 2: 19='.' 20='h' 21=':' 22=' ' 23='F' 24='O' 25='P'
+.f12: GET .ibuf 23
+.f13: GET .ibuf 24
+.f14: GET .ibuf 25
+
+-- Detectar FOP (70, 79, 80)
+.is_F: SUB .f12 70
+.is_O: SUB .f13 79
+.is_P: SUB .f14 80
+.is_FOP_1: ADD .is_F .is_O
+.is_FOP: ADD .is_FOP_1 .is_P
+
+-- Detectar FRD (70, 82, 68)
+.is_R: SUB .f13 82
+.is_D: SUB .f14 68
+.is_FRD_1: ADD .is_F .is_R
+.is_FRD: ADD .is_FRD_1 .is_D
+
+-- Detectar FWR (70, 87, 82)
+.is_W: SUB .f13 87
+.is_R2: SUB .f14 82
+.is_FWR_1: ADD .is_F .is_W
+.is_FWR: ADD .is_FWR_1 .is_R2
+
+-- Detectar FCL (70, 67, 76)
+.is_C: SUB .f13 67
+.is_L: SUB .f14 76
+.is_FCL_1: ADD .is_F .is_C
+.is_FCL: ADD .is_FCL_1 .is_L
+
+-- ===== EJECUTAR OPERACION DETECTADA =====
+
+-- Si es FOP, abrir archivo
+-- Necesitamos el path del archivo (en linea 1)
+-- Formato: .path: "test.txt"
+
+-- Leer path (bytes 8-20 para string)
+.p0: GET .ibuf 8
+.p1: GET .ibuf 9
+.p2: GET .ibuf 10
+.p3: GET .ibuf 11
+.p4: GET .ibuf 12
+.p5: GET .ibuf 13
+.p6: GET .ibuf 14
+.p7: GET .ibuf 15
+
+-- Copiar a buffer de path
+.pathbuf: ALC 64
+.pp0: PUT .pathbuf 0 .p0
+.pp1: PUT .pathbuf 1 .p1
+.pp2: PUT .pathbuf 2 .p2
+.pp3: PUT .pathbuf 3 .p3
+.pp4: PUT .pathbuf 4 .p4
+.pp5: PUT .pathbuf 5 .p5
+.pp6: PUT .pathbuf 6 .p6
+.pp7: PUT .pathbuf 7 .p7
+.pp8: PUT .pathbuf 8 0
+
+-- Resultado: indicar que operacion se detecto
+.result_fop: IFZ .is_FOP 1 0
+.result_frd: IFZ .is_FRD 2 .result_fop
+.result_fwr: IFZ .is_FWR 3 .result_frd
+.result: IFZ .is_FCL 4 .result_fwr
+
+-- Escribir out.exe
+.opath: "out.exe"
+.oh: FOP .opath .one
+.owlen: FWR .oh .self .slen
+.oc: FCL .oh
+
+-- Output
+.hdr: "Gen9.5: Parser File I/O\n"
+.ph: PRT .hdr 24
+
+.msg_det: "Operacion detectada: "
+.pmd: PRT .msg_det 21
+.num: ALC 8
+.its: ITS .result .num
+.pn: PRT .num .its
+.nl: "\n"
+.pnl: PRT .nl 1
+
+-- Mostrar que operacion
+.msg_fop: "1=FOP 2=FRD 3=FWR 4=FCL\n"
+.pmf: PRT .msg_fop 24
+
+.f1: FRE .self
+.f2: FRE .ibuf
+.f3: FRE .filebuf
+.f4: FRE .pathbuf
+.f5: FRE .num
+
+!

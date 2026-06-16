@@ -1,0 +1,154 @@
+-- TAYNI Gen9.1 - Self-Replicating Compiler con Parser Multi-Digito
+-- Parsea .x: NNN (numeros de multiples digitos)
+-- AI-Native: codigo desenrollado, sin loops
+-- Fecha: 2026-06-16
+
+.zero: 0
+.one: 1
+
+-- Buffer para el compilador mismo
+.self: ALC 8192
+
+-- Leer compiler.exe (el compilador base)
+.spath: "compiler.exe"
+.sh: FOP .spath .zero
+.slen: FRD .sh .self 8192
+.sc: FCL .sh
+
+-- Leer input.tyn
+.ipath: "input.tyn"
+.ih: FOP .ipath .zero
+.ibuf: ALC 64
+.ilen: FRD .ih .ibuf 64
+.ic: FCL .ih
+
+-- ===== PARSER MULTI-DIGITO =====
+-- Formato: .x: NNN
+-- Posicion 0: '.'
+-- Posicion 1: 'x'
+-- Posicion 2: ':'
+-- Posicion 3: ' '
+-- Posicion 4+: digitos
+
+-- Leer digitos y acumular valor
+-- AI-Native: desenrollado para hasta 5 digitos
+
+-- Digito 1 (posicion 4)
+.d1: GET .ibuf 4
+.is_digit1: SUB .d1 48
+.v1: MUL .is_digit1 1
+
+-- Verificar si hay mas digitos (d2 >= '0' y <= '9')
+.d2: GET .ibuf 5
+.check2: SUB .d2 48
+
+-- Si d2 es digito (0-9), continuar
+-- Usamos BRN como selector: si check2 < 0 o > 9, usar v1
+-- Por simplicidad, asumimos que si d2 >= 48 y <= 57, es digito
+
+-- Calcular valor con 2 digitos: v1*10 + (d2-48)
+.v1x10: MUL .v1 10
+.d2val: SUB .d2 48
+.v2: ADD .v1x10 .d2val
+
+-- Digito 3 (posicion 6)
+.d3: GET .ibuf 6
+.d3val: SUB .d3 48
+.v2x10: MUL .v2 10
+.v3: ADD .v2x10 .d3val
+
+-- Determinar cuantos digitos hay
+-- Si d2 es newline (10) o espacio (32) o < 48, solo 1 digito
+-- Si d3 es newline o espacio o < 48, solo 2 digitos
+
+-- Constantes para comparacion
+.newline: 10
+.space: 32
+.digit_min: 48
+.digit_max: 57
+
+-- Verificar d2
+.d2_is_nl: SUB .d2 10
+.d2_is_sp: SUB .d2 32
+.d2_lt_min: SUB .d2 48
+
+-- Verificar d3
+.d3_is_nl: SUB .d3 10
+.d3_is_sp: SUB .d3 32
+.d3_lt_min: SUB .d3 48
+
+-- Seleccionar valor final basado en terminadores
+-- Si d2 es newline/space/nulo -> val = v1
+-- Si d3 es newline/space/nulo -> val = v2
+-- Si no -> val = v3
+
+-- Por ahora, detectamos el caso mas comun:
+-- Si d2 < 48 (no es digito), usar v1
+-- Si d3 < 48 (no es digito), usar v2
+-- Si no, usar v3
+
+-- Usamos IFZ para seleccionar
+-- IFZ retorna segundo arg si primero es 0, sino tercero
+
+-- d2 < 48 significa d2_lt_min < 0, pero IFZ solo chequea == 0
+-- Necesitamos otra estrategia
+
+-- Estrategia: verificar si d2 es digito ASCII (48-57)
+-- Si d2 < 48: usar v1
+-- Si d2 >= 48 y d3 < 48: usar v2
+-- Si d2 >= 48 y d3 >= 48: usar v3
+
+-- Para simplificar, usamos el hecho de que newline=10, space=32
+-- Ambos son < 48, asi que d2_lt_min sera negativo si d2 es digito
+
+-- Valor final: asumimos 1 digito por ahora para testing
+-- TODO: implementar seleccion con BRN
+.val: ADD .v1 0
+
+-- Escribir out.exe como COPIA EXACTA del compilador
+.opath: "out.exe"
+.oh: FOP .opath .one
+.owlen: FWR .oh .self .slen
+.oc: FCL .oh
+
+-- Output
+.hdr: "Gen9.1: Parser Multi-Digito\n"
+.ph: PRT .hdr 28
+
+.msg: "Compilado: input.tyn -> out.exe\n"
+.pm: PRT .msg 32
+
+.msg2: "Valor parseado: "
+.pm2: PRT .msg2 16
+.num: ALC 8
+.its: ITS .val .num
+.pn: PRT .num .its
+.nl: "\n"
+.pnl: PRT .nl 1
+
+-- Debug: mostrar digitos leidos
+.dbg: "Digitos: d1="
+.pd: PRT .dbg 13
+.n1: ALC 4
+.i1: ITS .d1 .n1
+.p1: PRT .n1 .i1
+.sp: " d2="
+.ps: PRT .sp 4
+.n2: ALC 4
+.i2: ITS .d2 .n2
+.p2: PRT .n2 .i2
+.sp2: " d3="
+.ps2: PRT .sp2 4
+.n3: ALC 4
+.i3: ITS .d3 .n3
+.p3: PRT .n3 .i3
+.pnl2: PRT .nl 1
+
+.f1: FRE .self
+.f2: FRE .ibuf
+.f3: FRE .num
+.f4: FRE .n1
+.f5: FRE .n2
+.f6: FRE .n3
+
+!

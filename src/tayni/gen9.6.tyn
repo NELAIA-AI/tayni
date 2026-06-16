@@ -1,0 +1,128 @@
+-- TAYNI Gen9.6 - Generador de Codigo x86-64
+-- Parsea TAYNI y genera codigo maquina real
+-- AI-Native: emision directa de bytes
+-- Fecha: 2026-06-16
+
+.zero: 0
+.one: 1
+
+-- Buffers
+.self: ALC 8192
+.code: ALC 512
+.template: ALC 4096
+
+-- Leer compiler.exe (para self-replication)
+.spath: "compiler.exe"
+.sh: FOP .spath .zero
+.slen: FRD .sh .self 8192
+.sc: FCL .sh
+
+-- Leer mini.exe como template para out.exe
+.tpath: "mini.exe"
+.th: FOP .tpath .zero
+.tlen: FRD .th .template 4096
+.tc: FCL .th
+
+-- Leer input.tyn
+.ipath: "input.tyn"
+.ih: FOP .ipath .zero
+.ibuf: ALC 512
+.ilen: FRD .ih .ibuf 512
+.ic: FCL .ih
+
+-- ===== PARSER =====
+-- Detectar tipo de programa
+-- Formato simple: .x: NNN (retorna valor)
+
+.b1: GET .ibuf 1
+
+-- Si b1 == 'x' (120), es numero simple
+.is_x: SUB .b1 120
+
+-- Parser numerico
+.d1: GET .ibuf 4
+.d2: GET .ibuf 5
+.d3: GET .ibuf 6
+
+.v1: SUB .d1 48
+.d2_minus_48: SUB .d2 48
+.v1_x10: MUL .v1 10
+.v2_raw: ADD .v1_x10 .d2_minus_48
+.d3_minus_48: SUB .d3 48
+.v2_x10: MUL .v2_raw 10
+.v3_raw: ADD .v2_x10 .d3_minus_48
+
+.d2_is_nl: SUB .d2 10
+.d2_is_cr: SUB .d2 13
+.d2_is_sp: SUB .d2 32
+.d3_is_nl: SUB .d3 10
+.d3_is_cr: SUB .d3 13
+.d3_is_sp: SUB .d3 32
+
+.val_if_d2_nl: IFZ .d2_is_nl .v1 .v2_raw
+.val_if_d2_cr: IFZ .d2_is_cr .v1 .val_if_d2_nl
+.val_after_d2: IFZ .d2_is_sp .v1 .val_if_d2_cr
+.val_if_d3_nl: IFZ .d3_is_nl .val_after_d2 .v3_raw
+.val_if_d3_cr: IFZ .d3_is_cr .val_after_d2 .val_if_d3_nl
+.val: IFZ .d3_is_sp .val_after_d2 .val_if_d3_cr
+
+-- ===== GENERAR CODIGO x86-64 =====
+-- Codigo: mov eax, VAL; ret
+-- Bytes: B8 xx 00 00 00 C3
+
+-- Generar en buffer de codigo
+.c0: PUT .code 0 184
+.c1: PUT .code 1 .val
+.c2: PUT .code 2 0
+.c3: PUT .code 3 0
+.c4: PUT .code 4 0
+.c5: PUT .code 5 195
+
+-- ===== INYECTAR EN TEMPLATE =====
+-- mini.exe tiene codigo en offset 512
+.CODE_OFF: 512
+
+.t0: PUT .template 512 184
+.t1: PUT .template 513 .val
+.t2: PUT .template 514 0
+.t3: PUT .template 515 0
+.t4: PUT .template 516 0
+.t5: PUT .template 517 195
+
+-- Escribir out.exe (PE generado)
+.opath: "out.exe"
+.oh: FOP .opath .one
+.owlen: FWR .oh .template .tlen
+.oc: FCL .oh
+
+-- Output
+.hdr: "Gen9.6: Generador x86-64\n"
+.ph: PRT .hdr 25
+
+.msg_val: "Valor: "
+.pm: PRT .msg_val 7
+.num: ALC 8
+.its: ITS .val .num
+.pn: PRT .num .its
+.nl: "\n"
+.pnl: PRT .nl 1
+
+.msg_code: "Codigo: B8 "
+.pmc: PRT .msg_code 11
+.num2: ALC 8
+.its2: ITS .val .num2
+.pn2: PRT .num2 .its2
+.msg_rest: " 00 00 00 C3\n"
+.pmr: PRT .msg_rest 13
+
+.msg_out: "Generado: out.exe\n"
+.pmo: PRT .msg_out 18
+
+.f1: FRE .self
+.f2: FRE .code
+.f3: FRE .template
+.f4: FRE .ibuf
+.f5: FRE .num
+.f6: FRE .num2
+
+!

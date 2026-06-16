@@ -1,0 +1,152 @@
+-- TAYNI Gen9.3 - Parser con Strings
+-- Parsea .x: NNN y .msg: "texto"
+-- AI-Native: codigo desenrollado
+-- Fecha: 2026-06-16
+
+.zero: 0
+.one: 1
+.ten: 10
+.quote: 34
+
+-- Buffers
+.self: ALC 8192
+.strbuf: ALC 256
+
+-- Leer compiler.exe
+.spath: "compiler.exe"
+.sh: FOP .spath .zero
+.slen: FRD .sh .self 8192
+.sc: FCL .sh
+
+-- Leer input.tyn
+.ipath: "input.tyn"
+.ih: FOP .ipath .zero
+.ibuf: ALC 256
+.ilen: FRD .ih .ibuf 256
+.ic: FCL .ih
+
+-- ===== DETECTAR TIPO DE LINEA =====
+-- Formato numerico: .x: NNN
+-- Formato string: .msg: "texto"
+
+-- Leer byte 1 para determinar tipo
+.b1: GET .ibuf 1
+
+-- Si b1 == 'x' (120), es numero
+-- Si b1 == 'm' (109), es string (asumiendo .msg:)
+.is_x: SUB .b1 120
+.is_m: SUB .b1 109
+
+-- ===== PARSER NUMERICO (si b1 == 'x') =====
+.d1: GET .ibuf 4
+.d2: GET .ibuf 5
+.d3: GET .ibuf 6
+
+.v1: SUB .d1 48
+.d2_minus_48: SUB .d2 48
+.v1_x10: MUL .v1 10
+.v2_raw: ADD .v1_x10 .d2_minus_48
+.d3_minus_48: SUB .d3 48
+.v2_x10: MUL .v2_raw 10
+.v3_raw: ADD .v2_x10 .d3_minus_48
+
+.d2_is_nl: SUB .d2 10
+.d2_is_cr: SUB .d2 13
+.d2_is_sp: SUB .d2 32
+.d3_is_nl: SUB .d3 10
+.d3_is_cr: SUB .d3 13
+.d3_is_sp: SUB .d3 32
+
+.val_if_d2_nl: IFZ .d2_is_nl .v1 .v2_raw
+.val_if_d2_cr: IFZ .d2_is_cr .v1 .val_if_d2_nl
+.val_after_d2: IFZ .d2_is_sp .v1 .val_if_d2_cr
+.val_if_d3_nl: IFZ .d3_is_nl .val_after_d2 .v3_raw
+.val_if_d3_cr: IFZ .d3_is_cr .val_after_d2 .val_if_d3_nl
+.num_val: IFZ .d3_is_sp .val_after_d2 .val_if_d3_cr
+
+-- ===== PARSER STRING (si b1 == 'm') =====
+-- Formato: .msg: "texto"
+-- Posiciones: 0='.' 1='m' 2='s' 3='g' 4=':' 5=' ' 6='"' 7+=chars
+
+-- Leer caracteres del string (hasta 16 chars)
+.s0: GET .ibuf 7
+.s1: GET .ibuf 8
+.s2: GET .ibuf 9
+.s3: GET .ibuf 10
+.s4: GET .ibuf 11
+.s5: GET .ibuf 12
+.s6: GET .ibuf 13
+.s7: GET .ibuf 14
+
+-- Copiar a strbuf
+.p0: PUT .strbuf 0 .s0
+.p1: PUT .strbuf 1 .s1
+.p2: PUT .strbuf 2 .s2
+.p3: PUT .strbuf 3 .s3
+.p4: PUT .strbuf 4 .s4
+.p5: PUT .strbuf 5 .s5
+.p6: PUT .strbuf 6 .s6
+.p7: PUT .strbuf 7 .s7
+
+-- Calcular longitud (buscar quote de cierre)
+.s0_is_q: SUB .s0 34
+.s1_is_q: SUB .s1 34
+.s2_is_q: SUB .s2 34
+.s3_is_q: SUB .s3 34
+.s4_is_q: SUB .s4 34
+.s5_is_q: SUB .s5 34
+.s6_is_q: SUB .s6 34
+.s7_is_q: SUB .s7 34
+
+-- Longitud: posicion del primer quote
+.len_if_0: IFZ .s0_is_q 0 8
+.len_if_1: IFZ .s1_is_q 1 .len_if_0
+.len_if_2: IFZ .s2_is_q 2 .len_if_1
+.len_if_3: IFZ .s3_is_q 3 .len_if_2
+.len_if_4: IFZ .s4_is_q 4 .len_if_3
+.len_if_5: IFZ .s5_is_q 5 .len_if_4
+.len_if_6: IFZ .s6_is_q 6 .len_if_5
+.str_len: IFZ .s7_is_q 7 .len_if_6
+
+-- ===== SELECCIONAR RESULTADO =====
+-- Si es numero, usar num_val
+-- Si es string, usar str_len como valor (para testing)
+.val: IFZ .is_x .num_val .str_len
+
+-- Escribir out.exe
+.opath: "out.exe"
+.oh: FOP .opath .one
+.owlen: FWR .oh .self .slen
+.oc: FCL .oh
+
+-- Output
+.hdr: "Gen9.3: Parser con Strings\n"
+.ph: PRT .hdr 27
+
+-- Si es numero
+.msg_num: "Numero: "
+.pm_num: IFZ .is_x .zero .one
+.pn1: PRT .msg_num .pm_num
+
+-- Mostrar valor
+.msg_val: "Valor: "
+.pm: PRT .msg_val 7
+.num: ALC 8
+.its: ITS .val .num
+.pn: PRT .num .its
+.nl: "\n"
+.pnl: PRT .nl 1
+
+-- Si es string, mostrar el string
+.msg_str: "String: "
+.pm_str: IFZ .is_m .zero .one
+.ps1: PRT .msg_str .pm_str
+.ps2: PRT .strbuf .str_len
+.pnl2: PRT .nl 1
+
+.f1: FRE .self
+.f2: FRE .ibuf
+.f3: FRE .strbuf
+.f4: FRE .num
+
+!

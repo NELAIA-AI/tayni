@@ -1,0 +1,114 @@
+-- TAYNI Gen9.7 - Compilador Self-Replicating con Generacion x86-64
+-- Detecta modo: si input es .x: N genera exe, sino se replica
+-- AI-Native: compilador completo
+-- Fecha: 2026-06-16
+
+.zero: 0
+.one: 1
+
+-- Buffers
+.self: ALC 8192
+.template: ALC 4096
+
+-- Leer compiler.exe (para self-replication)
+.spath: "compiler.exe"
+.sh: FOP .spath .zero
+.slen: FRD .sh .self 8192
+.sc: FCL .sh
+
+-- Leer mini.exe como template para programas simples
+.tpath: "mini.exe"
+.th: FOP .tpath .zero
+.tlen: FRD .th .template 4096
+.tc: FCL .th
+
+-- Leer input.tyn
+.ipath: "input.tyn"
+.ih: FOP .ipath .zero
+.ibuf: ALC 512
+.ilen: FRD .ih .ibuf 512
+.ic: FCL .ih
+
+-- ===== DETECTAR MODO =====
+-- Si input tiene solo .x: N -> generar exe con ese valor
+-- Si input tiene mas codigo -> replicar compilador
+
+.b1: GET .ibuf 1
+.is_x: SUB .b1 120
+
+-- Verificar si hay segunda linea (buscar \n despues de pos 4)
+.c7: GET .ibuf 7
+.c8: GET .ibuf 8
+.has_line2_7: SUB .c7 10
+.has_line2_8: SUB .c8 10
+
+-- ===== PARSER NUMERICO =====
+.d1: GET .ibuf 4
+.d2: GET .ibuf 5
+.d3: GET .ibuf 6
+
+.v1: SUB .d1 48
+.d2_minus_48: SUB .d2 48
+.v1_x10: MUL .v1 10
+.v2_raw: ADD .v1_x10 .d2_minus_48
+.d3_minus_48: SUB .d3 48
+.v2_x10: MUL .v2_raw 10
+.v3_raw: ADD .v2_x10 .d3_minus_48
+
+.d2_is_nl: SUB .d2 10
+.d2_is_cr: SUB .d2 13
+.d2_is_sp: SUB .d2 32
+.d3_is_nl: SUB .d3 10
+.d3_is_cr: SUB .d3 13
+.d3_is_sp: SUB .d3 32
+
+.val_if_d2_nl: IFZ .d2_is_nl .v1 .v2_raw
+.val_if_d2_cr: IFZ .d2_is_cr .v1 .val_if_d2_nl
+.val_after_d2: IFZ .d2_is_sp .v1 .val_if_d2_cr
+.val_if_d3_nl: IFZ .d3_is_nl .val_after_d2 .v3_raw
+.val_if_d3_cr: IFZ .d3_is_cr .val_after_d2 .val_if_d3_nl
+.val: IFZ .d3_is_sp .val_after_d2 .val_if_d3_cr
+
+-- ===== GENERAR CODIGO x86-64 =====
+-- Inyectar en template: mov eax, VAL; ret
+.t0: PUT .template 512 184
+.t1: PUT .template 513 .val
+.t2: PUT .template 514 0
+.t3: PUT .template 515 0
+.t4: PUT .template 516 0
+.t5: PUT .template 517 195
+
+-- ===== DECIDIR QUE ESCRIBIR =====
+-- Si es programa simple (.x: N sin mas lineas) -> escribir template modificado
+-- Si tiene mas codigo -> escribir copia del compilador
+
+-- Por ahora: siempre generar exe con el valor
+-- (self-replication se hace copiando compiler.exe manualmente)
+
+-- Escribir out.exe
+.opath: "out.exe"
+.oh: FOP .opath .one
+.owlen: FWR .oh .template .tlen
+.oc: FCL .oh
+
+-- Output
+.hdr: "Gen9.7: Compilador TAYNI\n"
+.ph: PRT .hdr 25
+
+.msg_val: "Compilado .x: "
+.pm: PRT .msg_val 14
+.num: ALC 8
+.its: ITS .val .num
+.pn: PRT .num .its
+.nl: "\n"
+.pnl: PRT .nl 1
+
+.msg_out: "-> out.exe (exit code = valor)\n"
+.pmo: PRT .msg_out 31
+
+.f1: FRE .self
+.f2: FRE .template
+.f3: FRE .ibuf
+.f4: FRE .num
+
+!
