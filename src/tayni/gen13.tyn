@@ -1,0 +1,476 @@
+-- TAYNI Gen13 - Generador PE con Syscalls
+-- Genera PE completo con IAT para kernel32
+-- Paso hacia Zero Rust
+-- Fecha: 2026-06-16
+
+.zero: 0
+.one: 1
+
+-- Buffer para PE (necesitamos mas espacio para IAT)
+.pe: ALC 8192
+
+-- Leer compiler.exe (para self-replication)
+.spath: "compiler.exe"
+.sh: FOP .spath .zero
+.self: ALC 16384
+.slen: FRD .sh .self 16384
+.sc: FCL .sh
+
+-- Leer input.tyn
+.ipath: "input.tyn"
+.ih: FOP .ipath .zero
+.ibuf: ALC 64
+.ilen: FRD .ih .ibuf 64
+.ic: FCL .ih
+
+-- Parser: .x: N
+.d1: GET .ibuf 4
+.d2: GET .ibuf 5
+.d3: GET .ibuf 6
+
+.v1: SUB .d1 48
+.d2_minus_48: SUB .d2 48
+.v1_x10: MUL .v1 10
+.v2_raw: ADD .v1_x10 .d2_minus_48
+.d3_minus_48: SUB .d3 48
+.v2_x10: MUL .v2_raw 10
+.v3_raw: ADD .v2_x10 .d3_minus_48
+
+.d2_is_nl: SUB .d2 10
+.d2_is_cr: SUB .d2 13
+.d2_is_sp: SUB .d2 32
+.d3_is_nl: SUB .d3 10
+.d3_is_cr: SUB .d3 13
+.d3_is_sp: SUB .d3 32
+
+.val_if_d2_nl: IFZ .d2_is_nl .v1 .v2_raw
+.val_if_d2_cr: IFZ .d2_is_cr .v1 .val_if_d2_nl
+.val_after_d2: IFZ .d2_is_sp .v1 .val_if_d2_cr
+.val_if_d3_nl: IFZ .d3_is_nl .val_after_d2 .v3_raw
+.val_if_d3_cr: IFZ .d3_is_cr .val_after_d2 .val_if_d3_nl
+.val: IFZ .d3_is_sp .val_after_d2 .val_if_d3_cr
+
+-- ===== GENERAR PE CON IAT =====
+-- Layout:
+-- 0x000-0x1FF: Headers (512 bytes)
+-- 0x200-0x3FF: .text section (code) (512 bytes)
+-- 0x400-0x5FF: .rdata section (imports) (512 bytes)
+-- Total: 1536 bytes
+
+-- DOS Header
+.dos0: PUT .pe 0 77
+.dos1: PUT .pe 1 90
+.dos60: PUT .pe 60 64
+.dos61: PUT .pe 61 0
+.dos62: PUT .pe 62 0
+.dos63: PUT .pe 63 0
+
+-- PE Signature
+.pe64: PUT .pe 64 80
+.pe65: PUT .pe 65 69
+.pe66: PUT .pe 66 0
+.pe67: PUT .pe 67 0
+
+-- COFF Header
+.coff0: PUT .pe 68 100
+.coff1: PUT .pe 69 134
+.coff2: PUT .pe 70 2
+.coff3: PUT .pe 71 0
+.coff4: PUT .pe 72 0
+.coff5: PUT .pe 73 0
+.coff6: PUT .pe 74 0
+.coff7: PUT .pe 75 0
+.coff8: PUT .pe 76 0
+.coff9: PUT .pe 77 0
+.coff10: PUT .pe 78 0
+.coff11: PUT .pe 79 0
+.coff12: PUT .pe 80 0
+.coff13: PUT .pe 81 0
+.coff14: PUT .pe 82 0
+.coff15: PUT .pe 83 0
+.coff16: PUT .pe 84 240
+.coff17: PUT .pe 85 0
+.coff18: PUT .pe 86 34
+.coff19: PUT .pe 87 0
+
+-- Optional Header
+.opt0: PUT .pe 88 11
+.opt1: PUT .pe 89 2
+.opt2: PUT .pe 90 14
+.opt3: PUT .pe 91 0
+.opt4: PUT .pe 92 0
+.opt5: PUT .pe 93 2
+.opt6: PUT .pe 94 0
+.opt7: PUT .pe 95 0
+.opt8: PUT .pe 96 0
+.opt9: PUT .pe 97 0
+.opt10: PUT .pe 98 0
+.opt11: PUT .pe 99 0
+.opt12: PUT .pe 100 0
+.opt13: PUT .pe 101 0
+.opt14: PUT .pe 102 0
+.opt15: PUT .pe 103 0
+-- AddressOfEntryPoint: 0x1000
+.opt16: PUT .pe 104 0
+.opt17: PUT .pe 105 16
+.opt18: PUT .pe 106 0
+.opt19: PUT .pe 107 0
+-- BaseOfCode: 0x1000
+.opt20: PUT .pe 108 0
+.opt21: PUT .pe 109 16
+.opt22: PUT .pe 110 0
+.opt23: PUT .pe 111 0
+-- ImageBase: 0x140000000
+.opt24: PUT .pe 112 0
+.opt25: PUT .pe 113 0
+.opt26: PUT .pe 114 0
+.opt27: PUT .pe 115 64
+.opt28: PUT .pe 116 1
+.opt29: PUT .pe 117 0
+.opt30: PUT .pe 118 0
+.opt31: PUT .pe 119 0
+-- SectionAlignment: 0x1000
+.opt32: PUT .pe 120 0
+.opt33: PUT .pe 121 16
+.opt34: PUT .pe 122 0
+.opt35: PUT .pe 123 0
+-- FileAlignment: 0x200
+.opt36: PUT .pe 124 0
+.opt37: PUT .pe 125 2
+.opt38: PUT .pe 126 0
+.opt39: PUT .pe 127 0
+-- OS Version: 6.0
+.opt40: PUT .pe 128 6
+.opt41: PUT .pe 129 0
+.opt42: PUT .pe 130 0
+.opt43: PUT .pe 131 0
+.opt44: PUT .pe 132 0
+.opt45: PUT .pe 133 0
+.opt46: PUT .pe 134 0
+.opt47: PUT .pe 135 0
+.opt48: PUT .pe 136 6
+.opt49: PUT .pe 137 0
+.opt50: PUT .pe 138 0
+.opt51: PUT .pe 139 0
+.opt52: PUT .pe 140 0
+.opt53: PUT .pe 141 0
+.opt54: PUT .pe 142 0
+.opt55: PUT .pe 143 0
+-- SizeOfImage: 0x3000
+.opt56: PUT .pe 144 0
+.opt57: PUT .pe 145 48
+.opt58: PUT .pe 146 0
+.opt59: PUT .pe 147 0
+-- SizeOfHeaders: 0x200
+.opt60: PUT .pe 148 0
+.opt61: PUT .pe 149 2
+.opt62: PUT .pe 150 0
+.opt63: PUT .pe 151 0
+.opt64: PUT .pe 152 0
+.opt65: PUT .pe 153 0
+.opt66: PUT .pe 154 0
+.opt67: PUT .pe 155 0
+-- Subsystem: 3 (CONSOLE)
+.opt68: PUT .pe 156 3
+.opt69: PUT .pe 157 0
+.opt70: PUT .pe 158 96
+.opt71: PUT .pe 159 129
+-- Stack/Heap sizes
+.opt72: PUT .pe 160 0
+.opt73: PUT .pe 161 0
+.opt74: PUT .pe 162 16
+.opt75: PUT .pe 163 0
+.opt76: PUT .pe 164 0
+.opt77: PUT .pe 165 0
+.opt78: PUT .pe 166 0
+.opt79: PUT .pe 167 0
+.opt80: PUT .pe 168 0
+.opt81: PUT .pe 169 16
+.opt82: PUT .pe 170 0
+.opt83: PUT .pe 171 0
+.opt84: PUT .pe 172 0
+.opt85: PUT .pe 173 0
+.opt86: PUT .pe 174 0
+.opt87: PUT .pe 175 0
+.opt88: PUT .pe 176 0
+.opt89: PUT .pe 177 0
+.opt90: PUT .pe 178 16
+.opt91: PUT .pe 179 0
+.opt92: PUT .pe 180 0
+.opt93: PUT .pe 181 0
+.opt94: PUT .pe 182 0
+.opt95: PUT .pe 183 0
+.opt96: PUT .pe 184 0
+.opt97: PUT .pe 185 16
+.opt98: PUT .pe 186 0
+.opt99: PUT .pe 187 0
+.opt100: PUT .pe 188 0
+.opt101: PUT .pe 189 0
+.opt102: PUT .pe 190 0
+.opt103: PUT .pe 191 0
+.opt104: PUT .pe 192 0
+.opt105: PUT .pe 193 0
+.opt106: PUT .pe 194 0
+.opt107: PUT .pe 195 0
+-- NumberOfRvaAndSizes: 16
+.opt108: PUT .pe 196 16
+.opt109: PUT .pe 197 0
+.opt110: PUT .pe 198 0
+.opt111: PUT .pe 199 0
+
+-- Data Directory: Import Table at offset 200 + 8 = 208
+-- Import Directory RVA: 0x2000, Size: 40
+.dd0: PUT .pe 208 0
+.dd1: PUT .pe 209 32
+.dd2: PUT .pe 210 0
+.dd3: PUT .pe 211 0
+.dd4: PUT .pe 212 40
+.dd5: PUT .pe 213 0
+.dd6: PUT .pe 214 0
+.dd7: PUT .pe 215 0
+
+-- Section Headers start at 328
+
+-- .text section
+.sec0: PUT .pe 328 46
+.sec1: PUT .pe 329 116
+.sec2: PUT .pe 330 101
+.sec3: PUT .pe 331 120
+.sec4: PUT .pe 332 116
+.sec5: PUT .pe 333 0
+.sec6: PUT .pe 334 0
+.sec7: PUT .pe 335 0
+.sec8: PUT .pe 336 0
+.sec9: PUT .pe 337 2
+.sec10: PUT .pe 338 0
+.sec11: PUT .pe 339 0
+.sec12: PUT .pe 340 0
+.sec13: PUT .pe 341 16
+.sec14: PUT .pe 342 0
+.sec15: PUT .pe 343 0
+.sec16: PUT .pe 344 0
+.sec17: PUT .pe 345 2
+.sec18: PUT .pe 346 0
+.sec19: PUT .pe 347 0
+.sec20: PUT .pe 348 0
+.sec21: PUT .pe 349 2
+.sec22: PUT .pe 350 0
+.sec23: PUT .pe 351 0
+.sec24: PUT .pe 352 0
+.sec25: PUT .pe 353 0
+.sec26: PUT .pe 354 0
+.sec27: PUT .pe 355 0
+.sec28: PUT .pe 356 0
+.sec29: PUT .pe 357 0
+.sec30: PUT .pe 358 0
+.sec31: PUT .pe 359 0
+.sec32: PUT .pe 360 0
+.sec33: PUT .pe 361 0
+.sec34: PUT .pe 362 0
+.sec35: PUT .pe 363 0
+.sec36: PUT .pe 364 32
+.sec37: PUT .pe 365 0
+.sec38: PUT .pe 366 0
+.sec39: PUT .pe 367 96
+
+-- .rdata section at 368
+.rda0: PUT .pe 368 46
+.rda1: PUT .pe 369 114
+.rda2: PUT .pe 370 100
+.rda3: PUT .pe 371 97
+.rda4: PUT .pe 372 116
+.rda5: PUT .pe 373 97
+.rda6: PUT .pe 374 0
+.rda7: PUT .pe 375 0
+.rda8: PUT .pe 376 0
+.rda9: PUT .pe 377 2
+.rda10: PUT .pe 378 0
+.rda11: PUT .pe 379 0
+.rda12: PUT .pe 380 0
+.rda13: PUT .pe 381 32
+.rda14: PUT .pe 382 0
+.rda15: PUT .pe 383 0
+.rda16: PUT .pe 384 0
+.rda17: PUT .pe 385 2
+.rda18: PUT .pe 386 0
+.rda19: PUT .pe 387 0
+.rda20: PUT .pe 388 0
+.rda21: PUT .pe 389 4
+.rda22: PUT .pe 390 0
+.rda23: PUT .pe 391 0
+.rda24: PUT .pe 392 0
+.rda25: PUT .pe 393 0
+.rda26: PUT .pe 394 0
+.rda27: PUT .pe 395 0
+.rda28: PUT .pe 396 0
+.rda29: PUT .pe 397 0
+.rda30: PUT .pe 398 0
+.rda31: PUT .pe 399 0
+.rda32: PUT .pe 400 0
+.rda33: PUT .pe 401 0
+.rda34: PUT .pe 402 0
+.rda35: PUT .pe 403 0
+.rda36: PUT .pe 404 64
+.rda37: PUT .pe 405 0
+.rda38: PUT .pe 406 0
+.rda39: PUT .pe 407 64
+
+-- Code at 0x200 (512)
+-- Simple: mov eax, VAL; ret
+.code0: PUT .pe 512 184
+.code1: PUT .pe 513 .val
+.code2: PUT .pe 514 0
+.code3: PUT .pe 515 0
+.code4: PUT .pe 516 0
+.code5: PUT .pe 517 195
+
+-- Import data at 0x400 (1024)
+-- Import Directory Table
+-- OriginalFirstThunk: 0x2050
+.imp0: PUT .pe 1024 80
+.imp1: PUT .pe 1025 32
+.imp2: PUT .pe 1026 0
+.imp3: PUT .pe 1027 0
+-- TimeDateStamp: 0
+.imp4: PUT .pe 1028 0
+.imp5: PUT .pe 1029 0
+.imp6: PUT .pe 1030 0
+.imp7: PUT .pe 1031 0
+-- ForwarderChain: 0
+.imp8: PUT .pe 1032 0
+.imp9: PUT .pe 1033 0
+.imp10: PUT .pe 1034 0
+.imp11: PUT .pe 1035 0
+-- Name: 0x2070 (KERNEL32.dll)
+.imp12: PUT .pe 1036 112
+.imp13: PUT .pe 1037 32
+.imp14: PUT .pe 1038 0
+.imp15: PUT .pe 1039 0
+-- FirstThunk (IAT): 0x2060
+.imp16: PUT .pe 1040 96
+.imp17: PUT .pe 1041 32
+.imp18: PUT .pe 1042 0
+.imp19: PUT .pe 1043 0
+
+-- Null terminator for import directory
+.imp20: PUT .pe 1044 0
+.imp21: PUT .pe 1045 0
+.imp22: PUT .pe 1046 0
+.imp23: PUT .pe 1047 0
+.imp24: PUT .pe 1048 0
+.imp25: PUT .pe 1049 0
+.imp26: PUT .pe 1050 0
+.imp27: PUT .pe 1051 0
+.imp28: PUT .pe 1052 0
+.imp29: PUT .pe 1053 0
+.imp30: PUT .pe 1054 0
+.imp31: PUT .pe 1055 0
+.imp32: PUT .pe 1056 0
+.imp33: PUT .pe 1057 0
+.imp34: PUT .pe 1058 0
+.imp35: PUT .pe 1059 0
+.imp36: PUT .pe 1060 0
+.imp37: PUT .pe 1061 0
+.imp38: PUT .pe 1062 0
+.imp39: PUT .pe 1063 0
+
+-- ILT at 0x2050 (file offset 1104)
+-- Pointer to ExitProcess hint/name: 0x2080
+.ilt0: PUT .pe 1104 128
+.ilt1: PUT .pe 1105 32
+.ilt2: PUT .pe 1106 0
+.ilt3: PUT .pe 1107 0
+.ilt4: PUT .pe 1108 0
+.ilt5: PUT .pe 1109 0
+.ilt6: PUT .pe 1110 0
+.ilt7: PUT .pe 1111 0
+-- Null terminator
+.ilt8: PUT .pe 1112 0
+.ilt9: PUT .pe 1113 0
+.ilt10: PUT .pe 1114 0
+.ilt11: PUT .pe 1115 0
+.ilt12: PUT .pe 1116 0
+.ilt13: PUT .pe 1117 0
+.ilt14: PUT .pe 1118 0
+.ilt15: PUT .pe 1119 0
+
+-- IAT at 0x2060 (file offset 1120)
+.iat0: PUT .pe 1120 128
+.iat1: PUT .pe 1121 32
+.iat2: PUT .pe 1122 0
+.iat3: PUT .pe 1123 0
+.iat4: PUT .pe 1124 0
+.iat5: PUT .pe 1125 0
+.iat6: PUT .pe 1126 0
+.iat7: PUT .pe 1127 0
+.iat8: PUT .pe 1128 0
+.iat9: PUT .pe 1129 0
+.iat10: PUT .pe 1130 0
+.iat11: PUT .pe 1131 0
+.iat12: PUT .pe 1132 0
+.iat13: PUT .pe 1133 0
+.iat14: PUT .pe 1134 0
+.iat15: PUT .pe 1135 0
+
+-- DLL name at 0x2070 (file offset 1136)
+-- "KERNEL32.dll"
+.dll0: PUT .pe 1136 75
+.dll1: PUT .pe 1137 69
+.dll2: PUT .pe 1138 82
+.dll3: PUT .pe 1139 78
+.dll4: PUT .pe 1140 69
+.dll5: PUT .pe 1141 76
+.dll6: PUT .pe 1142 51
+.dll7: PUT .pe 1143 50
+.dll8: PUT .pe 1144 46
+.dll9: PUT .pe 1145 100
+.dll10: PUT .pe 1146 108
+.dll11: PUT .pe 1147 108
+.dll12: PUT .pe 1148 0
+
+-- Hint/Name at 0x2080 (file offset 1152)
+-- Hint: 0
+.hn0: PUT .pe 1152 0
+.hn1: PUT .pe 1153 0
+-- "ExitProcess"
+.hn2: PUT .pe 1154 69
+.hn3: PUT .pe 1155 120
+.hn4: PUT .pe 1156 105
+.hn5: PUT .pe 1157 116
+.hn6: PUT .pe 1158 80
+.hn7: PUT .pe 1159 114
+.hn8: PUT .pe 1160 111
+.hn9: PUT .pe 1161 99
+.hn10: PUT .pe 1162 101
+.hn11: PUT .pe 1163 115
+.hn12: PUT .pe 1164 115
+.hn13: PUT .pe 1165 0
+
+-- Escribir out.exe
+.opath: "out.exe"
+.oh: FOP .opath .one
+.pe_size: 1536
+.owlen: FWR .oh .pe .pe_size
+.oc: FCL .oh
+
+-- Output
+.hdr: "Gen13: PE con IAT\n"
+.ph: PRT .hdr 18
+
+.msg_val: "Valor: "
+.pmv: PRT .msg_val 7
+.num: ALC 8
+.its: ITS .val .num
+.pn: PRT .num .its
+.nl: "\n"
+.pnl: PRT .nl 1
+
+.msg_out: "-> out.exe (1536 bytes, con IAT)\n"
+.pmo: PRT .msg_out 33
+
+.f1: FRE .pe
+.f2: FRE .self
+.f3: FRE .ibuf
+.f4: FRE .num
+
+!

@@ -1,0 +1,331 @@
+-- TAYNI Gen12b - Generador de Codigo Minimo
+-- Genera PE completo para .x: N (sin template)
+-- Paso hacia Zero Rust
+-- Fecha: 2026-06-16
+
+.zero: 0
+.one: 1
+
+-- Buffer para PE
+.pe: ALC 4096
+
+-- Leer compiler.exe (para self-replication)
+.spath: "compiler.exe"
+.sh: FOP .spath .zero
+.self: ALC 8192
+.slen: FRD .sh .self 8192
+.sc: FCL .sh
+
+-- Leer input.tyn
+.ipath: "input.tyn"
+.ih: FOP .ipath .zero
+.ibuf: ALC 64
+.ilen: FRD .ih .ibuf 64
+.ic: FCL .ih
+
+-- Parser: .x: N
+.d1: GET .ibuf 4
+.d2: GET .ibuf 5
+.d3: GET .ibuf 6
+
+.v1: SUB .d1 48
+.d2_minus_48: SUB .d2 48
+.v1_x10: MUL .v1 10
+.v2_raw: ADD .v1_x10 .d2_minus_48
+.d3_minus_48: SUB .d3 48
+.v2_x10: MUL .v2_raw 10
+.v3_raw: ADD .v2_x10 .d3_minus_48
+
+.d2_is_nl: SUB .d2 10
+.d2_is_cr: SUB .d2 13
+.d2_is_sp: SUB .d2 32
+.d3_is_nl: SUB .d3 10
+.d3_is_cr: SUB .d3 13
+.d3_is_sp: SUB .d3 32
+
+.val_if_d2_nl: IFZ .d2_is_nl .v1 .v2_raw
+.val_if_d2_cr: IFZ .d2_is_cr .v1 .val_if_d2_nl
+.val_after_d2: IFZ .d2_is_sp .v1 .val_if_d2_cr
+.val_if_d3_nl: IFZ .d3_is_nl .val_after_d2 .v3_raw
+.val_if_d3_cr: IFZ .d3_is_cr .val_after_d2 .val_if_d3_nl
+.val: IFZ .d3_is_sp .val_after_d2 .val_if_d3_cr
+
+-- ===== GENERAR PE DESDE CERO =====
+-- DOS Header (64 bytes)
+.dos0: PUT .pe 0 77
+.dos1: PUT .pe 1 90
+-- ... (resto de DOS header es padding)
+-- e_lfanew at offset 60 = 64 (PE header starts at 64)
+.dos60: PUT .pe 60 64
+.dos61: PUT .pe 61 0
+.dos62: PUT .pe 62 0
+.dos63: PUT .pe 63 0
+
+-- PE Signature at offset 64
+.pe64: PUT .pe 64 80
+.pe65: PUT .pe 65 69
+.pe66: PUT .pe 66 0
+.pe67: PUT .pe 67 0
+
+-- COFF Header (20 bytes) at offset 68
+-- Machine: x64 (0x8664)
+.coff0: PUT .pe 68 100
+.coff1: PUT .pe 69 134
+-- NumberOfSections: 1
+.coff2: PUT .pe 70 1
+.coff3: PUT .pe 71 0
+-- TimeDateStamp: 0
+.coff4: PUT .pe 72 0
+.coff5: PUT .pe 73 0
+.coff6: PUT .pe 74 0
+.coff7: PUT .pe 75 0
+-- PointerToSymbolTable: 0
+.coff8: PUT .pe 76 0
+.coff9: PUT .pe 77 0
+.coff10: PUT .pe 78 0
+.coff11: PUT .pe 79 0
+-- NumberOfSymbols: 0
+.coff12: PUT .pe 80 0
+.coff13: PUT .pe 81 0
+.coff14: PUT .pe 82 0
+.coff15: PUT .pe 83 0
+-- SizeOfOptionalHeader: 240 (0xF0)
+.coff16: PUT .pe 84 240
+.coff17: PUT .pe 85 0
+-- Characteristics: 0x22 (executable, large address aware)
+.coff18: PUT .pe 86 34
+.coff19: PUT .pe 87 0
+
+-- Optional Header (240 bytes) at offset 88
+-- Magic: PE32+ (0x20B)
+.opt0: PUT .pe 88 11
+.opt1: PUT .pe 89 2
+-- MajorLinkerVersion, MinorLinkerVersion
+.opt2: PUT .pe 90 14
+.opt3: PUT .pe 91 0
+-- SizeOfCode: 512
+.opt4: PUT .pe 92 0
+.opt5: PUT .pe 93 2
+.opt6: PUT .pe 94 0
+.opt7: PUT .pe 95 0
+-- SizeOfInitializedData: 0
+.opt8: PUT .pe 96 0
+.opt9: PUT .pe 97 0
+.opt10: PUT .pe 98 0
+.opt11: PUT .pe 99 0
+-- SizeOfUninitializedData: 0
+.opt12: PUT .pe 100 0
+.opt13: PUT .pe 101 0
+.opt14: PUT .pe 102 0
+.opt15: PUT .pe 103 0
+-- AddressOfEntryPoint: 0x1000 (4096)
+.opt16: PUT .pe 104 0
+.opt17: PUT .pe 105 16
+.opt18: PUT .pe 106 0
+.opt19: PUT .pe 107 0
+-- BaseOfCode: 0x1000
+.opt20: PUT .pe 108 0
+.opt21: PUT .pe 109 16
+.opt22: PUT .pe 110 0
+.opt23: PUT .pe 111 0
+-- ImageBase: 0x140000000 (for 64-bit)
+.opt24: PUT .pe 112 0
+.opt25: PUT .pe 113 0
+.opt26: PUT .pe 114 0
+.opt27: PUT .pe 115 64
+.opt28: PUT .pe 116 1
+.opt29: PUT .pe 117 0
+.opt30: PUT .pe 118 0
+.opt31: PUT .pe 119 0
+-- SectionAlignment: 0x1000
+.opt32: PUT .pe 120 0
+.opt33: PUT .pe 121 16
+.opt34: PUT .pe 122 0
+.opt35: PUT .pe 123 0
+-- FileAlignment: 0x200 (512)
+.opt36: PUT .pe 124 0
+.opt37: PUT .pe 125 2
+.opt38: PUT .pe 126 0
+.opt39: PUT .pe 127 0
+-- OS Version: 6.0
+.opt40: PUT .pe 128 6
+.opt41: PUT .pe 129 0
+.opt42: PUT .pe 130 0
+.opt43: PUT .pe 131 0
+-- Image Version: 0.0
+.opt44: PUT .pe 132 0
+.opt45: PUT .pe 133 0
+.opt46: PUT .pe 134 0
+.opt47: PUT .pe 135 0
+-- Subsystem Version: 6.0
+.opt48: PUT .pe 136 6
+.opt49: PUT .pe 137 0
+.opt50: PUT .pe 138 0
+.opt51: PUT .pe 139 0
+-- Win32VersionValue: 0
+.opt52: PUT .pe 140 0
+.opt53: PUT .pe 141 0
+.opt54: PUT .pe 142 0
+.opt55: PUT .pe 143 0
+-- SizeOfImage: 0x2000 (8192)
+.opt56: PUT .pe 144 0
+.opt57: PUT .pe 145 32
+.opt58: PUT .pe 146 0
+.opt59: PUT .pe 147 0
+-- SizeOfHeaders: 0x200 (512)
+.opt60: PUT .pe 148 0
+.opt61: PUT .pe 149 2
+.opt62: PUT .pe 150 0
+.opt63: PUT .pe 151 0
+-- CheckSum: 0
+.opt64: PUT .pe 152 0
+.opt65: PUT .pe 153 0
+.opt66: PUT .pe 154 0
+.opt67: PUT .pe 155 0
+-- Subsystem: 3 (CONSOLE)
+.opt68: PUT .pe 156 3
+.opt69: PUT .pe 157 0
+-- DllCharacteristics: 0x8160 (NX, ASLR, etc)
+.opt70: PUT .pe 158 96
+.opt71: PUT .pe 159 129
+-- SizeOfStackReserve: 0x100000
+.opt72: PUT .pe 160 0
+.opt73: PUT .pe 161 0
+.opt74: PUT .pe 162 16
+.opt75: PUT .pe 163 0
+.opt76: PUT .pe 164 0
+.opt77: PUT .pe 165 0
+.opt78: PUT .pe 166 0
+.opt79: PUT .pe 167 0
+-- SizeOfStackCommit: 0x1000
+.opt80: PUT .pe 168 0
+.opt81: PUT .pe 169 16
+.opt82: PUT .pe 170 0
+.opt83: PUT .pe 171 0
+.opt84: PUT .pe 172 0
+.opt85: PUT .pe 173 0
+.opt86: PUT .pe 174 0
+.opt87: PUT .pe 175 0
+-- SizeOfHeapReserve: 0x100000
+.opt88: PUT .pe 176 0
+.opt89: PUT .pe 177 0
+.opt90: PUT .pe 178 16
+.opt91: PUT .pe 179 0
+.opt92: PUT .pe 180 0
+.opt93: PUT .pe 181 0
+.opt94: PUT .pe 182 0
+.opt95: PUT .pe 183 0
+-- SizeOfHeapCommit: 0x1000
+.opt96: PUT .pe 184 0
+.opt97: PUT .pe 185 16
+.opt98: PUT .pe 186 0
+.opt99: PUT .pe 187 0
+.opt100: PUT .pe 188 0
+.opt101: PUT .pe 189 0
+.opt102: PUT .pe 190 0
+.opt103: PUT .pe 191 0
+-- LoaderFlags: 0
+.opt104: PUT .pe 192 0
+.opt105: PUT .pe 193 0
+.opt106: PUT .pe 194 0
+.opt107: PUT .pe 195 0
+-- NumberOfRvaAndSizes: 16
+.opt108: PUT .pe 196 16
+.opt109: PUT .pe 197 0
+.opt110: PUT .pe 198 0
+.opt111: PUT .pe 199 0
+
+-- Data Directories (16 * 8 = 128 bytes) at offset 200
+-- All zeros for minimal PE
+-- (offsets 200-327 are zeros by default from ALC)
+
+-- Section Header at offset 328 (88 + 240 = 328)
+-- Name: ".text\0\0\0"
+.sec0: PUT .pe 328 46
+.sec1: PUT .pe 329 116
+.sec2: PUT .pe 330 101
+.sec3: PUT .pe 331 120
+.sec4: PUT .pe 332 116
+.sec5: PUT .pe 333 0
+.sec6: PUT .pe 334 0
+.sec7: PUT .pe 335 0
+-- VirtualSize: 6 (our code is 6 bytes)
+.sec8: PUT .pe 336 6
+.sec9: PUT .pe 337 0
+.sec10: PUT .pe 338 0
+.sec11: PUT .pe 339 0
+-- VirtualAddress: 0x1000
+.sec12: PUT .pe 340 0
+.sec13: PUT .pe 341 16
+.sec14: PUT .pe 342 0
+.sec15: PUT .pe 343 0
+-- SizeOfRawData: 0x200 (512)
+.sec16: PUT .pe 344 0
+.sec17: PUT .pe 345 2
+.sec18: PUT .pe 346 0
+.sec19: PUT .pe 347 0
+-- PointerToRawData: 0x200 (512)
+.sec20: PUT .pe 348 0
+.sec21: PUT .pe 349 2
+.sec22: PUT .pe 350 0
+.sec23: PUT .pe 351 0
+-- PointerToRelocations: 0
+.sec24: PUT .pe 352 0
+.sec25: PUT .pe 353 0
+.sec26: PUT .pe 354 0
+.sec27: PUT .pe 355 0
+-- PointerToLinenumbers: 0
+.sec28: PUT .pe 356 0
+.sec29: PUT .pe 357 0
+.sec30: PUT .pe 358 0
+.sec31: PUT .pe 359 0
+-- NumberOfRelocations: 0
+.sec32: PUT .pe 360 0
+.sec33: PUT .pe 361 0
+-- NumberOfLinenumbers: 0
+.sec34: PUT .pe 362 0
+.sec35: PUT .pe 363 0
+-- Characteristics: 0x60000020 (code, execute, read)
+.sec36: PUT .pe 364 32
+.sec37: PUT .pe 365 0
+.sec38: PUT .pe 366 0
+.sec39: PUT .pe 367 96
+
+-- Code at offset 512 (0x200)
+-- mov eax, VAL; ret
+.code0: PUT .pe 512 184
+.code1: PUT .pe 513 .val
+.code2: PUT .pe 514 0
+.code3: PUT .pe 515 0
+.code4: PUT .pe 516 0
+.code5: PUT .pe 517 195
+
+-- Escribir out.exe
+.opath: "out.exe"
+.oh: FOP .opath .one
+-- Tamaño: 512 (headers) + 512 (code section) = 1024
+.pe_size: 1024
+.owlen: FWR .oh .pe .pe_size
+.oc: FCL .oh
+
+-- Output
+.hdr: "Gen12b: PE desde cero\n"
+.ph: PRT .hdr 22
+
+.msg_val: "Valor: "
+.pmv: PRT .msg_val 7
+.num: ALC 8
+.its: ITS .val .num
+.pn: PRT .num .its
+.nl: "\n"
+.pnl: PRT .nl 1
+
+.msg_out: "-> out.exe (1024 bytes)\n"
+.pmo: PRT .msg_out 24
+
+.f1: FRE .pe
+.f2: FRE .self
+.f3: FRE .ibuf
+.f4: FRE .num
+
+!

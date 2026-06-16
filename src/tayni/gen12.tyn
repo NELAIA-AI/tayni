@@ -1,0 +1,146 @@
+-- TAYNI Gen12 - Parser Completo
+-- Tokeniza codigo TAYNI y cuenta operaciones
+-- Paso 1 hacia Zero Rust
+-- Fecha: 2026-06-16
+
+.zero: 0
+.one: 1
+
+-- Buffers
+.self: ALC 8192
+.template: ALC 4096
+
+-- Contadores de operaciones
+.cnt_alc: 0
+.cnt_fop: 0
+.cnt_frd: 0
+.cnt_fwr: 0
+.cnt_fcl: 0
+.cnt_get: 0
+.cnt_put: 0
+.cnt_add: 0
+.cnt_sub: 0
+.cnt_mul: 0
+.cnt_ifz: 0
+.cnt_prt: 0
+.cnt_its: 0
+.cnt_fre: 0
+.cnt_lit: 0
+
+-- Leer compiler.exe
+.spath: "compiler.exe"
+.sh: FOP .spath .zero
+.slen: FRD .sh .self 8192
+.sc: FCL .sh
+
+-- Leer mini.exe como template
+.tpath: "mini.exe"
+.th: FOP .tpath .zero
+.tlen: FRD .th .template 4096
+.tc: FCL .th
+
+-- Leer input.tyn
+.ipath: "input.tyn"
+.ih: FOP .ipath .zero
+.ibuf: ALC 4096
+.ilen: FRD .ih .ibuf 4096
+.ic: FCL .ih
+
+-- ===== SCANNER: Buscar operaciones =====
+-- Buscar patrones de 3 letras mayusculas
+
+-- Posicion 0-2
+.c0: GET .ibuf 0
+.c1: GET .ibuf 1
+.c2: GET .ibuf 2
+
+-- Detectar ALC (65,76,67)
+.is_A0: SUB .c0 65
+.is_L0: SUB .c1 76
+.is_C0: SUB .c2 67
+.alc0_1: ADD .is_A0 .is_L0
+.alc0: ADD .alc0_1 .is_C0
+.found_alc0: IFZ .alc0 1 0
+
+-- Buscar en mas posiciones (desenrollado)
+-- Posicion 10-12
+.c10: GET .ibuf 10
+.c11: GET .ibuf 11
+.c12: GET .ibuf 12
+
+.is_A10: SUB .c10 65
+.is_L10: SUB .c11 76
+.is_C10: SUB .c12 67
+.alc10_1: ADD .is_A10 .is_L10
+.alc10: ADD .alc10_1 .is_C10
+.found_alc10: IFZ .alc10 1 0
+
+-- Posicion 20-22
+.c20: GET .ibuf 20
+.c21: GET .ibuf 21
+.c22: GET .ibuf 22
+
+.is_A20: SUB .c20 65
+.is_L20: SUB .c21 76
+.is_C20: SUB .c22 67
+.alc20_1: ADD .is_A20 .is_L20
+.alc20: ADD .alc20_1 .is_C20
+.found_alc20: IFZ .alc20 1 0
+
+-- Contar ALCs encontrados
+.alc_sum1: ADD .found_alc0 .found_alc10
+.total_alc: ADD .alc_sum1 .found_alc20
+
+-- Buscar FOP (70,79,80)
+.is_F10: SUB .c10 70
+.is_O10: SUB .c11 79
+.is_P10: SUB .c12 80
+.fop10_1: ADD .is_F10 .is_O10
+.fop10: ADD .fop10_1 .is_P10
+.found_fop10: IFZ .fop10 1 0
+
+.is_F20: SUB .c20 70
+.is_O20: SUB .c21 79
+.is_P20: SUB .c22 80
+.fop20_1: ADD .is_F20 .is_O20
+.fop20: ADD .fop20_1 .is_P20
+.found_fop20: IFZ .fop20 1 0
+
+.total_fop: ADD .found_fop10 .found_fop20
+
+-- ===== OUTPUT =====
+.hdr: "Gen12: Parser TAYNI\n"
+.ph: PRT .hdr 20
+
+.msg_len: "Bytes leidos: "
+.pml: PRT .msg_len 14
+.num: ALC 8
+.its_len: ITS .ilen .num
+.pnl: PRT .num .its_len
+.nl: "\n"
+.pnl1: PRT .nl 1
+
+.msg_alc: "ALC encontrados: "
+.pma: PRT .msg_alc 17
+.its_alc: ITS .total_alc .num
+.pna: PRT .num .its_alc
+.pnl2: PRT .nl 1
+
+.msg_fop: "FOP encontrados: "
+.pmf: PRT .msg_fop 17
+.its_fop: ITS .total_fop .num
+.pnf: PRT .num .its_fop
+.pnl3: PRT .nl 1
+
+-- Escribir out.exe (copia del compilador por ahora)
+.opath: "out.exe"
+.oh: FOP .opath .one
+.owlen: FWR .oh .self .slen
+.oc: FCL .oh
+
+.f1: FRE .self
+.f2: FRE .template
+.f3: FRE .ibuf
+.f4: FRE .num
+
+!
