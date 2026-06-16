@@ -8,9 +8,9 @@ use std::path::Path;
 /// Get the compiler path
 fn compiler_path() -> String {
     if cfg!(windows) {
-        "target/debug/TAYNI-c.exe".to_string()
+        "target/debug/tayni-c.exe".to_string()
     } else {
-        "target/debug/TAYNI-c".to_string()
+        "target/debug/tayni-c".to_string()
     }
 }
 
@@ -43,8 +43,8 @@ fn write_temp_nela(content: &str, name: &str) -> String {
 fn test_version() {
     let (code, stdout, _) = run_compiler(&["--version"]);
     assert_eq!(code, 0);
-    assert!(stdout.contains("TAYNI-c"));
-    assert!(stdout.contains("0.23"));
+    assert!(stdout.contains("tayni-c"));
+    assert!(stdout.contains("0.24"));
 }
 
 #[test]
@@ -61,7 +61,7 @@ fn test_help() {
 fn test_no_args() {
     let (code, _, stderr) = run_compiler(&[]);
     assert_eq!(code, 0);
-    assert!(stderr.contains("usage") || stderr.contains("TAYNI-c"));
+    assert!(stderr.contains("usage") || stderr.contains("tayni-c"));
 }
 
 // ============================================
@@ -555,7 +555,7 @@ fn test_existing_nela_files() {
         let entry = entry.expect("Failed to read entry");
         let path = entry.path();
         
-        if path.extension().map(|e| e == "nela").unwrap_or(false) {
+        if path.extension().map(|e| e == "tayni").unwrap_or(false) {
             let path_str = path.to_string_lossy();
             let (code, _, _) = run_compiler(&[&path_str, "--check", "--quiet"]);
             
