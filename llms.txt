@@ -1,22 +1,21 @@
-# NELAIA - AI-First Compiler
+# TAYNI - AI-First Programming Language
 # Graph-based language optimized for AI code generation
-# https://github.com/NELAIA-AI/nelaia
+# https://github.com/NELAIA-AI/tayni
 
 ## CRITICAL - Read First
-Location: docs/CRITICAL-PATTERNS.jsonl
-Format: JSONL with correct/wrong examples
-Purpose: Avoid common mistakes in code generation
-
 Location: docs/COMMON-MISTAKES.md
 Format: Markdown with examples
-Purpose: Human-readable guide to common errors
+Purpose: Avoid common mistakes in code generation
 
-IMPORTANT: Servers need loops! Use `.loop >> .loop` for persistent servers.
 IMPORTANT: PRT needs TWO arguments: buffer AND length.
+IMPORTANT: All programs end with ! (terminator).
+IMPORTANT: Use USE directive for standard library modules.
 
 ## What
-NELAIA is a compiler that generates optimal native executables from graph-based source code.
-Optimized for AI systems to generate and consume.
+TAYNI is an AI-first programming language that compiles to multiple targets:
+- Classical: Windows, Linux, macOS, WASM, RISC-V, ARM64
+- Quantum: QIR (Azure, IonQ, Quantinuum)
+- GPU: PTX (NVIDIA), AMDGPU (AMD)
 
 ## For
 AI agents that need to generate compiled programs.
@@ -25,105 +24,166 @@ Applications requiring minimal, dependency-free executables.
 
 ## Why
 Traditional languages have syntax overhead that increases token usage in AI contexts.
-NELAIA addresses this with:
+TAYNI addresses this with:
 - Graph-based paradigm (natural for dependency modeling)
 - Token-efficient syntax (minimal tokens, maximum information)
 - Tiny output (Hello World = 145 bytes Linux, 1KB Windows)
 - No runtime dependencies
+- 43-module standard library
 
 ## Critical Syntax Rules
-1. All nodes start with dot: .name: value
-2. PRT requires buffer AND length: PRT .msg .len
-3. Servers need loop: .loop >> .loop
-4. Declare capabilities: REQUIRES { http }
+1. All bindings start with dot: .name: value
+2. PRT requires buffer AND length: PRT .msg 14
+3. Programs end with ! (terminator)
+4. Import modules with USE: USE http
+
+## Standard Library (43 modules)
+
+### Tier 0 - Core (10 modules)
+args, base64, file, http, json, log, random, router, string, url
+
+### Tier 1 - Standard (12 modules)
+async, env, format, hash, jwt, path, regex, test, time, timeout, uuid, validation
+
+### Tier 2 - Extended (21 modules)
+cookie, cors, crypto, csv, gpu, grpc, gzip, mime, mongodb, postgres, pqc, quantum, redis, retry, sql, sqlite, tls, toml, websocket, xml, yaml
 
 ## Capabilities
 - compile_to_windows_pe: Generate Windows x64 executables
 - compile_to_linux_elf: Generate Linux x64 executables
-- compile_to_macos_macho: Generate macOS x64 (Intel) executables
-- compile_to_macos_arm64: Generate macOS ARM64 (Apple Silicon) executables
+- compile_to_macos_macho: Generate macOS executables
+- compile_to_wasm: Generate WebAssembly
+- compile_to_riscv: Generate RISC-V executables
+- compile_to_arm64: Generate ARM64 Linux executables
+- compile_to_qir: Generate Quantum IR
+- compile_to_ptx: Generate NVIDIA CUDA
+- compile_to_amdgpu: Generate AMD ROCm
 - http_server: Create HTTP servers
 - http_client: Make HTTP requests
-- sql_database: Connect to SQL databases (ODBC)
+- sql_database: Connect to SQL databases
 - json_processing: Parse and generate JSON
 - file_io: Read and write files
 - networking: TCP/UDP sockets
-- threading: Multi-threaded execution
-- gui_windows: Windows GUI (MessageBox, windows)
+- quantum_computing: Quantum gates and circuits
+- gpu_computing: GPU kernels and memory
 
 ## Input Format
-.nela files (NELAIA source)
+.tyn files (TAYNI source)
 Graph-based syntax with nodes and data flow.
 
-Example:
-```
+Example (Hello World):
+```tayni
 .msg: "Hello World!\n"
-.len: 14
-.out: PRT .msg .len
+.out: PRT .msg 14
+!
 ```
 
-## Output Format
-Native executables:
+Example (HTTP Server with stdlib):
+```tayni
+USE http
+USE json
+
+.port: 8080
+.server: HTTP.LISTEN .port
+.req: HTTP.ACCEPT .server
+.body: JSON.ENCODE '{"status": "ok"}'
+.resp: HTTP.RESPOND .req 200 .body
+!
+```
+
+Example (Quantum Bell State):
+```tayni
+USE quantum
+
+.q0: QUBIT.ALLOC
+.q1: QUBIT.ALLOC
+.h: QH .q0
+.cx: QCNOT .q0 .q1
+.m0: QM .q0
+.m1: QM .q1
+!
+```
+
+## Output Formats
+
+### Classical
 - Windows: PE format (.exe)
 - Linux: ELF format
-- macOS: Mach-O format (Intel x64 and ARM64 Apple Silicon)
+- macOS: Mach-O format
+- Web: WebAssembly (.wasm)
+- RISC-V: ELF-RISCV64
+- ARM64: ELF-ARM64
 
-JSON compilation results available with --json flag.
+### Quantum
+- QIR: Native quantum executable
+- QASM: OpenQASM 3.0 (IBM)
+- Cirq: Python (Google)
+- Quil: Rigetti
+
+### GPU
+- PTX: NVIDIA CUDA
+- AMDGPU: AMD ROCm
+- OpenCL: Cross-platform
+- SPIR-V: Vulkan
+- WGSL: WebGPU
+- Metal: Apple
 
 ## Invoke
-```
-# Basic compilation (auto-detects platform, no external dependencies)
-nelaia-c input.nela -o output
+```bash
+# Basic compilation (auto-detects platform)
+tayni-c input.tyn -o output
 
-# With JSON output (for programmatic use)
-nelaia-c input.nela -o output --json
+# Specific targets
+tayni-c input.tyn --target=windows -o output.exe
+tayni-c input.tyn --target=linux -o output
+tayni-c input.tyn --target=wasm -o output.wasm
+tayni-c input.tyn --target=qir -o output.qir
+tayni-c input.tyn --target=ptx -o output.ptx
 
-# Force specific format
-nelaia-c input.nela --emit-pe    # Windows PE
-nelaia-c input.nela --emit-elf   # Linux ELF
+# With exports (quantum/GPU)
+tayni-c quantum.tyn --target=qir --export=qasm
+tayni-c gpu.tyn --target=ptx --export=opencl
 
 # Use LLVM+Clang flow (optional)
-nelaia-c input.nela --use-clang
+tayni-c input.tyn --use-clang
+
+# JSON output (for programmatic use)
+tayni-c input.tyn --check --json
 ```
 
 ## Training Data
-Location: docs/NELAIA-TRAINING-DATA.jsonl
+Location: docs/TAYNI-TRAINING-DATA.jsonl
 Format: JSONL with input/output pairs
 Count: 100+ examples
 
 Example entry:
-{"input": "Create HTTP server on port 8080", "output": ".caps: REQUIRES { http }\n.server: HTTP.LISTEN 8080\n.req: HTTP.ACCEPT .server"}
+{"input": "Create HTTP server on port 8080", "output": "USE http\n.port: 8080\n.server: HTTP.LISTEN .port\n!"}
 
 ## Grammar
-Location: docs/NELAIA-REFERENCE-v0.22.md
+Location: docs/TAYNI-REFERENCE-v0.22.md
 Format: EBNF
 
 Key syntax:
-- Nodes: .id: VALUE or .id: OPERATION .args
-- Flow: .a > .b (data flow)
-- Capabilities: REQUIRES { cap1, cap2 }
+- Bindings: .id: VALUE or .id: OPERATION args
+- Imports: USE module_name
+- Terminator: !
 
-## Semantic Rules
-Location: docs/NELAIA-SEMANTICS-v0.22.md
-Contains: Type signatures, constraints, error codes
-
-## Examples
-Location: docs/NELAIA-EXAMPLES-v0.22.md
-Format: Structured examples with dependency graphs
-
-## Error Codes
-Structured error format for programmatic handling.
-See: docs/NELAIA-SEMANTICS-v0.22.md#error-codes
+## Documentation
+- docs/TAYNI-GUIDE-v0.22.md - Complete language guide
+- docs/TAYNI-REFERENCE-v0.22.md - EBNF grammar
+- docs/TAYNI-EXAMPLES-v0.22.md - Examples
+- docs/TAYNI-SEMANTICS-v0.22.md - Type system
+- docs/ARCHITECTURE.md - Compiler architecture
 
 ## Version
-Current: 0.23
+Current: 0.25
 
 ## DOI
 10.5281/zenodo.20695531
 Citation: https://doi.org/10.5281/zenodo.20695531
 
 ## Repository
-https://github.com/NELAIA-AI/nelaia
+https://github.com/NELAIA-AI/tayni
 
 ## License
 MIT
