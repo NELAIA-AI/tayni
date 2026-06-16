@@ -1,4 +1,4 @@
-# NELAIA Build Workflow
+# TAYNI Build Workflow
 # 
 # IMPORTANT: This workflow is MANUAL ONLY (workflow_dispatch)
 # It does NOT run automatically on push/PR to save GitHub Actions credits.
@@ -67,32 +67,32 @@ jobs:
 
       - name: Verify Compiler
         run: |
-          ./target/debug/nelaia-c.exe --version
-          ./target/debug/nelaia-c.exe --help
+          ./target/debug/tayni-c.exe --version
+          ./target/debug/tayni-c.exe --help
 
       - name: Test Compilation (if examples exist)
         run: |
-          if (Test-Path "examples/hello.nela") {
-            ./target/debug/nelaia-c.exe examples/hello.nela -o hello_test
+          if (Test-Path "examples/hello.tayni") {
+            ./target/debug/tayni-c.exe examples/hello.tayni -o hello_test
             Write-Host "Compilation successful (default PE emission)"
           } else {
-            Write-Host "No examples/hello.nela found, skipping"
+            Write-Host "No examples/hello.tayni found, skipping"
           }
         shell: pwsh
 
       - name: Upload Debug Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: nelaia-c-windows-x64-debug
-          path: target/debug/nelaia-c.exe
+          name: tayni-c-windows-x64-debug
+          path: target/debug/tayni-c.exe
           retention-days: 7
 
       - name: Upload Release Artifact
         if: ${{ inputs.build_release }}
         uses: actions/upload-artifact@v4
         with:
-          name: nelaia-c-windows-x64-release
-          path: target/release/nelaia-c.exe
+          name: tayni-c-windows-x64-release
+          path: target/release/tayni-c.exe
           retention-days: 30
 
   # ============================================
@@ -131,31 +131,31 @@ jobs:
 
       - name: Verify Compiler
         run: |
-          ./target/debug/nelaia-c --version
-          ./target/debug/nelaia-c --help
+          ./target/debug/tayni-c --version
+          ./target/debug/tayni-c --help
 
       - name: Test Compilation (if examples exist)
         run: |
-          if [ -f "examples/hello.nela" ]; then
-            ./target/debug/nelaia-c examples/hello.nela -o hello_test
+          if [ -f "examples/hello.tayni" ]; then
+            ./target/debug/tayni-c examples/hello.tayni -o hello_test
             echo "Compilation successful (default ELF emission)"
           else
-            echo "No examples/hello.nela found, skipping"
+            echo "No examples/hello.tayni found, skipping"
           fi
 
       - name: Upload Debug Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: nelaia-c-linux-x64-debug
-          path: target/debug/nelaia-c
+          name: tayni-c-linux-x64-debug
+          path: target/debug/tayni-c
           retention-days: 7
 
       - name: Upload Release Artifact
         if: ${{ inputs.build_release }}
         uses: actions/upload-artifact@v4
         with:
-          name: nelaia-c-linux-x64-release
-          path: target/release/nelaia-c
+          name: tayni-c-linux-x64-release
+          path: target/release/tayni-c
           retention-days: 30
 
   # ============================================
@@ -200,39 +200,39 @@ jobs:
 
       - name: Verify Compiler
         run: |
-          ./target/debug/nelaia-c --version
-          ./target/debug/nelaia-c --help
+          ./target/debug/tayni-c --version
+          ./target/debug/tayni-c --help
 
       - name: Test Compilation (if examples exist)
         run: |
-          if [ -f "examples/hello.nela" ]; then
-            ./target/debug/nelaia-c examples/hello.nela -o hello_test
+          if [ -f "examples/hello.tayni" ]; then
+            ./target/debug/tayni-c examples/hello.tayni -o hello_test
             echo "Compilation successful (default Mach-O emission)"
           else
-            echo "No examples/hello.nela found, skipping"
+            echo "No examples/hello.tayni found, skipping"
           fi
 
       - name: Upload Debug Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: nelaia-c-macos-debug
-          path: target/debug/nelaia-c
+          name: tayni-c-macos-debug
+          path: target/debug/tayni-c
           retention-days: 7
 
       - name: Upload Release Artifact (ARM64)
         if: ${{ inputs.build_release }}
         uses: actions/upload-artifact@v4
         with:
-          name: nelaia-c-macos-arm64-release
-          path: target/aarch64-apple-darwin/release/nelaia-c
+          name: tayni-c-macos-arm64-release
+          path: target/aarch64-apple-darwin/release/tayni-c
           retention-days: 30
 
       - name: Upload Release Artifact (x64)
         if: ${{ inputs.build_release }}
         uses: actions/upload-artifact@v4
         with:
-          name: nelaia-c-macos-x64-release
-          path: target/x86_64-apple-darwin/release/nelaia-c
+          name: tayni-c-macos-x64-release
+          path: target/x86_64-apple-darwin/release/tayni-c
           retention-days: 30
 
   # ============================================
@@ -248,29 +248,29 @@ jobs:
       - name: Download Compiler
         uses: actions/download-artifact@v4
         with:
-          name: nelaia-c-linux-x64-debug
+          name: tayni-c-linux-x64-debug
           path: ./bin
 
       - name: Make Executable
-        run: chmod +x ./bin/nelaia-c
+        run: chmod +x ./bin/tayni-c
 
       - name: Validate JSONL Examples (syntax only)
         run: |
           echo "Validating training data examples..."
-          if [ -f "docs/NELAIA-TRAINING-DATA.jsonl" ]; then
+          if [ -f "docs/TAYNI-TRAINING-DATA.jsonl" ]; then
             count=0
             errors=0
             while IFS= read -r line; do
               count=$((count + 1))
               code=$(echo "$line" | jq -r '.output // empty')
               if [ -n "$code" ]; then
-                echo "$code" > /tmp/test_$count.nela
-                if ! ./bin/nelaia-c /tmp/test_$count.nela --check 2>/dev/null; then
+                echo "$code" > /tmp/test_$count.tayni
+                if ! ./bin/tayni-c /tmp/test_$count.tayni --check 2>/dev/null; then
                   echo "Warning: Example $count may have issues"
                   errors=$((errors + 1))
                 fi
               fi
-            done < docs/NELAIA-TRAINING-DATA.jsonl
+            done < docs/TAYNI-TRAINING-DATA.jsonl
             echo "Validated $count examples, $errors warnings"
           else
             echo "No training data found"
@@ -292,45 +292,45 @@ jobs:
       - name: Download Windows Release
         uses: actions/download-artifact@v4
         with:
-          name: nelaia-c-windows-x64-release
+          name: tayni-c-windows-x64-release
           path: ./release/windows
 
       - name: Download Linux Release
         uses: actions/download-artifact@v4
         with:
-          name: nelaia-c-linux-x64-release
+          name: tayni-c-linux-x64-release
           path: ./release/linux
 
       - name: Download macOS ARM64 Release
         uses: actions/download-artifact@v4
         with:
-          name: nelaia-c-macos-arm64-release
+          name: tayni-c-macos-arm64-release
           path: ./release/macos-arm64
 
       - name: Download macOS x64 Release
         uses: actions/download-artifact@v4
         with:
-          name: nelaia-c-macos-x64-release
+          name: tayni-c-macos-x64-release
           path: ./release/macos-x64
 
       - name: Prepare Release Assets
         run: |
           cd release
           # Windows
-          mv windows/nelaia-c.exe nelaia-c-windows-x64.exe
-          sha256sum nelaia-c-windows-x64.exe > nelaia-c-windows-x64.exe.sha256
+          mv windows/tayni-c.exe tayni-c-windows-x64.exe
+          sha256sum tayni-c-windows-x64.exe > tayni-c-windows-x64.exe.sha256
           # Linux
-          mv linux/nelaia-c nelaia-c-linux-x64
-          chmod +x nelaia-c-linux-x64
-          sha256sum nelaia-c-linux-x64 > nelaia-c-linux-x64.sha256
+          mv linux/tayni-c tayni-c-linux-x64
+          chmod +x tayni-c-linux-x64
+          sha256sum tayni-c-linux-x64 > tayni-c-linux-x64.sha256
           # macOS ARM64 (Apple Silicon)
-          mv macos-arm64/nelaia-c nelaia-c-macos-arm64
-          chmod +x nelaia-c-macos-arm64
-          sha256sum nelaia-c-macos-arm64 > nelaia-c-macos-arm64.sha256
+          mv macos-arm64/tayni-c tayni-c-macos-arm64
+          chmod +x tayni-c-macos-arm64
+          sha256sum tayni-c-macos-arm64 > tayni-c-macos-arm64.sha256
           # macOS x64 (Intel)
-          mv macos-x64/nelaia-c nelaia-c-macos-x64
-          chmod +x nelaia-c-macos-x64
-          sha256sum nelaia-c-macos-x64 > nelaia-c-macos-x64.sha256
+          mv macos-x64/tayni-c tayni-c-macos-x64
+          chmod +x tayni-c-macos-x64
+          sha256sum tayni-c-macos-x64 > tayni-c-macos-x64.sha256
 
       - name: Get Version
         id: version
@@ -342,45 +342,52 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.version.outputs.version }}
-          name: NELAIA v${{ steps.version.outputs.version }}
+          name: TAYNI v${{ steps.version.outputs.version }}
           draft: true
           files: |
-            release/nelaia-c-windows-x64.exe
-            release/nelaia-c-windows-x64.exe.sha256
-            release/nelaia-c-linux-x64
-            release/nelaia-c-linux-x64.sha256
-            release/nelaia-c-macos-arm64
-            release/nelaia-c-macos-arm64.sha256
-            release/nelaia-c-macos-x64
-            release/nelaia-c-macos-x64.sha256
+            release/tayni-c-windows-x64.exe
+            release/tayni-c-windows-x64.exe.sha256
+            release/tayni-c-linux-x64
+            release/tayni-c-linux-x64.sha256
+            release/tayni-c-macos-arm64
+            release/tayni-c-macos-arm64.sha256
+            release/tayni-c-macos-x64
+            release/tayni-c-macos-x64.sha256
           body: |
-            ## NELAIA Compiler v${{ steps.version.outputs.version }}
+            ## TAYNI Compiler v${{ steps.version.outputs.version }}
+            
+            **Typed AI Native Instructions** - Graph-based language for AI code generation.
             
             ### Downloads
             | Platform | Binary | Checksum |
             |----------|--------|----------|
-            | Windows x64 | `nelaia-c-windows-x64.exe` | `.sha256` |
-            | Linux x64 | `nelaia-c-linux-x64` | `.sha256` |
-            | macOS ARM64 (Apple Silicon) | `nelaia-c-macos-arm64` | `.sha256` |
-            | macOS x64 (Intel) | `nelaia-c-macos-x64` | `.sha256` |
+            | Windows x64 | `tayni-c-windows-x64.exe` | `.sha256` |
+            | Linux x64 | `tayni-c-linux-x64` | `.sha256` |
+            | macOS ARM64 (Apple Silicon) | `tayni-c-macos-arm64` | `.sha256` |
+            | macOS x64 (Intel) | `tayni-c-macos-x64` | `.sha256` |
             
             ### Verification
             ```bash
             # Verify SHA256 (Linux/macOS)
-            sha256sum -c nelaia-c-linux-x64.sha256
+            sha256sum -c tayni-c-linux-x64.sha256
             ```
             
             ### Quick Start
             ```bash
             # Download and run (example for macOS ARM64)
-            chmod +x nelaia-c-macos-arm64
-            ./nelaia-c-macos-arm64 --version
+            chmod +x tayni-c-macos-arm64
+            ./tayni-c-macos-arm64 --version
             
             # Compile a program (no flags needed!)
-            ./nelaia-c-macos-arm64 hello.nela -o hello
+            ./tayni-c-macos-arm64 hello.tayni -o hello
             ./hello
             ```
             
             ### Zero Dependencies
             The compiler produces native executables directly.
             No Clang, GCC, or other tools required.
+            
+            ### Tiny Binaries
+            - Linux: 145 bytes (Hello World)
+            - Windows: 1KB
+            - macOS: 4KB

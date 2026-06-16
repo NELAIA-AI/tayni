@@ -1,4 +1,4 @@
-# NELAIA Benchmark Suite
+# TAYNI Benchmark Suite
 
 ## Quick Start
 
@@ -18,12 +18,12 @@ Tests 6 languages in order (slowest to fastest expected):
 | 3 | Rust | 8087 | Compiled |
 | 4 | C | 8089 | Compiled |
 | 5 | Go | 8083 | Compiled |
-| 6 | **NELAIA** | 8101 | Compiled |
+| 6 | **TAYNI** | 8101 | Compiled |
 
 ## Latest Results
 
 ```
-NELAIA v0.15:  ████████████████████████████████████████████████ 2,419 req/s
+TAYNI v0.15:  ████████████████████████████████████████████████ 2,419 req/s
 C Optimized:   ██████████████████████████████████████           1,904 req/s
 Go HTTP:       ███████████████████████████████████              1,744 req/s
 Rust Opt:      ██████████████████████████████████               1,701 req/s
@@ -31,13 +31,13 @@ Python:        █████████████████████�
 Node.js:       █████████████████████████                        1,241 req/s
 ```
 
-**NELAIA is 27-95% faster than all other languages tested.**
+**TAYNI is 27-95% faster than all other languages tested.**
 
 ## Requirements
 
 - Go 1.18+ (for benchmark tool and Go server)
 - Rust (for Rust server)
-- Clang/LLVM (for C server and NELAIA)
+- Clang/LLVM (for C server and TAYNI)
 - Python 3.x
 - Node.js
 
@@ -67,9 +67,9 @@ rustc -O -o solar_rust_opt.exe solar_rust_opt.rs
 # C
 clang -O2 -o solar_c_opt.exe solar_c_opt.c -lws2_32
 
-# NELAIA
+# TAYNI
 cd ..
-cargo run --release -- benchmarks/solar_nelaia_16w.nela
+cargo run --release -- benchmarks/solar_TAYNI_16w.tayni
 ```
 
 ## Troubleshooting

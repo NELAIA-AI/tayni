@@ -1,8 +1,8 @@
-# NELAIA Pure Build System
+# TAYNI Pure Build System
 
 ## Overview
 
-NELAIA compiles to native binaries with **zero external dependencies**. No libc. No runtime. Just your code and the kernel.
+TAYNI compiles to native binaries with **zero external dependencies**. No libc. No runtime. Just your code and the kernel.
 
 ## Requirements
 
@@ -35,7 +35,7 @@ curl http://localhost:8080
 
 Output:
 ```
-OK from NELAIA
+OK from TAYNI
 ```
 
 ## Verifying Purity
@@ -62,7 +62,7 @@ file ./hello
    - Provides: print, read, memory allocation, TCP sockets
 
 2. **Your Program** (`.ll` file)
-   - Defines `@nelaia_main()` function
+   - Defines `@TAYNI_main()` function
    - Uses syscall layer functions
    - Gets linked with syscall layer
 
@@ -75,23 +75,23 @@ file ./hello
 
 ### Console I/O
 ```llvm
-declare i64 @nelaia_print(i8* %str)      ; Print string to stdout
-declare i64 @nelaia_println(i8* %str)    ; Print string + newline
+declare i64 @TAYNI_print(i8* %str)      ; Print string to stdout
+declare i64 @TAYNI_println(i8* %str)    ; Print string + newline
 ```
 
 ### Memory
 ```llvm
-declare i8* @nelaia_alloc(i64 %size)           ; Allocate memory
-declare void @nelaia_free(i8* %ptr, i64 %size) ; Free memory
+declare i8* @TAYNI_alloc(i64 %size)           ; Allocate memory
+declare void @TAYNI_free(i8* %ptr, i64 %size) ; Free memory
 ```
 
 ### TCP Networking
 ```llvm
-declare i64 @nelaia_tcp_listen(i32 %port)                    ; Create server socket
-declare i64 @nelaia_tcp_accept(i32 %server_fd)               ; Accept connection
-declare i64 @nelaia_tcp_write(i32 %fd, i8* %buf, i64 %len)   ; Write to socket
-declare i64 @nelaia_tcp_read(i32 %fd, i8* %buf, i64 %len)    ; Read from socket
-declare void @nelaia_tcp_close(i32 %fd)                      ; Close socket
+declare i64 @TAYNI_tcp_listen(i32 %port)                    ; Create server socket
+declare i64 @TAYNI_tcp_accept(i32 %server_fd)               ; Accept connection
+declare i64 @TAYNI_tcp_write(i32 %fd, i8* %buf, i64 %len)   ; Write to socket
+declare i64 @TAYNI_tcp_read(i32 %fd, i8* %buf, i64 %len)    ; Read from socket
+declare void @TAYNI_tcp_close(i32 %fd)                      ; Close socket
 ```
 
 ### Low-level Syscalls
@@ -111,4 +111,4 @@ declare void @sys_exit(i32 %code)
 
 ## Next Steps
 
-The NELAIA compiler will generate these `.ll` files from graph source code (`.nela` files). For now, you can write LLVM IR directly to test the syscall layer.
+The TAYNI compiler will generate these `.ll` files from graph source code (`.tayni` files). For now, you can write LLVM IR directly to test the syscall layer.

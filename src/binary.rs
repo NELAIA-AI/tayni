@@ -1,4 +1,4 @@
-//! NELAIA Binary Format (.nbin) - Serialization/Deserialization
+//! TAYNI Binary Format (.nbin) - Serialization/Deserialization
 //! AI-native graph format for direct memory loading
 
 use crate::ir::{Graph, Node, Op, Arg, Value, FlowDest};

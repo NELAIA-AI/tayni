@@ -1,11 +1,11 @@
-# NELAIA Binary Optimization Guide
+# TAYNI Binary Optimization Guide
 
 ## Current State Analysis
 
 ### Binary Composition (7,168 bytes)
 
 ```
-Section Analysis (solar_nelaia_16w.exe):
+Section Analysis (solar_TAYNI_16w.exe):
 ┌─────────────────────────────────────────┐
 │ .text (code)           ~4,096 bytes     │
 │ .rdata (strings)       ~1,536 bytes     │
@@ -216,11 +216,11 @@ fn get_optimized_clang_flags() -> Vec<&'static str> {
 ### Size Check Script
 ```powershell
 # Check binary size
-$size = (Get-Item solar_nelaia_16w.exe).Length
+$size = (Get-Item solar_TAYNI_16w.exe).Length
 Write-Host "Binary size: $size bytes ($([math]::Round($size/1024, 2)) KB)"
 
 # Section analysis
-dumpbin /headers solar_nelaia_16w.exe | Select-String "size of"
+dumpbin /headers solar_TAYNI_16w.exe | Select-String "size of"
 ```
 
 ### Comparison Benchmark

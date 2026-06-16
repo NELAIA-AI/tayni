@@ -23,7 +23,7 @@ const BASE_ADDR: u64 = 0x400000;
 /// Generate ULTRA-MINIMAL ELF64 executable (~120 bytes)
 /// Uses the "Teensy ELF" technique: program header overlaps with ELF header
 pub fn generate_hello_elf() -> Vec<u8> {
-    let message = b"Hello, NELAIA!\n";
+    let message = b"Hello, TAYNI!\n";
     generate_tiny_elf_with_message(message)
 }
 
@@ -147,10 +147,10 @@ fn generate_tiny_elf_with_message(message: &[u8]) -> Vec<u8> {
     elf
 }
 
-/// Generate ELF from NELAIA graph
+/// Generate ELF from TAYNI graph
 pub fn generate_elf_from_graph(graph: &Graph) -> Vec<u8> {
     // For now, extract message and generate simple print program
-    let mut message = String::from("Hello from NELAIA!\n");
+    let mut message = String::from("Hello from TAYNI!\n");
     let mut print_len: usize = message.len();
     
     // Look for string literals and PRT

@@ -73,8 +73,8 @@ identifier  = letter { letter | digit | "_" } ;
 
 ## Repository
 
-- Main: https://github.com/NELAIA-AI/nelaia-core
-- Documentation: https://github.com/NELAIA-AI/nelaia-core/tree/main/docs
+- Main: https://github.com/NELAIA-AI/tayni-core
+- Documentation: https://github.com/NELAIA-AI/tayni-core/tree/main/docs
 
 ## TextMate Grammar
 

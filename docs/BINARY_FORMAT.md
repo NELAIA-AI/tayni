@@ -1,4 +1,4 @@
-# NELAIA Binary Format (.nbin)
+# TAYNI Binary Format (.nbin)
 
 ## Purpose
 Direct graph serialization for AI-to-AI communication.
@@ -78,10 +78,10 @@ STRING TABLE:
 
 ```
 -- Compile to binary
-nelaia-c program.nela --emit-bin program.nbin
+TAYNI-c program.tayni --emit-bin program.nbin
 
 -- Load and execute binary
-nelaia-c program.nbin output
+TAYNI-c program.nbin output
 ```
 
 ## Benefits

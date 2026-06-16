@@ -1,8 +1,8 @@
-# NELAIA v0.22 - Complete Guide for AIs
+# TAYNI v0.22 - Complete Guide for AIs
 
-## What is NELAIA?
+## What is TAYNI?
 
-NELAIA is a **metalanguage designed by AIs, for AIs**. It is not a traditional programming language - it is a protocol of verifiable intention between AI and hardware.
+TAYNI is a **metalanguage designed by AIs, for AIs**. It is not a traditional programming language - it is a protocol of verifiable intention between AI and hardware.
 
 **Paradigm:** Data flow graphs (not imperative sequences)
 
@@ -11,9 +11,9 @@ NELAIA is a **metalanguage designed by AIs, for AIs**. It is not a traditional p
 ## 1. Basic Syntax
 
 ### 1.1 Nodes
-Everything in NELAIA is a node with identifier `.id`:
+Everything in TAYNI is a node with identifier `.id`:
 
-```nelaia
+```TAYNI
 .x: 42                    -- Numeric literal
 .msg: "Hello"             -- String literal
 .sum: ADD .x .y           -- Operation
@@ -21,18 +21,18 @@ Everything in NELAIA is a node with identifier `.id`:
 ```
 
 ### 1.2 Data Flow
-```nelaia
+```TAYNI
 .a > .b                   -- Simple flow (execute a, then b)
 .a >> .b                  -- Cyclic flow (loop)
 ```
 
 ### 1.3 Execution
-```nelaia
+```TAYNI
 !                         -- Execute the graph
 ```
 
 ### 1.4 Comments
-```nelaia
+```TAYNI
 -- This is a comment
 .x: 42  -- comment at end
 ```
@@ -42,7 +42,7 @@ Everything in NELAIA is a node with identifier `.id`:
 ## 2. Basic Operations
 
 ### 2.1 Arithmetic
-```nelaia
+```TAYNI
 .sum: ADD .a .b           -- Addition
 .dif: SUB .a .b           -- Subtraction
 .pro: MUL .a .b           -- Multiplication
@@ -52,7 +52,7 @@ Everything in NELAIA is a node with identifier `.id`:
 ```
 
 ### 2.2 Comparison (returns 0 or 1)
-```nelaia
+```TAYNI
 .eq: EQ .a .b             -- Equal
 .ne: NE .a .b             -- Not equal
 .lt: LT .a .b             -- Less than
@@ -62,14 +62,14 @@ Everything in NELAIA is a node with identifier `.id`:
 ```
 
 ### 2.3 Logic
-```nelaia
+```TAYNI
 .and: AND .a .b           -- Logical AND
 .or: OR .a .b             -- Logical OR
 .not: NOT .a              -- Logical NOT
 ```
 
 ### 2.4 Memory
-```nelaia
+```TAYNI
 .ptr: ALC 1024            -- Allocate 1024 bytes
 .free: FRE .ptr           -- Free memory
 .put: PUT .ptr 0 65       -- Write byte 65 at offset 0
@@ -79,14 +79,14 @@ Everything in NELAIA is a node with identifier `.id`:
 ```
 
 ### 2.5 I/O
-```nelaia
+```TAYNI
 .out: PRT .msg .len       -- Print (buffer, length)
 .inp: INP                 -- Read from stdin
 .err: ERR                 -- Error code
 ```
 
 ### 2.6 Files
-```nelaia
+```TAYNI
 .f: FOP "file.txt" 0      -- Open (0=read, 1=write)
 .n: FRD .f .buf 1024      -- Read up to 1024 bytes
 .w: FWR .f .buf .len      -- Write
@@ -94,7 +94,7 @@ Everything in NELAIA is a node with identifier `.id`:
 ```
 
 ### 2.7 Network
-```nelaia
+```TAYNI
 .sock: TCP                -- Create TCP socket
 .bind: BND .sock .addr    -- Bind to address
 .list: LST .sock 10       -- Listen with backlog 10
@@ -105,7 +105,7 @@ Everything in NELAIA is a node with identifier `.id`:
 ```
 
 ### 2.8 Threading
-```nelaia
+```TAYNI
 .t: THR .func .arg        -- Create thread
 .j: JON .t                -- Join thread
 .m: MTX                   -- Create mutex
@@ -114,7 +114,7 @@ Everything in NELAIA is a node with identifier `.id`:
 ```
 
 ### 2.9 GUI (Windows)
-```nelaia
+```TAYNI
 .win: WIN 800 600 "Title" -- Create window
 .show: SHW .win           -- Show window
 .btn: BTN .win 10 10 100 30 "Click" .flag  -- Button
@@ -127,12 +127,12 @@ Everything in NELAIA is a node with identifier `.id`:
 ## 3. Capability System (SCN)
 
 ### 3.1 Declare Required Capabilities
-```nelaia
+```TAYNI
 .caps: REQUIRES { http, sql, json }
 ```
 
 ### 3.2 HTTP
-```nelaia
+```TAYNI
 -- Server
 .server: HTTP.LISTEN 8080
 .req: HTTP.ACCEPT .server
@@ -147,7 +147,7 @@ Everything in NELAIA is a node with identifier `.id`:
 ```
 
 ### 3.3 SQL (ODBC)
-```nelaia
+```TAYNI
 .conn: SQL.CONNECT "Driver={SQL Server};Server=localhost;Database=test"
 .result: SQL.QUERY .conn "SELECT * FROM users"
 .exec: SQL.EXEC .conn "INSERT INTO users VALUES (1, 'test')"
@@ -157,7 +157,7 @@ Everything in NELAIA is a node with identifier `.id`:
 ```
 
 ### 3.4 JSON
-```nelaia
+```TAYNI
 .obj: JSON.PARSE .json_string
 .str: JSON.ENCODE .obj
 .val: JSON.GET .obj "key"
@@ -169,7 +169,7 @@ Everything in NELAIA is a node with identifier `.id`:
 ## 4. Contracts and Negotiation (Phase 8)
 
 ### 4.1 Resource Contracts
-```nelaia
+```TAYNI
 -- Create contract (replaces traditional permissions)
 .contract: CONTRACT 0
 
@@ -184,7 +184,7 @@ Everything in NELAIA is a node with identifier `.id`:
 ```
 
 ### 4.2 AI Negotiation
-```nelaia
+```TAYNI
 -- Offer capabilities
 .offer: PROVIDES 0
 
@@ -196,7 +196,7 @@ Everything in NELAIA is a node with identifier `.id`:
 ```
 
 ### 4.3 Custom Capabilities
-```nelaia
+```TAYNI
 .my_cap: DEFCAP 0             -- Define capability
 .ext: EXTCAP .base            -- Extend capability
 .comp: COMPOSE 0              -- Compose capabilities
@@ -206,7 +206,7 @@ Everything in NELAIA is a node with identifier `.id`:
 
 ## 5. Property-Based Testing (Phase 10)
 
-```nelaia
+```TAYNI
 -- Define testable property
 .prop: PROPERTY 0
 
@@ -221,7 +221,7 @@ Everything in NELAIA is a node with identifier `.id`:
 
 ## 6. Incremental Cache (Phase 9)
 
-```nelaia
+```TAYNI
 -- Calculate hash of a value
 .hash: HASH .value
 
@@ -243,13 +243,13 @@ Everything in NELAIA is a node with identifier `.id`:
 ## 7. SEN - Ecosystem System (Phase 11)
 
 ### 7.1 Capability Discovery
-```nelaia
+```TAYNI
 -- Search capabilities by description
 .caps: DISCOVER "json processing"
 ```
 
 ### 7.2 Capability Information
-```nelaia
+```TAYNI
 -- Get metadata (guarantees, version, etc.)
 .info: CAPABILITY_INFO "json"
 
@@ -267,7 +267,7 @@ Everything in NELAIA is a node with identifier `.id`:
 ```
 
 ### 7.3 Publish Capability
-```nelaia
+```TAYNI
 .pub: PUBLISH .my_capability
 ```
 
@@ -276,7 +276,7 @@ Everything in NELAIA is a node with identifier `.id`:
 ## 8. AI Workflow
 
 ### 8.1 Design-Time (using SEN)
-```nelaia
+```TAYNI
 -- 1. Discover what capabilities exist
 .options: DISCOVER "process data"
 
@@ -288,7 +288,7 @@ Everything in NELAIA is a node with identifier `.id`:
 ```
 
 ### 8.2 Code-Time (write program)
-```nelaia
+```TAYNI
 -- 4. Declare chosen capabilities
 .caps: REQUIRES { json }
 
@@ -299,7 +299,7 @@ Everything in NELAIA is a node with identifier `.id`:
 
 ### 8.3 Compile-Time
 ```
-nelaia-c program.nela -o program.exe
+TAYNI-c program.tayni -o program.exe
 ```
 
 ---
@@ -307,22 +307,22 @@ nelaia-c program.nela -o program.exe
 ## 9. Complete Examples
 
 ### 9.1 Hello World
-```nelaia
-.msg: "Hello NELAIA!\n"
+```TAYNI
+.msg: "Hello TAYNI!\n"
 .len: 14
 .out: PRT .msg .len
 ```
 
 ### 9.2 Simple HTTP Server
-```nelaia
+```TAYNI
 .caps: REQUIRES { http }
 .server: HTTP.LISTEN 8080
 .req: HTTP.ACCEPT .server
-.resp: HTTP.RESPOND .req 200 "Hello from NELAIA!"
+.resp: HTTP.RESPOND .req 200 "Hello from TAYNI!"
 ```
 
 ### 9.3 SQL Query
-```nelaia
+```TAYNI
 .caps: REQUIRES { sql }
 .conn: SQL.CONNECT "Driver={SQL Server};Server=localhost;Database=test"
 .result: SQL.QUERY .conn "SELECT name FROM users"
@@ -330,15 +330,15 @@ nelaia-c program.nela -o program.exe
 ```
 
 ### 9.4 Process JSON
-```nelaia
+```TAYNI
 .caps: REQUIRES { json }
-.input: "{ \"name\": \"NELAIA\", \"version\": \"0.22\" }"
+.input: "{ \"name\": \"TAYNI\", \"version\": \"0.22\" }"
 .obj: JSON.PARSE .input
 .name: JSON.GET .obj "name"
 ```
 
 ### 9.5 AI Discovering Capabilities
-```nelaia
+```TAYNI
 -- AI searches what to use for JSON processing
 .options: DISCOVER "json"
 .cost: CAPABILITY_COST "json"
@@ -356,22 +356,22 @@ nelaia-c program.nela -o program.exe
 ### 10.1 Commands
 ```bash
 # Compile to executable
-nelaia-c program.nela -o program.exe
+TAYNI-c program.tayni -o program.exe
 
 # Emit LLVM IR
-nelaia-c program.nela --emit-ll
+TAYNI-c program.tayni --emit-ll
 
 # Generate Windows PE directly (no clang)
-nelaia-c program.nela --emit-pe
+TAYNI-c program.tayni --emit-pe
 
 # Generate Linux ELF
-nelaia-c program.nela --emit-elf
+TAYNI-c program.tayni --emit-elf
 
 # GUI MessageBox
-nelaia-c --gui "Title" "Message"
+TAYNI-c --gui "Title" "Message"
 
 # Ultra-optimized PE (1KB)
-nelaia-c --tiny "Message"
+TAYNI-c --tiny "Message"
 ```
 
 ---
@@ -431,6 +431,6 @@ CAPABILITY_AVAILABLE CAPABILITY_VERSION CAPABILITY_DEPS
 
 ---
 
-*Document generated for NELAIA*
+*Document generated for TAYNI*
 *Version: 0.22 - Phases 1-11 Completed*
 *Designed by AIs, for AIs*

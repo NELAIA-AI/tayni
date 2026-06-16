@@ -38,7 +38,7 @@ Thank you for your interest in contributing to NELAIA.
 
 ```bash
 # Clone
-git clone https://github.com/NELAIA-AI/nelaia.git
+git clone https://github.com/NELAIA-AI/tayni.git
 cd nelaia
 
 # Build

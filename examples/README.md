@@ -1,4 +1,4 @@
-# NELAIA Examples
+# TAYNI Examples
 
 Example programs organized by category.
 
@@ -6,7 +6,7 @@ Example programs organized by category.
 
 ```
 examples/
-├── hello.nela       # Hello World (CI test)
+├── hello.tayni       # Hello World (CI test)
 ├── basic/          # Basic examples (arithmetic, memory, etc.)
 ├── network/        # TCP/UDP, HTTP servers
 ├── files/          # File I/O operations
@@ -17,15 +17,15 @@ examples/
 ## Quick Examples
 
 ### Hello World
-- `hello.nela` - Basic Hello World
+- `hello.tayni` - Basic Hello World
 
 ### Arithmetic
-- `add.nela` - Addition
-- `calc.nela` - Calculator
+- `add.tayni` - Addition
+- `calc.tayni` - Calculator
 
 ### Network
-- `tcp_server.nela` - TCP server
-- `http_server.nela` - HTTP server
+- `tcp_server.tayni` - TCP server
+- `http_server.tayni` - HTTP server
 
 ### GUI
-- `gui_final.nela` - Complete GUI application
+- `gui_final.tayni` - Complete GUI application

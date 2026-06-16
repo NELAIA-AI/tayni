@@ -1,4 +1,4 @@
-//! NELAIA v0.15 Pure Emitter
+//! TAYNI v0.15 Pure Emitter
 //! Only syscall wrappers - NO embedded programs
 //! Dead code elimination enabled
 
@@ -56,7 +56,7 @@ impl PureEmitter {
         let mut ir = String::new();
         
         // Header
-        ir.push_str("; NELAIA v0.15 Pure - Dead Code Elimination\n");
+        ir.push_str("; TAYNI v0.15 Pure - Dead Code Elimination\n");
         match self.target {
             TargetPlatform::Linux => ir.push_str("target triple = \"x86_64-pc-linux-gnu\"\n\n"),
             TargetPlatform::Windows => ir.push_str("target triple = \"x86_64-pc-windows-msvc\"\n\n"),
@@ -119,7 +119,7 @@ impl PureEmitter {
         }
         
         // Emit main
-        ir.push_str("\ndefine i32 @nelaia_main() {\nentry:\n");
+        ir.push_str("\ndefine i32 @TAYNI_main() {\nentry:\n");
         
         for node in &graph.nodes {
             // Skip function definitions in main
@@ -2413,7 +2413,7 @@ declare dllimport i32 @SendMessageW(i8*, i32, i64, i64)
 ; GUI globals
 @.gui_init = private global i32 0
 @.hinstance = private global i8* null
-@.wndclass_name = private constant [8 x i16] [i16 78, i16 69, i16 76, i16 65, i16 73, i16 65, i16 0, i16 0]  ; "NELAIA\0"
+@.wndclass_name = private constant [8 x i16] [i16 78, i16 69, i16 76, i16 65, i16 73, i16 65, i16 0, i16 0]  ; "TAYNI\0"
 @.btn_class = private constant [14 x i16] [i16 66, i16 85, i16 84, i16 84, i16 79, i16 78, i16 0, i16 0, i16 0, i16 0, i16 0, i16 0, i16 0, i16 0]  ; "BUTTON\0"
 @.edit_class = private constant [10 x i16] [i16 69, i16 68, i16 73, i16 84, i16 0, i16 0, i16 0, i16 0, i16 0, i16 0]  ; "EDIT\0"
 @.static_class = private constant [14 x i16] [i16 83, i16 84, i16 65, i16 84, i16 73, i16 67, i16 0, i16 0, i16 0, i16 0, i16 0, i16 0, i16 0, i16 0]  ; "STATIC\0"
@@ -2456,7 +2456,7 @@ define void @sys_exit(i32 %code) {
 }
 
 ; GUI Window Procedure
-define i64 @_nelaia_wndproc(i8* %hwnd, i32 %msg, i64 %wparam, i64 %lparam) {
+define i64 @_TAYNI_wndproc(i8* %hwnd, i32 %msg, i64 %wparam, i64 %lparam) {
 entry:
   ; WM_DESTROY = 2
   %is_destroy = icmp eq i32 %msg, 2
@@ -2517,7 +2517,7 @@ init:
   ; lpfnWndProc (offset 8)
   %wndproc_ptr = getelementptr [80 x i8], [80 x i8]* %wc, i32 0, i32 8
   %wndproc_cast = bitcast i8* %wndproc_ptr to i64*
-  %wndproc_fn = ptrtoint i64 (i8*, i32, i64, i64)* @_nelaia_wndproc to i64
+  %wndproc_fn = ptrtoint i64 (i8*, i32, i64, i64)* @_TAYNI_wndproc to i64
   store i64 %wndproc_fn, i64* %wndproc_cast
   
   ; cbClsExtra = 0 (offset 16)
@@ -2583,7 +2583,7 @@ end:
         match self.target {
             TargetPlatform::Linux | TargetPlatform::MacOS | TargetPlatform::MacOSArm64 => r#"
 define void @_start() {
-  %r = call i32 @nelaia_main()
+  %r = call i32 @TAYNI_main()
   call void @sys_exit(i32 %r)
   unreachable
 }
@@ -2591,7 +2591,7 @@ define void @_start() {
             TargetPlatform::Windows => r#"
 define void @mainCRTStartup() {
   call void @_init_io()
-  %r = call i32 @nelaia_main()
+  %r = call i32 @TAYNI_main()
   call void @sys_exit(i32 %r)
   unreachable
 }
@@ -2718,11 +2718,11 @@ declare dllimport i16 @SQLDisconnect(i8*)
         // JSON Capability declarations
         if usage.used_ops.contains(&Op::JsonParse) || usage.used_ops.contains(&Op::JsonEncode) {
             ir.push_str(r#"
-; JSON helper declarations (NELAIA runtime)
-declare void @nelaia_json_parse(i8*, i8*)
-declare i64 @nelaia_json_encode(i8*, i8*)
-declare i8* @nelaia_json_get(i8*, i8*)
-declare void @nelaia_json_set(i8*, i8*, i8*)
+; JSON helper declarations (TAYNI runtime)
+declare void @TAYNI_json_parse(i8*, i8*)
+declare i64 @TAYNI_json_encode(i8*, i8*)
+declare i8* @TAYNI_json_get(i8*, i8*)
+declare void @TAYNI_json_set(i8*, i8*, i8*)
 ; malloc for JSON buffers
 declare i8* @malloc(i64)
 "#);
@@ -2811,7 +2811,7 @@ end:
     fn emit_gui_init(&self) -> String {
         r#"
 ; GUI Window Procedure
-define i64 @_nelaia_wndproc(i8* %hwnd, i32 %msg, i64 %wparam, i64 %lparam) {
+define i64 @_TAYNI_wndproc(i8* %hwnd, i32 %msg, i64 %wparam, i64 %lparam) {
 entry:
   %is_destroy = icmp eq i32 %msg, 2
   br i1 %is_destroy, label %destroy, label %check_command
@@ -2852,7 +2852,7 @@ init:
   store i32 3, i32* %style_cast
   %wndproc_ptr = getelementptr [80 x i8], [80 x i8]* %wc, i32 0, i32 8
   %wndproc_cast = bitcast i8* %wndproc_ptr to i64*
-  %wndproc_fn = ptrtoint i64 (i8*, i32, i64, i64)* @_nelaia_wndproc to i64
+  %wndproc_fn = ptrtoint i64 (i8*, i32, i64, i64)* @_TAYNI_wndproc to i64
   store i64 %wndproc_fn, i64* %wndproc_cast
   %clsextra_ptr = getelementptr [80 x i8], [80 x i8]* %wc, i32 0, i32 16
   %clsextra_cast = bitcast i8* %clsextra_ptr to i32*
@@ -3713,7 +3713,7 @@ end:
   ; JSON.PARSE
   %{id}_obj = call i8* @malloc(i64 4096)
   %{id}_input_ptr = inttoptr i64 {input} to i8*
-  call void @nelaia_json_parse(i8* %{id}_input_ptr, i8* %{id}_obj)
+  call void @TAYNI_json_parse(i8* %{id}_input_ptr, i8* %{id}_obj)
   %{id} = ptrtoint i8* %{id}_obj to i64
 "#, id = id, input = input))
     }
@@ -3725,7 +3725,7 @@ end:
   ; JSON.ENCODE
   %{id}_out = call i8* @malloc(i64 4096)
   %{id}_obj_ptr = inttoptr i64 {obj} to i8*
-  call i64 @nelaia_json_encode(i8* %{id}_obj_ptr, i8* %{id}_out)
+  call i64 @TAYNI_json_encode(i8* %{id}_obj_ptr, i8* %{id}_out)
   %{id} = ptrtoint i8* %{id}_out to i64
 "#, id = id, obj = obj))
     }
@@ -3741,7 +3741,7 @@ end:
   ; JSON.GET
   %{id}_obj_ptr = inttoptr i64 {obj} to i8*
   %{id}_key_ptr = inttoptr i64 {key} to i8*
-  %{id}_val = call i8* @nelaia_json_get(i8* %{id}_obj_ptr, i8* %{id}_key_ptr)
+  %{id}_val = call i8* @TAYNI_json_get(i8* %{id}_obj_ptr, i8* %{id}_key_ptr)
   %{id} = ptrtoint i8* %{id}_val to i64
 "#, id = id, obj = obj, key = key))
     }
@@ -3759,7 +3759,7 @@ end:
   %{id}_obj_ptr = inttoptr i64 {obj} to i8*
   %{id}_key_ptr = inttoptr i64 {key} to i8*
   %{id}_val_ptr = inttoptr i64 {val} to i8*
-  call void @nelaia_json_set(i8* %{id}_obj_ptr, i8* %{id}_key_ptr, i8* %{id}_val_ptr)
+  call void @TAYNI_json_set(i8* %{id}_obj_ptr, i8* %{id}_key_ptr, i8* %{id}_val_ptr)
   %{id} = add i64 {obj}, 0
 "#, id = id, obj = obj, key = key, val = val))
     }
@@ -3983,7 +3983,7 @@ end:
 "#, id = id, hash = hash))
     }
     
-    // === PHASE 11: SEN - Sistema de Ecosistema NELAIA (IA-first) ===
+    // === PHASE 11: SEN - Sistema de Ecosistema TAYNI (IA-first) ===
     
     fn emit_discover(&self, id: &str, args: &[Arg]) -> Result<String, String> {
         // DISCOVER searches for capabilities matching a description (GPT's dynamic discovery)

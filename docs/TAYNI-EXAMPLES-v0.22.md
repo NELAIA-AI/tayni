@@ -1,4 +1,4 @@
-# NELAIA v0.22 - Training Examples for AIs
+# TAYNI v0.22 - Training Examples for AIs
 
 This document contains structured examples with dependency graph diagrams for AI learning.
 
@@ -8,7 +8,7 @@ This document contains structured examples with dependency graph diagrams for AI
 
 Each example includes:
 - **INTENT:** Natural language description
-- **CODE:** NELAIA code
+- **CODE:** TAYNI code
 - **GRAPH:** ASCII diagram showing data flow dependencies
 - **EXPLANATION:** Why it works this way
 
@@ -397,7 +397,7 @@ INTENT: Parse JSON, modify, serialize
 
 CODE:
 .caps: REQUIRES { json }
-.input: "{ \"name\": \"NELAIA\" }"
+.input: "{ \"name\": \"TAYNI\" }"
 .obj: JSON.PARSE .input
 .modified: JSON.SET .obj "version" "0.22"
 .output: JSON.ENCODE .modified
@@ -617,5 +617,5 @@ CORRECT:
 
 ---
 
-*Training document for AIs - NELAIA v0.22*
+*Training document for AIs - TAYNI v0.22*
 *Includes dependency graphs for visual learning*

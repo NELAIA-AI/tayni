@@ -1,4 +1,4 @@
-# NELAIA Quick Reference for AI
+# TAYNI Quick Reference for AI
 
 ## Syntax (6 rules)
 ```
@@ -111,7 +111,7 @@ THR func arg          -- create thread running func(arg)
 
 ## Example 1: Hello World
 ```
-.msg: "Hello NELAIA!\n"
+.msg: "Hello TAYNI!\n"
 .out: PRT .msg 14
 !
 ```
@@ -171,6 +171,6 @@ THR func arg          -- create thread running func(arg)
 
 ## Compile
 ```
-nelaia-c program.nela output
+TAYNI-c program.tayni output
 ./output
 ```

@@ -1,4 +1,4 @@
-//! NELAIA PE Generator - Direct Windows executable generation
+//! TAYNI PE Generator - Direct Windows executable generation
 //! Generates PE32+ (64-bit) executables without external tools
 
 use crate::ir::{Graph, Node, Op, Arg, Value};
@@ -516,7 +516,7 @@ pub fn generate_hello_pe() -> Vec<u8> {
     code.extend(&[0x48, 0x8D, 0x15]); // LEA RDX, [RIP+disp32]
     code.extend(&(msg_offset as i32).to_le_bytes());
     
-    // mov r8d, 15 (length of "Hello, NELAIA!\n")
+    // mov r8d, 15 (length of "Hello, TAYNI!\n")
     code.extend(&[0x41, 0xB8]); // MOV R8D, imm32
     code.extend(&15u32.to_le_bytes());
     
@@ -613,7 +613,7 @@ pub fn generate_hello_pe() -> Vec<u8> {
     
     // .data section - Message
     let mut data = vec![0u8; data_size as usize];
-    let msg = b"Hello, NELAIA!\n";
+    let msg = b"Hello, TAYNI!\n";
     data[..msg.len()].copy_from_slice(msg);
     
     pe.extend(&data);
@@ -621,7 +621,7 @@ pub fn generate_hello_pe() -> Vec<u8> {
     pe
 }
 
-/// Generate PE from NELAIA graph
+/// Generate PE from TAYNI graph
 /// Supports: literals, strings, ALC, PUT, PRT, ADD, SUB, MUL
 pub fn generate_pe_from_graph(graph: &Graph) -> Vec<u8> {
     // Evaluate all values at compile time

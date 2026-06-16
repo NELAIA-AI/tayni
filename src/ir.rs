@@ -1,4 +1,4 @@
-//! NELAIA v0.7 Intermediate Representation
+//! TAYNI v0.7 Intermediate Representation
 //! Data Flow Graph representation with Capability System
 //! Includes: Contracts, Guarantees, Negotiation (IA-first design)
 
@@ -167,7 +167,7 @@ pub struct CapabilityMetadata {
     pub keywords: Vec<String>,        // For DISCOVER search
 }
 
-/// SEN Registry - Sistema de Ecosistema NELAIA (IA-first: federated)
+/// SEN Registry - Sistema de Ecosistema TAYNI (IA-first: federated)
 #[derive(Debug, Default)]
 pub struct EcosystemRegistry {
     pub capabilities: HashMap<String, CapabilityMetadata>,
@@ -609,7 +609,7 @@ pub enum Op {
     CacheVerify,  // CACHE_VERIFY hash -> 1 if valid, 0 if corrupted
     CacheInvalidate, // CACHE_INVALIDATE hash -> remove from cache
     
-    // === PHASE 11: SEN - Sistema de Ecosistema NELAIA (IA-first) ===
+    // === PHASE 11: SEN - Sistema de Ecosistema TAYNI (IA-first) ===
     
     // Capability discovery (design-time for IAs)
     Discover,       // DISCOVER "description" -> list of matching capabilities

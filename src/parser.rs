@@ -1,4 +1,4 @@
-//! NELAIA v0.5 Parser
+//! TAYNI v0.5 Parser
 //! Parses data flow graph syntax into IR
 //! Supports GEN (Graph Element Generators) for subgraph reuse
 
@@ -506,7 +506,7 @@ impl Parser {
             "CACHE_VERIFY" | "CVERIFY" => Ok(Op::CacheVerify),
             "CACHE_INVALIDATE" | "CINV" => Ok(Op::CacheInvalidate),
             
-            // === PHASE 11: SEN - Sistema de Ecosistema NELAIA (IA-first) ===
+            // === PHASE 11: SEN - Sistema de Ecosistema TAYNI (IA-first) ===
             "DISCOVER" => Ok(Op::Discover),
             "CAPABILITY_INFO" | "CAP_INFO" => Ok(Op::CapInfo),
             "CAPABILITY_COST" | "CAP_COST" => Ok(Op::CapCost),

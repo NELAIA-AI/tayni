@@ -1,4 +1,4 @@
-//! NELAIA Compiler v0.23
+//! TAYNI Compiler v0.23
 //! Direct Native Emission (PE/ELF/Mach-O) - No External Dependencies
 //! Supports: Windows PE, Linux ELF, macOS Mach-O, Capability System (SCN)
 //! Phase 12: Product Ready - Direct emission as DEFAULT
@@ -28,16 +28,16 @@ fn main() {
     
     // Handle --version
     if args.contains(&"--version".to_string()) || args.contains(&"-V".to_string()) {
-        println!("nelaia-c {}", VERSION);
+        println!("tayni-c {}", VERSION);
         return;
     }
     
     // Handle --help
     if args.contains(&"--help".to_string()) || args.contains(&"-h".to_string()) {
-        println!("nelaia-c {} - NELAIA Compiler", VERSION);
+        println!("tayni-c {} - TAYNI Compiler", VERSION);
         println!();
         println!("USAGE:");
-        println!("  nelaia-c <file.nela|file.nbin> [options]");
+        println!("  tayni-c <file.tayni|file.nbin> [options]");
         println!();
         println!("OUTPUT OPTIONS:");
         println!("  -o <file>           Output file name");
@@ -74,11 +74,11 @@ fn main() {
         println!("  --smallest          Generate smallest PE (~512 bytes)");
         println!();
         println!("EXAMPLES:");
-        println!("  nelaia-c hello.nela                    # Compile to native (auto-detect)");
-        println!("  nelaia-c hello.nela -o hello           # Specify output name");
-        println!("  nelaia-c hello.nela --emit-macho-arm64 # macOS Apple Silicon");
-        println!("  nelaia-c hello.nela --target=linux     # Cross-compile to Linux");
-        println!("  nelaia-c code.nela --check             # Validate syntax only");
+        println!("  tayni-c hello.tayni                    # Compile to native (auto-detect)");
+        println!("  tayni-c hello.tayni -o hello           # Specify output name");
+        println!("  tayni-c hello.tayni --emit-macho-arm64 # macOS Apple Silicon");
+        println!("  tayni-c hello.tayni --target=linux     # Cross-compile to Linux");
+        println!("  tayni-c code.tayni --check             # Validate syntax only");
         println!();
         println!("SUPPORTED PLATFORMS:");
         println!("  Windows x64, Linux x64, macOS x64 (Intel), macOS ARM64 (Apple Silicon)");
@@ -90,9 +90,9 @@ fn main() {
     
     if args.len() < 2 {
         if !quiet {
-            eprintln!("nelaia-c {}", VERSION);
-            eprintln!("usage: nelaia-c <file.nela|file.nbin> [output] [options]");
-            eprintln!("Try 'nelaia-c --help' for more information.");
+            eprintln!("tayni-c {}", VERSION);
+            eprintln!("usage: tayni-c <file.tayni|file.nbin> [output] [options]");
+            eprintln!("Try 'tayni-c --help' for more information.");
         }
         return;
     }
@@ -116,7 +116,7 @@ fn main() {
     // Special command: generate TCP server PE
     if input_file == "--tcp-server" {
         let port: u16 = args.get(2).and_then(|s| s.parse().ok()).unwrap_or(8080);
-        let response = "HTTP/1.1 200 OK\r\nContent-Length: 13\r\n\r\nHello NELAIA!";
+        let response = "HTTP/1.1 200 OK\r\nContent-Length: 13\r\n\r\nHello TAYNI!";
         let pe_data = pe::generate_tcp_server_pe(port, response);
         let output = args.get(3).map(|s| s.as_str()).unwrap_or("tcp_server.exe");
         if let Err(e) = fs::write(output, &pe_data) {
@@ -132,7 +132,7 @@ fn main() {
     // Special command: generate GUI PE
     if input_file == "--gui" {
         let title = args.get(2).map(|s| s.as_str()).unwrap_or("NELAIA");
-        let message = args.get(3).map(|s| s.as_str()).unwrap_or("Hello from NELAIA GUI!");
+        let message = args.get(3).map(|s| s.as_str()).unwrap_or("Hello from TAYNI GUI!");
         let output = args.get(4).map(|s| s.as_str()).unwrap_or("gui.exe");
         let pe_data = pe::generate_gui_pe(title, message);
         if let Err(e) = fs::write(output, &pe_data) {
@@ -147,7 +147,7 @@ fn main() {
     
     // Special command: generate tiny PE (1KB)
     if input_file == "--tiny" {
-        let message = args.get(2).map(|s| s.as_str()).unwrap_or("Hello from NELAIA!\n");
+        let message = args.get(2).map(|s| s.as_str()).unwrap_or("Hello from TAYNI!\n");
         let output = args.get(3).map(|s| s.as_str()).unwrap_or("tiny.exe");
         let pe_data = pe::generate_tiny_pe(message);
         if let Err(e) = fs::write(output, &pe_data) {
@@ -239,7 +239,7 @@ fn main() {
             }
             i += 1;
         }
-        out.unwrap_or_else(|| input_file.replace(".nela", "").replace(".nbin", ""))
+        out.unwrap_or_else(|| input_file.replace(".tayni", "").replace(".nbin", ""))
     };
     
     // Read input file (text or binary)

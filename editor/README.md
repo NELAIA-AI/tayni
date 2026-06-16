@@ -1,16 +1,16 @@
-# Editor Support for NELAIA
+# Editor Support for TAYNI
 
-This directory contains editor integrations for the NELAIA language.
+This directory contains editor integrations for the TAYNI language.
 
 ## VS Code Extension
 
-The `vscode/` directory contains a VS Code extension for NELAIA syntax highlighting.
+The `vscode/` directory contains a VS Code extension for TAYNI syntax highlighting.
 
 ### Installation (Local)
 
-1. Copy the `vscode/` folder to `~/.vscode/extensions/nelaia-0.22.0/`
+1. Copy the `vscode/` folder to `~/.vscode/extensions/TAYNI-0.22.0/`
 2. Restart VS Code
-3. Open any `.nela` file
+3. Open any `.tayni` file
 
 ### Features
 
@@ -25,7 +25,7 @@ The `vscode/` directory contains a VS Code extension for NELAIA syntax highlight
 
 ## GitHub Linguist
 
-See `LINGUIST.md` for information about registering NELAIA with GitHub Linguist.
+See `LINGUIST.md` for information about registering TAYNI with GitHub Linguist.
 
 ## Other Editors
 

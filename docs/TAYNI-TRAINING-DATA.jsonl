@@ -57,7 +57,7 @@
 {"input": "Respond to HTTP request with JSON", "output": ".resp: HTTP.RESPOND .req 200 \"{\\\"status\\\": \\\"success\\\"}\""}
 {"input": "Make HTTP GET request", "output": ".caps: REQUIRES { http }\n.data: HTTP.GET \"http://api.example.com/data\""}
 {"input": "Make HTTP POST request with body", "output": ".caps: REQUIRES { http }\n.response: HTTP.POST \"http://api.example.com/users\" .body"}
-{"input": "Simple HTTP server responding Hello", "output": ".caps: REQUIRES { http }\n.server: HTTP.LISTEN 8080\n.req: HTTP.ACCEPT .server\n.resp: HTTP.RESPOND .req 200 \"Hello from NELAIA!\""}
+{"input": "Simple HTTP server responding Hello", "output": ".caps: REQUIRES { http }\n.server: HTTP.LISTEN 8080\n.req: HTTP.ACCEPT .server\n.resp: HTTP.RESPOND .req 200 \"Hello from TAYNI!\""}
 {"input": "HTTP server with method routing", "output": ".caps: REQUIRES { http }\n.server: HTTP.LISTEN 8080\n.req: HTTP.ACCEPT .server\n.method: HTTP.METHOD .req\n.path: HTTP.PATH .req\n.resp: HTTP.RESPOND .req 200 \"OK\""}
 {"input": "Connect to SQL database", "output": ".caps: REQUIRES { sql }\n.conn: SQL.CONNECT \"Driver={SQL Server};Server=localhost;Database=test\""}
 {"input": "Execute SQL SELECT query", "output": ".caps: REQUIRES { sql }\n.conn: SQL.CONNECT \"Driver={SQL Server};Server=localhost;Database=test\"\n.result: SQL.QUERY .conn \"SELECT * FROM users\""}
@@ -67,11 +67,11 @@
 {"input": "Close SQL connection", "output": ".close: SQL.CLOSE .conn"}
 {"input": "Query users and get first name", "output": ".caps: REQUIRES { sql }\n.conn: SQL.CONNECT \"Driver={SQL Server};Server=localhost;Database=test\"\n.result: SQL.QUERY .conn \"SELECT name FROM users\"\n.has_row: SQL.NEXT .result\n.name: SQL.GET .result 0\n.close: SQL.CLOSE .conn"}
 {"input": "Insert user into database", "output": ".caps: REQUIRES { sql }\n.conn: SQL.CONNECT \"Driver={SQL Server};Server=localhost;Database=test\"\n.exec: SQL.EXEC .conn \"INSERT INTO users (name, email) VALUES ('John', 'john@example.com')\"\n.close: SQL.CLOSE .conn"}
-{"input": "Parse JSON string", "output": ".caps: REQUIRES { json }\n.input: \"{ \\\"name\\\": \\\"NELAIA\\\" }\"\n.obj: JSON.PARSE .input"}
+{"input": "Parse JSON string", "output": ".caps: REQUIRES { json }\n.input: \"{ \\\"name\\\": \\\"TAYNI\\\" }\"\n.obj: JSON.PARSE .input"}
 {"input": "Encode object to JSON string", "output": ".caps: REQUIRES { json }\n.output: JSON.ENCODE .obj"}
 {"input": "Get value from JSON object by key", "output": ".caps: REQUIRES { json }\n.obj: JSON.PARSE .input\n.name: JSON.GET .obj \"name\""}
 {"input": "Set value in JSON object", "output": ".caps: REQUIRES { json }\n.obj: JSON.PARSE .input\n.modified: JSON.SET .obj \"status\" \"active\""}
-{"input": "Parse JSON and extract multiple fields", "output": ".caps: REQUIRES { json }\n.input: \"{ \\\"name\\\": \\\"NELAIA\\\", \\\"version\\\": 22 }\"\n.obj: JSON.PARSE .input\n.name: JSON.GET .obj \"name\"\n.version: JSON.GET .obj \"version\""}
+{"input": "Parse JSON and extract multiple fields", "output": ".caps: REQUIRES { json }\n.input: \"{ \\\"name\\\": \\\"TAYNI\\\", \\\"version\\\": 22 }\"\n.obj: JSON.PARSE .input\n.name: JSON.GET .obj \"name\"\n.version: JSON.GET .obj \"version\""}
 {"input": "Modify JSON and serialize", "output": ".caps: REQUIRES { json }\n.obj: JSON.PARSE .input\n.modified: JSON.SET .obj \"updated\" \"true\"\n.output: JSON.ENCODE .modified"}
 {"input": "Create resource contract", "output": ".contract: CONTRACT 0"}
 {"input": "Declare resource guarantee", "output": ".guarantee: GUARANTEE 1 0"}
@@ -111,7 +111,7 @@
 {"input": "HTTP server with loop (persistent)", "output": ".caps: REQUIRES { http }\n.server: HTTP.LISTEN 8080\n.loop: HTTP.ACCEPT .server\n.resp: HTTP.RESPOND .loop 200 \"Hello!\"\n.loop >> .loop"}
 {"input": "REST API server with loop", "output": ".caps: REQUIRES { http, json }\n.server: HTTP.LISTEN 8080\n.loop: HTTP.ACCEPT .server\n.data: \"{\\\"status\\\":\\\"ok\\\"}\"\n.resp: HTTP.RESPOND .loop 200 .data\n.loop >> .loop"}
 {"input": "Persistent HTTP server", "output": ".caps: REQUIRES { http }\n.server: HTTP.LISTEN 8080\n.loop: HTTP.ACCEPT .server\n.resp: HTTP.RESPOND .loop 200 \"OK\"\n.loop >> .loop"}
-{"input": "Create loop in NELAIA", "output": ".start: OP .args\n.end >> .start"}
+{"input": "Create loop in TAYNI", "output": ".start: OP .args\n.end >> .start"}
 {"input": "How to make a server persistent", "output": "-- Use >> to loop back\\n.loop: HTTP.ACCEPT .server\\n.resp: HTTP.RESPOND .loop 200 \\\"OK\\\"\\n.loop >> .loop"}
 {"input": "Query database and return as JSON", "output": ".caps: REQUIRES { sql, json }\n.conn: SQL.CONNECT \"...\"\n.result: SQL.QUERY .conn \"SELECT name FROM users\"\n.has_row: SQL.NEXT .result\n.name: SQL.GET .result 0\n.json: JSON.SET .obj \"name\" .name\n.close: SQL.CLOSE .conn"}
 {"input": "HTTP client fetching JSON API", "output": ".caps: REQUIRES { http, json }\n.response: HTTP.GET \"http://api.example.com/data\"\n.data: JSON.PARSE .response\n.value: JSON.GET .data \"result\""}

@@ -1,8 +1,8 @@
 {
   "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
-  "name": "NELAIA",
-  "scopeName": "source.nelaia",
-  "fileTypes": ["nela"],
+  "name": "TAYNI",
+  "scopeName": "source.TAYNI",
+  "fileTypes": ["tayni"],
   "patterns": [
     { "include": "#comments" },
     { "include": "#strings" },
@@ -15,76 +15,76 @@
   ],
   "repository": {
     "comments": {
-      "name": "comment.line.double-dash.nelaia",
+      "name": "comment.line.double-dash.TAYNI",
       "match": "--.*$"
     },
     "strings": {
-      "name": "string.quoted.double.nelaia",
+      "name": "string.quoted.double.TAYNI",
       "begin": "\"",
       "end": "\"",
       "patterns": [
         {
-          "name": "constant.character.escape.nelaia",
+          "name": "constant.character.escape.TAYNI",
           "match": "\\\\."
         }
       ]
     },
     "numbers": {
-      "name": "constant.numeric.nelaia",
+      "name": "constant.numeric.TAYNI",
       "match": "-?\\b\\d+(\\.\\d+)?\\b"
     },
     "nodes": {
-      "name": "variable.other.node.nelaia",
+      "name": "variable.other.node.TAYNI",
       "match": "\\.[a-zA-Z_][a-zA-Z0-9_]*(?=\\s*:)"
     },
     "references": {
-      "name": "variable.other.reference.nelaia",
+      "name": "variable.other.reference.TAYNI",
       "match": "\\.[a-zA-Z_][a-zA-Z0-9_]*"
     },
     "operators": {
       "patterns": [
         {
-          "name": "keyword.operator.arithmetic.nelaia",
+          "name": "keyword.operator.arithmetic.TAYNI",
           "match": "\\b(ADD|SUB|MUL|DIV|MOD|NEG)\\b"
         },
         {
-          "name": "keyword.operator.comparison.nelaia",
+          "name": "keyword.operator.comparison.TAYNI",
           "match": "\\b(EQ|NE|LT|GT|LE|GE)\\b"
         },
         {
-          "name": "keyword.operator.logic.nelaia",
+          "name": "keyword.operator.logic.TAYNI",
           "match": "\\b(AND|OR|NOT)\\b"
         },
         {
-          "name": "keyword.operator.memory.nelaia",
+          "name": "keyword.operator.memory.TAYNI",
           "match": "\\b(ALC|FRE|PUT|GET|CPY|SLN)\\b"
         },
         {
-          "name": "keyword.operator.io.nelaia",
+          "name": "keyword.operator.io.TAYNI",
           "match": "\\b(PRT|INP|ERR|FOP|FRD|FWR|FCL)\\b"
         },
         {
-          "name": "keyword.operator.network.nelaia",
+          "name": "keyword.operator.network.TAYNI",
           "match": "\\b(TCP|UDP|BND|LST|ACC|XMT|RCV|CLS)\\b"
         },
         {
-          "name": "keyword.operator.control.nelaia",
+          "name": "keyword.operator.control.TAYNI",
           "match": "\\b(IFZ|JMP|FSM|CHR|TRN)\\b"
         },
         {
-          "name": "keyword.operator.contract.nelaia",
+          "name": "keyword.operator.contract.TAYNI",
           "match": "\\b(CONTRACT|GUARANTEE|LIMIT|SANDBOX|PROVIDES|NEGOTIATE|BIND|DEFCAP|EXTCAP|COMPOSE)\\b"
         },
         {
-          "name": "keyword.operator.test.nelaia",
+          "name": "keyword.operator.test.TAYNI",
           "match": "\\b(PROPERTY|GENTESTS|VERIFY)\\b"
         },
         {
-          "name": "keyword.operator.cache.nelaia",
+          "name": "keyword.operator.cache.TAYNI",
           "match": "\\b(HASH|CACHE_GET|CACHE_PUT|CACHE_VERIFY|CACHE_INVALIDATE)\\b"
         },
         {
-          "name": "keyword.operator.sen.nelaia",
+          "name": "keyword.operator.sen.TAYNI",
           "match": "\\b(DISCOVER|CAPABILITY_INFO|CAPABILITY_COST|PUBLISH|CAPABILITY_AVAILABLE|CAPABILITY_VERSION|CAPABILITY_DEPS)\\b"
         }
       ]
@@ -92,19 +92,19 @@
     "capabilities": {
       "patterns": [
         {
-          "name": "keyword.control.requires.nelaia",
+          "name": "keyword.control.requires.TAYNI",
           "match": "\\bREQUIRES\\b"
         },
         {
-          "name": "support.function.http.nelaia",
+          "name": "support.function.http.TAYNI",
           "match": "\\bHTTP\\.(LISTEN|ACCEPT|RESPOND|METHOD|PATH|BODY|GET|POST)\\b"
         },
         {
-          "name": "support.function.sql.nelaia",
+          "name": "support.function.sql.TAYNI",
           "match": "\\bSQL\\.(CONNECT|QUERY|EXEC|NEXT|GET|CLOSE)\\b"
         },
         {
-          "name": "support.function.json.nelaia",
+          "name": "support.function.json.TAYNI",
           "match": "\\bJSON\\.(PARSE|ENCODE|GET|SET)\\b"
         }
       ]
@@ -112,11 +112,11 @@
     "flow": {
       "patterns": [
         {
-          "name": "keyword.operator.flow.cyclic.nelaia",
+          "name": "keyword.operator.flow.cyclic.TAYNI",
           "match": ">>"
         },
         {
-          "name": "keyword.operator.flow.nelaia",
+          "name": "keyword.operator.flow.TAYNI",
           "match": ">"
         }
       ]

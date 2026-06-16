@@ -1,4 +1,4 @@
-# NELAIA Architecture v2.0
+# TAYNI Architecture v2.0
 
 ## Design Principles
 
@@ -13,7 +13,7 @@ This architecture is designed for AI agents to:
 - **IR is sacred**: The Intermediate Representation never changes structure
 - **Backends are isolated**: Each target platform is independent
 - **Domains are additive**: New opcodes extend, never modify
-- **Compatibility is mandatory**: Old .nela files always work
+- **Compatibility is mandatory**: Old .tayni files always work
 
 ---
 
@@ -24,7 +24,7 @@ This architecture is designed for AI agents to:
 │                         LAYER 0: IR                             │
 │                    (Immutable Foundation)                       │
 ├─────────────────────────────────────────────────────────────────┤
-│  nelaia-ir/                                                     │
+│  TAYNI-ir/                                                     │
 │  ├── graph.rs      Graph { nodes, edges, entry }               │
 │  ├── node.rs       Node { id, op, inputs, outputs }            │
 │  ├── op.rs         trait OpCode + core ops (ADD, SUB, etc)     │
@@ -39,13 +39,13 @@ This architecture is designed for AI agents to:
 │                       LAYER 1: PARSER                           │
 │                    (Text → IR Transform)                        │
 ├─────────────────────────────────────────────────────────────────┤
-│  nelaia-parser/                                                 │
-│  ├── lexer.rs      Tokenize .nela files                         │
+│  TAYNI-parser/                                                 │
+│  ├── lexer.rs      Tokenize .tayni files                         │
 │  ├── parser.rs     Build IR Graph from tokens                  │
 │  └── error.rs      Parse error handling                        │
 │                                                                 │
-│  INPUT:  .nela text file                                         │
-│  OUTPUT: nelaia_ir::Graph                                       │
+│  INPUT:  .tayni text file                                         │
+│  OUTPUT: TAYNI_ir::Graph                                       │
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
@@ -53,14 +53,14 @@ This architecture is designed for AI agents to:
 │                      LAYER 2: OPTIMIZER                         │
 │                   (IR → Optimized IR)                           │
 ├─────────────────────────────────────────────────────────────────┤
-│  nelaia-optimizer/                                              │
+│  TAYNI-optimizer/                                              │
 │  ├── dce.rs        Dead Code Elimination                       │
 │  ├── inline.rs     Function Inlining                           │
 │  ├── fold.rs       Constant Folding                            │
 │  └── usage.rs      Usage Analysis                              │
 │                                                                 │
-│  INPUT:  nelaia_ir::Graph                                       │
-│  OUTPUT: nelaia_ir::Graph (optimized)                           │
+│  INPUT:  TAYNI_ir::Graph                                       │
+│  OUTPUT: TAYNI_ir::Graph (optimized)                           │
 └─────────────────────────────────────────────────────────────────┘
                               │
               ┌───────────────┼───────────────┐
@@ -69,7 +69,7 @@ This architecture is designed for AI agents to:
 │  LAYER 3A:      │ │  LAYER 3B:      │ │  LAYER 3C:      │
 │  BACKEND-NATIVE │ │  BACKEND-WASM   │ │  BACKEND-*      │
 ├─────────────────┤ ├─────────────────┤ ├─────────────────┤
-│ nelaia-backend- │ │ nelaia-backend- │ │ Future backends │
+│ TAYNI-backend- │ │ TAYNI-backend- │ │ Future backends │
 │ native/         │ │ wasm/           │ │                 │
 │ ├── llvm.rs     │ │ ├── wasm.rs     │ │ • Android       │
 │ ├── windows.rs  │ │ ├── memory.rs   │ │ • iOS           │
@@ -83,19 +83,19 @@ This architecture is designed for AI agents to:
 │                   (Opcode Extensions)                           │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  nelaia-domain-core/    (always included)                       │
+│  TAYNI-domain-core/    (always included)                       │
 │  └── ADD, SUB, MUL, DIV, CMP, JMP, CAL, RET, etc               │
 │                                                                 │
-│  nelaia-domain-net/     (network applications)                  │
+│  TAYNI-domain-net/     (network applications)                  │
 │  └── TCP, UDP, BND, LST, ACC, CON, XMT, RCV, EPL, etc          │
 │                                                                 │
-│  nelaia-domain-ui/      (user interfaces) [NEW]                 │
+│  TAYNI-domain-ui/      (user interfaces) [NEW]                 │
 │  └── BOX, TXT, BTN, INP, IMG, EVT, STY, LAY, etc               │
 │                                                                 │
-│  nelaia-domain-db/      (databases) [FUTURE]                    │
+│  TAYNI-domain-db/      (databases) [FUTURE]                    │
 │  └── QRY, INS, UPD, DEL, TXN, IDX, etc                         │
 │                                                                 │
-│  nelaia-domain-ml/      (machine learning) [FUTURE]             │
+│  TAYNI-domain-ml/      (machine learning) [FUTURE]             │
 │  └── TEN, MAT, CNV, RNN, ATT, etc                              │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
@@ -105,12 +105,12 @@ This architecture is designed for AI agents to:
 │                 (Interpreted Execution)                         │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  nelaia-runtime-wasm/   (runs in browser)                       │
+│  TAYNI-runtime-wasm/   (runs in browser)                       │
 │  ├── interpreter.rs    Execute IR directly                     │
 │  ├── renderer.rs       Canvas/WebGL rendering                  │
 │  └── bridge.rs         JS interop                              │
 │                                                                 │
-│  Compiled to WASM, loaded by browser, interprets .nela graphs   │
+│  Compiled to WASM, loaded by browser, interprets .tayni graphs   │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 
@@ -119,9 +119,9 @@ This architecture is designed for AI agents to:
 │                    (User Interfaces)                            │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  nelaia-cli/            Command-line compiler                   │
-│  nelaia-lsp/            Language Server Protocol [FUTURE]       │
-│  nelaia-playground/     Web-based editor [FUTURE]               │
+│  TAYNI-cli/            Command-line compiler                   │
+│  TAYNI-lsp/            Language Server Protocol [FUTURE]       │
+│  TAYNI-playground/     Web-based editor [FUTURE]               │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -131,22 +131,22 @@ This architecture is designed for AI agents to:
 ## Directory Structure
 
 ```
-nelaia/
+TAYNI/
 ├── Cargo.toml                    # Workspace definition
 ├── ARCHITECTURE.md               # This document
 ├── README.md
 │
 ├── crates/
-│   ├── nelaia-ir/                # Layer 0: Core IR
-│   ├── nelaia-parser/            # Layer 1: Parser
-│   ├── nelaia-optimizer/         # Layer 2: Optimizer
-│   ├── nelaia-backend-native/    # Layer 3: Native backend
-│   ├── nelaia-backend-wasm/      # Layer 3: WASM backend
-│   ├── nelaia-domain-core/       # Layer 4: Core opcodes
-│   ├── nelaia-domain-net/        # Layer 4: Network opcodes
-│   ├── nelaia-domain-ui/         # Layer 4: UI opcodes
-│   ├── nelaia-runtime-wasm/      # Layer 5: Browser runtime
-│   └── nelaia-cli/               # Layer 6: CLI tool
+│   ├── TAYNI-ir/                # Layer 0: Core IR
+│   ├── TAYNI-parser/            # Layer 1: Parser
+│   ├── TAYNI-optimizer/         # Layer 2: Optimizer
+│   ├── TAYNI-backend-native/    # Layer 3: Native backend
+│   ├── TAYNI-backend-wasm/      # Layer 3: WASM backend
+│   ├── TAYNI-domain-core/       # Layer 4: Core opcodes
+│   ├── TAYNI-domain-net/        # Layer 4: Network opcodes
+│   ├── TAYNI-domain-ui/         # Layer 4: UI opcodes
+│   ├── TAYNI-runtime-wasm/      # Layer 5: Browser runtime
+│   └── TAYNI-cli/               # Layer 6: CLI tool
 │
 ├── examples/
 │   ├── server/                   # Network examples
@@ -174,24 +174,24 @@ pub enum Op {
 
 ### Proposed (Modular)
 ```rust
-// nelaia-ir/src/op.rs
+// TAYNI-ir/src/op.rs
 pub trait OpCode: Clone + Debug {
     fn domain(&self) -> &'static str;
     fn mnemonic(&self) -> &'static str;
     fn arity(&self) -> (usize, usize);  // (inputs, outputs)
 }
 
-// nelaia-domain-core/src/lib.rs
+// TAYNI-domain-core/src/lib.rs
 #[derive(Clone, Debug)]
 pub enum CoreOp { ADD, SUB, MUL, DIV, CMP, JMP, CAL, RET }
 impl OpCode for CoreOp { ... }
 
-// nelaia-domain-net/src/lib.rs  
+// TAYNI-domain-net/src/lib.rs  
 #[derive(Clone, Debug)]
 pub enum NetOp { TCP, UDP, BND, LST, ACC, CON, XMT, RCV }
 impl OpCode for NetOp { ... }
 
-// nelaia-domain-ui/src/lib.rs
+// TAYNI-domain-ui/src/lib.rs
 #[derive(Clone, Debug)]
 pub enum UiOp { BOX, TXT, BTN, INP, IMG, EVT, STY }
 impl OpCode for UiOp { ... }
@@ -199,7 +199,7 @@ impl OpCode for UiOp { ... }
 
 ### Dynamic Op Resolution
 ```rust
-// nelaia-ir/src/registry.rs
+// TAYNI-ir/src/registry.rs
 pub struct OpRegistry {
     domains: HashMap<&'static str, Box<dyn OpDomain>>,
 }
@@ -223,7 +223,7 @@ impl OpRegistry {
 All backends implement the same trait:
 
 ```rust
-// nelaia-ir/src/backend.rs
+// TAYNI-ir/src/backend.rs
 pub trait Backend {
     type Output;
     type Error;
@@ -233,7 +233,7 @@ pub trait Backend {
     fn compile(&self, graph: &Graph) -> Result<Self::Output, Self::Error>;
 }
 
-// nelaia-backend-native/src/lib.rs
+// TAYNI-backend-native/src/lib.rs
 pub struct NativeBackend {
     target: Target,  // Windows, Linux, MacOS
 }
@@ -243,7 +243,7 @@ impl Backend for NativeBackend {
     fn compile(&self, graph: &Graph) -> Result<Vec<u8>, CompileError> { ... }
 }
 
-// nelaia-backend-wasm/src/lib.rs
+// TAYNI-backend-wasm/src/lib.rs
 pub struct WasmBackend;
 impl Backend for WasmBackend {
     type Output = Vec<u8>;  // .wasm bytes
@@ -262,21 +262,21 @@ impl Backend for WasmBackend {
 
 ### Phase 1: Extract IR (When needed)
 - [ ] Create workspace Cargo.toml
-- [ ] Extract nelaia-ir from ir.rs
-- [ ] Extract nelaia-parser from parser.rs
+- [ ] Extract TAYNI-ir from ir.rs
+- [ ] Extract TAYNI-parser from parser.rs
 - [ ] Regression tests pass
 
 ### Phase 2: Modularize Backend
-- [ ] Extract nelaia-backend-native from emitter_pure.rs
+- [ ] Extract TAYNI-backend-native from emitter_pure.rs
 - [ ] Same binary output verified
 
 ### Phase 3: Add WASM Backend
-- [ ] Create nelaia-backend-wasm
-- [ ] Create nelaia-runtime-wasm
+- [ ] Create TAYNI-backend-wasm
+- [ ] Create TAYNI-runtime-wasm
 - [ ] POC: Calculator app
 
 ### Phase 4: Add UI Domain
-- [ ] Create nelaia-domain-ui
+- [ ] Create TAYNI-domain-ui
 - [ ] Define UI opcodes
 - [ ] Integrate with WASM runtime
 
@@ -284,8 +284,8 @@ impl Backend for WasmBackend {
 
 ## Compatibility Guarantees
 
-1. **Source Compatibility**: All .nela files that compile today will compile forever
-2. **Binary Compatibility**: Same .nela produces same binary (bit-for-bit when possible)
+1. **Source Compatibility**: All .tayni files that compile today will compile forever
+2. **Binary Compatibility**: Same .tayni produces same binary (bit-for-bit when possible)
 3. **API Stability**: Public traits and structs follow semver
 4. **Deprecation Policy**: Old features deprecated for 2 major versions before removal
 
@@ -293,19 +293,19 @@ impl Backend for WasmBackend {
 
 ## AI Generation Guidelines
 
-When an AI generates NELAIA code:
+When an AI generates TAYNI code:
 
 1. **Detect target platform** from user request
 2. **Select minimal domains** needed (don't include UI for CLI tools)
-3. **Generate graph** in .nela format
+3. **Generate graph** in .tayni format
 4. **Specify backend** in compilation command
 
 Example:
 ```
 User: "Create a web calculator"
 AI detects: UI needed, WASM target
-AI generates: calculator.nela using domain-ui ops
-AI compiles: nelaia compile calculator.nela --backend=wasm --domains=core,ui
+AI generates: calculator.tayni using domain-ui ops
+AI compiles: TAYNI compile calculator.tayni --backend=wasm --domains=core,ui
 Output: calculator.wasm (5KB) + runtime.wasm (300KB cached)
 ```
 
@@ -322,25 +322,25 @@ Based on AI-native reasoning, the following simplifications were made:
 1. **Unified Op Enum**: Instead of separate domain crates, all opcodes live in one enum with a `domain()` method. This reduces complexity while maintaining organization.
 
 2. **Fewer Crates**: Reduced from 10+ crates to 4:
-   - `nelaia-core` (IR + Parser + Optimizer)
-   - `nelaia-native` (Windows/Linux/Mac backend)
-   - `nelaia-wasm` (Web backend + runtime)
-   - `nelaia-cli` (Command-line tool)
+   - `TAYNI-core` (IR + Parser + Optimizer)
+   - `TAYNI-native` (Windows/Linux/Mac backend)
+   - `TAYNI-wasm` (Web backend + runtime)
+   - `TAYNI-cli` (Command-line tool)
 
-3. **Bytecode Format**: Added `.nelaia.bin` intermediate format for faster loading in runtime scenarios.
+3. **Bytecode Format**: Added `.TAYNI.bin` intermediate format for faster loading in runtime scenarios.
 
 4. **JIT Deferred**: Runtime JIT compilation deferred to POC evaluation phase.
 
 ### Simplified Structure (v2.1)
 
 ```
-nelaia/
+TAYNI/
 ├── Cargo.toml                    # Workspace
 ├── crates/
-│   ├── nelaia-core/              # IR, Parser, Optimizer, Bytecode
-│   ├── nelaia-native/            # LLVM backend for native targets
-│   ├── nelaia-wasm/              # WASM backend + browser runtime
-│   └── nelaia-cli/               # CLI tool
+│   ├── TAYNI-core/              # IR, Parser, Optimizer, Bytecode
+│   ├── TAYNI-native/            # LLVM backend for native targets
+│   ├── TAYNI-wasm/              # WASM backend + browser runtime
+│   └── TAYNI-cli/               # CLI tool
 ├── examples/
 └── tests/
 ```
@@ -380,4 +380,4 @@ impl Op {
 |---------|------|---------|
 | 2.1 | 2026-06-13 | Simplified to 4 crates, unified Op enum |
 | 2.0 | 2026-06-13 | Initial modular architecture proposal |
-| 1.x | 2026-06-xx | Monolithic nelaia-core |
+| 1.x | 2026-06-xx | Monolithic TAYNI-core |

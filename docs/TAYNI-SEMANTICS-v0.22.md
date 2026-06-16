@@ -1,6 +1,6 @@
-# NELAIA v0.22 - Semantic Rules and Type System
+# TAYNI v0.22 - Semantic Rules and Type System
 
-This document defines the semantic constraints and type rules for NELAIA.
+This document defines the semantic constraints and type rules for TAYNI.
 
 ---
 
@@ -323,7 +323,7 @@ VALID:
 | E:CYCLE | Circular dependency | Nodes depend on each other |
 | E:TYPE | Type mismatch | Wrong argument types |
 | E:CAP | Missing capability | Using capability without REQUIRES |
-| E:SYNTAX | Syntax error | Invalid NELAIA syntax |
+| E:SYNTAX | Syntax error | Invalid TAYNI syntax |
 
 ### 4.2 Runtime Errors
 
@@ -452,5 +452,5 @@ After FRE p:
 
 ---
 
-*Semantic specification for NELAIA v0.22*
+*Semantic specification for TAYNI v0.22*
 *Type safety verification reference*

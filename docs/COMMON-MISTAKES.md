@@ -1,13 +1,13 @@
-# NELAIA Common Mistakes
+# TAYNI Common Mistakes
 
-**READ THIS FIRST** - These are the most common errors when generating NELAIA code.
+**READ THIS FIRST** - These are the most common errors when generating TAYNI code.
 
 ---
 
 ## 1. Server Without Loop (CRITICAL)
 
 ### WRONG - Server exits after one request:
-```nelaia
+```TAYNI
 .caps: REQUIRES { http }
 .server: HTTP.LISTEN 8080
 .req: HTTP.ACCEPT .server
@@ -16,7 +16,7 @@
 ```
 
 ### CORRECT - Server stays running:
-```nelaia
+```TAYNI
 .caps: REQUIRES { http }
 .server: HTTP.LISTEN 8080
 .loop: HTTP.ACCEPT .server
@@ -31,13 +31,13 @@
 ## 2. PRT Missing Length (CRITICAL)
 
 ### WRONG - Silent failure, prints nothing:
-```nelaia
+```TAYNI
 .msg: "Hello!"
 .out: PRT .msg
 ```
 
 ### CORRECT - Prints "Hello!":
-```nelaia
+```TAYNI
 .msg: "Hello!"
 .len: 6
 .out: PRT .msg .len
@@ -50,14 +50,14 @@
 ## 3. Wrong String Length
 
 ### WRONG - Truncated output:
-```nelaia
+```TAYNI
 .msg: "Hello World!\n"
 .len: 11  -- Wrong! Doesn't count \n
 .out: PRT .msg .len
 ```
 
 ### CORRECT - Full output:
-```nelaia
+```TAYNI
 .msg: "Hello World!\n"
 .len: 13  -- "Hello World!" (12) + "\n" (1) = 13
 .out: PRT .msg .len
@@ -70,12 +70,12 @@
 ## 4. Missing Capability Declaration
 
 ### WRONG - Will fail:
-```nelaia
+```TAYNI
 .server: HTTP.LISTEN 8080
 ```
 
 ### CORRECT:
-```nelaia
+```TAYNI
 .caps: REQUIRES { http }
 .server: HTTP.LISTEN 8080
 ```
@@ -87,14 +87,14 @@
 ## 5. Missing Node Prefix
 
 ### WRONG - Invalid syntax:
-```nelaia
+```TAYNI
 x: 42
 y: 10
 sum: ADD x y
 ```
 
 ### CORRECT:
-```nelaia
+```TAYNI
 .x: 42
 .y: 10
 .sum: ADD .x .y
@@ -107,14 +107,14 @@ sum: ADD x y
 ## 6. Resource Leaks
 
 ### WRONG - File handle leak:
-```nelaia
+```TAYNI
 .file: FOP .path 0
 .n: FRD .file .buf 1024
 -- Forgot to close!
 ```
 
 ### CORRECT:
-```nelaia
+```TAYNI
 .file: FOP .path 0
 .n: FRD .file .buf 1024
 .close: FCL .file
@@ -126,7 +126,7 @@ sum: ADD x y
 
 ## Quick Reference: Loop Syntax
 
-```nelaia
+```TAYNI
 -- The >> operator creates a loop
 .loop_start: OPERATION .args
 -- ... more operations ...

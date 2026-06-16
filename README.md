@@ -1,12 +1,12 @@
-﻿# NELAIA
+# TAYNI
 
-[![Build](https://github.com/NELAIA-AI/nelaia/actions/workflows/build.yml/badge.svg)](https://github.com/NELAIA-AI/nelaia/actions/workflows/build.yml)
+[![Build](https://github.com/NELAIA-AI/tayni/actions/workflows/build.yml/badge.svg)](https://github.com/NELAIA-AI/tayni/actions/workflows/build.yml)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20695531.svg)](https://doi.org/10.5281/zenodo.20695531)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Rust](https://img.shields.io/badge/Rust-1.96+-orange.svg)](https://www.rust-lang.org/)
-[![Platform](https://img.shields.io/badge/Platform-Windows%20|%20Linux%20|%20macOS-blue.svg)](https://github.com/NELAIA-AI/nelaia/releases)
+[![Platform](https://img.shields.io/badge/Platform-Windows%20|%20Linux%20|%20macOS-blue.svg)](https://github.com/NELAIA-AI/tayni/releases)
 
-NELAIA Compiler v0.23 - A graph-based language optimized for AI code generation.
+TAYNI Compiler v0.23 - A graph-based language optimized for AI code generation.
 
 > **Minimal syntax. Direct native compilation. Zero dependencies.**
 
@@ -16,32 +16,32 @@ NELAIA Compiler v0.23 - A graph-based language optimized for AI code generation.
 
 ```bash
 # Linux x64
-curl -LO https://github.com/NELAIA-AI/nelaia/releases/latest/download/nelaia-c-linux-x64
-chmod +x nelaia-c-linux-x64
+curl -LO https://github.com/NELAIA-AI/tayni/releases/latest/download/tayni-c-linux-x64
+chmod +x tayni-c-linux-x64
 
 # macOS Apple Silicon
-curl -LO https://github.com/NELAIA-AI/nelaia/releases/latest/download/nelaia-c-macos-arm64
-chmod +x nelaia-c-macos-arm64
+curl -LO https://github.com/NELAIA-AI/tayni/releases/latest/download/tayni-c-macos-arm64
+chmod +x tayni-c-macos-arm64
 
 # macOS Intel
-curl -LO https://github.com/NELAIA-AI/nelaia/releases/latest/download/nelaia-c-macos-x64
-chmod +x nelaia-c-macos-x64
+curl -LO https://github.com/NELAIA-AI/tayni/releases/latest/download/tayni-c-macos-x64
+chmod +x tayni-c-macos-x64
 
-# Windows: Download nelaia-c-windows-x64.exe from Releases
+# Windows: Download tayni-c-windows-x64.exe from Releases
 ```
 
 ### 2. Verify Installation
 
 ```bash
-./nelaia-c-linux-x64 --version
-# Output: nelaia-c 0.23.0
+./tayni-c-linux-x64 --version
+# Output: tayni-c 0.23.0
 ```
 
 ### 3. Create a Program
 
 ```bash
-cat > hello.nela << 'EOF'
-.msg: "Hello from NELAIA!\n"
+cat > hello.tayni << 'EOF'
+.msg: "Hello from TAYNI!\n"
 .len: 20
 .out: PRT .msg .len
 EOF
@@ -50,7 +50,7 @@ EOF
 ### 4. Compile
 
 ```bash
-./nelaia-c-linux-x64 hello.nela -o hello
+./tayni-c-linux-x64 hello.tayni -o hello
 # Output: OK:ELF:hello:2048 bytes (direct emission, no clang)
 ```
 
@@ -58,14 +58,14 @@ EOF
 
 ```bash
 ./hello
-# Output: Hello from NELAIA!
+# Output: Hello from TAYNI!
 ```
 
 ## Example Program
 
-```nelaia
--- hello.nela
-.msg: "Hello from NELAIA!\n"
+```tayni
+-- hello.tayni
+.msg: "Hello from TAYNI!\n"
 .len: 20
 .out: PRT .msg .len
 ```
@@ -74,11 +74,11 @@ EOF
 
 | Document | Purpose |
 |----------|---------|
-| [`docs/NELAIA-GUIDE-v0.22.md`](docs/NELAIA-GUIDE-v0.22.md) | Complete guide - all operators |
-| [`docs/NELAIA-REFERENCE-v0.22.md`](docs/NELAIA-REFERENCE-v0.22.md) | EBNF grammar + operator tables |
-| [`docs/NELAIA-EXAMPLES-v0.22.md`](docs/NELAIA-EXAMPLES-v0.22.md) | Examples with dependency graphs |
-| [`docs/NELAIA-SEMANTICS-v0.22.md`](docs/NELAIA-SEMANTICS-v0.22.md) | Type system + semantic rules |
-| [`docs/NELAIA-TRAINING-DATA.jsonl`](docs/NELAIA-TRAINING-DATA.jsonl) | 100+ input/output pairs for training |
+| [`docs/TAYNI-GUIDE-v0.22.md`](docs/TAYNI-GUIDE-v0.22.md) | Complete guide - all operators |
+| [`docs/TAYNI-REFERENCE-v0.22.md`](docs/TAYNI-REFERENCE-v0.22.md) | EBNF grammar + operator tables |
+| [`docs/TAYNI-EXAMPLES-v0.22.md`](docs/TAYNI-EXAMPLES-v0.22.md) | Examples with dependency graphs |
+| [`docs/TAYNI-SEMANTICS-v0.22.md`](docs/TAYNI-SEMANTICS-v0.22.md) | Type system + semantic rules |
+| [`docs/TAYNI-TRAINING-DATA.jsonl`](docs/TAYNI-TRAINING-DATA.jsonl) | 100+ input/output pairs for training |
 | [`llms.txt`](llms.txt) | AI discovery manifest |
 
 ## Features
@@ -88,7 +88,7 @@ EOF
 - **Tiny executables** - Hello World: 145 bytes (Linux), 1KB (Windows), 4KB (macOS)
 - **Zero dependencies** - Direct PE/ELF/Mach-O emission, no Clang/GCC required
 - **Capability system** - HTTP, SQL, JSON, Files, Network, GUI
-- **MCP Server** - AI agents can invoke NELAIA directly
+- **MCP Server** - AI agents can invoke TAYNI directly
 
 ## Available Operators
 
@@ -108,38 +108,38 @@ EOF
 
 ```bash
 # Check version
-nelaia-c --version
+TAYNI-c --version
 
 # Syntax check only
-nelaia-c program.nela --check
+TAYNI-c program.tayni --check
 
 # Compile to native executable (auto-detects platform)
-nelaia-c program.nela -o program
+TAYNI-c program.tayni -o program
 
 # Force specific format
-nelaia-c program.nela -o program --emit-pe           # Windows PE
-nelaia-c program.nela -o program --emit-elf          # Linux ELF
-nelaia-c program.nela -o program --emit-macho        # macOS x64 (Intel)
-nelaia-c program.nela -o program --emit-macho-arm64  # macOS ARM64 (Apple Silicon)
+TAYNI-c program.tayni -o program --emit-pe           # Windows PE
+TAYNI-c program.tayni -o program --emit-elf          # Linux ELF
+TAYNI-c program.tayni -o program --emit-macho        # macOS x64 (Intel)
+TAYNI-c program.tayni -o program --emit-macho-arm64  # macOS ARM64 (Apple Silicon)
 
 # Cross-compile
-nelaia-c program.nela --target=linux      # From any OS to Linux
-nelaia-c program.nela --target=macos-arm64 # From any OS to macOS ARM64
+TAYNI-c program.tayni --target=linux      # From any OS to Linux
+TAYNI-c program.tayni --target=macos-arm64 # From any OS to macOS ARM64
 
 # Use LLVM+Clang flow (optional, requires clang)
-nelaia-c program.nela -o program --use-clang
+TAYNI-c program.tayni -o program --use-clang
 
 # JSON output for programmatic use
-nelaia-c program.nela --check --json
+TAYNI-c program.tayni --check --json
 ```
 
 ## Project Structure
 
 ```
-nelaia-core/
+TAYNI-core/
 ├── src/                    # Rust compiler source
 │   ├── main.rs            # CLI entry point
-│   ├── parser.rs          # NELAIA parser
+│   ├── parser.rs          # TAYNI parser
 │   ├── ir.rs              # Intermediate representation
 │   ├── pe.rs              # Windows PE generator
 │   ├── elf.rs             # Linux ELF generator
@@ -158,7 +158,7 @@ cargo build --release
 # Run tests
 cargo test
 
-# The compiler binary will be at target/release/nelaia-c
+# The compiler binary will be at target/release/TAYNI-c
 ```
 
 ## Troubleshooting
@@ -166,7 +166,7 @@ cargo test
 ### "Permission denied" on Linux/macOS
 
 ```bash
-chmod +x nelaia-c-linux-x64
+chmod +x TAYNI-c-linux-x64
 ```
 
 ### "command not found"
@@ -174,20 +174,20 @@ chmod +x nelaia-c-linux-x64
 Use the full path or add to PATH:
 
 ```bash
-./nelaia-c-linux-x64 --version
+./TAYNI-c-linux-x64 --version
 # or
 export PATH=$PATH:$(pwd)
-nelaia-c-linux-x64 --version
+TAYNI-c-linux-x64 --version
 ```
 
 ### "E:PARSE: Unrecognized syntax"
 
-Check your NELAIA syntax:
+Check your TAYNI syntax:
 - Comments use `--` (not `//` or `#`)
 - Nodes start with `.` (e.g., `.x: 42`)
 - Strings use double quotes
 
-```nelaia
+```TAYNI
 -- This is a comment
 .x: 42
 .msg: "Hello"
@@ -197,7 +197,7 @@ Check your NELAIA syntax:
 
 All referenced nodes must be defined:
 
-```nelaia
+```TAYNI
 -- Wrong: .y is not defined
 .result: ADD .x .y
 
@@ -209,9 +209,9 @@ All referenced nodes must be defined:
 
 ### "E:CYCLE: circular dependency"
 
-NELAIA graphs must be acyclic:
+TAYNI graphs must be acyclic:
 
-```nelaia
+```TAYNI
 -- Wrong: circular reference
 .a: ADD .b 1
 .b: ADD .a 1
@@ -224,22 +224,22 @@ NELAIA graphs must be acyclic:
 ### Binary doesn't run on target OS
 
 Use the correct binary for your platform:
-- Windows: `nelaia-c-windows-x64.exe`
-- Linux: `nelaia-c-linux-x64`
-- macOS Intel: `nelaia-c-macos-x64`
-- macOS Apple Silicon: `nelaia-c-macos-arm64`
+- Windows: `TAYNI-c-windows-x64.exe`
+- Linux: `TAYNI-c-linux-x64`
+- macOS Intel: `TAYNI-c-macos-x64`
+- macOS Apple Silicon: `TAYNI-c-macos-arm64`
 
 Or cross-compile with `--target`:
 
 ```bash
-./nelaia-c-linux-x64 program.nela --target=windows -o program
+./TAYNI-c-linux-x64 program.tayni --target=windows -o program
 ```
 
 ### Need more help?
 
 ```bash
-nelaia-c --help
-nelaia-c program.nela --check --json  # Machine-readable errors
+TAYNI-c --help
+TAYNI-c program.tayni --check --json  # Machine-readable errors
 ```
 
 ## License
@@ -248,4 +248,4 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
-*NELAIA - Graph-based compilation for AI systems*
+*TAYNI - Graph-based compilation for AI systems*

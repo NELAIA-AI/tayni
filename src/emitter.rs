@@ -1,4 +1,4 @@
-//! NELAIA v0.8 LLVM IR Emitter
+//! TAYNI v0.8 LLVM IR Emitter
 //! Generates pure LLVM IR with direct syscalls (no libc)
 //! Supports Linux (direct syscalls) and Windows (kernel32.dll)
 
@@ -111,7 +111,7 @@ impl Emitter {
         let mut ir = String::new();
         
         // Header
-        ir.push_str("; NELAIA v0.6 Auto-Generated LLVM IR\n");
+        ir.push_str("; TAYNI v0.6 Auto-Generated LLVM IR\n");
         ir.push_str("; Pure syscalls - NO libc dependency\n");
         
         match self.target {
@@ -149,7 +149,7 @@ impl Emitter {
         ir.push_str(&self.emit_subgraph_functions()?);
         
         // Main function
-        ir.push_str("define i32 @nelaia_main() {\n");
+        ir.push_str("define i32 @TAYNI_main() {\n");
         ir.push_str("entry:\n");
         ir.push_str(&main_body);
         ir.push_str("  ret i32 0\n");
@@ -293,7 +293,7 @@ impl Emitter {
                 .map(|p| format!("i64 %{}", p))
                 .collect();
             
-            code.push_str(&format!("define i64 @nelaia_func_{}({}) {{\n", name, params.join(", ")));
+            code.push_str(&format!("define i64 @TAYNI_func_{}({}) {{\n", name, params.join(", ")));
             code.push_str("entry:\n");
             
             // Emit nodes inside the function
@@ -386,7 +386,7 @@ impl Emitter {
             Op::Brn => self.emit_branch(id, args),
             Op::Prt => {
                 let arg = self.emit_arg(&args[0])?;
-                Ok(format!("  call i64 @nelaia_println(i8* {})\n", arg))
+                Ok(format!("  call i64 @TAYNI_println(i8* {})\n", arg))
             }
             Op::Opn => self.emit_file_open(id, args),
             Op::Get => self.emit_file_read(id, args),
@@ -419,12 +419,12 @@ impl Emitter {
     
     /// TCP socket: TCP -> fd
     fn emit_tcp_socket(&mut self, id: &str, _args: &[Arg]) -> Result<String, String> {
-        Ok(format!("  %{} = call i64 @nelaia_tcp_socket()\n", id))
+        Ok(format!("  %{} = call i64 @TAYNI_tcp_socket()\n", id))
     }
     
     /// UDP socket: UDP -> fd
     fn emit_udp_socket(&mut self, id: &str, _args: &[Arg]) -> Result<String, String> {
-        Ok(format!("  %{} = call i64 @nelaia_udp_socket()\n", id))
+        Ok(format!("  %{} = call i64 @TAYNI_udp_socket()\n", id))
     }
     
     /// TCP bind: BND .fd port
@@ -434,7 +434,7 @@ impl Emitter {
         }
         let fd = self.emit_arg(&args[0])?;
         let port = self.emit_arg(&args[1])?;
-        Ok(format!("  %{} = call i64 @nelaia_tcp_bind(i64 {}, i64 {})\n", id, fd, port))
+        Ok(format!("  %{} = call i64 @TAYNI_tcp_bind(i64 {}, i64 {})\n", id, fd, port))
     }
     
     /// TCP listen: LST .fd backlog
@@ -448,7 +448,7 @@ impl Emitter {
         } else {
             "10".to_string()
         };
-        Ok(format!("  %{} = call i64 @nelaia_tcp_listen(i64 {}, i64 {})\n", id, fd, backlog))
+        Ok(format!("  %{} = call i64 @TAYNI_tcp_listen(i64 {}, i64 {})\n", id, fd, backlog))
     }
     
     /// TCP accept: ACC .fd -> client_fd
@@ -457,7 +457,7 @@ impl Emitter {
             return Err("ACC requires fd argument".to_string());
         }
         let fd = self.emit_arg(&args[0])?;
-        Ok(format!("  %{} = call i64 @nelaia_tcp_accept(i64 {})\n", id, fd))
+        Ok(format!("  %{} = call i64 @TAYNI_tcp_accept(i64 {})\n", id, fd))
     }
     
     /// TCP connect: CON .fd "host" port
@@ -468,7 +468,7 @@ impl Emitter {
         let fd = self.emit_arg(&args[0])?;
         let host = self.emit_arg(&args[1])?;
         let port = self.emit_arg(&args[2])?;
-        Ok(format!("  %{} = call i64 @nelaia_tcp_connect(i64 {}, i8* {}, i64 {})\n", id, fd, host, port))
+        Ok(format!("  %{} = call i64 @TAYNI_tcp_connect(i64 {}, i8* {}, i64 {})\n", id, fd, host, port))
     }
     
     /// TCP send: SND .fd "data" or SND .fd .buf .len
@@ -490,7 +490,7 @@ impl Emitter {
                     });
                 let len = s.len();
                 Ok(format!(
-                    "  %{} = call i64 @nelaia_tcp_send(i64 {}, i8* getelementptr ([{} x i8], [{} x i8]* @{}, i32 0, i32 0), i64 {})\n",
+                    "  %{} = call i64 @TAYNI_tcp_send(i64 {}, i8* getelementptr ([{} x i8], [{} x i8]* @{}, i32 0, i32 0), i64 {})\n",
                     id, fd, len + 1, len + 1, str_id, len
                 ))
             }
@@ -498,7 +498,7 @@ impl Emitter {
                 // Reference to a string - need to calculate length at runtime
                 let buf = self.emit_arg(&args[1])?;
                 Ok(format!(
-                    "  %{}_len = call i64 @_nelaia_str_len(i8* {})\n  %{} = call i64 @nelaia_tcp_send(i64 {}, i8* {}, i64 %{}_len)\n",
+                    "  %{}_len = call i64 @_TAYNI_str_len(i8* {})\n  %{} = call i64 @TAYNI_tcp_send(i64 {}, i8* {}, i64 %{}_len)\n",
                     id, buf, id, fd, buf, id
                 ))
             }
@@ -509,7 +509,7 @@ impl Emitter {
                 } else {
                     "0".to_string()
                 };
-                Ok(format!("  %{} = call i64 @nelaia_tcp_send(i64 {}, i8* {}, i64 {})\n", id, fd, buf, len))
+                Ok(format!("  %{} = call i64 @TAYNI_tcp_send(i64 {}, i8* {}, i64 {})\n", id, fd, buf, len))
             }
         }
     }
@@ -522,7 +522,7 @@ impl Emitter {
         let fd = self.emit_arg(&args[0])?;
         let buf = self.emit_arg(&args[1])?;
         let maxlen = self.emit_arg(&args[2])?;
-        Ok(format!("  %{} = call i64 @nelaia_tcp_recv(i64 {}, i8* {}, i64 {})\n", id, fd, buf, maxlen))
+        Ok(format!("  %{} = call i64 @TAYNI_tcp_recv(i64 {}, i8* {}, i64 {})\n", id, fd, buf, maxlen))
     }
     
     // ========== MEMORY OPERATIONS ==========
@@ -533,7 +533,7 @@ impl Emitter {
             return Err("ALC requires size argument".to_string());
         }
         let size = self.emit_arg(&args[0])?;
-        Ok(format!("  %{}_ptr = call i8* @nelaia_alloc(i64 {})\n  %{} = ptrtoint i8* %{}_ptr to i64\n", id, size, id, id))
+        Ok(format!("  %{}_ptr = call i8* @TAYNI_alloc(i64 {})\n  %{} = ptrtoint i8* %{}_ptr to i64\n", id, size, id, id))
     }
     
     /// Free memory: FRE .ptr
@@ -542,7 +542,7 @@ impl Emitter {
             return Err("FRE requires ptr argument".to_string());
         }
         let ptr = self.emit_arg(&args[0])?;
-        Ok(format!("  %{}_ptr = inttoptr i64 {} to i8*\n  %{} = call i64 @nelaia_free(i8* %{}_ptr)\n", id, ptr, id, id))
+        Ok(format!("  %{}_ptr = inttoptr i64 {} to i8*\n  %{} = call i64 @TAYNI_free(i8* %{}_ptr)\n", id, ptr, id, id))
     }
     
     // ========== CONTROL FLOW ==========
@@ -617,7 +617,7 @@ loop_end_{depth}:
             "0".to_string()
         };
         
-        Ok(format!("  %{} = call i64 @nelaia_file_open(i8* {}, i64 {})\n", id, filename, mode))
+        Ok(format!("  %{} = call i64 @TAYNI_file_open(i8* {}, i64 {})\n", id, filename, mode))
     }
     
     /// Emit file read: GET .fd .buffer .size
@@ -630,7 +630,7 @@ loop_end_{depth}:
         let buf = self.emit_arg(&args[1])?;
         let size = self.emit_arg(&args[2])?;
         
-        Ok(format!("  %{} = call i64 @nelaia_file_read(i64 {}, i8* {}, i64 {})\n", id, fd, buf, size))
+        Ok(format!("  %{} = call i64 @TAYNI_file_read(i64 {}, i8* {}, i64 {})\n", id, fd, buf, size))
     }
     
     /// Emit file write: PUT .fd "data" or PUT .fd .buffer .size
@@ -654,7 +654,7 @@ loop_end_{depth}:
                         });
                     let len = s.len();
                     Ok(format!(
-                        "  %{} = call i64 @nelaia_file_write(i64 {}, i8* getelementptr ([{} x i8], [{} x i8]* @{}, i32 0, i32 0), i64 {})\n",
+                        "  %{} = call i64 @TAYNI_file_write(i64 {}, i8* getelementptr ([{} x i8], [{} x i8]* @{}, i32 0, i32 0), i64 {})\n",
                         id, fd, len + 1, len + 1, str_id, len
                     ))
                 }
@@ -665,7 +665,7 @@ loop_end_{depth}:
                     } else {
                         "0".to_string()
                     };
-                    Ok(format!("  %{} = call i64 @nelaia_file_write(i64 {}, i8* {}, i64 {})\n", id, fd, buf, size))
+                    Ok(format!("  %{} = call i64 @TAYNI_file_write(i64 {}, i8* {}, i64 {})\n", id, fd, buf, size))
                 }
             }
         } else {
@@ -684,10 +684,10 @@ loop_end_{depth}:
         match self.target {
             TargetPlatform::Windows => {
                 // Try closesocket first (for sockets), then CloseHandle (for files)
-                Ok(format!("  %{} = call i64 @nelaia_socket_close(i64 {})\n", id, fd))
+                Ok(format!("  %{} = call i64 @TAYNI_socket_close(i64 {})\n", id, fd))
             }
             TargetPlatform::Linux => {
-                Ok(format!("  %{} = call i64 @nelaia_file_close(i64 {})\n", id, fd))
+                Ok(format!("  %{} = call i64 @TAYNI_file_close(i64 {})\n", id, fd))
             }
         }
     }
@@ -718,7 +718,7 @@ loop_end_{depth}:
             arg_strs.push(format!("i64 {}", self.emit_arg(arg)?));
         }
         
-        code.push_str(&format!("  %{} = call i64 @nelaia_func_{}({})\n", 
+        code.push_str(&format!("  %{} = call i64 @TAYNI_func_{}({})\n", 
             id, func_name, arg_strs.join(", ")));
         Ok(code)
     }
@@ -806,22 +806,22 @@ loop_end_{depth}:
                             });
                         let len = s.len() + 1;
                         Ok(format!(
-                            "  call i64 @nelaia_println(i8* getelementptr ([{} x i8], [{} x i8]* @{}, i32 0, i32 0))\n",
+                            "  call i64 @TAYNI_println(i8* getelementptr ([{} x i8], [{} x i8]* @{}, i32 0, i32 0))\n",
                             len, len, str_id
                         ))
                     }
                     Arg::Lit(Value::Int(n)) => {
-                        Ok(format!("  call i64 @nelaia_print_int(i64 {})\n", n))
+                        Ok(format!("  call i64 @TAYNI_print_int(i64 {})\n", n))
                     }
                     Arg::Ref(name) => {
                         // Check if we know the type
                         if let Some(var_type) = self.var_types.get(name) {
                             match var_type {
                                 VarType::String => {
-                                    Ok(format!("  call i64 @nelaia_println(i8* %{})\n", name))
+                                    Ok(format!("  call i64 @TAYNI_println(i8* %{})\n", name))
                                 }
                                 VarType::Int => {
-                                    Ok(format!("  call i64 @nelaia_print_int(i64 %{})\n", name))
+                                    Ok(format!("  call i64 @TAYNI_print_int(i64 %{})\n", name))
                                 }
                                 VarType::Float => {
                                     // TODO: implement float printing
@@ -833,14 +833,14 @@ loop_end_{depth}:
                             }
                         } else {
                             // Default to integer for operations
-                            Ok(format!("  call i64 @nelaia_print_int(i64 %{})\n", name))
+                            Ok(format!("  call i64 @TAYNI_print_int(i64 %{})\n", name))
                         }
                     }
                     Arg::Expr(op, args) => {
                         // Emit the expression first, then print the result
                         let tmp_id = format!("flow_tmp_{}", self.next_id());
                         let mut code = self.emit_operation(&tmp_id, op, args)?;
-                        code.push_str(&format!("  call i64 @nelaia_print_int(i64 %{})\n", tmp_id));
+                        code.push_str(&format!("  call i64 @TAYNI_print_int(i64 %{})\n", tmp_id));
                         Ok(code)
                     }
                     _ => Ok("  ; TODO: print unknown type\n".to_string())
@@ -931,7 +931,7 @@ entry:
 ; ============================================================================
 
 ; Open file: mode 0=read, 1=write, 2=append
-define i64 @nelaia_file_open(i8* %filename, i64 %mode) {
+define i64 @TAYNI_file_open(i8* %filename, i64 %mode) {
 entry:
   %is_read = icmp eq i64 %mode, 0
   br i1 %is_read, label %open_read, label %check_write
@@ -957,7 +957,7 @@ open_append:
 }
 
 ; Read from file
-define i64 @nelaia_file_read(i64 %fd, i8* %buf, i64 %size) {
+define i64 @TAYNI_file_read(i64 %fd, i8* %buf, i64 %size) {
 entry:
   %fd32 = trunc i64 %fd to i32
   %result = call i64 @sys_read(i32 %fd32, i8* %buf, i64 %size)
@@ -965,7 +965,7 @@ entry:
 }
 
 ; Write to file
-define i64 @nelaia_file_write(i64 %fd, i8* %buf, i64 %size) {
+define i64 @TAYNI_file_write(i64 %fd, i8* %buf, i64 %size) {
 entry:
   %fd32 = trunc i64 %fd to i32
   %result = call i64 @sys_write(i32 %fd32, i8* %buf, i64 %size)
@@ -973,7 +973,7 @@ entry:
 }
 
 ; Close file
-define i64 @nelaia_file_close(i64 %fd) {
+define i64 @TAYNI_file_close(i64 %fd) {
 entry:
   %result = call i64 @sys_close(i64 %fd)
   ret i64 %result
@@ -1074,7 +1074,7 @@ entry:
 @.sockaddr_buf = private global [16 x i8] zeroinitializer
 
 ; Create TCP socket
-define i64 @nelaia_tcp_socket() {
+define i64 @TAYNI_tcp_socket() {
 entry:
   ; AF_INET = 2, SOCK_STREAM = 1, protocol = 0
   %fd = call i64 @sys_socket(i64 2, i64 1, i64 0)
@@ -1082,7 +1082,7 @@ entry:
 }
 
 ; Create UDP socket
-define i64 @nelaia_udp_socket() {
+define i64 @TAYNI_udp_socket() {
 entry:
   ; AF_INET = 2, SOCK_DGRAM = 2, protocol = 0
   %fd = call i64 @sys_socket(i64 2, i64 2, i64 0)
@@ -1090,7 +1090,7 @@ entry:
 }
 
 ; Bind socket to port
-define i64 @nelaia_tcp_bind(i64 %fd, i64 %port) {
+define i64 @TAYNI_tcp_bind(i64 %fd, i64 %port) {
 entry:
   ; Build sockaddr_in: AF_INET (2), port (big-endian), INADDR_ANY (0)
   %addr = getelementptr [16 x i8], [16 x i8]* @.sockaddr_buf, i32 0, i32 0
@@ -1121,24 +1121,24 @@ entry:
 }
 
 ; Listen on socket
-define i64 @nelaia_tcp_listen(i64 %fd, i64 %backlog) {
+define i64 @TAYNI_tcp_listen(i64 %fd, i64 %backlog) {
 entry:
   %result = call i64 @sys_listen(i64 %fd, i64 %backlog)
   ret i64 %result
 }
 
 ; Accept connection
-define i64 @nelaia_tcp_accept(i64 %fd) {
+define i64 @TAYNI_tcp_accept(i64 %fd) {
 entry:
   %result = call i64 @sys_accept(i64 %fd, i8* null, i64* null)
   ret i64 %result
 }
 
 ; Connect to host:port (simplified - only supports IP addresses)
-define i64 @nelaia_tcp_connect(i64 %fd, i8* %host, i64 %port) {
+define i64 @TAYNI_tcp_connect(i64 %fd, i8* %host, i64 %port) {
 entry:
   ; Parse IP address from string "x.x.x.x"
-  %ip = call i32 @nelaia_parse_ip(i8* %host)
+  %ip = call i32 @TAYNI_parse_ip(i8* %host)
   
   ; Build sockaddr_in
   %addr = getelementptr [16 x i8], [16 x i8]* @.sockaddr_buf, i32 0, i32 0
@@ -1163,7 +1163,7 @@ entry:
 }
 
 ; Parse IP address string "x.x.x.x" to 32-bit integer (network byte order)
-define i32 @nelaia_parse_ip(i8* %str) #1 {
+define i32 @TAYNI_parse_ip(i8* %str) #1 {
 entry:
   %octet1 = alloca i32
   %octet2 = alloca i32
@@ -1261,14 +1261,14 @@ done:
 }
 
 ; Send data
-define i64 @nelaia_tcp_send(i64 %fd, i8* %buf, i64 %len) {
+define i64 @TAYNI_tcp_send(i64 %fd, i8* %buf, i64 %len) {
 entry:
   %result = call i64 @sys_sendto(i64 %fd, i8* %buf, i64 %len, i64 0, i8* null, i64 0)
   ret i64 %result
 }
 
 ; Receive data
-define i64 @nelaia_tcp_recv(i64 %fd, i8* %buf, i64 %maxlen) {
+define i64 @TAYNI_tcp_recv(i64 %fd, i8* %buf, i64 %maxlen) {
 entry:
   %result = call i64 @sys_recvfrom(i64 %fd, i8* %buf, i64 %maxlen, i64 0, i8* null, i64* null)
   ret i64 %result
@@ -1279,7 +1279,7 @@ entry:
 ; ============================================================================
 
 ; Allocate memory using mmap
-define i8* @nelaia_alloc(i64 %size) {
+define i8* @TAYNI_alloc(i64 %size) {
 entry:
   ; PROT_READ | PROT_WRITE = 3, MAP_PRIVATE | MAP_ANONYMOUS = 34
   %ptr = call i8* @sys_mmap(i8* null, i64 %size, i64 3, i64 34, i64 -1, i64 0)
@@ -1287,7 +1287,7 @@ entry:
 }
 
 ; Free memory using munmap
-define i64 @nelaia_free(i8* %ptr) {
+define i64 @TAYNI_free(i8* %ptr) {
 entry:
   ; Note: munmap needs the size, but we don't track it. Use a page size.
   %result = call i64 @sys_munmap(i8* %ptr, i64 4096)
@@ -1316,7 +1316,7 @@ attributes #0 = { nounwind }
 @.stdout_handle = private global i8* null
 
 ; Initialize stdout handle
-define void @nelaia_init_io() {
+define void @TAYNI_init_io() {
 entry:
   ; STD_OUTPUT_HANDLE = -11
   %handle = call i8* @GetStdHandle(i32 -11)
@@ -1349,7 +1349,7 @@ entry:
 ; ============================================================================
 
 ; Open file: mode 0=read, 1=write, 2=append
-define i64 @nelaia_file_open(i8* %filename, i64 %mode) {
+define i64 @TAYNI_file_open(i8* %filename, i64 %mode) {
 entry:
   %is_read = icmp eq i64 %mode, 0
   br i1 %is_read, label %open_read, label %check_write
@@ -1378,7 +1378,7 @@ open_append:
 }
 
 ; Read from file
-define i64 @nelaia_file_read(i64 %fd, i8* %buf, i64 %size) {
+define i64 @TAYNI_file_read(i64 %fd, i8* %buf, i64 %size) {
 entry:
   %handle = inttoptr i64 %fd to i8*
   %size32 = trunc i64 %size to i32
@@ -1391,7 +1391,7 @@ entry:
 }
 
 ; Write to file
-define i64 @nelaia_file_write(i64 %fd, i8* %buf, i64 %size) {
+define i64 @TAYNI_file_write(i64 %fd, i8* %buf, i64 %size) {
 entry:
   %handle = inttoptr i64 %fd to i8*
   %size32 = trunc i64 %size to i32
@@ -1404,7 +1404,7 @@ entry:
 }
 
 ; Close file
-define i64 @nelaia_file_close(i64 %fd) {
+define i64 @TAYNI_file_close(i64 %fd) {
 entry:
   %handle = inttoptr i64 %fd to i8*
   %result = call i32 @CloseHandle(i8* %handle)
@@ -1441,7 +1441,7 @@ declare dllimport i32 @VirtualFree(i8*, i64, i32) #0
 @.win_sockaddr = private global [16 x i8] zeroinitializer
 
 ; Initialize Winsock
-define void @nelaia_wsa_init() {
+define void @TAYNI_wsa_init() {
 entry:
   %initialized = load i32, i32* @.wsa_initialized
   %need_init = icmp eq i32 %initialized, 0
@@ -1459,25 +1459,25 @@ done:
 }
 
 ; Create TCP socket
-define i64 @nelaia_tcp_socket() {
+define i64 @TAYNI_tcp_socket() {
 entry:
-  call void @nelaia_wsa_init()
+  call void @TAYNI_wsa_init()
   ; AF_INET = 2, SOCK_STREAM = 1, IPPROTO_TCP = 6
   %fd = call i64 @socket(i32 2, i32 1, i32 6)
   ret i64 %fd
 }
 
 ; Create UDP socket
-define i64 @nelaia_udp_socket() {
+define i64 @TAYNI_udp_socket() {
 entry:
-  call void @nelaia_wsa_init()
+  call void @TAYNI_wsa_init()
   ; AF_INET = 2, SOCK_DGRAM = 2, IPPROTO_UDP = 17
   %fd = call i64 @socket(i32 2, i32 2, i32 17)
   ret i64 %fd
 }
 
 ; Bind socket to port
-define i64 @nelaia_tcp_bind(i64 %fd, i64 %port) {
+define i64 @TAYNI_tcp_bind(i64 %fd, i64 %port) {
 entry:
   %addr = getelementptr [16 x i8], [16 x i8]* @.win_sockaddr, i32 0, i32 0
   ; sin_family = AF_INET = 2
@@ -1507,7 +1507,7 @@ entry:
 }
 
 ; Listen on socket
-define i64 @nelaia_tcp_listen(i64 %fd, i64 %backlog) {
+define i64 @TAYNI_tcp_listen(i64 %fd, i64 %backlog) {
 entry:
   %backlog32 = trunc i64 %backlog to i32
   %result = call i32 @listen(i64 %fd, i32 %backlog32)
@@ -1516,17 +1516,17 @@ entry:
 }
 
 ; Accept connection
-define i64 @nelaia_tcp_accept(i64 %fd) {
+define i64 @TAYNI_tcp_accept(i64 %fd) {
 entry:
   %client_fd = call i64 @accept(i64 %fd, i8* null, i32* null)
   ret i64 %client_fd
 }
 
 ; Connect to host:port
-define i64 @nelaia_tcp_connect(i64 %fd, i8* %host, i64 %port) {
+define i64 @TAYNI_tcp_connect(i64 %fd, i8* %host, i64 %port) {
 entry:
   ; Parse IP address from string
-  %ip = call i32 @nelaia_parse_ip(i8* %host)
+  %ip = call i32 @TAYNI_parse_ip(i8* %host)
   
   %addr = getelementptr [16 x i8], [16 x i8]* @.win_sockaddr, i32 0, i32 0
   store i8 2, i8* %addr
@@ -1551,7 +1551,7 @@ entry:
 }
 
 ; Parse IP address string "x.x.x.x" to 32-bit integer (network byte order)
-define i32 @nelaia_parse_ip(i8* %str) #1 {
+define i32 @TAYNI_parse_ip(i8* %str) #1 {
 entry:
   %octet1 = alloca i32
   %octet2 = alloca i32
@@ -1648,7 +1648,7 @@ done:
 }
 
 ; Send data
-define i64 @nelaia_tcp_send(i64 %fd, i8* %buf, i64 %len) {
+define i64 @TAYNI_tcp_send(i64 %fd, i8* %buf, i64 %len) {
 entry:
   %len32 = trunc i64 %len to i32
   %result = call i32 @send(i64 %fd, i8* %buf, i32 %len32, i32 0)
@@ -1657,7 +1657,7 @@ entry:
 }
 
 ; Receive data
-define i64 @nelaia_tcp_recv(i64 %fd, i8* %buf, i64 %maxlen) {
+define i64 @TAYNI_tcp_recv(i64 %fd, i8* %buf, i64 %maxlen) {
 entry:
   %maxlen32 = trunc i64 %maxlen to i32
   %result = call i32 @recv(i64 %fd, i8* %buf, i32 %maxlen32, i32 0)
@@ -1666,7 +1666,7 @@ entry:
 }
 
 ; Close socket (use closesocket, not CloseHandle)
-define i64 @nelaia_socket_close(i64 %fd) {
+define i64 @TAYNI_socket_close(i64 %fd) {
 entry:
   ; Shutdown send direction first (SD_SEND = 1)
   call i32 @shutdown(i64 %fd, i32 1)
@@ -1681,7 +1681,7 @@ entry:
 ; ============================================================================
 
 ; Allocate memory using VirtualAlloc
-define i8* @nelaia_alloc(i64 %size) {
+define i8* @TAYNI_alloc(i64 %size) {
 entry:
   ; MEM_COMMIT | MEM_RESERVE = 0x3000, PAGE_READWRITE = 0x04
   %ptr = call i8* @VirtualAlloc(i8* null, i64 %size, i32 12288, i32 4)
@@ -1689,7 +1689,7 @@ entry:
 }
 
 ; Free memory using VirtualFree
-define i64 @nelaia_free(i8* %ptr) {
+define i64 @TAYNI_free(i8* %ptr) {
 entry:
   ; MEM_RELEASE = 0x8000
   %result = call i32 @VirtualFree(i8* %ptr, i64 0, i32 32768)
@@ -1706,7 +1706,7 @@ entry:
 ; ============================================================================
 
 ; String length (internal, noinline to prevent optimization to libc strlen)
-define i64 @_nelaia_str_len(i8* %str) #1 {
+define i64 @_TAYNI_str_len(i8* %str) #1 {
 entry:
   br label %loop
 loop:
@@ -1723,18 +1723,18 @@ done:
 attributes #1 = { noinline nounwind optnone }
 
 ; Print string (no newline)
-define i64 @nelaia_print(i8* %str) {
+define i64 @TAYNI_print(i8* %str) {
 entry:
-  %len = call i64 @_nelaia_str_len(i8* %str)
+  %len = call i64 @_TAYNI_str_len(i8* %str)
   %result = call i64 @sys_write(i32 1, i8* %str, i64 %len)
   ret i64 %result
 }
 
 ; Print string with newline
 @.newline = private constant [2 x i8] c"\0A\00"
-define i64 @nelaia_println(i8* %str) {
+define i64 @TAYNI_println(i8* %str) {
 entry:
-  %len = call i64 @_nelaia_str_len(i8* %str)
+  %len = call i64 @_TAYNI_str_len(i8* %str)
   call i64 @sys_write(i32 1, i8* %str, i64 %len)
   %nl = getelementptr [2 x i8], [2 x i8]* @.newline, i32 0, i32 0
   %result = call i64 @sys_write(i32 1, i8* %nl, i64 1)
@@ -1746,7 +1746,7 @@ entry:
 ; ============================================================================
 @.itoa_buf = private global [21 x i8] zeroinitializer
 
-define i8* @nelaia_itoa(i64 %num) #1 {
+define i8* @TAYNI_itoa(i64 %num) #1 {
 entry:
   %buf_end = getelementptr [21 x i8], [21 x i8]* @.itoa_buf, i32 0, i32 20
   store i8 0, i8* %buf_end
@@ -1794,10 +1794,10 @@ return_ptr:
 }
 
 ; Print integer with newline
-define i64 @nelaia_print_int(i64 %num) {
+define i64 @TAYNI_print_int(i64 %num) {
 entry:
-  %str = call i8* @nelaia_itoa(i64 %num)
-  %len = call i64 @_nelaia_str_len(i8* %str)
+  %str = call i8* @TAYNI_itoa(i64 %num)
+  %len = call i64 @_TAYNI_str_len(i8* %str)
   call i64 @sys_write(i32 1, i8* %str, i64 %len)
   %nl = getelementptr [2 x i8], [2 x i8]* @.newline, i32 0, i32 0
   %result = call i64 @sys_write(i32 1, i8* %nl, i64 1)
@@ -1814,7 +1814,7 @@ entry:
 
 define void @_start() {
 entry:
-  %result = call i32 @nelaia_main()
+  %result = call i32 @TAYNI_main()
   call void @sys_exit(i32 %result)
   unreachable
 }
@@ -1830,9 +1830,9 @@ entry:
 define void @mainCRTStartup() {
 entry:
   ; Initialize I/O handles
-  call void @nelaia_init_io()
+  call void @TAYNI_init_io()
   ; Run main
-  %result = call i32 @nelaia_main()
+  %result = call i32 @TAYNI_main()
   call void @sys_exit(i32 %result)
   unreachable
 }

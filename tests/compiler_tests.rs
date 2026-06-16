@@ -1,4 +1,4 @@
-//! NELAIA Compiler Test Suite
+//! TAYNI Compiler Test Suite
 //! AI-First: Deterministic validation of all operators and examples
 
 use std::process::Command;
@@ -8,9 +8,9 @@ use std::path::Path;
 /// Get the compiler path
 fn compiler_path() -> String {
     if cfg!(windows) {
-        "target/debug/nelaia-c.exe".to_string()
+        "target/debug/TAYNI-c.exe".to_string()
     } else {
-        "target/debug/nelaia-c".to_string()
+        "target/debug/TAYNI-c".to_string()
     }
 }
 
@@ -30,7 +30,7 @@ fn run_compiler(args: &[&str]) -> (i32, String, String) {
 
 /// Write temp file and return path
 fn write_temp_nela(content: &str, name: &str) -> String {
-    let path = format!("target/test_{}.nela", name);
+    let path = format!("target/test_{}.tayni", name);
     fs::write(&path, content).expect("Failed to write temp file");
     path
 }
@@ -43,7 +43,7 @@ fn write_temp_nela(content: &str, name: &str) -> String {
 fn test_version() {
     let (code, stdout, _) = run_compiler(&["--version"]);
     assert_eq!(code, 0);
-    assert!(stdout.contains("nelaia-c"));
+    assert!(stdout.contains("TAYNI-c"));
     assert!(stdout.contains("0.23"));
 }
 
@@ -61,7 +61,7 @@ fn test_help() {
 fn test_no_args() {
     let (code, _, stderr) = run_compiler(&[]);
     assert_eq!(code, 0);
-    assert!(stderr.contains("usage") || stderr.contains("nelaia-c"));
+    assert!(stderr.contains("usage") || stderr.contains("TAYNI-c"));
 }
 
 // ============================================
@@ -498,7 +498,7 @@ fn test_error_cycle() {
 
 #[test]
 fn test_jsonl_examples_syntax() {
-    let jsonl_path = "docs/NELAIA-TRAINING-DATA.jsonl";
+    let jsonl_path = "docs/TAYNI-TRAINING-DATA.jsonl";
     if !Path::new(jsonl_path).exists() {
         return; // Skip if file doesn't exist
     }

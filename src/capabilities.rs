@@ -1,4 +1,4 @@
-//! NELAIA Capability System (SCN)
+//! TAYNI Capability System (SCN)
 //! Resolves high-level capability operations to platform-specific code
 //! 
 //! Principle: Programs declare WHAT they need, compiler decides HOW
@@ -177,7 +177,7 @@ impl CapabilityResolver {
         format!(r#"
   ; JSON.PARSE - allocate and parse
   %json_obj = call i8* @malloc(i64 4096)
-  call void @nelaia_json_parse(i8* %{input}, i8* %json_obj)
+  call void @TAYNI_json_parse(i8* %{input}, i8* %json_obj)
 "#, input = input_ref)
     }
     
@@ -186,7 +186,7 @@ impl CapabilityResolver {
         format!(r#"
   ; JSON.ENCODE
   %json_out = call i8* @malloc(i64 4096)
-  call i64 @nelaia_json_encode(i8* %{obj}, i8* %json_out)
+  call i64 @TAYNI_json_encode(i8* %{obj}, i8* %json_out)
 "#, obj = obj_ref)
     }
     
@@ -256,11 +256,11 @@ declare i16 @SQLDisconnect(i8*)
     
     fn emit_json_declarations(&self) -> String {
         r#"
-; JSON helper declarations (NELAIA runtime)
-declare void @nelaia_json_parse(i8*, i8*)
-declare i64 @nelaia_json_encode(i8*, i8*)
-declare i8* @nelaia_json_get(i8*, i8*)
-declare void @nelaia_json_set(i8*, i8*, i8*)
+; JSON helper declarations (TAYNI runtime)
+declare void @TAYNI_json_parse(i8*, i8*)
+declare i64 @TAYNI_json_encode(i8*, i8*)
+declare i8* @TAYNI_json_get(i8*, i8*)
+declare void @TAYNI_json_set(i8*, i8*, i8*)
 "#.to_string()
     }
 }

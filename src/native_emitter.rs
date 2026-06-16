@@ -1,4 +1,4 @@
-//! NELAIA Native Code Emitter - Windows x64 PE Generator
+//! TAYNI Native Code Emitter - Windows x64 PE Generator
 //! Generates native executables without LLVM
 
 use crate::ir::{Graph, Node, Op, Arg, Value};

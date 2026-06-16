@@ -46,7 +46,7 @@ pub enum MacOSArch {
 
 /// Generate minimal Mach-O "Hello World" executable
 pub fn generate_hello_macho(arch: MacOSArch) -> Vec<u8> {
-    let message = b"Hello from NELAIA on macOS!\n";
+    let message = b"Hello from TAYNI on macOS!\n";
     
     match arch {
         MacOSArch::X86_64 => generate_hello_macho_x64(message),
@@ -286,7 +286,7 @@ fn arm64_adr(reg: u8, offset: i32) -> [u8; 4] {
     instr.to_le_bytes()
 }
 
-/// Generate Mach-O executable from NELAIA graph
+/// Generate Mach-O executable from TAYNI graph
 pub fn generate_macho_from_graph(graph: &Graph, arch: MacOSArch) -> Vec<u8> {
     // Find all string literals and PRT operations
     let mut strings: Vec<(String, String)> = Vec::new(); // (id, value)
@@ -318,7 +318,7 @@ pub fn generate_macho_from_graph(graph: &Graph, arch: MacOSArch) -> Vec<u8> {
     }
     
     if combined_msg.is_empty() {
-        combined_msg = "Hello from NELAIA!\n".to_string();
+        combined_msg = "Hello from TAYNI!\n".to_string();
     }
     
     // Generate appropriate binary

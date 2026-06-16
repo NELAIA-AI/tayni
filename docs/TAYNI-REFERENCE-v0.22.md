@@ -1,6 +1,6 @@
-# NELAIA v0.22 - Structured Reference for AIs
+# TAYNI v0.22 - Structured Reference for AIs
 
-This document is optimized for an AI to quickly learn NELAIA syntax and semantics.
+This document is optimized for an AI to quickly learn TAYNI syntax and semantics.
 
 ## Complete EBNF Grammar
 
@@ -192,14 +192,14 @@ comment        = "--" { character } newline ;
 ## Common Patterns
 
 ### Pattern 1: Hello World
-```nelaia
-.msg: "Hello NELAIA!\n"
+```TAYNI
+.msg: "Hello TAYNI!\n"
 .len: 14
 .out: PRT .msg .len
 ```
 
 ### Pattern 2: HTTP Server (Single Request)
-```nelaia
+```TAYNI
 .caps: REQUIRES { http }
 .server: HTTP.LISTEN 8080
 .req: HTTP.ACCEPT .server
@@ -207,7 +207,7 @@ comment        = "--" { character } newline ;
 ```
 
 ### Pattern 2b: HTTP Server (Persistent with Loop)
-```nelaia
+```TAYNI
 .caps: REQUIRES { http }
 .server: HTTP.LISTEN 8080
 .loop: HTTP.ACCEPT .server
@@ -217,7 +217,7 @@ comment        = "--" { character } newline ;
 **IMPORTANT:** Use `>>` to create a loop. Without `.loop >> .loop`, the server handles only one request and exits.
 
 ### Pattern 3: SQL Query
-```nelaia
+```TAYNI
 .caps: REQUIRES { sql }
 .conn: SQL.CONNECT "Driver={SQL Server};Server=localhost;Database=test"
 .result: SQL.QUERY .conn "SELECT * FROM users"
@@ -225,14 +225,14 @@ comment        = "--" { character } newline ;
 ```
 
 ### Pattern 4: Process JSON
-```nelaia
+```TAYNI
 .caps: REQUIRES { json }
 .obj: JSON.PARSE .input
 .val: JSON.GET .obj "key"
 ```
 
 ### Pattern 5: TCP Loop
-```nelaia
+```TAYNI
 .sock: TCP
 .addr: ALC 16
 .a0: PUT .addr 0 2
@@ -249,7 +249,7 @@ comment        = "--" { character } newline ;
 ```
 
 ### Pattern 6: AI Discovering Capabilities
-```nelaia
+```TAYNI
 -- Design-time: AI evaluates options
 .options: DISCOVER "process data"
 .cost: CAPABILITY_COST "json"

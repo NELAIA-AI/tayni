@@ -1,12 +1,12 @@
 [package]
-name = "nelaia-c"
+name = "tayni-c"
 version = "0.23.0"
 edition = "2021"
-description = "NELAIA Compiler - Direct native emission (PE/ELF/Mach-O), no external dependencies"
+description = "TAYNI Compiler - Direct native emission (PE/ELF/Mach-O), no external dependencies"
 rust-version = "1.96"
 
 [dependencies]
 
 [[bin]]
-name = "nelaia-c"
+name = "tayni-c"
 path = "src/main.rs"
