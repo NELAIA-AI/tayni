@@ -2,22 +2,26 @@
 
 [![Build](https://github.com/NELAIA-AI/tayni/actions/workflows/build.yml/badge.svg)](https://github.com/NELAIA-AI/tayni/actions/workflows/build.yml)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20695531.svg)](https://doi.org/10.5281/zenodo.20695531)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Rust](https://img.shields.io/badge/Rust-1.96+-orange.svg)](https://www.rust-lang.org/)
-[![Platform](https://img.shields.io/badge/Platform-Windows%20|%20Linux%20|%20macOS%20|%20WASM%20|%20RISC--V-blue.svg)](https://github.com/NELAIA-AI/tayni/releases)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Version](https://img.shields.io/badge/Version-1.0-green.svg)](https://github.com/NELAIA-AI/tayni/releases)
+[![Autonomy](https://img.shields.io/badge/Autonomy-5.0%2F5.0-brightgreen.svg)](https://github.com/NELAIA-AI/tayni)
+[![Stdlib](https://img.shields.io/badge/Stdlib-36%20modules-purple.svg)](https://github.com/NELAIA-AI/tayni)
+[![Targets](https://img.shields.io/badge/Targets-17%20architectures-orange.svg)](https://github.com/NELAIA-AI/tayni)
+[![Platform](https://img.shields.io/badge/Platform-x86__64%20|%20ARM64%20|%20RISC--V%20|%20WASM%20|%20QIR%20|%20GPU-blue.svg)](https://github.com/NELAIA-AI/tayni/releases)
 
-**TAYNI Compiler v0.25** - An AI-first programming language optimized for token efficiency and minimal binary sizes.
+**TAYNI v1.0** - An AI-first programming language optimized for token efficiency and minimal binary sizes.
 
-> **Minimal syntax. Multi-target compilation. Zero dependencies. 43-module standard library.**
+> **Production Ready. Zero Rust Dependency. Self-Hosting Complete. 36-module Standard Library.**
 
 ## Key Features
 
 - **AI-First Design** - Optimized for AI code generation and maintenance
-- **Multi-Target** - Windows, Linux, macOS, WASM, RISC-V, ARM64, Quantum (QIR), GPU (PTX/AMDGPU)
-- **Tiny Executables** - Hello World: 145 bytes (Linux), 1KB (Windows)
-- **Zero Dependencies** - Direct PE/ELF/Mach-O/WASM emission, no Clang required
-- **Standard Library** - 43 modules in 3 tiers for common tasks
-- **Self-Hosting** - Compiler written in TAYNI (bootstrap in progress)
+- **Self-Hosting Complete** - Compiler written in TAYNI (Gen15, Zero Rust)
+- **Multi-Target** - 17 architectures: x86_64, ARM64, RISC-V, WASM, QIR (Quantum), GPU (PTX/AMDGPU/SPIR-V)
+- **Tiny Executables** - Minimal PE: 1,024 bytes, with File I/O: 2,560 bytes (3.5x smaller than LLVM)
+- **Zero Dependencies** - Direct PE/ELF/Mach-O/WASM emission from scratch
+- **Standard Library** - 36 modules in 3 tiers (TIER 0: 10, TIER 1: 12, TIER 2: 14)
+- **Autonomy Level 5.0** - Full AI autonomy, self-replicating compiler
 
 ## Quick Start
 
@@ -69,10 +73,10 @@ EOF
 
 ## Standard Library
 
-TAYNI includes a 43-module standard library organized in 3 tiers:
+TAYNI includes a 36-module standard library organized in 3 tiers:
 
-### Tier 0 - Core (10 modules)
-Essential modules for most programs:
+### Tier 0 - Essential (10 modules)
+Core modules for 95% of applications:
 
 | Module | Purpose |
 |--------|---------|
@@ -105,32 +109,25 @@ Common utilities:
 | `uuid` | UUID generation |
 | `validation` | Input validation |
 
-### Tier 2 - Extended (21 modules)
-Specialized functionality:
+### Tier 2 - Specialized (14 modules)
+Advanced functionality:
 
 | Module | Purpose |
 |--------|---------|
-| `cookie` | HTTP cookies |
-| `cors` | CORS handling |
-| `crypto` | Encryption (AES, RSA) |
-| `csv` | CSV parsing |
-| `gpu` | GPU computing (PTX/AMDGPU) |
-| `grpc` | gRPC client/server |
-| `gzip` | Compression |
-| `mime` | MIME types |
-| `mongodb` | MongoDB client |
-| `postgres` | PostgreSQL client |
-| `pqc` | Post-quantum cryptography |
-| `quantum` | Quantum computing (QIR) |
-| `redis` | Redis client |
-| `retry` | Retry with backoff |
 | `sql` | SQL query builder |
-| `sqlite` | SQLite database |
-| `tls` | TLS/SSL |
-| `toml` | TOML parsing |
-| `websocket` | WebSocket client/server |
-| `xml` | XML parsing |
+| `postgres` | PostgreSQL wire protocol |
+| `redis` | Redis RESP protocol |
+| `websocket` | WebSocket (RFC 6455) |
+| `grpc` | gRPC/protobuf |
 | `yaml` | YAML parsing |
+| `csv` | CSV parsing (RFC 4180) |
+| `xml` | XML parsing + XPath |
+| `crypto` | AES-256-GCM, RSA, ECDSA, ChaCha20 |
+| `tls` | TLS 1.3 protocol |
+| `pqc` | Post-Quantum: ML-KEM, ML-DSA, SLH-DSA |
+| `cors` | CORS handling |
+| `cookie` | Cookie/session management |
+| `gzip` | GZIP compression (RFC 1952) |
 
 ## Multi-Target Compilation
 
@@ -258,13 +255,18 @@ cargo test
 
 ## Self-Hosting Status
 
-TAYNI is working towards self-hosting (compiler written in TAYNI):
+TAYNI has achieved **full self-hosting** with Zero Rust dependency:
 
-- ✅ **v1.1**: File I/O, source analysis
-- ✅ **v1.2**: PE header generation
-- ✅ **v1.3**: CHR (char read), ITS (int-to-string), full PE headers
-- ⏳ **v2.0**: Full parser in TAYNI (in progress)
-- ⏳ **v3.0**: Self-compilation (bootstrap complete)
+| Level | Description | Status |
+|-------|-------------|--------|
+| 3.5 | Pure compiler generates PE | ✅ Complete |
+| 3.7 | File I/O via syscalls | ✅ Complete |
+| 3.9 | AI-native assembler with auto offsets | ✅ Complete |
+| 4.0 | Full self-hosting (bit-identical replication) | ✅ Complete |
+| 4.5 | Self-replicating compiler with code generation | ✅ Complete |
+| 5.0 | Zero Rust - PE generation from scratch | ✅ Complete |
+
+**Autonomy Level: 5.0/5.0 (100%)**
 
 ## Troubleshooting
 
@@ -284,8 +286,8 @@ Use the correct binary for your platform or cross-compile with `--target`.
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details.
+Apache 2.0 License - see [LICENSE](LICENSE) for details.
 
 ---
 
-*TAYNI - AI-first programming language for efficient code generation*
+*TAYNI v1.0 - AI-first programming language. Production Ready.*
