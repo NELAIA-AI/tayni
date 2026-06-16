@@ -1,0 +1,171 @@
+-- TAYNI Multi-Target: QIR (Quantum Intermediate Representation) Emitter
+-- Target: Quantum computers via Azure Quantum
+-- Format: LLVM-based QIR
+--
+-- AI-Native Design:
+-- - Direct QIR generation
+-- - Native for Azure Quantum, IonQ, Quantinuum
+-- - Export to OpenQASM, Cirq, Quil
+
+-- ============================================================
+-- QIR BASICS
+-- ============================================================
+-- QIR is LLVM IR with quantum extensions
+-- Uses opaque types for qubits and results
+-- Runtime functions for quantum operations
+
+-- ============================================================
+-- QIR TYPES
+-- ============================================================
+
+.qir_qubit: "%Qubit"
+.qir_result: "%Result"
+.qir_array: "%Array"
+
+-- ============================================================
+-- QIR RUNTIME FUNCTIONS
+-- ============================================================
+
+-- Qubit management
+.qir_qubit_allocate: "@__quantum__rt__qubit_allocate"
+.qir_qubit_release: "@__quantum__rt__qubit_release"
+.qir_qubit_allocate_array: "@__quantum__rt__qubit_allocate_array"
+.qir_qubit_release_array: "@__quantum__rt__qubit_release_array"
+
+-- Single-qubit gates
+.qir_h: "@__quantum__qis__h__body"
+.qir_x: "@__quantum__qis__x__body"
+.qir_y: "@__quantum__qis__y__body"
+.qir_z: "@__quantum__qis__z__body"
+.qir_s: "@__quantum__qis__s__body"
+.qir_t: "@__quantum__qis__t__body"
+.qir_rx: "@__quantum__qis__rx__body"
+.qir_ry: "@__quantum__qis__ry__body"
+.qir_rz: "@__quantum__qis__rz__body"
+
+-- Two-qubit gates
+.qir_cnot: "@__quantum__qis__cnot__body"
+.qir_cz: "@__quantum__qis__cz__body"
+.qir_swap: "@__quantum__qis__swap__body"
+
+-- Three-qubit gates
+.qir_ccx: "@__quantum__qis__ccx__body"  -- Toffoli
+.qir_cswap: "@__quantum__qis__cswap__body"  -- Fredkin
+
+-- Measurement
+.qir_m: "@__quantum__qis__m__body"
+.qir_mz: "@__quantum__qis__mz__body"
+.qir_reset: "@__quantum__qis__reset__body"
+
+-- Result operations
+.qir_result_get_zero: "@__quantum__rt__result_get_zero"
+.qir_result_get_one: "@__quantum__rt__result_get_one"
+.qir_result_equal: "@__quantum__rt__result_equal"
+
+-- ============================================================
+-- QIR GENERATION
+-- ============================================================
+
+.emit_qir: FUN .circuit .out
+  .pos: 0
+  
+  -- Module header
+  .header: "; ModuleID = 'tayni_quantum'\n"
+  .header: "source_filename = \"tayni_quantum\"\n"
+  .header: "target datalayout = \"e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128\"\n"
+  .header: "target triple = \"x86_64-unknown-linux-gnu\"\n\n"
+  
+  -- Type declarations
+  .types: "%Qubit = type opaque\n"
+  .types: "%Result = type opaque\n"
+  .types: "%Array = type opaque\n\n"
+  
+  -- Runtime function declarations
+  .decls: "declare %Qubit* @__quantum__rt__qubit_allocate()\n"
+  .decls: "declare void @__quantum__rt__qubit_release(%Qubit*)\n"
+  .decls: "declare void @__quantum__qis__h__body(%Qubit*)\n"
+  .decls: "declare void @__quantum__qis__x__body(%Qubit*)\n"
+  .decls: "declare void @__quantum__qis__cnot__body(%Qubit*, %Qubit*)\n"
+  .decls: "declare %Result* @__quantum__qis__m__body(%Qubit*)\n\n"
+  
+  -- Entry point
+  .entry: "define void @main() {\n"
+  .entry: "entry:\n"
+  
+  -- Generate quantum operations from circuit
+  -- ...
+  
+  .exit: "  ret void\n"
+  .exit: "}\n"
+  
+  .result: .pos
+!FUN
+
+-- ============================================================
+-- EXPORT TO OPENQASM 3.0 (IBM)
+-- ============================================================
+
+.export_qasm: FUN .circuit .out
+  .pos: 0
+  
+  -- Header
+  .header: "OPENQASM 3.0;\n"
+  .header: "include \"stdgates.inc\";\n\n"
+  
+  -- Qubit declarations
+  .qubits: "qubit[N] q;\n"
+  .bits: "bit[N] c;\n\n"
+  
+  -- Gates
+  -- h q[0];
+  -- cx q[0], q[1];
+  -- measure q -> c;
+  
+  .result: .pos
+!FUN
+
+-- ============================================================
+-- EXPORT TO CIRQ (Google)
+-- ============================================================
+
+.export_cirq: FUN .circuit .out
+  .pos: 0
+  
+  -- Python code
+  .header: "import cirq\n\n"
+  .header: "qubits = cirq.LineQubit.range(N)\n"
+  .header: "circuit = cirq.Circuit()\n\n"
+  
+  -- Gates
+  -- circuit.append(cirq.H(qubits[0]))
+  -- circuit.append(cirq.CNOT(qubits[0], qubits[1]))
+  -- circuit.append(cirq.measure(*qubits, key='result'))
+  
+  .result: .pos
+!FUN
+
+-- ============================================================
+-- EXPORT TO QUIL (Rigetti)
+-- ============================================================
+
+.export_quil: FUN .circuit .out
+  .pos: 0
+  
+  -- Quil program
+  .header: "DECLARE ro BIT[N]\n\n"
+  
+  -- Gates
+  -- H 0
+  -- CNOT 0 1
+  -- MEASURE 0 ro[0]
+  
+  .result: .pos
+!FUN
+
+-- ============================================================
+-- USAGE
+-- ============================================================
+-- tayni-c program.tyn --target=qir
+-- tayni-c program.tyn --target=qir --export=qasm
+-- tayni-c program.tyn --target=qir --export=cirq
+-- tayni-c program.tyn --target=qir --export=quil

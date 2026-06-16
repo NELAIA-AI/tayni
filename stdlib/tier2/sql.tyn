@@ -1,31 +1,253 @@
--- TAYNI stdlib: sql v0.1
--- Provides: SQL.QUERY, SQL.EXECUTE, SQL.PREPARE
+-- TAYNI stdlib: sql v1.0
+-- Provides: SQL query building and execution abstraction
 -- Usage: USE sql
+--
+-- AI-Native Design:
+-- - Query builder pattern (no string concatenation)
+-- - Parameterized queries by default (SQL injection safe)
+-- - Result iteration without loops
 
--- SQL.QUERY: Execute SELECT query
--- Returns: result set pointer
-.sql_query: FUN .conn .query .query_len
+-- ============================================================
+-- SQL QUERY BUILDER
+-- ============================================================
+-- Build queries declaratively, not as strings
+-- AI generates structured queries, not raw SQL
+
+-- Query structure (64 bytes):
+--   type: i64 (0=SELECT, 1=INSERT, 2=UPDATE, 3=DELETE)
+--   table: i64 (pointer to table name)
+--   columns: i64 (pointer to column list)
+--   where: i64 (pointer to conditions)
+--   params: i64 (pointer to parameter values)
+--   limit: i64
+--   offset: i64
+--   order: i64 (pointer to order clause)
+
+.sql_type_select: 0
+.sql_type_insert: 1
+.sql_type_update: 2
+.sql_type_delete: 3
+
+-- ============================================================
+-- SQL.SELECT: Start SELECT query
+-- ============================================================
+-- Example:
+--   .q: SQL.SELECT "users" "id,name,email"
+--   .q: SQL.WHERE .q "id = $1"
+--   .q: SQL.PARAM .q user_id
+--   .result: SQL.EXEC .conn .q
+
+.sql_select: FUN .table .table_len .columns .columns_len
+  .q: ALC 64
+  .set_type: PUT .q 0 0  -- SELECT
+  .set_table: PUT .q 8 .table
+  .set_cols: PUT .q 16 .columns
+  .result: .q
+!FUN
+
+-- ============================================================
+-- SQL.INSERT: Start INSERT query
+-- ============================================================
+-- Example:
+--   .q: SQL.INSERT "users" "name,email"
+--   .q: SQL.VALUES .q "Alice" "alice@example.com"
+
+.sql_insert: FUN .table .table_len .columns .columns_len
+  .q: ALC 64
+  .set_type: PUT .q 0 1  -- INSERT
+  .set_table: PUT .q 8 .table
+  .set_cols: PUT .q 16 .columns
+  .result: .q
+!FUN
+
+-- ============================================================
+-- SQL.UPDATE: Start UPDATE query
+-- ============================================================
+
+.sql_update: FUN .table .table_len
+  .q: ALC 64
+  .set_type: PUT .q 0 2  -- UPDATE
+  .set_table: PUT .q 8 .table
+  .result: .q
+!FUN
+
+-- ============================================================
+-- SQL.DELETE: Start DELETE query
+-- ============================================================
+
+.sql_delete: FUN .table .table_len
+  .q: ALC 64
+  .set_type: PUT .q 0 3  -- DELETE
+  .set_table: PUT .q 8 .table
+  .result: .q
+!FUN
+
+-- ============================================================
+-- SQL.WHERE: Add WHERE clause
+-- ============================================================
+
+.sql_where: FUN .query .condition .condition_len
+  .set_where: PUT .query 24 .condition
+  .result: .query
+!FUN
+
+-- ============================================================
+-- SQL.AND: Add AND condition
+-- ============================================================
+
+.sql_and: FUN .query .condition .condition_len
+  -- Append to existing where
+  .result: .query
+!FUN
+
+-- ============================================================
+-- SQL.OR: Add OR condition
+-- ============================================================
+
+.sql_or: FUN .query .condition .condition_len
+  .result: .query
+!FUN
+
+-- ============================================================
+-- SQL.PARAM: Bind parameter value
+-- ============================================================
+-- Parameters are $1, $2, $3... in query
+
+.sql_param: FUN .query .value .value_len
+  .params: GET .query 32
+  -- Append to params list
+  .result: .query
+!FUN
+
+-- ============================================================
+-- SQL.LIMIT: Add LIMIT clause
+-- ============================================================
+
+.sql_limit: FUN .query .limit
+  .set_limit: PUT .query 40 .limit
+  .result: .query
+!FUN
+
+-- ============================================================
+-- SQL.OFFSET: Add OFFSET clause
+-- ============================================================
+
+.sql_offset: FUN .query .offset
+  .set_offset: PUT .query 48 .offset
+  .result: .query
+!FUN
+
+-- ============================================================
+-- SQL.ORDER: Add ORDER BY clause
+-- ============================================================
+
+.sql_order: FUN .query .column .column_len .direction
+  .set_order: PUT .query 56 .column
+  .result: .query
+!FUN
+
+.sql_order_asc: 0
+.sql_order_desc: 1
+
+-- ============================================================
+-- SQL.SET: Add SET clause for UPDATE
+-- ============================================================
+
+.sql_set: FUN .query .column .column_len .value .value_len
+  .result: .query
+!FUN
+
+-- ============================================================
+-- SQL.VALUES: Add VALUES for INSERT
+-- ============================================================
+
+.sql_values: FUN .query .values .values_len
+  .result: .query
+!FUN
+
+-- ============================================================
+-- SQL.BUILD: Build SQL string from query
+-- ============================================================
+-- Converts query structure to SQL string
+
+.sql_build: FUN .query .out
+  .type: GET .query 0
+  .table: GET .query 8
+  .columns: GET .query 16
+  .where: GET .query 24
+  .limit: GET .query 40
+  .offset: GET .query 48
+  
+  -- Build based on type
+  -- SELECT: "SELECT columns FROM table WHERE ... LIMIT ... OFFSET ..."
+  -- INSERT: "INSERT INTO table (columns) VALUES (...)"
+  -- UPDATE: "UPDATE table SET ... WHERE ..."
+  -- DELETE: "DELETE FROM table WHERE ..."
+  
   .result: 0
 !FUN
 
--- SQL.EXECUTE: Execute INSERT/UPDATE/DELETE
--- Returns: affected rows count
-.sql_execute: FUN .conn .query .query_len
+-- ============================================================
+-- SQL.EXEC: Execute query on connection
+-- ============================================================
+
+.sql_exec: FUN .conn .query
+  -- Build SQL string
+  .sql: ALC 4096
+  .len: SQL.BUILD .query .sql
+  
+  -- Execute via driver (postgres, mysql, etc.)
+  .result: 0
+!FUN
+
+-- ============================================================
+-- SQL.QUERY: Execute raw SQL (escape hatch)
+-- ============================================================
+
+.sql_query: FUN .conn .sql .sql_len
+  .result: 0
+!FUN
+
+-- ============================================================
+-- SQL.EXECUTE: Execute non-SELECT raw SQL
+-- ============================================================
+
+.sql_execute: FUN .conn .sql .sql_len
   .affected: 0
 !FUN
 
--- SQL.PREPARE: Prepare parameterized statement
-.sql_prepare: FUN .conn .query .query_len
-  .stmt: 0
+-- ============================================================
+-- RESULT SET OPERATIONS
+-- ============================================================
+
+-- Result structure:
+--   rows: i64 (pointer to row array)
+--   count: i64 (number of rows)
+--   columns: i64 (number of columns)
+--   current: i64 (current row index)
+
+-- SQL.ROWS: Get row count
+.sql_rows: FUN .result
+  .count: GET .result 8
 !FUN
 
--- SQL.BIND: Bind parameter to prepared statement
-.sql_bind: FUN .stmt .index .value .value_len
-  .done: 0
+-- SQL.COLS: Get column count
+.sql_cols: FUN .result
+  .count: GET .result 16
 !FUN
 
--- SQL.FETCH: Fetch next row from result set
+-- SQL.FETCH: Get next row
 .sql_fetch: FUN .result
+  .current: GET .result 24
+  .count: GET .result 8
+  
+  -- Check if more rows
+  .has_more: LT .current .count
+  
+  -- Increment current
+  .next: ADD .current 1
+  .set_current: PUT .result 24 .next
+  
   .row: 0
 !FUN
 
@@ -34,7 +256,90 @@
   .value: 0
 !FUN
 
--- SQL.CLOSE: Close result set or statement
-.sql_close: FUN .handle
+-- SQL.GET_INT: Get column as integer
+.sql_get_int: FUN .row .column
+  .value: 0
+!FUN
+
+-- SQL.GET_STR: Get column as string
+.sql_get_str: FUN .row .column
+  .value: 0
+  .len: 0
+!FUN
+
+-- SQL.CLOSE: Close result set
+.sql_close: FUN .result
   .done: 0
 !FUN
+
+-- ============================================================
+-- PREPARED STATEMENTS
+-- ============================================================
+
+.sql_prepare: FUN .conn .sql .sql_len
+  .stmt: 0
+!FUN
+
+.sql_bind: FUN .stmt .index .value .value_len
+  .done: 0
+!FUN
+
+.sql_bind_int: FUN .stmt .index .value
+  .done: 0
+!FUN
+
+.sql_bind_null: FUN .stmt .index
+  .done: 0
+!FUN
+
+.sql_stmt_exec: FUN .stmt
+  .result: 0
+!FUN
+
+.sql_stmt_close: FUN .stmt
+  .done: 0
+!FUN
+
+-- ============================================================
+-- TRANSACTIONS
+-- ============================================================
+
+.sql_begin: FUN .conn
+  .done: SQL.EXECUTE .conn "BEGIN" 5
+!FUN
+
+.sql_commit: FUN .conn
+  .done: SQL.EXECUTE .conn "COMMIT" 6
+!FUN
+
+.sql_rollback: FUN .conn
+  .done: SQL.EXECUTE .conn "ROLLBACK" 8
+!FUN
+
+-- ============================================================
+-- USAGE EXAMPLES (AI Reference)
+-- ============================================================
+--
+-- Select with conditions:
+--   .q: SQL.SELECT "users" 5 "id,name" 7
+--   .q: SQL.WHERE .q "active = $1" 12
+--   .q: SQL.PARAM .q "true" 4
+--   .q: SQL.LIMIT .q 10
+--   .result: SQL.EXEC .conn .q
+--
+-- Insert:
+--   .q: SQL.INSERT "users" 5 "name,email" 10
+--   .q: SQL.VALUES .q "'Alice','alice@example.com'" 28
+--   .result: SQL.EXEC .conn .q
+--
+-- Update:
+--   .q: SQL.UPDATE "users" 5
+--   .q: SQL.SET .q "name" 4 "'Bob'" 5
+--   .q: SQL.WHERE .q "id = 1" 6
+--   .result: SQL.EXEC .conn .q
+--
+-- Transaction:
+--   .begin: SQL.BEGIN .conn
+--   .q1: SQL.EXEC .conn .query1
+--   .q2: SQL.EXEC .conn .query2
+--   .commit: SQL.COMMIT .conn

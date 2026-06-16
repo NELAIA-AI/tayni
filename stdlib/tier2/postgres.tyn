@@ -1,44 +1,364 @@
--- TAYNI stdlib: postgres v0.1
--- Provides: PG.CONNECT, PG.QUERY, PG.TRANSACTION
+-- TAYNI stdlib: postgres v1.0
+-- Provides: PostgreSQL wire protocol implementation
 -- Usage: USE postgres
+-- Depends: USE sql
+--
+-- AI-Native Design:
+-- - Direct wire protocol (no libpq dependency)
+-- - Binary protocol for efficiency
+-- - Connection pooling built-in
 
--- PG.CONNECT: Connect to PostgreSQL database
--- conn_str: "host=localhost dbname=test user=postgres"
+-- ============================================================
+-- POSTGRESQL WIRE PROTOCOL
+-- ============================================================
+-- Frontend (client) messages:
+--   'Q' - Simple Query
+--   'P' - Parse (prepared statement)
+--   'B' - Bind
+--   'E' - Execute
+--   'S' - Sync
+--   'X' - Terminate
+--
+-- Backend (server) messages:
+--   'R' - Authentication
+--   'K' - BackendKeyData
+--   'Z' - ReadyForQuery
+--   'T' - RowDescription
+--   'D' - DataRow
+--   'C' - CommandComplete
+--   'E' - ErrorResponse
+
+-- ============================================================
+-- CONNECTION
+-- ============================================================
+
+-- Connection structure (128 bytes):
+--   socket: i64 (TCP socket handle)
+--   pid: i64 (backend process ID)
+--   secret: i64 (backend secret key)
+--   status: i64 (0=idle, 1=in_transaction, 2=error)
+--   params: i64 (pointer to server parameters)
+--   tx_depth: i64 (transaction nesting depth)
+
+.pg_status_idle: 0
+.pg_status_transaction: 1
+.pg_status_error: 2
+
+-- ============================================================
+-- PG.CONNECT: Connect to PostgreSQL
+-- ============================================================
+-- Connection string format:
+--   "host=localhost port=5432 dbname=test user=postgres password=secret"
+--
+-- Example:
+--   .conn: PG.CONNECT "host=localhost dbname=mydb user=postgres" 42
+
 .pg_connect: FUN .conn_str .conn_str_len
-  .conn: 0
+  .conn: ALC 128
+  
+  -- Parse connection string
+  .host: ALC 64
+  .port: 5432
+  .dbname: ALC 64
+  .user: ALC 64
+  .password: ALC 64
+  
+  -- Create TCP socket
+  .socket: 0  -- TCP.CONNECT .host .port
+  
+  -- Send startup message
+  -- Protocol version 3.0 (196608)
+  .startup: ALC 256
+  .set_len: PUT .startup 0 0  -- Length placeholder
+  .set_proto: PUT .startup 4 196608
+  -- Parameters: user, database, etc.
+  
+  -- Receive authentication request
+  -- Handle auth (MD5, SCRAM-SHA-256, etc.)
+  
+  -- Wait for ReadyForQuery
+  
+  .set_socket: PUT .conn 0 .socket
+  .result: .conn
 !FUN
 
--- PG.QUERY: Execute query
-.pg_query: FUN .conn .query .query_len
-  .result: 0
+-- ============================================================
+-- PG.QUERY: Execute simple query
+-- ============================================================
+
+.pg_query: FUN .conn .sql .sql_len
+  .socket: GET .conn 0
+  
+  -- Build Query message
+  -- 'Q' + length + query + null
+  .msg: ALC 4096
+  .set_type: PUT .msg 0 81  -- 'Q'
+  .msg_len: ADD .sql_len 5
+  .set_len: PUT .msg 1 .msg_len
+  -- Copy query string
+  -- Add null terminator
+  
+  -- Send message
+  -- TCP.SEND .socket .msg .msg_len
+  
+  -- Receive response
+  .result: ALC 8192
+  -- Parse RowDescription
+  -- Parse DataRows
+  -- Parse CommandComplete
+  -- Wait for ReadyForQuery
+  
 !FUN
 
+-- ============================================================
 -- PG.EXECUTE: Execute non-SELECT query
-.pg_execute: FUN .conn .query .query_len
+-- ============================================================
+
+.pg_execute: FUN .conn .sql .sql_len
+  .result: PG.QUERY .conn .sql .sql_len
+  
+  -- Parse affected rows from CommandComplete
   .affected: 0
 !FUN
 
--- PG.BEGIN: Start transaction
+-- ============================================================
+-- PG.PREPARE: Create prepared statement
+-- ============================================================
+
+.pg_prepare: FUN .conn .name .name_len .sql .sql_len
+  .socket: GET .conn 0
+  
+  -- Build Parse message
+  -- 'P' + length + name + null + query + null + param_count (0)
+  .msg: ALC 4096
+  .set_type: PUT .msg 0 80  -- 'P'
+  
+  -- Send Parse
+  -- Send Sync
+  -- Wait for ParseComplete
+  
+  .stmt: ALC 32
+  .set_name: PUT .stmt 0 .name
+  .set_conn: PUT .stmt 8 .conn
+  .result: .stmt
+!FUN
+
+-- ============================================================
+-- PG.BIND: Bind parameters to prepared statement
+-- ============================================================
+
+.pg_bind: FUN .stmt .params .param_count
+  .conn: GET .stmt 8
+  .socket: GET .conn 0
+  .name: GET .stmt 0
+  
+  -- Build Bind message
+  -- 'B' + length + portal + null + stmt + null + format_count + formats + param_count + params
+  .msg: ALC 4096
+  .set_type: PUT .msg 0 66  -- 'B'
+  
+  .result: 0
+!FUN
+
+-- ============================================================
+-- PG.EXEC_PREPARED: Execute prepared statement
+-- ============================================================
+
+.pg_exec_prepared: FUN .stmt
+  .conn: GET .stmt 8
+  .socket: GET .conn 0
+  
+  -- Build Execute message
+  -- 'E' + length + portal + null + max_rows (0 = all)
+  .msg: ALC 32
+  .set_type: PUT .msg 0 69  -- 'E'
+  
+  -- Send Execute
+  -- Send Sync
+  -- Receive results
+  
+  .result: 0
+!FUN
+
+-- ============================================================
+-- TRANSACTIONS
+-- ============================================================
+
 .pg_begin: FUN .conn
-  .done: 0
+  .result: PG.EXECUTE .conn "BEGIN" 5
+  .status: PUT .conn 24 1  -- in_transaction
 !FUN
 
--- PG.COMMIT: Commit transaction
 .pg_commit: FUN .conn
-  .done: 0
+  .result: PG.EXECUTE .conn "COMMIT" 6
+  .status: PUT .conn 24 0  -- idle
 !FUN
 
--- PG.ROLLBACK: Rollback transaction
 .pg_rollback: FUN .conn
-  .done: 0
+  .result: PG.EXECUTE .conn "ROLLBACK" 8
+  .status: PUT .conn 24 0  -- idle
 !FUN
 
--- PG.CLOSE: Close connection
+-- Savepoint support
+.pg_savepoint: FUN .conn .name .name_len
+  .sql: ALC 128
+  -- "SAVEPOINT name"
+  .result: PG.EXECUTE .conn .sql 0
+!FUN
+
+.pg_release: FUN .conn .name .name_len
+  .sql: ALC 128
+  -- "RELEASE SAVEPOINT name"
+  .result: PG.EXECUTE .conn .sql 0
+!FUN
+
+.pg_rollback_to: FUN .conn .name .name_len
+  .sql: ALC 128
+  -- "ROLLBACK TO SAVEPOINT name"
+  .result: PG.EXECUTE .conn .sql 0
+!FUN
+
+-- ============================================================
+-- COPY PROTOCOL (Bulk operations)
+-- ============================================================
+
+.pg_copy_in: FUN .conn .table .table_len
+  .sql: ALC 256
+  -- "COPY table FROM STDIN"
+  .result: PG.QUERY .conn .sql 0
+!FUN
+
+.pg_copy_data: FUN .conn .data .data_len
+  .socket: GET .conn 0
+  -- Send CopyData message
+  -- 'd' + length + data
+  .result: 0
+!FUN
+
+.pg_copy_done: FUN .conn
+  .socket: GET .conn 0
+  -- Send CopyDone message
+  -- 'c' + length
+  .result: 0
+!FUN
+
+-- ============================================================
+-- NOTIFICATIONS (LISTEN/NOTIFY)
+-- ============================================================
+
+.pg_listen: FUN .conn .channel .channel_len
+  .sql: ALC 128
+  -- "LISTEN channel"
+  .result: PG.EXECUTE .conn .sql 0
+!FUN
+
+.pg_notify: FUN .conn .channel .channel_len .payload .payload_len
+  .sql: ALC 256
+  -- "NOTIFY channel, 'payload'"
+  .result: PG.EXECUTE .conn .sql 0
+!FUN
+
+.pg_check_notify: FUN .conn
+  -- Check for pending notifications
+  .notification: 0
+!FUN
+
+-- ============================================================
+-- UTILITY
+-- ============================================================
+
+.pg_escape: FUN .str .str_len .out
+  -- Escape single quotes: ' -> ''
+  -- Escape backslashes: \ -> \\
+  .result: 0
+!FUN
+
+.pg_escape_identifier: FUN .str .str_len .out
+  -- Wrap in double quotes
+  -- Escape double quotes: " -> ""
+  .result: 0
+!FUN
+
 .pg_close: FUN .conn
+  .socket: GET .conn 0
+  
+  -- Send Terminate message
+  -- 'X' + length (4)
+  .msg: ALC 5
+  .set_type: PUT .msg 0 88  -- 'X'
+  .set_len: PUT .msg 1 4
+  
+  -- TCP.SEND .socket .msg 5
+  -- TCP.CLOSE .socket
+  
   .done: 0
 !FUN
 
--- PG.ESCAPE: Escape string for SQL
-.pg_escape: FUN .str .str_len
-  .escaped: ALC 4096
+-- ============================================================
+-- CONNECTION POOLING
+-- ============================================================
+
+-- Pool structure:
+--   connections: i64 (array of connections)
+--   size: i64 (pool size)
+--   available: i64 (available count)
+--   conn_str: i64 (connection string)
+
+.pg_pool_create: FUN .conn_str .conn_str_len .size
+  .pool: ALC 64
+  .conns: ALC 0  -- size * 8
+  
+  -- Pre-create connections
+  .set_conns: PUT .pool 0 .conns
+  .set_size: PUT .pool 8 .size
+  .set_avail: PUT .pool 16 .size
+  .set_str: PUT .pool 24 .conn_str
+  
+  .result: .pool
 !FUN
+
+.pg_pool_acquire: FUN .pool
+  .available: GET .pool 16
+  -- Get available connection
+  -- Decrement available
+  .conn: 0
+!FUN
+
+.pg_pool_release: FUN .pool .conn
+  -- Return connection to pool
+  -- Increment available
+  .done: 0
+!FUN
+
+.pg_pool_close: FUN .pool
+  -- Close all connections
+  .done: 0
+!FUN
+
+-- ============================================================
+-- USAGE EXAMPLES (AI Reference)
+-- ============================================================
+--
+-- Simple query:
+--   .conn: PG.CONNECT "host=localhost dbname=test user=postgres" 40
+--   .result: PG.QUERY .conn "SELECT * FROM users" 19
+--   .close: PG.CLOSE .conn
+--
+-- Prepared statement:
+--   .stmt: PG.PREPARE .conn "get_user" 8 "SELECT * FROM users WHERE id = $1" 35
+--   .params: ALC 8
+--   .set_id: PUT .params 0 42
+--   .bind: PG.BIND .stmt .params 1
+--   .result: PG.EXEC_PREPARED .stmt
+--
+-- Transaction:
+--   .begin: PG.BEGIN .conn
+--   .q1: PG.EXECUTE .conn "INSERT INTO users (name) VALUES ('Alice')" 42
+--   .q2: PG.EXECUTE .conn "UPDATE accounts SET balance = balance - 100" 44
+--   .commit: PG.COMMIT .conn
+--
+-- Connection pool:
+--   .pool: PG.POOL_CREATE "host=localhost dbname=test" 26 10
+--   .conn: PG.POOL_ACQUIRE .pool
+--   .result: PG.QUERY .conn "SELECT 1" 8
+--   .release: PG.POOL_RELEASE .pool .conn

@@ -1,0 +1,211 @@
+-- TAYNI Multi-Target: WebAssembly Emitter
+-- Target: wasm32
+-- Format: WASM binary
+--
+-- AI-Native Design:
+-- - Direct WASM binary generation
+-- - No text format (WAT) intermediate
+-- - WASI support for I/O
+
+-- ============================================================
+-- WASM BINARY FORMAT
+-- ============================================================
+-- Magic: 0x00 0x61 0x73 0x6D ("\0asm")
+-- Version: 0x01 0x00 0x00 0x00 (1)
+-- Sections: type, import, function, table, memory, global, export, start, element, code, data
+
+.wasm_magic: 0x6D736100  -- "\0asm" little-endian
+.wasm_version: 1
+
+-- Section IDs
+.wasm_section_custom: 0
+.wasm_section_type: 1
+.wasm_section_import: 2
+.wasm_section_function: 3
+.wasm_section_table: 4
+.wasm_section_memory: 5
+.wasm_section_global: 6
+.wasm_section_export: 7
+.wasm_section_start: 8
+.wasm_section_element: 9
+.wasm_section_code: 10
+.wasm_section_data: 11
+
+-- Value types
+.wasm_i32: 0x7F
+.wasm_i64: 0x7E
+.wasm_f32: 0x7D
+.wasm_f64: 0x7C
+.wasm_funcref: 0x70
+.wasm_externref: 0x6F
+
+-- ============================================================
+-- WASM INSTRUCTIONS
+-- ============================================================
+
+-- Control
+.wasm_unreachable: 0x00
+.wasm_nop: 0x01
+.wasm_block: 0x02
+.wasm_loop: 0x03
+.wasm_if: 0x04
+.wasm_else: 0x05
+.wasm_end: 0x0B
+.wasm_br: 0x0C
+.wasm_br_if: 0x0D
+.wasm_br_table: 0x0E
+.wasm_return: 0x0F
+.wasm_call: 0x10
+.wasm_call_indirect: 0x11
+
+-- Parametric
+.wasm_drop: 0x1A
+.wasm_select: 0x1B
+
+-- Variable
+.wasm_local_get: 0x20
+.wasm_local_set: 0x21
+.wasm_local_tee: 0x22
+.wasm_global_get: 0x23
+.wasm_global_set: 0x24
+
+-- Memory
+.wasm_i32_load: 0x28
+.wasm_i64_load: 0x29
+.wasm_i32_store: 0x36
+.wasm_i64_store: 0x37
+.wasm_memory_size: 0x3F
+.wasm_memory_grow: 0x40
+
+-- Numeric (i32)
+.wasm_i32_const: 0x41
+.wasm_i32_eqz: 0x45
+.wasm_i32_eq: 0x46
+.wasm_i32_ne: 0x47
+.wasm_i32_lt_s: 0x48
+.wasm_i32_lt_u: 0x49
+.wasm_i32_gt_s: 0x4A
+.wasm_i32_gt_u: 0x4B
+.wasm_i32_le_s: 0x4C
+.wasm_i32_le_u: 0x4D
+.wasm_i32_ge_s: 0x4E
+.wasm_i32_ge_u: 0x4F
+.wasm_i32_add: 0x6A
+.wasm_i32_sub: 0x6B
+.wasm_i32_mul: 0x6C
+.wasm_i32_div_s: 0x6D
+.wasm_i32_div_u: 0x6E
+.wasm_i32_rem_s: 0x6F
+.wasm_i32_rem_u: 0x70
+.wasm_i32_and: 0x71
+.wasm_i32_or: 0x72
+.wasm_i32_xor: 0x73
+.wasm_i32_shl: 0x74
+.wasm_i32_shr_s: 0x75
+.wasm_i32_shr_u: 0x76
+
+-- Numeric (i64)
+.wasm_i64_const: 0x42
+.wasm_i64_add: 0x7C
+.wasm_i64_sub: 0x7D
+.wasm_i64_mul: 0x7E
+
+-- ============================================================
+-- LEB128 ENCODING
+-- ============================================================
+
+.wasm_encode_uleb128: FUN .value .out .pos
+  .byte: AND .value 127
+  .rest: SHR .value 7
+  .has_more: GT .rest 0
+  .byte: IFZ .has_more .byte 0
+  .byte: OR .byte 128
+  .set: PUT .out .pos .byte
+  .pos: ADD .pos 1
+  
+  -- Continue if more bytes needed (unwound for max 5 bytes)
+  .result: .pos
+!FUN
+
+.wasm_encode_sleb128: FUN .value .out .pos
+  -- Signed LEB128
+  .result: .pos
+!FUN
+
+-- ============================================================
+-- WASM MODULE GENERATION
+-- ============================================================
+
+.emit_wasm: FUN .code .code_len .out
+  .pos: 0
+  
+  -- Magic and version
+  .set_magic: PUT .out 0 0x00
+  .set_magic1: PUT .out 1 0x61
+  .set_magic2: PUT .out 2 0x73
+  .set_magic3: PUT .out 3 0x6D
+  .set_ver: PUT .out 4 0x01
+  .set_ver1: PUT .out 5 0x00
+  .set_ver2: PUT .out 6 0x00
+  .set_ver3: PUT .out 7 0x00
+  .pos: 8
+  
+  -- Type section
+  .set_type_id: PUT .out .pos 1
+  .pos: ADD .pos 1
+  -- Section size (LEB128)
+  -- Function types
+  
+  -- Import section (WASI)
+  .set_import_id: PUT .out .pos 2
+  .pos: ADD .pos 1
+  -- Import fd_write, proc_exit, etc.
+  
+  -- Function section
+  .set_func_id: PUT .out .pos 3
+  .pos: ADD .pos 1
+  
+  -- Memory section
+  .set_mem_id: PUT .out .pos 5
+  .pos: ADD .pos 1
+  -- 1 page minimum
+  
+  -- Export section
+  .set_export_id: PUT .out .pos 7
+  .pos: ADD .pos 1
+  -- Export _start, memory
+  
+  -- Code section
+  .set_code_id: PUT .out .pos 10
+  .pos: ADD .pos 1
+  -- Function bodies
+  
+  -- Data section
+  .set_data_id: PUT .out .pos 11
+  .pos: ADD .pos 1
+  -- Static data
+  
+  .result: .pos
+!FUN
+
+-- ============================================================
+-- WASI IMPORTS
+-- ============================================================
+
+-- fd_write(fd, iovs, iovs_len, nwritten) -> errno
+.wasi_fd_write_type: 0  -- (i32, i32, i32, i32) -> i32
+
+-- fd_read(fd, iovs, iovs_len, nread) -> errno
+.wasi_fd_read_type: 1
+
+-- proc_exit(code)
+.wasi_proc_exit_type: 2  -- (i32) -> ()
+
+-- path_open(...)
+.wasi_path_open_type: 3
+
+-- ============================================================
+-- USAGE
+-- ============================================================
+-- tayni-c program.tyn --target=wasm32
+-- wasmtime out.wasm

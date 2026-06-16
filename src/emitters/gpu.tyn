@@ -1,0 +1,227 @@
+-- TAYNI Multi-Target: GPU Emitters (PTX, AMDGPU, SPIR-V)
+-- Targets: NVIDIA, AMD, Vulkan/OpenCL
+--
+-- AI-Native Design:
+-- - Direct kernel generation
+-- - Automatic memory management
+-- - Unified interface across vendors
+
+-- ============================================================
+-- NVIDIA PTX (Parallel Thread Execution)
+-- ============================================================
+
+.emit_ptx: FUN .kernel .out
+  .pos: 0
+  
+  -- PTX header
+  .header: ".version 7.0\n"
+  .header: ".target sm_80\n"  -- Ampere
+  .header: ".address_size 64\n\n"
+  
+  -- Kernel declaration
+  .kernel_decl: ".visible .entry kernel_name(\n"
+  .kernel_decl: "    .param .u64 param_0,\n"
+  .kernel_decl: "    .param .u64 param_1,\n"
+  .kernel_decl: "    .param .u32 param_2\n"
+  .kernel_decl: ")\n"
+  .kernel_decl: "{\n"
+  
+  -- Register declarations
+  .regs: "    .reg .pred %p<16>;\n"
+  .regs: "    .reg .b32 %r<32>;\n"
+  .regs: "    .reg .b64 %rd<32>;\n"
+  .regs: "    .reg .f32 %f<32>;\n\n"
+  
+  -- Thread indexing
+  .idx: "    mov.u32 %r0, %tid.x;\n"
+  .idx: "    mov.u32 %r1, %ctaid.x;\n"
+  .idx: "    mov.u32 %r2, %ntid.x;\n"
+  .idx: "    mad.lo.s32 %r3, %r1, %r2, %r0;\n"  -- global_id
+  
+  -- Kernel body
+  -- ...
+  
+  .exit: "    ret;\n"
+  .exit: "}\n"
+  
+  .result: .pos
+!FUN
+
+-- PTX Instructions
+.ptx_ld_global: "ld.global"
+.ptx_st_global: "st.global"
+.ptx_add: "add"
+.ptx_mul: "mul"
+.ptx_mad: "mad"
+.ptx_setp: "setp"
+.ptx_selp: "selp"
+.ptx_bra: "bra"
+.ptx_ret: "ret"
+.ptx_bar: "bar.sync"
+
+-- ============================================================
+-- AMD AMDGPU (GCN/RDNA)
+-- ============================================================
+
+.emit_amdgpu: FUN .kernel .out
+  .pos: 0
+  
+  -- AMDGPU assembly (LLVM IR based)
+  .header: "; ModuleID = 'tayni_gpu'\n"
+  .header: "target datalayout = \"e-p:64:64-p1:64:64-p2:32:32-p3:32:32-p4:64:64-p5:32:32-p6:32:32-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128-v192:256-v256:256-v512:512-v1024:1024-v2048:2048-n32:64-S32-A5-G1-ni:7\"\n"
+  .header: "target triple = \"amdgcn-amd-amdhsa\"\n\n"
+  
+  -- Kernel function
+  .kernel: "define amdgpu_kernel void @kernel_name(\n"
+  .kernel: "    i64 addrspace(1)* %arg0,\n"
+  .kernel: "    i64 addrspace(1)* %arg1,\n"
+  .kernel: "    i32 %n\n"
+  .kernel: ") #0 {\n"
+  .kernel: "entry:\n"
+  
+  -- Get thread ID
+  .tid: "  %tid = call i32 @llvm.amdgcn.workitem.id.x()\n"
+  .tid: "  %gid = call i32 @llvm.amdgcn.workgroup.id.x()\n"
+  
+  -- Kernel body
+  -- ...
+  
+  .exit: "  ret void\n"
+  .exit: "}\n"
+  
+  .result: .pos
+!FUN
+
+-- ============================================================
+-- SPIR-V (Vulkan/OpenCL)
+-- ============================================================
+
+.emit_spirv: FUN .kernel .out
+  .pos: 0
+  
+  -- SPIR-V binary format
+  -- Magic: 0x07230203
+  .set_magic: PUT .out 0 0x07230203
+  .set_version: PUT .out 4 0x00010500  -- SPIR-V 1.5
+  .set_generator: PUT .out 8 0         -- Generator ID
+  .set_bound: PUT .out 12 0            -- ID bound
+  .set_schema: PUT .out 16 0           -- Schema
+  .pos: 20
+  
+  -- Capabilities
+  -- OpCapability Shader
+  .cap: 17  -- OpCapability
+  .cap_shader: 1
+  
+  -- Memory model
+  -- OpMemoryModel Logical GLSL450
+  
+  -- Entry point
+  -- OpEntryPoint GLCompute %main "main" %gl_GlobalInvocationID
+  
+  -- Execution mode
+  -- OpExecutionMode %main LocalSize 256 1 1
+  
+  -- Decorations
+  -- OpDecorate %gl_GlobalInvocationID BuiltIn GlobalInvocationId
+  
+  -- Types and variables
+  -- ...
+  
+  -- Function
+  -- ...
+  
+  .result: .pos
+!FUN
+
+-- SPIR-V Opcodes
+.spirv_op_capability: 17
+.spirv_op_extension: 10
+.spirv_op_ext_inst_import: 11
+.spirv_op_memory_model: 14
+.spirv_op_entry_point: 15
+.spirv_op_execution_mode: 16
+.spirv_op_decorate: 71
+.spirv_op_type_void: 19
+.spirv_op_type_int: 21
+.spirv_op_type_float: 22
+.spirv_op_type_vector: 23
+.spirv_op_type_pointer: 32
+.spirv_op_type_function: 33
+.spirv_op_constant: 43
+.spirv_op_function: 54
+.spirv_op_function_end: 56
+.spirv_op_variable: 59
+.spirv_op_load: 61
+.spirv_op_store: 62
+.spirv_op_access_chain: 65
+.spirv_op_iadd: 128
+.spirv_op_isub: 130
+.spirv_op_imul: 132
+.spirv_op_return: 253
+
+-- ============================================================
+-- METAL (Apple GPUs)
+-- ============================================================
+
+.emit_metal: FUN .kernel .out
+  .pos: 0
+  
+  -- Metal Shading Language
+  .header: "#include <metal_stdlib>\n"
+  .header: "using namespace metal;\n\n"
+  
+  .kernel: "kernel void kernel_name(\n"
+  .kernel: "    device float* input [[buffer(0)]],\n"
+  .kernel: "    device float* output [[buffer(1)]],\n"
+  .kernel: "    uint id [[thread_position_in_grid]]\n"
+  .kernel: ") {\n"
+  
+  -- Kernel body
+  -- ...
+  
+  .exit: "}\n"
+  
+  .result: .pos
+!FUN
+
+-- ============================================================
+-- UNIFIED GPU INTERFACE
+-- ============================================================
+
+.gpu_kernel_new: FUN .name .name_len
+  .kernel: ALC 128
+  .set_name: PUT .kernel 0 .name
+  .result: .kernel
+!FUN
+
+.gpu_kernel_param: FUN .kernel .type .name .name_len
+  -- Add parameter to kernel
+  .done: 0
+!FUN
+
+.gpu_kernel_body: FUN .kernel .code .code_len
+  -- Set kernel body
+  .done: 0
+!FUN
+
+.gpu_emit: FUN .kernel .target .out
+  -- target: 0=PTX, 1=AMDGPU, 2=SPIRV, 3=Metal
+  .is_ptx: IFZ .target 1 0
+  .is_amd: SUB .target 1
+  .is_amd: IFZ .is_amd 1 0
+  .is_spirv: SUB .target 2
+  .is_spirv: IFZ .is_spirv 1 0
+  .is_metal: SUB .target 3
+  .is_metal: IFZ .is_metal 1 0
+  
+  .result: 0
+!FUN
+
+-- ============================================================
+-- USAGE
+-- ============================================================
+-- tayni-c program.tyn --target=ptx
+-- tayni-c program.tyn --target=amdgpu
+-- tayni-c program.tyn --target=spirv
+-- tayni-c program.tyn --target=metal

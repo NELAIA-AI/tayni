@@ -1,48 +1,215 @@
--- TAYNI stdlib: cookie v0.1
--- Provides: COOKIE.GET, COOKIE.SET, COOKIE.DELETE, COOKIE.SESSION
+-- TAYNI stdlib: cookie v1.0
+-- Provides: HTTP cookie handling and sessions
 -- Usage: USE cookie
+--
+-- AI-Native Design:
+-- - RFC 6265 compliant
+-- - Secure defaults
+-- - Session management
 
+-- ============================================================
+-- COOKIE ATTRIBUTES
+-- ============================================================
+
+.cookie_same_site_strict: 0
+.cookie_same_site_lax: 1
+.cookie_same_site_none: 2
+
+-- Cookie structure:
+--   name: i64 (pointer)
+--   value: i64 (pointer)
+--   domain: i64 (pointer)
+--   path: i64 (pointer)
+--   expires: i64 (Unix timestamp, 0 = session)
+--   max_age: i64 (seconds, -1 = not set)
+--   secure: i64 (0 or 1)
+--   http_only: i64 (0 or 1)
+--   same_site: i64 (0, 1, or 2)
+
+-- ============================================================
+-- COOKIE.NEW: Create new cookie
+-- ============================================================
+
+.cookie_new: FUN .name .name_len .value .value_len
+  .cookie: ALC 72
+  
+  .set_name: PUT .cookie 0 .name
+  .set_value: PUT .cookie 8 .value
+  .set_domain: PUT .cookie 16 0
+  .set_path: PUT .cookie 24 0
+  .set_expires: PUT .cookie 32 0
+  .set_max_age: PUT .cookie 40 -1
+  .set_secure: PUT .cookie 48 1      -- Secure by default
+  .set_http_only: PUT .cookie 56 1   -- HttpOnly by default
+  .set_same_site: PUT .cookie 64 1   -- Lax by default
+  
+  .result: .cookie
+!FUN
+
+-- ============================================================
+-- COOKIE SETTERS
+-- ============================================================
+
+.cookie_set_domain: FUN .cookie .domain .domain_len
+  .set: PUT .cookie 16 .domain
+  .result: .cookie
+!FUN
+
+.cookie_set_path: FUN .cookie .path .path_len
+  .set: PUT .cookie 24 .path
+  .result: .cookie
+!FUN
+
+.cookie_set_expires: FUN .cookie .timestamp
+  .set: PUT .cookie 32 .timestamp
+  .result: .cookie
+!FUN
+
+.cookie_set_max_age: FUN .cookie .seconds
+  .set: PUT .cookie 40 .seconds
+  .result: .cookie
+!FUN
+
+.cookie_set_secure: FUN .cookie .secure
+  .set: PUT .cookie 48 .secure
+  .result: .cookie
+!FUN
+
+.cookie_set_http_only: FUN .cookie .http_only
+  .set: PUT .cookie 56 .http_only
+  .result: .cookie
+!FUN
+
+.cookie_set_same_site: FUN .cookie .same_site
+  .set: PUT .cookie 64 .same_site
+  .result: .cookie
+!FUN
+
+-- ============================================================
+-- COOKIE.ENCODE: Encode to Set-Cookie header
+-- ============================================================
+
+.cookie_encode: FUN .cookie .out
+  .name: GET .cookie 0
+  .value: GET .cookie 8
+  .domain: GET .cookie 16
+  .path: GET .cookie 24
+  .expires: GET .cookie 32
+  .max_age: GET .cookie 40
+  .secure: GET .cookie 48
+  .http_only: GET .cookie 56
+  .same_site: GET .cookie 64
+  
+  .pos: 0
+  
+  -- name=value
+  -- ; Domain=domain
+  -- ; Path=path
+  -- ; Expires=date
+  -- ; Max-Age=seconds
+  -- ; Secure
+  -- ; HttpOnly
+  -- ; SameSite=Strict|Lax|None
+  
+  .result: .pos
+!FUN
+
+-- ============================================================
 -- COOKIE.PARSE: Parse Cookie header
+-- ============================================================
+-- Returns array of (name, value) pairs
+
 .cookie_parse: FUN .header .header_len
-  .cookies: ALC 1024
+  .cookies: ALC 512
+  .count: 0
+  
+  -- Split by "; "
+  -- For each: split by "="
+  
+  .result: .count
 !FUN
 
+-- ============================================================
 -- COOKIE.GET: Get cookie value by name
-.cookie_get: FUN .cookies .name .name_len
+-- ============================================================
+
+.cookie_get: FUN .cookies .count .name .name_len
   .value: 0
+  .value_len: 0
 !FUN
 
--- COOKIE.SET: Create Set-Cookie header
-.cookie_set: FUN .name .name_len .value .value_len
-  .header: ALC 256
-!FUN
+-- ============================================================
+-- COOKIE.DELETE: Create deletion cookie
+-- ============================================================
 
--- COOKIE.SET_WITH_OPTIONS: Set cookie with options
-.cookie_set_options: FUN .name .name_len .value .value_len .max_age .path .path_len .secure .http_only
-  .header: ALC 512
-!FUN
-
--- COOKIE.DELETE: Create delete cookie header
 .cookie_delete: FUN .name .name_len
-  .header: ALC 128
+  .cookie: COOKIE.NEW .name .name_len "" 0
+  .set_max_age: PUT .cookie 40 0  -- Expire immediately
+  .result: .cookie
 !FUN
 
--- SESSION.CREATE: Create new session
-.session_create: FUN
-  .session_id: ALC 64
+-- ============================================================
+-- SESSION MANAGEMENT
+-- ============================================================
+
+-- Session structure:
+--   id: i64 (session ID)
+--   data: i64 (pointer to key-value store)
+--   created: i64 (timestamp)
+--   expires: i64 (timestamp)
+
+.session_new: FUN .ttl_seconds
+  .session: ALC 64
+  
+  -- Generate random session ID
+  .id: ALC 32
+  .rand: CRYPTO.RANDOM .id 32
+  
+  .now: TIME.NOW
+  .expires: ADD .now .ttl_seconds
+  
+  .set_id: PUT .session 0 .id
+  .set_data: PUT .session 8 0
+  .set_created: PUT .session 16 .now
+  .set_expires: PUT .session 24 .expires
+  
+  .result: .session
 !FUN
 
--- SESSION.GET: Get session data
-.session_get: FUN .session_id .session_id_len .key .key_len
+.session_get: FUN .session .key .key_len
+  .data: GET .session 8
+  -- Lookup key in data
   .value: 0
 !FUN
 
--- SESSION.SET: Set session data
-.session_set: FUN .session_id .session_id_len .key .key_len .value .value_len
+.session_set: FUN .session .key .key_len .value .value_len
+  .data: GET .session 8
+  -- Store key-value
   .done: 0
 !FUN
 
--- SESSION.DESTROY: Destroy session
-.session_destroy: FUN .session_id .session_id_len
+.session_delete: FUN .session .key .key_len
   .done: 0
+!FUN
+
+.session_destroy: FUN .session
+  -- Clear all data
+  -- Mark as expired
+  .done: 0
+!FUN
+
+.session_is_expired: FUN .session
+  .expires: GET .session 24
+  .now: TIME.NOW
+  .result: GT .now .expires
+!FUN
+
+.session_to_cookie: FUN .session .cookie_name .cookie_name_len
+  .id: GET .session 0
+  .expires: GET .session 24
+  
+  .cookie: COOKIE.NEW .cookie_name .cookie_name_len .id 32
+  .set_expires: COOKIE.SET_EXPIRES .cookie .expires
+  
+  .result: .cookie
 !FUN

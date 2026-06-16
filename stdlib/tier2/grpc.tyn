@@ -1,48 +1,108 @@
--- TAYNI stdlib: grpc v0.1
--- Provides: GRPC.SERVER, GRPC.CLIENT, GRPC.CALL
+-- TAYNI stdlib: grpc v1.0
+-- Provides: gRPC protocol over HTTP/2
 -- Usage: USE grpc
+--
+-- AI-Native Design:
+-- - HTTP/2 framing
+-- - Protobuf encoding/decoding
+-- - Unary and streaming RPCs
 
--- GRPC.SERVER: Create gRPC server
-.grpc_server: FUN .port
-  .server: 0
+-- ============================================================
+-- GRPC MESSAGE FORMAT
+-- ============================================================
+-- 1 byte: compressed flag
+-- 4 bytes: message length (big-endian)
+-- N bytes: protobuf message
+
+-- ============================================================
+-- CLIENT
+-- ============================================================
+
+.grpc_dial: FUN .host .host_len .port
+  .conn: ALC 64
+  -- HTTP/2 connection
+  .result: .conn
 !FUN
 
--- GRPC.REGISTER: Register service handler
-.grpc_register: FUN .server .service .method .handler
+.grpc_call: FUN .conn .service .service_len .method .method_len .request .request_len
+  -- Build path: /service/method
+  -- Send HTTP/2 request with gRPC headers
+  -- content-type: application/grpc
+  -- te: trailers
+  
+  .response: ALC 4096
+  .result: .response
+!FUN
+
+.grpc_close: FUN .conn
   .done: 0
 !FUN
 
--- GRPC.START: Start server
-.grpc_start: FUN .server
+-- ============================================================
+-- SERVER
+-- ============================================================
+
+.grpc_server_create: FUN .port
+  .server: ALC 64
+  .result: .server
+!FUN
+
+.grpc_server_register: FUN .server .service .service_len .method .method_len .handler
   .done: 0
 !FUN
 
--- GRPC.CLIENT: Create gRPC client
-.grpc_client: FUN .host .host_len .port
-  .client: 0
-!FUN
-
--- GRPC.CALL: Make unary RPC call
-.grpc_call: FUN .client .service .method .request .request_len
-  .response: 0
-!FUN
-
--- GRPC.STREAM: Start streaming call
-.grpc_stream: FUN .client .service .method
-  .stream: 0
-!FUN
-
--- GRPC.SEND: Send message on stream
-.grpc_send: FUN .stream .msg .msg_len
+.grpc_server_serve: FUN .server
+  -- Accept connections
+  -- Handle requests
   .done: 0
 !FUN
 
--- GRPC.RECV: Receive message from stream
-.grpc_recv: FUN .stream .buf .buf_size
+-- ============================================================
+-- PROTOBUF ENCODING
+-- ============================================================
+
+-- Wire types
+.proto_varint: 0
+.proto_fixed64: 1
+.proto_length: 2
+.proto_fixed32: 5
+
+.proto_encode_varint: FUN .value .out
+  -- Encode variable-length integer
+  .pos: 0
+!FUN
+
+.proto_encode_string: FUN .field .str .str_len .out
+  -- field_tag + length + string
+  .pos: 0
+!FUN
+
+.proto_encode_int32: FUN .field .value .out
+  .pos: 0
+!FUN
+
+.proto_decode_varint: FUN .data .pos
+  .value: 0
+  .new_pos: 0
+!FUN
+
+.proto_decode_string: FUN .data .pos .out
+  .len: 0
+  .new_pos: 0
+!FUN
+
+-- ============================================================
+-- STREAMING
+-- ============================================================
+
+.grpc_stream_send: FUN .stream .message .message_len
+  .done: 0
+!FUN
+
+.grpc_stream_recv: FUN .stream .buffer .buffer_size
   .len: 0
 !FUN
 
--- GRPC.CLOSE: Close client or stream
-.grpc_close: FUN .handle
+.grpc_stream_close: FUN .stream
   .done: 0
 !FUN

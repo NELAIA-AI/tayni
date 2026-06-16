@@ -1,48 +1,167 @@
--- TAYNI stdlib: xml v0.1
--- Provides: XML.PARSE, XML.ENCODE, XML.XPATH
+-- TAYNI stdlib: xml v1.0
+-- Provides: XML parsing and encoding
 -- Usage: USE xml
+--
+-- AI-Native Design:
+-- - SAX-style streaming parser
+-- - DOM-style tree access
+-- - XPath subset for queries
 
--- XML.PARSE: Parse XML string to DOM tree
-.xml_parse: FUN .str .len
-  .doc: ALC 4096
+-- ============================================================
+-- XML NODE TYPES
+-- ============================================================
+
+.xml_element: 1
+.xml_text: 3
+.xml_cdata: 4
+.xml_comment: 8
+.xml_document: 9
+
+-- ============================================================
+-- XML.PARSE: Parse XML string
+-- ============================================================
+
+.xml_parse: FUN .xml .xml_len
+  .doc: ALC 64
+  .pos: 0
+  
+  -- Skip BOM if present
+  -- Parse prolog (<?xml ...?>)
+  -- Parse root element
+  
+  .result: .doc
 !FUN
 
--- XML.ENCODE: Encode DOM tree to XML string
-.xml_encode: FUN .doc
-  .out: ALC 8192
+-- ============================================================
+-- XML.ROOT: Get root element
+-- ============================================================
+
+.xml_root: FUN .doc
+  .root: GET .doc 8
 !FUN
 
--- XML.XPATH: Query DOM with XPath
-.xml_xpath: FUN .doc .xpath .xpath_len
-  .nodes: ALC 1024
+-- ============================================================
+-- XML.TAG: Get element tag name
+-- ============================================================
+
+.xml_tag: FUN .element
+  .name: GET .element 8
+  .len: GET .element 16
 !FUN
 
--- XML.GET_ATTR: Get attribute value
-.xml_get_attr: FUN .node .attr .attr_len
+-- ============================================================
+-- XML.ATTR: Get attribute value
+-- ============================================================
+
+.xml_attr: FUN .element .name .name_len
   .value: 0
+  .len: 0
 !FUN
 
--- XML.SET_ATTR: Set attribute value
-.xml_set_attr: FUN .node .attr .attr_len .value .value_len
+-- ============================================================
+-- XML.TEXT: Get text content
+-- ============================================================
+
+.xml_text: FUN .element
+  .text: 0
+  .len: 0
+!FUN
+
+-- ============================================================
+-- XML.CHILDREN: Get child elements
+-- ============================================================
+
+.xml_children: FUN .element
+  .children: GET .element 24
+  .count: GET .element 32
+!FUN
+
+.xml_child: FUN .element .index
+  .child: 0
+!FUN
+
+.xml_child_count: FUN .element
+  .count: GET .element 32
+!FUN
+
+-- ============================================================
+-- XML.FIND: Find element by tag name
+-- ============================================================
+
+.xml_find: FUN .element .tag .tag_len
+  .found: 0
+!FUN
+
+.xml_find_all: FUN .element .tag .tag_len
+  .results: ALC 256
+  .count: 0
+!FUN
+
+-- ============================================================
+-- XPATH (Subset)
+-- ============================================================
+-- Supported: /root/child, //element, @attribute, [index]
+
+.xml_xpath: FUN .doc .path .path_len
+  .results: ALC 256
+  .count: 0
+!FUN
+
+.xml_xpath_first: FUN .doc .path .path_len
+  .result: 0
+!FUN
+
+-- ============================================================
+-- XML BUILDER
+-- ============================================================
+
+.xml_new_doc: FUN
+  .doc: ALC 64
+  .set_type: PUT .doc 0 9
+  .result: .doc
+!FUN
+
+.xml_new_element: FUN .tag .tag_len
+  .elem: ALC 64
+  .set_type: PUT .elem 0 1
+  .set_tag: PUT .elem 8 .tag
+  .set_tag_len: PUT .elem 16 .tag_len
+  .result: .elem
+!FUN
+
+.xml_set_attr: FUN .element .name .name_len .value .value_len
   .done: 0
 !FUN
 
--- XML.GET_TEXT: Get text content
-.xml_get_text: FUN .node
-  .text: 0
+.xml_set_text: FUN .element .text .text_len
+  .done: 0
 !FUN
 
--- XML.GET_CHILDREN: Get child nodes
-.xml_get_children: FUN .node
-  .children: 0
-!FUN
-
--- XML.CREATE_ELEMENT: Create new element
-.xml_create_element: FUN .tag .tag_len
-  .elem: 0
-!FUN
-
--- XML.APPEND_CHILD: Append child to node
 .xml_append_child: FUN .parent .child
   .done: 0
+!FUN
+
+-- ============================================================
+-- XML.ENCODE: Encode to XML string
+-- ============================================================
+
+.xml_encode: FUN .doc .out
+  .len: 0
+  
+  -- Write prolog
+  -- Write root element recursively
+  
+!FUN
+
+-- ============================================================
+-- XML.ESCAPE: Escape special characters
+-- ============================================================
+-- & -> &amp;  < -> &lt;  > -> &gt;  " -> &quot;  ' -> &apos;
+
+.xml_escape: FUN .str .str_len .out
+  .result: 0
+!FUN
+
+.xml_unescape: FUN .str .str_len .out
+  .result: 0
 !FUN

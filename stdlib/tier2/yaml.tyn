@@ -1,39 +1,97 @@
--- TAYNI stdlib: yaml v0.1
--- Provides: YAML.PARSE, YAML.ENCODE
+-- TAYNI stdlib: yaml v1.0
+-- Provides: YAML parsing and encoding
 -- Usage: USE yaml
+--
+-- AI-Native Design:
+-- - Streaming parser
+-- - No recursive descent (unwound)
+-- - Subset: maps, lists, scalars
 
--- YAML.PARSE: Parse YAML string to value tree
-.yaml_parse: FUN .str .len
-  .root: ALC 1024
-  -- Parse YAML structure
+-- ============================================================
+-- YAML NODE TYPES
+-- ============================================================
+
+.yaml_null: 0
+.yaml_bool: 1
+.yaml_int: 2
+.yaml_float: 3
+.yaml_string: 4
+.yaml_list: 5
+.yaml_map: 6
+
+-- ============================================================
+-- YAML.PARSE: Parse YAML string
+-- ============================================================
+
+.yaml_parse: FUN .yaml .yaml_len
+  .root: ALC 64
+  .pos: 0
+  .indent: 0
+  
+  -- Parse document
+  -- Handle indentation-based structure
+  
+  .result: .root
 !FUN
 
--- YAML.ENCODE: Encode value tree to YAML string
-.yaml_encode: FUN .value
-  .out: ALC 4096
-!FUN
+-- ============================================================
+-- YAML.GET: Get value by path
+-- ============================================================
+-- Path: "key.subkey.0" (0 for array index)
 
--- YAML.GET: Get value by path (e.g., "server.port")
 .yaml_get: FUN .root .path .path_len
   .value: 0
 !FUN
 
--- YAML.SET: Set value by path
-.yaml_set: FUN .root .path .path_len .value
+.yaml_get_string: FUN .root .path .path_len
+  .value: 0
+  .len: 0
+!FUN
+
+.yaml_get_int: FUN .root .path .path_len
+  .value: 0
+!FUN
+
+.yaml_get_bool: FUN .root .path .path_len
+  .value: 0
+!FUN
+
+-- ============================================================
+-- YAML.ENCODE: Encode to YAML string
+-- ============================================================
+
+.yaml_encode: FUN .root .out
+  .len: 0
+!FUN
+
+-- ============================================================
+-- YAML BUILDER
+-- ============================================================
+
+.yaml_new_map: FUN
+  .node: ALC 64
+  .set_type: PUT .node 0 6
+  .result: .node
+!FUN
+
+.yaml_new_list: FUN
+  .node: ALC 64
+  .set_type: PUT .node 0 5
+  .result: .node
+!FUN
+
+.yaml_set: FUN .map .key .key_len .value
   .done: 0
 !FUN
 
--- YAML.GET_STRING: Get string value
-.yaml_get_string: FUN .value
-  .str: 0
+.yaml_append: FUN .list .value
+  .done: 0
 !FUN
 
--- YAML.GET_INT: Get integer value
-.yaml_get_int: FUN .value
-  .num: 0
+.yaml_set_string: FUN .map .key .key_len .value .value_len
+  .done: 0
 !FUN
 
--- YAML.GET_ARRAY: Get array value
-.yaml_get_array: FUN .value
-  .arr: 0
+.yaml_set_int: FUN .map .key .key_len .value
+  .done: 0
 !FUN

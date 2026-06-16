@@ -1,53 +1,185 @@
--- TAYNI stdlib: cors v0.1
--- Provides: CORS.ALLOW, CORS.HEADERS, CORS.PREFLIGHT
+-- TAYNI stdlib: cors v1.0
+-- Provides: CORS (Cross-Origin Resource Sharing) handling
 -- Usage: USE cors
+--
+-- AI-Native Design:
+-- - Middleware pattern
+-- - Configurable policies
+-- - Preflight handling
 
--- CORS configuration structure
-.cors_config_size: 64
+-- ============================================================
+-- CORS CONFIGURATION
+-- ============================================================
 
--- CORS.NEW: Create CORS configuration
-.cors_new: FUN
-  .config: ALC .cors_config_size
+-- Config structure:
+--   allowed_origins: i64 (pointer to list or "*")
+--   allowed_methods: i64 (pointer to list)
+--   allowed_headers: i64 (pointer to list)
+--   exposed_headers: i64 (pointer to list)
+--   allow_credentials: i64 (0 or 1)
+--   max_age: i64 (preflight cache seconds)
+
+.cors_config_new: FUN
+  .config: ALC 48
+  
+  -- Defaults
+  .set_origins: PUT .config 0 0
+  .set_methods: PUT .config 8 0
+  .set_headers: PUT .config 16 0
+  .set_exposed: PUT .config 24 0
+  .set_creds: PUT .config 32 0
+  .set_age: PUT .config 40 86400  -- 24 hours
+  
+  .result: .config
 !FUN
 
+-- ============================================================
 -- CORS.ALLOW_ORIGIN: Set allowed origins
--- origin: "*" for all, or specific domain
+-- ============================================================
+
 .cors_allow_origin: FUN .config .origin .origin_len
-  .done: 0
+  .set: PUT .config 0 .origin
+  .result: .config
 !FUN
 
+.cors_allow_all_origins: FUN .config
+  .star: "*"
+  .set: PUT .config 0 .star
+  .result: .config
+!FUN
+
+-- ============================================================
 -- CORS.ALLOW_METHODS: Set allowed methods
--- methods: "GET,POST,PUT,DELETE"
+-- ============================================================
+
 .cors_allow_methods: FUN .config .methods .methods_len
-  .done: 0
+  .set: PUT .config 8 .methods
+  .result: .config
 !FUN
 
+.cors_default_methods: "GET, POST, PUT, DELETE, OPTIONS"
+
+-- ============================================================
 -- CORS.ALLOW_HEADERS: Set allowed headers
+-- ============================================================
+
 .cors_allow_headers: FUN .config .headers .headers_len
-  .done: 0
+  .set: PUT .config 16 .headers
+  .result: .config
 !FUN
 
+.cors_default_headers: "Content-Type, Authorization, X-Requested-With"
+
+-- ============================================================
+-- CORS.EXPOSE_HEADERS: Set exposed headers
+-- ============================================================
+
+.cors_expose_headers: FUN .config .headers .headers_len
+  .set: PUT .config 24 .headers
+  .result: .config
+!FUN
+
+-- ============================================================
 -- CORS.ALLOW_CREDENTIALS: Allow credentials
+-- ============================================================
+
 .cors_allow_credentials: FUN .config .allow
-  .done: 0
+  .set: PUT .config 32 .allow
+  .result: .config
 !FUN
 
+-- ============================================================
 -- CORS.MAX_AGE: Set preflight cache duration
+-- ============================================================
+
 .cors_max_age: FUN .config .seconds
-  .done: 0
+  .set: PUT .config 40 .seconds
+  .result: .config
 !FUN
 
--- CORS.HEADERS: Generate CORS response headers
-.cors_headers: FUN .config .origin .origin_len
+-- ============================================================
+-- CORS.HANDLE: Handle CORS for request
+-- ============================================================
+-- Returns headers to add to response
+
+.cors_handle: FUN .config .request_origin .request_origin_len .request_method .request_method_len
   .headers: ALC 512
+  .pos: 0
+  
+  -- Check if origin is allowed
+  .allowed_origins: GET .config 0
+  
+  -- Add Access-Control-Allow-Origin
+  -- Add Access-Control-Allow-Credentials if enabled
+  -- Add Access-Control-Expose-Headers if set
+  
+  .result: .headers
 !FUN
 
+-- ============================================================
+-- CORS.HANDLE_PREFLIGHT: Handle OPTIONS preflight
+-- ============================================================
+
+.cors_handle_preflight: FUN .config .request_origin .request_origin_len .request_method .request_method_len .request_headers .request_headers_len
+  .headers: ALC 1024
+  .pos: 0
+  
+  -- Check if origin is allowed
+  -- Check if method is allowed
+  -- Check if headers are allowed
+  
+  -- Add Access-Control-Allow-Origin
+  -- Add Access-Control-Allow-Methods
+  -- Add Access-Control-Allow-Headers
+  -- Add Access-Control-Max-Age
+  -- Add Access-Control-Allow-Credentials if enabled
+  
+  .result: .headers
+!FUN
+
+-- ============================================================
 -- CORS.IS_PREFLIGHT: Check if request is preflight
+-- ============================================================
+
 .cors_is_preflight: FUN .method .method_len
-  .is_preflight: 0
+  -- OPTIONS method with Access-Control-Request-Method header
+  .is_options: 0
+  
+  .o: GET .method 0
+  .p: GET .method 1
+  .t: GET .method 2
+  
+  -- "OPTIONS" = 79, 80, 84, 73, 79, 78, 83
+  .check_o: SUB .o 79
+  .check_p: SUB .p 80
+  .check_t: SUB .t 84
+  
+  .sum: ADD .check_o .check_p
+  .sum: ADD .sum .check_t
+  
+  .result: IFZ .sum 1 0
 !FUN
 
--- CORS.HANDLE_PREFLIGHT: Handle preflight request
-.cors_handle_preflight: FUN .config
-  .response: ALC 256
+-- ============================================================
+-- CORS.IS_CORS_REQUEST: Check if request has Origin header
+-- ============================================================
+
+.cors_is_cors_request: FUN .origin .origin_len
+  .result: GT .origin_len 0
+!FUN
+
+-- ============================================================
+-- CORS.ORIGIN_ALLOWED: Check if origin is in allowed list
+-- ============================================================
+
+.cors_origin_allowed: FUN .config .origin .origin_len
+  .allowed: GET .config 0
+  
+  -- Check for "*" (allow all)
+  .first: GET .allowed 0
+  .is_star: SUB .first 42
+  .allow_all: IFZ .is_star 1 0
+  
+  -- Check if origin matches allowed list
+  .result: .allow_all
 !FUN

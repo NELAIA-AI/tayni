@@ -1,0 +1,190 @@
+-- TAYNI Multi-Target: ARM64 Linux ELF Emitter
+-- Target: aarch64-linux-gnu
+-- Format: ELF64
+--
+-- AI-Native Design:
+-- - Direct ELF generation (no assembler)
+-- - AArch64 instruction encoding
+-- - Linux syscall ABI
+
+-- ============================================================
+-- ELF64 HEADER (64 bytes)
+-- ============================================================
+
+.elf_magic: 0x7f454c46  -- 0x7f 'E' 'L' 'F'
+.elf_class_64: 2
+.elf_data_le: 1         -- Little endian
+.elf_version: 1
+.elf_osabi_linux: 0
+.elf_type_exec: 2
+.elf_machine_aarch64: 183
+
+-- ============================================================
+-- AARCH64 INSTRUCTION ENCODING
+-- ============================================================
+
+-- MOV immediate (MOVZ)
+-- 31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 0
+-- sf  1  0  1  0  0  1  0  1  hw        imm16                              Rd
+.arm64_movz: FUN .rd .imm16 .shift
+  .base: 3489660928  -- 0xD2800000
+  .rd_bits: AND .rd 31
+  .imm_bits: SHL .imm16 5
+  .hw_bits: SHL .shift 21
+  .instr: OR .base .rd_bits
+  .instr: OR .instr .imm_bits
+  .instr: OR .instr .hw_bits
+  .result: .instr
+!FUN
+
+-- MOV register
+.arm64_mov_reg: FUN .rd .rn
+  -- ORR Rd, XZR, Rn
+  .base: 2863267840  -- 0xAA0003E0
+  .rd_bits: AND .rd 31
+  .rn_bits: SHL .rn 16
+  .instr: OR .base .rd_bits
+  .instr: OR .instr .rn_bits
+  .result: .instr
+!FUN
+
+-- ADD immediate
+.arm64_add_imm: FUN .rd .rn .imm12
+  .base: 2449473536  -- 0x91000000
+  .rd_bits: AND .rd 31
+  .rn_bits: SHL .rn 5
+  .imm_bits: SHL .imm12 10
+  .instr: OR .base .rd_bits
+  .instr: OR .instr .rn_bits
+  .instr: OR .instr .imm_bits
+  .result: .instr
+!FUN
+
+-- SUB immediate
+.arm64_sub_imm: FUN .rd .rn .imm12
+  .base: 3523215360  -- 0xD1000000
+  .rd_bits: AND .rd 31
+  .rn_bits: SHL .rn 5
+  .imm_bits: SHL .imm12 10
+  .instr: OR .base .rd_bits
+  .instr: OR .instr .rn_bits
+  .instr: OR .instr .imm_bits
+  .result: .instr
+!FUN
+
+-- SVC (Supervisor Call) for syscalls
+.arm64_svc: FUN .imm16
+  .base: 3556769793  -- 0xD4000001
+  .imm_bits: SHL .imm16 5
+  .instr: OR .base .imm_bits
+  .result: .instr
+!FUN
+
+-- RET (Return)
+.arm64_ret: 3596451840  -- 0xD65F03C0
+
+-- BL (Branch with Link)
+.arm64_bl: FUN .offset
+  .base: 2483027968  -- 0x94000000
+  .off_bits: AND .offset 67108863  -- 26 bits
+  .instr: OR .base .off_bits
+  .result: .instr
+!FUN
+
+-- B (Branch)
+.arm64_b: FUN .offset
+  .base: 335544320  -- 0x14000000
+  .off_bits: AND .offset 67108863
+  .instr: OR .base .off_bits
+  .result: .instr
+!FUN
+
+-- LDR (Load Register)
+.arm64_ldr: FUN .rt .rn .offset
+  .base: 4160749568  -- 0xF8400000
+  .rt_bits: AND .rt 31
+  .rn_bits: SHL .rn 5
+  .off_bits: SHL .offset 12
+  .instr: OR .base .rt_bits
+  .instr: OR .instr .rn_bits
+  .instr: OR .instr .off_bits
+  .result: .instr
+!FUN
+
+-- STR (Store Register)
+.arm64_str: FUN .rt .rn .offset
+  .base: 4160749568  -- 0xF8000000
+  .rt_bits: AND .rt 31
+  .rn_bits: SHL .rn 5
+  .off_bits: SHL .offset 12
+  .instr: OR .base .rt_bits
+  .instr: OR .instr .rn_bits
+  .instr: OR .instr .off_bits
+  .result: .instr
+!FUN
+
+-- ============================================================
+-- LINUX SYSCALL NUMBERS (aarch64)
+-- ============================================================
+
+.sys_read: 63
+.sys_write: 64
+.sys_openat: 56
+.sys_close: 57
+.sys_exit: 93
+.sys_mmap: 222
+.sys_munmap: 215
+
+-- ============================================================
+-- ELF GENERATION
+-- ============================================================
+
+.emit_elf64_arm64: FUN .code .code_len .out
+  .pos: 0
+  
+  -- ELF Header (64 bytes)
+  .set_magic: PUT .out 0 0x7f454c46
+  .set_class: PUT .out 4 2          -- 64-bit
+  .set_data: PUT .out 5 1           -- Little endian
+  .set_version: PUT .out 6 1
+  .set_osabi: PUT .out 7 0          -- Linux
+  .set_type: PUT .out 16 2          -- Executable
+  .set_machine: PUT .out 18 183     -- AArch64
+  .set_version2: PUT .out 20 1
+  .set_entry: PUT .out 24 0x400000  -- Entry point
+  .set_phoff: PUT .out 32 64        -- Program header offset
+  .set_shoff: PUT .out 40 0         -- No section headers
+  .set_flags: PUT .out 48 0
+  .set_ehsize: PUT .out 52 64
+  .set_phentsize: PUT .out 54 56
+  .set_phnum: PUT .out 56 1
+  .pos: 64
+  
+  -- Program Header (56 bytes)
+  .set_ptype: PUT .out .pos 1       -- PT_LOAD
+  .pos: ADD .pos 4
+  .set_pflags: PUT .out .pos 5      -- PF_R | PF_X
+  .pos: ADD .pos 4
+  .set_poffset: PUT .out .pos 0
+  .pos: ADD .pos 8
+  .set_pvaddr: PUT .out .pos 0x400000
+  .pos: ADD .pos 8
+  .set_ppaddr: PUT .out .pos 0x400000
+  .pos: ADD .pos 8
+  .set_pfilesz: PUT .out .pos 0     -- Will update
+  .pos: ADD .pos 8
+  .set_pmemsz: PUT .out .pos 0      -- Will update
+  .pos: ADD .pos 8
+  .set_palign: PUT .out .pos 4096
+  .pos: ADD .pos 8
+  
+  -- Code section
+  -- Copy code to output
+  
+  .result: .pos
+!FUN
+
+-- ============================================================
+-- USAGE
+-- ============================================================
+-- tayni-c program.tyn --target=arm64-linux

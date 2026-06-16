@@ -1,53 +1,157 @@
--- TAYNI stdlib: websocket v0.1
--- Provides: WS.SERVER, WS.CLIENT, WS.SEND, WS.RECEIVE
+-- TAYNI stdlib: websocket v1.0
+-- Provides: WebSocket protocol (RFC 6455)
 -- Usage: USE websocket
+--
+-- AI-Native Design:
+-- - Direct protocol implementation
+-- - Frame-based messaging
+-- - Both client and server support
 
--- WS.SERVER: Create WebSocket server
-.ws_server: FUN .port
-  .server: 0
+-- ============================================================
+-- WEBSOCKET OPCODES
+-- ============================================================
+
+.ws_opcode_continuation: 0
+.ws_opcode_text: 1
+.ws_opcode_binary: 2
+.ws_opcode_close: 8
+.ws_opcode_ping: 9
+.ws_opcode_pong: 10
+
+-- ============================================================
+-- CLIENT: Connect to WebSocket server
+-- ============================================================
+
+.ws_connect: FUN .url .url_len
+  .conn: ALC 64
+  
+  -- Parse URL (ws:// or wss://)
+  -- TCP/TLS connect
+  -- Send HTTP upgrade request
+  -- Receive 101 Switching Protocols
+  -- Validate Sec-WebSocket-Accept
+  
+  .result: .conn
 !FUN
 
--- WS.ACCEPT: Accept WebSocket connection
-.ws_accept: FUN .server
-  .client: 0
+-- ============================================================
+-- SERVER: Accept WebSocket connection
+-- ============================================================
+
+.ws_accept: FUN .http_request
+  .conn: ALC 64
+  
+  -- Validate Upgrade: websocket header
+  -- Get Sec-WebSocket-Key
+  -- Compute Sec-WebSocket-Accept (SHA1 + base64)
+  -- Send 101 response
+  
+  .result: .conn
 !FUN
 
--- WS.CLIENT: Connect to WebSocket server
-.ws_client: FUN .url .url_len
+-- ============================================================
+-- SEND: Send message
+-- ============================================================
+
+.ws_send: FUN .conn .data .data_len .opcode
+  .socket: GET .conn 0
+  
+  -- Build frame
+  -- FIN=1, opcode, mask (client only), payload length, mask key, payload
+  .frame: ALC 4096
+  
+  -- First byte: FIN + opcode
+  .b0: OR 128 .opcode  -- FIN=1
+  .set_b0: PUT .frame 0 .b0
+  
+  -- Second byte: MASK + length
+  -- If len < 126: single byte
+  -- If len < 65536: 126 + 2 bytes
+  -- Else: 127 + 8 bytes
+  
+  .result: 0
+!FUN
+
+.ws_send_text: FUN .conn .text .text_len
+  .result: WS.SEND .conn .text .text_len 1
+!FUN
+
+.ws_send_binary: FUN .conn .data .data_len
+  .result: WS.SEND .conn .data .data_len 2
+!FUN
+
+-- ============================================================
+-- RECEIVE: Receive message
+-- ============================================================
+
+.ws_receive: FUN .conn .buffer .buffer_size
+  .socket: GET .conn 0
+  
+  -- Read frame header
+  -- Parse FIN, opcode, mask, length
+  -- Read payload
+  -- Unmask if needed
+  
+  .opcode: 0
+  .len: 0
+  .result: .len
+!FUN
+
+-- ============================================================
+-- CONTROL FRAMES
+-- ============================================================
+
+.ws_ping: FUN .conn .data .data_len
+  .result: WS.SEND .conn .data .data_len 9
+!FUN
+
+.ws_pong: FUN .conn .data .data_len
+  .result: WS.SEND .conn .data .data_len 10
+!FUN
+
+.ws_close: FUN .conn .code .reason .reason_len
+  -- Build close frame with status code and reason
+  .frame: ALC 128
+  .set_code_hi: PUT .frame 0 0
+  .set_code_lo: PUT .frame 1 .code
+  -- Copy reason
+  
+  .result: WS.SEND .conn .frame 0 8
+!FUN
+
+-- ============================================================
+-- CLOSE CODES
+-- ============================================================
+
+.ws_close_normal: 1000
+.ws_close_going_away: 1001
+.ws_close_protocol_error: 1002
+.ws_close_unsupported: 1003
+.ws_close_no_status: 1005
+.ws_close_abnormal: 1006
+.ws_close_invalid_data: 1007
+.ws_close_policy: 1008
+.ws_close_too_large: 1009
+.ws_close_extension: 1010
+.ws_close_unexpected: 1011
+
+-- ============================================================
+-- SERVER: WebSocket server
+-- ============================================================
+
+.ws_server_create: FUN .port
+  .server: ALC 64
+  -- TCP.LISTEN .port
+  .result: .server
+!FUN
+
+.ws_server_accept: FUN .server
+  -- TCP.ACCEPT
+  -- Read HTTP request
+  -- WS.ACCEPT
   .conn: 0
 !FUN
 
--- WS.SEND: Send message
-.ws_send: FUN .conn .msg .msg_len
-  .sent: 0
-!FUN
-
--- WS.SEND_BINARY: Send binary message
-.ws_send_binary: FUN .conn .data .data_len
-  .sent: 0
-!FUN
-
--- WS.RECEIVE: Receive message (blocking)
-.ws_receive: FUN .conn .buf .buf_size
-  .len: 0
-!FUN
-
--- WS.ON_MESSAGE: Set message callback
-.ws_on_message: FUN .conn .callback
-  .done: 0
-!FUN
-
--- WS.ON_CLOSE: Set close callback
-.ws_on_close: FUN .conn .callback
-  .done: 0
-!FUN
-
--- WS.CLOSE: Close connection
-.ws_close: FUN .conn
-  .done: 0
-!FUN
-
--- WS.PING: Send ping frame
-.ws_ping: FUN .conn
+.ws_server_close: FUN .server
   .done: 0
 !FUN

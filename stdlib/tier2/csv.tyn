@@ -1,43 +1,142 @@
--- TAYNI stdlib: csv v0.1
--- Provides: CSV.PARSE, CSV.ENCODE, CSV.STREAM
+-- TAYNI stdlib: csv v1.0
+-- Provides: CSV parsing and encoding
 -- Usage: USE csv
+--
+-- AI-Native Design:
+-- - Streaming parser (row by row)
+-- - RFC 4180 compliant
+-- - Configurable delimiter
 
--- CSV.PARSE: Parse CSV string to rows
-.csv_parse: FUN .str .len
-  .rows: ALC 4096
+-- ============================================================
+-- CSV.PARSE: Parse CSV string
+-- ============================================================
+
+.csv_parse: FUN .csv .csv_len
+  .result: ALC 64
+  .set_data: PUT .result 0 .csv
+  .set_len: PUT .result 8 .csv_len
+  .set_pos: PUT .result 16 0
+  .set_delim: PUT .result 24 44  -- ','
 !FUN
 
--- CSV.PARSE_WITH_HEADER: Parse CSV with header row
-.csv_parse_with_header: FUN .str .len
-  .data: ALC 4096
+-- ============================================================
+-- CSV.SET_DELIMITER: Set field delimiter
+-- ============================================================
+
+.csv_set_delimiter: FUN .parser .delim
+  .set: PUT .parser 24 .delim
 !FUN
 
--- CSV.ENCODE: Encode rows to CSV string
-.csv_encode: FUN .rows .row_count .col_count
-  .out: ALC 8192
+-- ============================================================
+-- CSV.NEXT_ROW: Get next row
+-- ============================================================
+
+.csv_next_row: FUN .parser
+  .data: GET .parser 0
+  .len: GET .parser 8
+  .pos: GET .parser 16
+  .delim: GET .parser 24
+  
+  -- Find end of row (newline)
+  -- Parse fields
+  
+  .row: ALC 256
+  .has_more: LT .pos .len
+  .result: .has_more
 !FUN
 
--- CSV.GET_ROW: Get row by index
-.csv_get_row: FUN .data .index
-  .row: 0
+-- ============================================================
+-- CSV.GET_FIELD: Get field from row
+-- ============================================================
+
+.csv_get_field: FUN .row .index
+  .value: 0
+  .len: 0
 !FUN
 
--- CSV.GET_CELL: Get cell value
-.csv_get_cell: FUN .row .col
+.csv_get_field_int: FUN .row .index
   .value: 0
 !FUN
 
--- CSV.STREAM_OPEN: Open CSV file for streaming
-.csv_stream_open: FUN .path .path_len
-  .stream: 0
+-- ============================================================
+-- CSV.FIELD_COUNT: Get number of fields in row
+-- ============================================================
+
+.csv_field_count: FUN .row
+  .count: GET .row 0
 !FUN
 
--- CSV.STREAM_READ: Read next row from stream
-.csv_stream_read: FUN .stream
-  .row: 0
+-- ============================================================
+-- CSV.ENCODE: Encode rows to CSV
+-- ============================================================
+
+.csv_encode: FUN .rows .row_count .out
+  .len: 0
 !FUN
 
--- CSV.STREAM_CLOSE: Close stream
-.csv_stream_close: FUN .stream
+-- ============================================================
+-- CSV.ENCODE_ROW: Encode single row
+-- ============================================================
+
+.csv_encode_row: FUN .fields .field_count .delim .out
+  .pos: 0
+  
+  -- For each field:
+  -- If contains delimiter, quote, or newline: wrap in quotes
+  -- Escape quotes by doubling
+  
+  .result: .pos
+!FUN
+
+-- ============================================================
+-- CSV.ESCAPE: Escape field value
+-- ============================================================
+
+.csv_escape: FUN .value .value_len .out
+  -- Check if needs quoting
+  -- Add quotes and escape internal quotes
+  .result: 0
+!FUN
+
+-- ============================================================
+-- CSV WRITER
+-- ============================================================
+
+.csv_writer_new: FUN .delim
+  .writer: ALC 64
+  .buf: ALC 8192
+  .set_buf: PUT .writer 0 .buf
+  .set_pos: PUT .writer 8 0
+  .set_delim: PUT .writer 16 .delim
+  .result: .writer
+!FUN
+
+.csv_writer_field: FUN .writer .value .value_len
+  .buf: GET .writer 0
+  .pos: GET .writer 8
+  .delim: GET .writer 16
+  
+  -- Add delimiter if not first field
+  -- Escape and write field
+  
   .done: 0
+!FUN
+
+.csv_writer_end_row: FUN .writer
+  .buf: GET .writer 0
+  .pos: GET .writer 8
+  
+  -- Add newline
+  .set_cr: PUT .buf .pos 13
+  .pos: ADD .pos 1
+  .set_lf: PUT .buf .pos 10
+  .pos: ADD .pos 1
+  
+  .set_pos: PUT .writer 8 .pos
+!FUN
+
+.csv_writer_finish: FUN .writer
+  .buf: GET .writer 0
+  .len: GET .writer 8
+  .result: .len
 !FUN

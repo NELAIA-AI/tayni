@@ -1,53 +1,238 @@
--- TAYNI stdlib: redis v0.1
--- Provides: REDIS.GET, REDIS.SET, REDIS.DEL, REDIS.PUBSUB
+-- TAYNI stdlib: redis v1.0
+-- Provides: Redis RESP protocol implementation
 -- Usage: USE redis
+--
+-- AI-Native Design:
+-- - Direct RESP protocol (no library)
+-- - Pipelining support
+-- - Pub/Sub built-in
 
--- REDIS.CONNECT: Connect to Redis server
+-- ============================================================
+-- RESP PROTOCOL
+-- ============================================================
+-- Simple Strings: +OK\r\n
+-- Errors: -ERR message\r\n
+-- Integers: :1000\r\n
+-- Bulk Strings: $6\r\nfoobar\r\n
+-- Arrays: *2\r\n$3\r\nfoo\r\n$3\r\nbar\r\n
+
+.resp_simple: 43   -- '+'
+.resp_error: 45    -- '-'
+.resp_integer: 58  -- ':'
+.resp_bulk: 36     -- '$'
+.resp_array: 42    -- '*'
+
+-- ============================================================
+-- CONNECTION
+-- ============================================================
+
 .redis_connect: FUN .host .host_len .port
-  .conn: 0
+  .conn: ALC 64
+  -- TCP connect
+  .socket: 0
+  .set_socket: PUT .conn 0 .socket
+  .result: .conn
 !FUN
 
--- REDIS.GET: Get value by key
+.redis_auth: FUN .conn .password .password_len
+  -- AUTH password
+  .result: REDIS.CMD .conn "AUTH" 4 .password .password_len
+!FUN
+
+.redis_select: FUN .conn .db
+  -- SELECT db
+  .result: 0
+!FUN
+
+.redis_close: FUN .conn
+  .socket: GET .conn 0
+  -- TCP.CLOSE
+  .done: 0
+!FUN
+
+-- ============================================================
+-- BASIC COMMANDS
+-- ============================================================
+
 .redis_get: FUN .conn .key .key_len
+  .cmd: REDIS.CMD .conn "GET" 3 .key .key_len
   .value: 0
 !FUN
 
--- REDIS.SET: Set key-value pair
 .redis_set: FUN .conn .key .key_len .value .value_len
-  .done: 0
+  .result: REDIS.CMD2 .conn "SET" 3 .key .key_len .value .value_len
 !FUN
 
--- REDIS.SETEX: Set with expiration (seconds)
-.redis_setex: FUN .conn .key .key_len .value .value_len .ttl
-  .done: 0
+.redis_setex: FUN .conn .key .key_len .ttl .value .value_len
+  -- SETEX key ttl value
+  .result: 0
 !FUN
 
--- REDIS.DEL: Delete key
+.redis_setnx: FUN .conn .key .key_len .value .value_len
+  -- SETNX key value (set if not exists)
+  .result: 0
+!FUN
+
 .redis_del: FUN .conn .key .key_len
-  .done: 0
+  .result: REDIS.CMD .conn "DEL" 3 .key .key_len
 !FUN
 
--- REDIS.EXISTS: Check if key exists
 .redis_exists: FUN .conn .key .key_len
-  .exists: 0
+  .result: REDIS.CMD .conn "EXISTS" 6 .key .key_len
 !FUN
 
--- REDIS.INCR: Increment integer value
+.redis_expire: FUN .conn .key .key_len .seconds
+  .result: 0
+!FUN
+
+.redis_ttl: FUN .conn .key .key_len
+  .result: REDIS.CMD .conn "TTL" 3 .key .key_len
+!FUN
+
+-- ============================================================
+-- NUMERIC OPERATIONS
+-- ============================================================
+
 .redis_incr: FUN .conn .key .key_len
-  .new_value: 0
+  .result: REDIS.CMD .conn "INCR" 4 .key .key_len
 !FUN
 
--- REDIS.PUBLISH: Publish message to channel
-.redis_publish: FUN .conn .channel .channel_len .msg .msg_len
+.redis_incrby: FUN .conn .key .key_len .amount
+  .result: 0
+!FUN
+
+.redis_decr: FUN .conn .key .key_len
+  .result: REDIS.CMD .conn "DECR" 4 .key .key_len
+!FUN
+
+-- ============================================================
+-- HASH OPERATIONS
+-- ============================================================
+
+.redis_hget: FUN .conn .key .key_len .field .field_len
+  .result: 0
+!FUN
+
+.redis_hset: FUN .conn .key .key_len .field .field_len .value .value_len
+  .result: 0
+!FUN
+
+.redis_hgetall: FUN .conn .key .key_len
+  .result: 0
+!FUN
+
+.redis_hdel: FUN .conn .key .key_len .field .field_len
+  .result: 0
+!FUN
+
+-- ============================================================
+-- LIST OPERATIONS
+-- ============================================================
+
+.redis_lpush: FUN .conn .key .key_len .value .value_len
+  .result: 0
+!FUN
+
+.redis_rpush: FUN .conn .key .key_len .value .value_len
+  .result: 0
+!FUN
+
+.redis_lpop: FUN .conn .key .key_len
+  .result: 0
+!FUN
+
+.redis_rpop: FUN .conn .key .key_len
+  .result: 0
+!FUN
+
+.redis_lrange: FUN .conn .key .key_len .start .stop
+  .result: 0
+!FUN
+
+.redis_llen: FUN .conn .key .key_len
+  .result: 0
+!FUN
+
+-- ============================================================
+-- SET OPERATIONS
+-- ============================================================
+
+.redis_sadd: FUN .conn .key .key_len .member .member_len
+  .result: 0
+!FUN
+
+.redis_srem: FUN .conn .key .key_len .member .member_len
+  .result: 0
+!FUN
+
+.redis_smembers: FUN .conn .key .key_len
+  .result: 0
+!FUN
+
+.redis_sismember: FUN .conn .key .key_len .member .member_len
+  .result: 0
+!FUN
+
+-- ============================================================
+-- PUB/SUB
+-- ============================================================
+
+.redis_publish: FUN .conn .channel .channel_len .message .message_len
   .subscribers: 0
 !FUN
 
--- REDIS.SUBSCRIBE: Subscribe to channel
-.redis_subscribe: FUN .conn .channel .channel_len .callback
-  .done: 0
+.redis_subscribe: FUN .conn .channel .channel_len
+  .result: 0
 !FUN
 
--- REDIS.CLOSE: Close connection
-.redis_close: FUN .conn
-  .done: 0
+.redis_unsubscribe: FUN .conn .channel .channel_len
+  .result: 0
+!FUN
+
+.redis_receive: FUN .conn
+  -- Blocking receive for pub/sub messages
+  .message: 0
+!FUN
+
+-- ============================================================
+-- PIPELINING
+-- ============================================================
+
+.redis_pipeline_start: FUN .conn
+  .pipeline: ALC 64
+  .set_conn: PUT .pipeline 0 .conn
+  .set_count: PUT .pipeline 8 0
+  .result: .pipeline
+!FUN
+
+.redis_pipeline_add: FUN .pipeline .cmd .cmd_len
+  .count: GET .pipeline 8
+  .new_count: ADD .count 1
+  .set_count: PUT .pipeline 8 .new_count
+  .result: .pipeline
+!FUN
+
+.redis_pipeline_exec: FUN .pipeline
+  -- Send all commands
+  -- Receive all responses
+  .results: 0
+!FUN
+
+-- ============================================================
+-- INTERNAL: Build RESP command
+-- ============================================================
+
+.redis_cmd: FUN .conn .cmd .cmd_len .arg1 .arg1_len
+  .socket: GET .conn 0
+  .buf: ALC 1024
+  
+  -- *2\r\n$cmd_len\r\ncmd\r\n$arg1_len\r\narg1\r\n
+  .pos: 0
+  .set_arr: PUT .buf .pos 42  -- '*'
+  
+  .result: 0
+!FUN
+
+.redis_cmd2: FUN .conn .cmd .cmd_len .arg1 .arg1_len .arg2 .arg2_len
+  .result: 0
 !FUN

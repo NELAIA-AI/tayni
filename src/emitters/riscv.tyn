@@ -1,0 +1,231 @@
+-- TAYNI Multi-Target: RISC-V Emitter
+-- Target: riscv64-linux-gnu
+-- Format: ELF64
+--
+-- AI-Native Design:
+-- - Direct ELF generation
+-- - RV64I base instruction set
+-- - Linux syscall ABI
+
+-- ============================================================
+-- RISC-V REGISTERS
+-- ============================================================
+-- x0 (zero): Always 0
+-- x1 (ra): Return address
+-- x2 (sp): Stack pointer
+-- x3 (gp): Global pointer
+-- x4 (tp): Thread pointer
+-- x5-x7 (t0-t2): Temporaries
+-- x8 (s0/fp): Saved/frame pointer
+-- x9 (s1): Saved
+-- x10-x11 (a0-a1): Arguments/return values
+-- x12-x17 (a2-a7): Arguments
+-- x18-x27 (s2-s11): Saved
+-- x28-x31 (t3-t6): Temporaries
+
+.rv_zero: 0
+.rv_ra: 1
+.rv_sp: 2
+.rv_gp: 3
+.rv_tp: 4
+.rv_t0: 5
+.rv_t1: 6
+.rv_t2: 7
+.rv_s0: 8
+.rv_fp: 8
+.rv_s1: 9
+.rv_a0: 10
+.rv_a1: 11
+.rv_a2: 12
+.rv_a3: 13
+.rv_a4: 14
+.rv_a5: 15
+.rv_a6: 16
+.rv_a7: 17
+
+-- ============================================================
+-- RISC-V INSTRUCTION ENCODING
+-- ============================================================
+
+-- R-type: funct7[31:25] rs2[24:20] rs1[19:15] funct3[14:12] rd[11:7] opcode[6:0]
+-- I-type: imm[31:20] rs1[19:15] funct3[14:12] rd[11:7] opcode[6:0]
+-- S-type: imm[31:25] rs2[24:20] rs1[19:15] funct3[14:12] imm[11:7] opcode[6:0]
+-- B-type: imm[31] imm[30:25] rs2[24:20] rs1[19:15] funct3[14:12] imm[11:8] imm[7] opcode[6:0]
+-- U-type: imm[31:12] rd[11:7] opcode[6:0]
+-- J-type: imm[31] imm[30:21] imm[20] imm[19:12] rd[11:7] opcode[6:0]
+
+-- Opcodes
+.rv_op_load: 0x03
+.rv_op_store: 0x23
+.rv_op_branch: 0x63
+.rv_op_jalr: 0x67
+.rv_op_jal: 0x6F
+.rv_op_op_imm: 0x13
+.rv_op_op: 0x33
+.rv_op_lui: 0x37
+.rv_op_auipc: 0x17
+.rv_op_system: 0x73
+
+-- ============================================================
+-- INSTRUCTION GENERATORS
+-- ============================================================
+
+-- ADDI rd, rs1, imm
+.rv_addi: FUN .rd .rs1 .imm
+  .opcode: 0x13
+  .funct3: 0
+  .rd_bits: SHL .rd 7
+  .rs1_bits: SHL .rs1 15
+  .imm_bits: SHL .imm 20
+  .instr: OR .opcode .rd_bits
+  .instr: OR .instr .rs1_bits
+  .instr: OR .instr .imm_bits
+  .result: .instr
+!FUN
+
+-- ADD rd, rs1, rs2
+.rv_add: FUN .rd .rs1 .rs2
+  .opcode: 0x33
+  .funct3: 0
+  .funct7: 0
+  .rd_bits: SHL .rd 7
+  .rs1_bits: SHL .rs1 15
+  .rs2_bits: SHL .rs2 20
+  .instr: OR .opcode .rd_bits
+  .instr: OR .instr .rs1_bits
+  .instr: OR .instr .rs2_bits
+  .result: .instr
+!FUN
+
+-- SUB rd, rs1, rs2
+.rv_sub: FUN .rd .rs1 .rs2
+  .opcode: 0x33
+  .funct7: 0x20
+  .rd_bits: SHL .rd 7
+  .rs1_bits: SHL .rs1 15
+  .rs2_bits: SHL .rs2 20
+  .f7_bits: SHL .funct7 25
+  .instr: OR .opcode .rd_bits
+  .instr: OR .instr .rs1_bits
+  .instr: OR .instr .rs2_bits
+  .instr: OR .instr .f7_bits
+  .result: .instr
+!FUN
+
+-- LUI rd, imm (Load Upper Immediate)
+.rv_lui: FUN .rd .imm
+  .opcode: 0x37
+  .rd_bits: SHL .rd 7
+  .imm_bits: SHL .imm 12
+  .instr: OR .opcode .rd_bits
+  .instr: OR .instr .imm_bits
+  .result: .instr
+!FUN
+
+-- JAL rd, offset (Jump and Link)
+.rv_jal: FUN .rd .offset
+  .opcode: 0x6F
+  .rd_bits: SHL .rd 7
+  -- Encode offset (J-type immediate)
+  .instr: OR .opcode .rd_bits
+  .result: .instr
+!FUN
+
+-- JALR rd, rs1, offset (Jump and Link Register)
+.rv_jalr: FUN .rd .rs1 .offset
+  .opcode: 0x67
+  .rd_bits: SHL .rd 7
+  .rs1_bits: SHL .rs1 15
+  .off_bits: SHL .offset 20
+  .instr: OR .opcode .rd_bits
+  .instr: OR .instr .rs1_bits
+  .instr: OR .instr .off_bits
+  .result: .instr
+!FUN
+
+-- BEQ rs1, rs2, offset (Branch if Equal)
+.rv_beq: FUN .rs1 .rs2 .offset
+  .opcode: 0x63
+  .funct3: 0
+  .rs1_bits: SHL .rs1 15
+  .rs2_bits: SHL .rs2 20
+  .instr: OR .opcode .rs1_bits
+  .instr: OR .instr .rs2_bits
+  .result: .instr
+!FUN
+
+-- LD rd, offset(rs1) (Load Doubleword)
+.rv_ld: FUN .rd .rs1 .offset
+  .opcode: 0x03
+  .funct3: 3
+  .rd_bits: SHL .rd 7
+  .f3_bits: SHL .funct3 12
+  .rs1_bits: SHL .rs1 15
+  .off_bits: SHL .offset 20
+  .instr: OR .opcode .rd_bits
+  .instr: OR .instr .f3_bits
+  .instr: OR .instr .rs1_bits
+  .instr: OR .instr .off_bits
+  .result: .instr
+!FUN
+
+-- SD rs2, offset(rs1) (Store Doubleword)
+.rv_sd: FUN .rs2 .rs1 .offset
+  .opcode: 0x23
+  .funct3: 3
+  .rs1_bits: SHL .rs1 15
+  .rs2_bits: SHL .rs2 20
+  .f3_bits: SHL .funct3 12
+  .instr: OR .opcode .f3_bits
+  .instr: OR .instr .rs1_bits
+  .instr: OR .instr .rs2_bits
+  .result: .instr
+!FUN
+
+-- ECALL (Environment Call - syscall)
+.rv_ecall: 0x00000073
+
+-- EBREAK (Environment Break)
+.rv_ebreak: 0x00100073
+
+-- ============================================================
+-- LINUX SYSCALL NUMBERS (RISC-V)
+-- ============================================================
+
+.sys_read: 63
+.sys_write: 64
+.sys_openat: 56
+.sys_close: 57
+.sys_exit: 93
+.sys_mmap: 222
+
+-- ============================================================
+-- ELF GENERATION
+-- ============================================================
+
+.emit_elf64_riscv: FUN .code .code_len .out
+  .pos: 0
+  
+  -- ELF Header
+  .set_magic: PUT .out 0 0x7f454c46
+  .set_class: PUT .out 4 2          -- 64-bit
+  .set_data: PUT .out 5 1           -- Little endian
+  .set_version: PUT .out 6 1
+  .set_osabi: PUT .out 7 0          -- Linux
+  .set_type: PUT .out 16 2          -- Executable
+  .set_machine: PUT .out 18 243     -- RISC-V
+  .set_version2: PUT .out 20 1
+  .set_entry: PUT .out 24 0x10000   -- Entry point
+  .set_phoff: PUT .out 32 64
+  .pos: 64
+  
+  -- Program Header
+  -- ... similar to ARM64
+  
+  .result: .pos
+!FUN
+
+-- ============================================================
+-- USAGE
+-- ============================================================
+-- tayni-c program.tyn --target=riscv64-linux

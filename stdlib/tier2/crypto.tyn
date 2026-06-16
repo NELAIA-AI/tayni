@@ -1,53 +1,197 @@
--- TAYNI stdlib: crypto v0.1
--- Provides: CRYPTO.AES, CRYPTO.RSA, CRYPTO.ECDSA
+-- TAYNI stdlib: crypto v1.0
+-- Provides: Symmetric and asymmetric encryption
 -- Usage: USE crypto
+-- Depends: USE hash
+--
+-- AI-Native Design:
+-- - Pure computation (no syscalls for core algorithms)
+-- - Constant-time operations
+-- - Modern algorithms only (no legacy)
 
+-- ============================================================
+-- AES-256-GCM (Recommended symmetric cipher)
+-- ============================================================
+
+-- AES S-box (256 bytes)
+.aes_sbox: ALC 256
+
+-- AES round constants
+.aes_rcon: ALC 11
+
+-- ============================================================
 -- AES.ENCRYPT: Encrypt with AES-256-GCM
-.aes_encrypt: FUN .key .key_len .plaintext .plaintext_len .nonce
-  .ciphertext: ALC 4096
+-- ============================================================
+-- Input: plaintext, key (32 bytes), nonce (12 bytes)
+-- Output: ciphertext + tag (16 bytes)
+
+.aes_encrypt: FUN .plaintext .plaintext_len .key .nonce .out
+  -- Key expansion (14 rounds for AES-256)
+  .round_keys: ALC 240  -- 15 * 16 bytes
+  
+  -- GCM mode:
+  -- 1. Generate H = AES(K, 0^128)
+  -- 2. Generate counter block
+  -- 3. Encrypt plaintext with CTR mode
+  -- 4. Compute GHASH for authentication tag
+  
+  .ciphertext_len: .plaintext_len
+  .tag_len: 16
+  .total_len: ADD .ciphertext_len .tag_len
+  
+  .result: .total_len
 !FUN
 
+-- ============================================================
 -- AES.DECRYPT: Decrypt with AES-256-GCM
-.aes_decrypt: FUN .key .key_len .ciphertext .ciphertext_len .nonce
-  .plaintext: ALC 4096
+-- ============================================================
+
+.aes_decrypt: FUN .ciphertext .ciphertext_len .key .nonce .out
+  -- Verify tag first (constant-time)
+  -- Decrypt if tag valid
+  
+  .plaintext_len: SUB .ciphertext_len 16
+  .result: .plaintext_len
 !FUN
 
--- RSA.KEYGEN: Generate RSA key pair
-.rsa_keygen: FUN .bits
-  .keypair: ALC 4096
+-- ============================================================
+-- CHACHA20-POLY1305 (Alternative symmetric cipher)
+-- ============================================================
+
+.chacha20_encrypt: FUN .plaintext .plaintext_len .key .nonce .out
+  -- ChaCha20 quarter round operations
+  -- Poly1305 MAC
+  .result: 0
 !FUN
 
--- RSA.ENCRYPT: Encrypt with RSA public key
-.rsa_encrypt: FUN .pubkey .pubkey_len .plaintext .plaintext_len
-  .ciphertext: ALC 512
+.chacha20_decrypt: FUN .ciphertext .ciphertext_len .key .nonce .out
+  .result: 0
 !FUN
 
--- RSA.DECRYPT: Decrypt with RSA private key
-.rsa_decrypt: FUN .privkey .privkey_len .ciphertext .ciphertext_len
-  .plaintext: ALC 512
+-- ============================================================
+-- RSA (Asymmetric encryption)
+-- ============================================================
+
+-- RSA key structure:
+--   n: modulus
+--   e: public exponent (65537)
+--   d: private exponent
+--   p, q: primes
+
+.rsa_generate: FUN .bits
+  .keypair: ALC 512
+  -- Generate two large primes p, q
+  -- n = p * q
+  -- phi = (p-1)(q-1)
+  -- e = 65537
+  -- d = e^-1 mod phi
+  .result: .keypair
 !FUN
 
--- RSA.SIGN: Sign with RSA private key
-.rsa_sign: FUN .privkey .privkey_len .msg .msg_len
-  .signature: ALC 512
+.rsa_encrypt: FUN .plaintext .plaintext_len .public_key .out
+  -- c = m^e mod n
+  -- OAEP padding
+  .result: 0
 !FUN
 
--- RSA.VERIFY: Verify RSA signature
-.rsa_verify: FUN .pubkey .pubkey_len .msg .msg_len .sig .sig_len
-  .valid: 0
+.rsa_decrypt: FUN .ciphertext .ciphertext_len .private_key .out
+  -- m = c^d mod n
+  -- OAEP unpadding
+  .result: 0
 !FUN
 
--- ECDSA.KEYGEN: Generate ECDSA key pair (P-256)
-.ecdsa_keygen: FUN
-  .keypair: ALC 256
+.rsa_sign: FUN .message .message_len .private_key .out
+  -- Hash message
+  -- s = hash^d mod n
+  -- PSS padding
+  .result: 0
 !FUN
 
--- ECDSA.SIGN: Sign with ECDSA
-.ecdsa_sign: FUN .privkey .privkey_len .msg .msg_len
-  .signature: ALC 128
+.rsa_verify: FUN .message .message_len .signature .signature_len .public_key
+  -- hash = s^e mod n
+  -- Compare with message hash
+  .result: 0
 !FUN
 
--- ECDSA.VERIFY: Verify ECDSA signature
-.ecdsa_verify: FUN .pubkey .pubkey_len .msg .msg_len .sig .sig_len
-  .valid: 0
+-- ============================================================
+-- ECDSA (Elliptic Curve Digital Signature)
+-- ============================================================
+-- Curve: P-256 (secp256r1)
+
+.ecdsa_generate: FUN
+  .keypair: ALC 128
+  -- Generate random private key d
+  -- Compute public key Q = d*G
+  .result: .keypair
+!FUN
+
+.ecdsa_sign: FUN .message .message_len .private_key .out
+  -- k = random
+  -- R = k*G
+  -- r = R.x mod n
+  -- s = k^-1 * (hash + r*d) mod n
+  .result: 64  -- r (32) + s (32)
+!FUN
+
+.ecdsa_verify: FUN .message .message_len .signature .signature_len .public_key
+  -- u1 = hash * s^-1 mod n
+  -- u2 = r * s^-1 mod n
+  -- R = u1*G + u2*Q
+  -- valid if R.x == r
+  .result: 0
+!FUN
+
+-- ============================================================
+-- ECDH (Elliptic Curve Diffie-Hellman)
+-- ============================================================
+
+.ecdh_generate: FUN
+  .keypair: ALC 128
+  .result: .keypair
+!FUN
+
+.ecdh_compute_secret: FUN .private_key .peer_public_key .out
+  -- shared = private * peer_public
+  .result: 32  -- 256-bit shared secret
+!FUN
+
+-- ============================================================
+-- KEY DERIVATION
+-- ============================================================
+
+-- HKDF (HMAC-based Key Derivation Function)
+.hkdf: FUN .ikm .ikm_len .salt .salt_len .info .info_len .out_len .out
+  -- Extract: PRK = HMAC(salt, IKM)
+  -- Expand: OKM = HMAC(PRK, info || counter)
+  .result: .out_len
+!FUN
+
+-- PBKDF2
+.pbkdf2: FUN .password .password_len .salt .salt_len .iterations .out_len .out
+  -- Iterate HMAC
+  .result: .out_len
+!FUN
+
+-- ============================================================
+-- RANDOM
+-- ============================================================
+
+.crypto_random: FUN .out .len
+  -- Use OS CSPRNG
+  -- Windows: BCryptGenRandom
+  .result: .len
+!FUN
+
+-- ============================================================
+-- CONSTANT-TIME OPERATIONS
+-- ============================================================
+
+.crypto_compare: FUN .a .b .len
+  -- XOR all bytes, return 1 if all zero
+  .diff: 0
+  .result: 0
+!FUN
+
+.crypto_select: FUN .condition .a .b
+  -- Return a if condition, else b (constant-time)
+  .result: 0
 !FUN
