@@ -1,0 +1,8 @@
+-- Test: Solo FOP + FCL (sin FRD ni FWR)
+.zero: 0
+.path: "test.txt"
+.h: FOP .path .zero
+.c: FCL .h
+.msg: "Opened and closed\n"
+.p: PRT .msg 18
+!

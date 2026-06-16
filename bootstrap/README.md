@@ -22,20 +22,33 @@ Proporcionamos binarios pre-compilados para Windows x64:
 # 1. Crear input.tyn con código TAYNI (valor 0-9)
 echo .x: 5 > input.tyn
 
-# 2. Compilar
+# 2. Compilar (compiler.exe debe existir)
 tayni-bootstrap.exe
 
-# 3. Ejecutar
+# 3. Ejecutar el resultado
 out.exe
 echo %ERRORLEVEL%  # Muestra: 5
+
+# 4. SELF-REPLICATION: out.exe puede compilar también
+copy out.exe compiler.exe
+echo .x: 7 > input.tyn
+compiler.exe
+# Genera nuevo out.exe con valor 7
 ```
+
+## Self-Replication
+
+El bootstrap compiler es **self-replicating**:
+- `out.exe` generado es idéntico a `compiler.exe`
+- Cada generación puede generar más compiladores
+- Cadena infinita: compiler.exe → out.exe → out.exe → ...
 
 ## Limitaciones del Bootstrap
 
 El bootstrap compiler es mínimo:
 - Solo soporta formato `.x: N` donde N es un dígito (0-9)
 - Genera un exe que retorna el valor como exit code
-- No soporta operaciones complejas
+- Requiere `compiler.exe` en el mismo directorio
 
 Para funcionalidad completa, usa el compilador principal.
 

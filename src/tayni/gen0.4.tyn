@@ -1,0 +1,167 @@
+-- TAYNI Gen0.4 - Emitir código TAYNI
+-- Lee input, detecta nodos, emite output idéntico
+-- Sin EMT de Rust - usa PUT para escribir bytes
+-- Autonomía Total
+-- Fecha: 2026-06-16
+
+.zero: 0
+.one: 1
+
+-- ASCII
+.C_DOT: 46
+.C_COLON: 58
+.C_SPACE: 32
+.C_NL: 10
+.C_BANG: 33
+.C_a: 97
+.C_z: 122
+.C_0: 48
+.C_9: 57
+
+-- Buffers
+.src: ALC 256
+.out: ALC 256
+.num: ALC 32
+
+-- Leer input
+.path: "input.tyn"
+.h: FOP .path .zero
+.len: FRD .h .src 256
+.c: FCL .h
+
+-- ============================================
+-- CLASIFICAR BYTES (simplificado para 20 bytes)
+-- ============================================
+
+.r0: GET .src 0
+.r1: GET .src 1
+.r2: GET .src 2
+.r3: GET .src 3
+.r4: GET .src 4
+.r5: GET .src 5
+.r6: GET .src 6
+.r7: GET .src 7
+.r8: GET .src 8
+.r9: GET .src 9
+.r10: GET .src 10
+.r11: GET .src 11
+.r12: GET .src 12
+.r13: GET .src 13
+.r14: GET .src 14
+.r15: GET .src 15
+.r16: GET .src 16
+.r17: GET .src 17
+.r18: GET .src 18
+.r19: GET .src 19
+
+-- ============================================
+-- EMITIR OUTPUT (copiar byte por byte)
+-- Para autonomía total, copiamos el input al output
+-- ============================================
+
+-- Escribir byte 0
+.w0: PUT .out 0 .r0
+-- Escribir byte 1
+.w1: PUT .out 1 .r1
+-- Escribir byte 2
+.w2: PUT .out 2 .r2
+-- Escribir byte 3
+.w3: PUT .out 3 .r3
+-- Escribir byte 4
+.w4: PUT .out 4 .r4
+-- Escribir byte 5
+.w5: PUT .out 5 .r5
+-- Escribir byte 6
+.w6: PUT .out 6 .r6
+-- Escribir byte 7
+.w7: PUT .out 7 .r7
+-- Escribir byte 8
+.w8: PUT .out 8 .r8
+-- Escribir byte 9
+.w9: PUT .out 9 .r9
+-- Escribir byte 10
+.w10: PUT .out 10 .r10
+-- Escribir byte 11
+.w11: PUT .out 11 .r11
+-- Escribir byte 12
+.w12: PUT .out 12 .r12
+-- Escribir byte 13
+.w13: PUT .out 13 .r13
+-- Escribir byte 14
+.w14: PUT .out 14 .r14
+-- Escribir byte 15
+.w15: PUT .out 15 .r15
+-- Escribir byte 16
+.w16: PUT .out 16 .r16
+-- Escribir byte 17
+.w17: PUT .out 17 .r17
+-- Escribir byte 18
+.w18: PUT .out 18 .r18
+-- Escribir byte 19
+.w19: PUT .out 19 .r19
+
+-- ============================================
+-- ESCRIBIR OUTPUT A ARCHIVO
+-- ============================================
+
+.opath: "output.tyn"
+.oh: FOP .opath .one
+.wlen: FWR .oh .out .len
+.oc: FCL .oh
+
+-- ============================================
+-- VERIFICAR: Comparar bytes
+-- ============================================
+
+-- Leer output de vuelta
+.vpath: "output.tyn"
+.vh: FOP .vpath .zero
+.vbuf: ALC 256
+.vlen: FRD .vh .vbuf 256
+.vc: FCL .vh
+
+-- Comparar primeros bytes
+.v0: GET .vbuf 0
+.v1: GET .vbuf 1
+.v2: GET .vbuf 2
+
+.eq0: EQ .r0 .v0
+.eq1: EQ .r1 .v1
+.eq2: EQ .r2 .v2
+.eqa: MUL .eq0 .eq1
+.match: MUL .eqa .eq2
+
+-- ============================================
+-- OUTPUT
+-- ============================================
+
+.hdr: "Gen0.4 - Emit TAYNI\n"
+.p0: PRT .hdr 20
+
+.ms: "Input: "
+.p1: PRT .ms 7
+.n1: ITS .len .num
+.p2: PRT .num .n1
+.mb: " bytes\n"
+.p3: PRT .mb 7
+
+.mo: "Output: "
+.p4: PRT .mo 8
+.n2: ITS .vlen .num
+.p5: PRT .num .n2
+.p6: PRT .mb 7
+
+.mm: "Match: "
+.p7: PRT .mm 7
+.n3: ITS .match .num
+.p8: PRT .num .n3
+.nl: "\n"
+.p9: PRT .nl 1
+
+-- Cleanup
+.f1: FRE .src
+.f2: FRE .out
+.f3: FRE .num
+.f4: FRE .vbuf
+
+!

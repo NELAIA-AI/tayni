@@ -20,7 +20,7 @@ fn op_to_byte(op: &Op) -> u8 {
         Op::And => 0x18, Op::Or => 0x19, Op::Not => 0x1A,
         // Memory 0x20-0x2F
         Op::Alc => 0x20, Op::Fre => 0x21, Op::Put => 0x22, Op::Get => 0x23,
-        Op::Cpy => 0x24, Op::Cmp => 0x25, Op::Fnd => 0x26, Op::Sln => 0x27,
+        Op::Cpy => 0x24, Op::Cmp => 0x25, Op::Fnd => 0x26, Op::Sln => 0x27, Op::Ge8 => 0x28,
         // I/O 0x30-0x3F
         Op::Prt => 0x30, Op::Inp => 0x31, Op::Fop => 0x32, Op::Frd => 0x33, Op::Fwr => 0x34, Op::Fcl => 0x35,
         Op::Err => 0x36,
@@ -40,6 +40,7 @@ fn op_to_byte(op: &Op) -> u8 {
         Op::Cat => 0x6C, Op::Its => 0x6D, Op::Chr => 0x6E, Op::Sbs => 0x6F, Op::Scm => 0x77, Op::Wrt => 0x78, Op::Ifz => 0x79,
         // Control 0x70-0x7F
         Op::Brn => 0x70, Op::Ret => 0x71, Op::Jmp => 0x72, Op::Whl => 0x73, Op::End => 0x74, Op::Trn => 0x75, Op::Fsm => 0x76,
+        Op::Red => 0x7A, Op::Psc => 0x7B, Op::Ast => 0x7C, Op::Emt => 0x7D,
         // GUI 0x80-0x8F
         Op::Win => 0x80, Op::Shw => 0x81, Op::Hid => 0x82, Op::Evt => 0x83, Op::Run => 0x84,
         Op::Lbl => 0x85, Op::Txb => 0x86, Op::Btn => 0x87, Op::Dlg => 0x88,
@@ -83,7 +84,7 @@ fn byte_to_op(b: u8) -> Option<Op> {
         0x10 => Op::Eq, 0x11 => Op::Ne, 0x12 => Op::Lt, 0x13 => Op::Gt, 0x14 => Op::Le, 0x15 => Op::Ge,
         0x18 => Op::And, 0x19 => Op::Or, 0x1A => Op::Not,
         0x20 => Op::Alc, 0x21 => Op::Fre, 0x22 => Op::Put, 0x23 => Op::Get,
-        0x24 => Op::Cpy, 0x25 => Op::Cmp, 0x26 => Op::Fnd, 0x27 => Op::Sln,
+        0x24 => Op::Cpy, 0x25 => Op::Cmp, 0x26 => Op::Fnd, 0x27 => Op::Sln, 0x28 => Op::Ge8,
         0x30 => Op::Prt, 0x31 => Op::Inp, 0x32 => Op::Fop, 0x33 => Op::Frd, 0x34 => Op::Fwr, 0x35 => Op::Fcl,
         0x36 => Op::Err,
         0x40 => Op::Tcp, 0x41 => Op::Udp, 0x42 => Op::Bnd, 0x43 => Op::Lst,
@@ -96,6 +97,7 @@ fn byte_to_op(b: u8) -> Option<Op> {
         0x68 => Op::Hmp, 0x69 => Op::Hpt, 0x6A => Op::Hgt, 0x6B => Op::Hhs,
         0x6C => Op::Cat, 0x6D => Op::Its, 0x6E => Op::Chr, 0x6F => Op::Sbs, 0x77 => Op::Scm, 0x78 => Op::Wrt, 0x79 => Op::Ifz,
         0x70 => Op::Brn, 0x71 => Op::Ret, 0x72 => Op::Jmp, 0x73 => Op::Whl, 0x74 => Op::End, 0x75 => Op::Trn, 0x76 => Op::Fsm,
+        0x7A => Op::Red, 0x7B => Op::Psc, 0x7C => Op::Ast, 0x7D => Op::Emt,
         0x80 => Op::Win, 0x81 => Op::Shw, 0x82 => Op::Hid, 0x83 => Op::Evt, 0x84 => Op::Run,
         0x85 => Op::Lbl, 0x86 => Op::Txb, 0x87 => Op::Btn, 0x88 => Op::Dlg,
         0x89 => Op::Gvl, 0x8A => Op::Svl,

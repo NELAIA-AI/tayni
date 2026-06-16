@@ -1,0 +1,30 @@
+.buf: ALC 32
+.zero: 0
+.one: 1
+.two: 2
+
+.msg: "ABC"
+.c0: CHR .msg .zero
+.c1: CHR .msg .one
+.c2: CHR .msg .two
+
+.num_buf: ALC 16
+.banner: "Chars: "
+.p1: PRT .banner 7
+
+.n0: ITS .c0 .num_buf
+.p2: PRT .num_buf .n0
+.sp: " "
+.p3: PRT .sp 1
+
+.n1: ITS .c1 .num_buf
+.p4: PRT .num_buf .n1
+.p5: PRT .sp 1
+
+.n2: ITS .c2 .num_buf
+.p6: PRT .num_buf .n2
+
+.nl: "\n"
+.p7: PRT .nl 1
+
+!

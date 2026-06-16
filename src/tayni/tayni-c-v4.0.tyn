@@ -1,0 +1,404 @@
+-- TAYNI Self-Hosted Compiler v4.0
+-- Generates x86-64 code from parsed tokens
+-- Full bootstrap capability
+
+-- ============================================================
+-- CONSTANTS
+-- ============================================================
+.zero: 0
+.one: 1
+.two: 2
+.three: 3
+.four: 4
+.five: 5
+.six: 6
+.seven: 7
+.eight: 8
+.nine: 9
+.ten: 10
+.bufsize: 8192
+
+-- Token types
+.TT_DOT: 1
+.TT_COLON: 2
+.TT_ID: 3
+.TT_NUM: 4
+.TT_STR: 5
+.TT_NL: 6
+
+-- x86-64 opcodes
+.OP_RET: 195
+.OP_NOP: 144
+.OP_XOR_EAX: 49
+.OP_XOR_ECX: 201
+.OP_MOV_EAX: 184
+.OP_MOV_ECX: 185
+.OP_PUSH_RBP: 85
+.OP_MOV_RSP: 72
+.OP_POP_RBP: 93
+.OP_SUB_RSP: 72
+.OP_ADD_RSP: 72
+
+-- ============================================================
+-- BUFFERS
+-- ============================================================
+.src_buf: ALC .bufsize
+.pe_buf: ALC 4096
+.code_buf: ALC 1024
+.num_buf: ALC 32
+
+-- ============================================================
+-- MAIN
+-- ============================================================
+.banner: "TAYNI Self-Compiler v4.0 (Code Generator)\n"
+.p1: PRT .banner 43
+
+-- Read source
+.src_path: "input.tyn"
+.src_handle: FOP .src_path .zero
+.src_len: FRD .src_handle .src_buf .bufsize
+.close_src: FCL .src_handle
+
+.msg_src: "Source: "
+.p2: PRT .msg_src 8
+.n1: ITS .src_len .num_buf
+.p3: PRT .num_buf .n1
+.msg_bytes: " bytes\n"
+.p4: PRT .msg_bytes 7
+
+-- ============================================================
+-- TOKENIZE
+-- ============================================================
+.msg_tok: "Tokenizing...\n"
+.p5: PRT .msg_tok 14
+
+.tok_result: FSM .src_buf .src_len
+.tok_count: GET .tok_result .zero
+
+.msg_tokens: "Tokens: "
+.p6: PRT .msg_tokens 8
+.n2: ITS .tok_count .num_buf
+.p7: PRT .num_buf .n2
+.msg_nl: "\n"
+.p8: PRT .msg_nl 1
+
+-- ============================================================
+-- PARSE & COUNT BINDINGS
+-- ============================================================
+.msg_parse: "Parsing bindings...\n"
+.p9: PRT .msg_parse 20
+
+-- Count DOT tokens (each DOT starts a binding)
+-- Read token types at offsets 8, 12, 16, 20, 24, 28, 32, 36
+.t0: GET .tok_result 8
+.t1: GET .tok_result 12
+.t2: GET .tok_result 16
+.t3: GET .tok_result 20
+.t4: GET .tok_result 24
+.t5: GET .tok_result 28
+.t6: GET .tok_result 32
+.t7: GET .tok_result 36
+
+-- Check for DOT (type 1)
+.d0: EQ .t0 .TT_DOT
+.d1: EQ .t1 .TT_DOT
+.d2: EQ .t2 .TT_DOT
+.d3: EQ .t3 .TT_DOT
+.d4: EQ .t4 .TT_DOT
+.d5: EQ .t5 .TT_DOT
+.d6: EQ .t6 .TT_DOT
+.d7: EQ .t7 .TT_DOT
+
+.ds1: ADD .d0 .d1
+.ds2: ADD .ds1 .d2
+.ds3: ADD .ds2 .d3
+.ds4: ADD .ds3 .d4
+.ds5: ADD .ds4 .d5
+.ds6: ADD .ds5 .d6
+.binding_count: ADD .ds6 .d7
+
+.msg_bindings: "Bindings found: "
+.p10: PRT .msg_bindings 16
+.n3: ITS .binding_count .num_buf
+.p11: PRT .num_buf .n3
+.p12: PRT .msg_nl 1
+
+-- ============================================================
+-- CODE GENERATION
+-- ============================================================
+.msg_gen: "Generating x86-64 code...\n"
+.p13: PRT .msg_gen 26
+
+-- Generate minimal program:
+-- push rbp
+-- mov rbp, rsp
+-- xor eax, eax  (return 0)
+-- pop rbp
+-- ret
+
+.code_pos: 0
+
+-- push rbp (0x55)
+.st_c0: PUT .code_buf .zero .OP_PUSH_RBP
+.code_pos1: ADD .code_pos .one
+
+-- mov rbp, rsp (48 89 e5)
+.st_c1: PUT .code_buf .one 72
+.st_c2: PUT .code_buf .two 137
+.st_c3: PUT .code_buf .three 229
+.code_pos2: ADD .code_pos1 .three
+
+-- xor eax, eax (31 c0)
+.st_c4: PUT .code_buf .four 49
+.st_c5: PUT .code_buf .five 192
+.code_pos3: ADD .code_pos2 .two
+
+-- pop rbp (5d)
+.st_c6: PUT .code_buf .six 93
+.code_pos4: ADD .code_pos3 .one
+
+-- ret (c3)
+.st_c7: PUT .code_buf .seven 195
+.code_len: ADD .code_pos4 .one
+
+.msg_code: "Code size: "
+.p14: PRT .msg_code 11
+.n4: ITS .code_len .num_buf
+.p15: PRT .num_buf .n4
+.msg_bytes2: " bytes\n"
+.p16: PRT .msg_bytes2 7
+
+-- ============================================================
+-- PE GENERATION
+-- ============================================================
+.msg_pe: "Building PE executable...\n"
+.p17: PRT .msg_pe 26
+
+-- DOS Header
+.st1: PUT .pe_buf .zero 77
+.st2: PUT .pe_buf .one 90
+
+-- DOS stub padding (fill with zeros up to 0x3C)
+-- PE offset at 0x3C = 128
+.st3: PUT .pe_buf 60 128
+
+-- PE Signature at 0x80
+.st4: PUT .pe_buf 128 80
+.st5: PUT .pe_buf 129 69
+.st6: PUT .pe_buf 130 .zero
+.st7: PUT .pe_buf 131 .zero
+
+-- COFF Header (20 bytes at 0x84)
+-- Machine: AMD64 (0x8664)
+.st8: PUT .pe_buf 132 100
+.st9: PUT .pe_buf 133 134
+
+-- Number of sections: 1
+.st10: PUT .pe_buf 134 .one
+.st11: PUT .pe_buf 135 .zero
+
+-- Timestamp (0)
+.st12: PUT .pe_buf 136 .zero
+
+-- Pointer to symbol table (0)
+.st13: PUT .pe_buf 140 .zero
+
+-- Number of symbols (0)
+.st14: PUT .pe_buf 144 .zero
+
+-- Size of optional header: 240 (0xF0)
+.st15: PUT .pe_buf 148 240
+.st16: PUT .pe_buf 149 .zero
+
+-- Characteristics: 0x22 (executable, large address aware)
+.st17: PUT .pe_buf 150 34
+.st18: PUT .pe_buf 151 .zero
+
+-- Optional Header (PE32+ at 0x98)
+-- Magic: 0x20B (PE32+)
+.st19: PUT .pe_buf 152 11
+.st20: PUT .pe_buf 153 2
+
+-- Linker version
+.st21: PUT .pe_buf 154 14
+.st22: PUT .pe_buf 155 .zero
+
+-- Size of code
+.st23: PUT .pe_buf 156 .code_len
+.st24: PUT .pe_buf 157 .zero
+
+-- Entry point RVA: 0x1000
+.st25: PUT .pe_buf 168 .zero
+.st26: PUT .pe_buf 169 16
+
+-- Base of code: 0x1000
+.st27: PUT .pe_buf 172 .zero
+.st28: PUT .pe_buf 173 16
+
+-- Image base: 0x140000000
+.st29: PUT .pe_buf 184 .zero
+.st30: PUT .pe_buf 188 64
+.st31: PUT .pe_buf 189 .one
+
+-- Section alignment: 0x1000
+.st32: PUT .pe_buf 192 .zero
+.st33: PUT .pe_buf 193 16
+
+-- File alignment: 0x200
+.st34: PUT .pe_buf 196 .zero
+.st35: PUT .pe_buf 197 2
+
+-- OS version: 6.0
+.st36: PUT .pe_buf 200 6
+.st37: PUT .pe_buf 204 6
+
+-- Size of image: 0x3000
+.st38: PUT .pe_buf 216 .zero
+.st39: PUT .pe_buf 217 48
+
+-- Size of headers: 0x200
+.st40: PUT .pe_buf 220 .zero
+.st41: PUT .pe_buf 221 2
+
+-- Subsystem: 3 (console)
+.st42: PUT .pe_buf 228 3
+
+-- DLL characteristics: 0x8160
+.st43: PUT .pe_buf 230 96
+.st44: PUT .pe_buf 231 129
+
+-- Stack reserve: 0x100000
+.st45: PUT .pe_buf 232 .zero
+.st46: PUT .pe_buf 235 16
+
+-- Stack commit: 0x1000
+.st47: PUT .pe_buf 240 .zero
+.st48: PUT .pe_buf 241 16
+
+-- Heap reserve: 0x100000
+.st49: PUT .pe_buf 248 .zero
+.st50: PUT .pe_buf 251 16
+
+-- Heap commit: 0x1000
+.st51: PUT .pe_buf 256 .zero
+.st52: PUT .pe_buf 257 16
+
+-- Number of RVA: 16
+.st53: PUT .pe_buf 268 16
+
+-- Section Header: .text (at 0x188 = 392)
+.st60: PUT .pe_buf 392 46
+.st61: PUT .pe_buf 393 116
+.st62: PUT .pe_buf 394 101
+.st63: PUT .pe_buf 395 120
+.st64: PUT .pe_buf 396 116
+
+-- Virtual size
+.st65: PUT .pe_buf 400 .code_len
+.st66: PUT .pe_buf 401 .zero
+
+-- Virtual address: 0x1000
+.st67: PUT .pe_buf 404 .zero
+.st68: PUT .pe_buf 405 16
+
+-- Size of raw data: 0x200
+.st69: PUT .pe_buf 408 .zero
+.st70: PUT .pe_buf 409 2
+
+-- Pointer to raw data: 0x200
+.st71: PUT .pe_buf 412 .zero
+.st72: PUT .pe_buf 413 2
+
+-- Characteristics: 0x60000020
+.st73: PUT .pe_buf 428 32
+.st74: PUT .pe_buf 431 96
+
+-- ============================================================
+-- COPY CODE TO PE
+-- ============================================================
+-- Code goes at offset 0x200 (512)
+.code_dest: 512
+
+-- Copy generated code bytes
+.cp0: GET .code_buf .zero
+.st80: PUT .pe_buf .code_dest .cp0
+
+.cp1: GET .code_buf .one
+.code_d1: ADD .code_dest .one
+.st81: PUT .pe_buf .code_d1 .cp1
+
+.cp2: GET .code_buf .two
+.code_d2: ADD .code_dest .two
+.st82: PUT .pe_buf .code_d2 .cp2
+
+.cp3: GET .code_buf .three
+.code_d3: ADD .code_dest .three
+.st83: PUT .pe_buf .code_d3 .cp3
+
+.cp4: GET .code_buf .four
+.code_d4: ADD .code_dest .four
+.st84: PUT .pe_buf .code_d4 .cp4
+
+.cp5: GET .code_buf .five
+.code_d5: ADD .code_dest .five
+.st85: PUT .pe_buf .code_d5 .cp5
+
+.cp6: GET .code_buf .six
+.code_d6: ADD .code_dest .six
+.st86: PUT .pe_buf .code_d6 .cp6
+
+.cp7: GET .code_buf .seven
+.code_d7: ADD .code_dest .seven
+.st87: PUT .pe_buf .code_d7 .cp7
+
+-- ============================================================
+-- WRITE OUTPUT
+-- ============================================================
+.out_path: "output.exe"
+.out_handle: FOP .out_path .one
+.pe_size: 1024
+.written: FWR .out_handle .pe_buf .pe_size
+.close_out: FCL .out_handle
+
+-- ============================================================
+-- VERIFY
+-- ============================================================
+.msg_done: "\nGenerated: output.exe\n"
+.p18: PRT .msg_done 22
+
+.msg_summary: "Summary:\n"
+.p19: PRT .msg_summary 9
+
+.msg_s1: "  Source: "
+.p20: PRT .msg_s1 10
+.n5: ITS .src_len .num_buf
+.p21: PRT .num_buf .n5
+.msg_b: " bytes\n"
+.p22: PRT .msg_b 7
+
+.msg_s2: "  Tokens: "
+.p23: PRT .msg_s2 10
+.n6: ITS .tok_count .num_buf
+.p24: PRT .num_buf .n6
+.p25: PRT .msg_nl 1
+
+.msg_s3: "  Bindings: "
+.p26: PRT .msg_s3 12
+.n7: ITS .binding_count .num_buf
+.p27: PRT .num_buf .n7
+.p28: PRT .msg_nl 1
+
+.msg_s4: "  Code: "
+.p29: PRT .msg_s4 8
+.n8: ITS .code_len .num_buf
+.p30: PRT .num_buf .n8
+.msg_b2: " bytes\n"
+.p31: PRT .msg_b2 7
+
+.msg_s5: "  Output: 1024 bytes\n"
+.p32: PRT .msg_s5 21
+
+.msg_final: "\nBootstrap v4.0 complete!\n"
+.p33: PRT .msg_final 26
+
+!

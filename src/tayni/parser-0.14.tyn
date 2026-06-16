@@ -1,0 +1,266 @@
+-- TAYNI Parser v0.14 - Sequential Token Scanner
+-- Escanea cada posición de token buscando DOT-ID-COLON
+
+.zero: 0
+.one: 1
+.four: 4
+.eight: 8
+
+.num_buf: ALC 32
+.src_buf: ALC 65536
+
+-- Token types (FSM v3)
+.TT_DOT: 1
+.TT_COLON: 2
+.TT_ID: 3
+.TT_NUM: 4
+.TT_STR: 5
+.TT_NL: 6
+
+-- Header
+.header: "TAYNI Parser v0.14\n"
+.p0: PRT .header 19
+
+-- Read source
+.src_path: "input.tyn"
+.src_handle: FOP .src_path .zero
+.src_len: FRD .src_handle .src_buf 65536
+.close_src: FCL .src_handle
+
+.msg_src: "Source: "
+.p1: PRT .msg_src 8
+.n1: ITS .src_len .num_buf
+.p2: PRT .num_buf .n1
+.msg_bytes: " bytes\n"
+.p3: PRT .msg_bytes 7
+
+-- Tokenize
+.tok: FSM .src_buf .src_len
+.tok_count: GET .tok .zero
+
+.msg_tok: "Tokens: "
+.p4: PRT .msg_tok 8
+.n2: ITS .tok_count .num_buf
+.p5: PRT .num_buf .n2
+.nl: "\n"
+.p6: PRT .nl 1
+
+-- Debug: print first 20 token types
+.msg_debug: "Token types: "
+.pd0: PRT .msg_debug 13
+
+.dt0: GET .tok 8
+.dn0: ITS .dt0 .num_buf
+.dp0: PRT .num_buf .dn0
+.ds0: PRT " " 1
+
+.dt1: GET .tok 12
+.dn1: ITS .dt1 .num_buf
+.dp1: PRT .num_buf .dn1
+.ds1: PRT " " 1
+
+.dt2: GET .tok 16
+.dn2: ITS .dt2 .num_buf
+.dp2: PRT .num_buf .dn2
+.ds2: PRT " " 1
+
+.dt3: GET .tok 20
+.dn3: ITS .dt3 .num_buf
+.dp3: PRT .num_buf .dn3
+.ds3: PRT " " 1
+
+.dt4: GET .tok 24
+.dn4: ITS .dt4 .num_buf
+.dp4: PRT .num_buf .dn4
+.ds4: PRT " " 1
+
+.dt5: GET .tok 28
+.dn5: ITS .dt5 .num_buf
+.dp5: PRT .num_buf .dn5
+.ds5: PRT " " 1
+
+.dt6: GET .tok 32
+.dn6: ITS .dt6 .num_buf
+.dp6: PRT .num_buf .dn6
+.ds6: PRT " " 1
+
+.dt7: GET .tok 36
+.dn7: ITS .dt7 .num_buf
+.dp7: PRT .num_buf .dn7
+.ds7: PRT " " 1
+
+.dt8: GET .tok 40
+.dn8: ITS .dt8 .num_buf
+.dp8: PRT .num_buf .dn8
+.ds8: PRT " " 1
+
+.dt9: GET .tok 44
+.dn9: ITS .dt9 .num_buf
+.dp9: PRT .num_buf .dn9
+.ds9: PRT " " 1
+
+.dt10: GET .tok 48
+.dn10: ITS .dt10 .num_buf
+.dp10: PRT .num_buf .dn10
+.ds10: PRT " " 1
+
+.dt11: GET .tok 52
+.dn11: ITS .dt11 .num_buf
+.dp11: PRT .num_buf .dn11
+.ds11: PRT " " 1
+
+.dt12: GET .tok 56
+.dn12: ITS .dt12 .num_buf
+.dp12: PRT .num_buf .dn12
+.ds12: PRT " " 1
+
+.dt13: GET .tok 60
+.dn13: ITS .dt13 .num_buf
+.dp13: PRT .num_buf .dn13
+.ds13: PRT " " 1
+
+.dt14: GET .tok 64
+.dn14: ITS .dt14 .num_buf
+.dp14: PRT .num_buf .dn14
+.ds14: PRT " " 1
+
+.dt15: GET .tok 68
+.dn15: ITS .dt15 .num_buf
+.dp15: PRT .num_buf .dn15
+.ds15: PRT " " 1
+
+.dt16: GET .tok 72
+.dn16: ITS .dt16 .num_buf
+.dp16: PRT .num_buf .dn16
+.ds16: PRT " " 1
+
+.dt17: GET .tok 76
+.dn17: ITS .dt17 .num_buf
+.dp17: PRT .num_buf .dn17
+.ds17: PRT " " 1
+
+.dt18: GET .tok 80
+.dn18: ITS .dt18 .num_buf
+.dp18: PRT .num_buf .dn18
+.ds18: PRT " " 1
+
+.dt19: GET .tok 84
+.dn19: ITS .dt19 .num_buf
+.dp19: PRT .num_buf .dn19
+.ds19: PRT .nl 1
+
+-- Check each position for DOT-ID-COLON pattern
+-- Position i: tokens at 8+i*4, 8+(i+1)*4, 8+(i+2)*4, 8+(i+3)*4
+
+-- Pos 0: offset 8, 12, 16, 20
+.c0_dot: EQ .dt0 .TT_DOT
+.c0_id: EQ .dt1 .TT_ID
+.c0_colon: EQ .dt2 .TT_COLON
+.c0_a: AND .c0_dot .c0_id
+.c0_valid: AND .c0_a .c0_colon
+.c0_num: EQ .dt3 .TT_NUM
+.c0_str: EQ .dt3 .TT_STR
+.c0_is_lit: OR .c0_num .c0_str
+.c0_is_ref: EQ .dt3 .TT_DOT
+.c0_is_op: EQ .dt3 .TT_ID
+
+-- Pos 5: offset 28, 32, 36, 40
+.c5_dot: EQ .dt5 .TT_DOT
+.c5_id: EQ .dt6 .TT_ID
+.c5_colon: EQ .dt7 .TT_COLON
+.c5_a: AND .c5_dot .c5_id
+.c5_valid: AND .c5_a .c5_colon
+.c5_num: EQ .dt8 .TT_NUM
+.c5_str: EQ .dt8 .TT_STR
+.c5_is_lit: OR .c5_num .c5_str
+.c5_is_ref: EQ .dt8 .TT_DOT
+.c5_is_op: EQ .dt8 .TT_ID
+
+-- Pos 10: offset 48, 52, 56, 60
+.c10_dot: EQ .dt10 .TT_DOT
+.c10_id: EQ .dt11 .TT_ID
+.c10_colon: EQ .dt12 .TT_COLON
+.c10_a: AND .c10_dot .c10_id
+.c10_valid: AND .c10_a .c10_colon
+.c10_num: EQ .dt13 .TT_NUM
+.c10_str: EQ .dt13 .TT_STR
+.c10_is_lit: OR .c10_num .c10_str
+.c10_is_ref: EQ .dt13 .TT_DOT
+.c10_is_op: EQ .dt13 .TT_ID
+
+-- Pos 15: offset 68, 72, 76, 80
+.c15_dot: EQ .dt15 .TT_DOT
+.c15_id: EQ .dt16 .TT_ID
+.c15_colon: EQ .dt17 .TT_COLON
+.c15_a: AND .c15_dot .c15_id
+.c15_valid: AND .c15_a .c15_colon
+.c15_num: EQ .dt18 .TT_NUM
+.c15_str: EQ .dt18 .TT_STR
+.c15_is_lit: OR .c15_num .c15_str
+.c15_is_ref: EQ .dt18 .TT_DOT
+.c15_is_op: EQ .dt18 .TT_ID
+
+-- Sum valid nodes
+.nc_a: ADD .c0_valid .c5_valid
+.nc_b: ADD .nc_a .c10_valid
+.node_count: ADD .nc_b .c15_valid
+
+-- Sum literals
+.lc_0: AND .c0_valid .c0_is_lit
+.lc_5: AND .c5_valid .c5_is_lit
+.lc_10: AND .c10_valid .c10_is_lit
+.lc_15: AND .c15_valid .c15_is_lit
+.lc_a: ADD .lc_0 .lc_5
+.lc_b: ADD .lc_a .lc_10
+.lit_count: ADD .lc_b .lc_15
+
+-- Sum refs
+.rc_0: AND .c0_valid .c0_is_ref
+.rc_5: AND .c5_valid .c5_is_ref
+.rc_10: AND .c10_valid .c10_is_ref
+.rc_15: AND .c15_valid .c15_is_ref
+.rc_a: ADD .rc_0 .rc_5
+.rc_b: ADD .rc_a .rc_10
+.ref_count: ADD .rc_b .rc_15
+
+-- Sum ops
+.oc_0: AND .c0_valid .c0_is_op
+.oc_5: AND .c5_valid .c5_is_op
+.oc_10: AND .c10_valid .c10_is_op
+.oc_15: AND .c15_valid .c15_is_op
+.oc_a: ADD .oc_0 .oc_5
+.oc_b: ADD .oc_a .oc_10
+.op_count: ADD .oc_b .oc_15
+
+-- Output
+.msg_valid: "\nParsed nodes: "
+.pv0: PRT .msg_valid 15
+.nv: ITS .node_count .num_buf
+.pv1: PRT .num_buf .nv
+.pv2: PRT .nl 1
+
+.msg_lit: "  Literals: "
+.pl0: PRT .msg_lit 12
+.nl_: ITS .lit_count .num_buf
+.pl1: PRT .num_buf .nl_
+.pl2: PRT .nl 1
+
+.msg_ref: "  References: "
+.pr0: PRT .msg_ref 14
+.nr: ITS .ref_count .num_buf
+.pr1: PRT .num_buf .nr
+.pr2: PRT .nl 1
+
+.msg_op: "  Operations: "
+.po0: PRT .msg_op 14
+.no: ITS .op_count .num_buf
+.po1: PRT .num_buf .no
+.po2: PRT .nl 1
+
+.msg_done: "\nParser v0.14 complete.\n"
+.pd: PRT .msg_done 24
+
+.free1: FRE .num_buf
+.free2: FRE .src_buf
+
+!

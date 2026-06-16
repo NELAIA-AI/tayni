@@ -1,0 +1,18 @@
+.msg1: "Starting...\n"
+.p1: PRT .msg1 12
+
+.bufsize: 1024
+.src_buf: ALC .bufsize
+.zero: 0
+
+.src_path: "input.tyn"
+.src_handle: FOP .src_path .zero
+.src_len: FRD .src_handle .src_buf .bufsize
+.close_src: FCL .src_handle
+
+.msg2: "File read complete\n"
+.p2: PRT .msg2 19
+
+.msg4: "Done!\n"
+.p5: PRT .msg4 6
+!

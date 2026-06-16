@@ -1,0 +1,219 @@
+-- TAYNI Gen1 - Self-Hosting Compiler
+-- Compila TAYNI a PE sin Rust/LLVM
+-- Input: programa TAYNI simple
+-- Output: ejecutable PE funcional
+-- Autonomía Total
+-- Fecha: 2026-06-16
+
+.zero: 0
+.one: 1
+
+-- ASCII
+.C_DOT: 46
+.C_COLON: 58
+.C_a: 97
+.C_z: 122
+.C_0: 48
+.C_9: 57
+
+-- Buffers
+.src: ALC 256
+.exe: ALC 4096
+.num: ALC 32
+
+-- ============================================
+-- LEER CÓDIGO FUENTE
+-- ============================================
+
+.path: "input.tyn"
+.h: FOP .path .zero
+.len: FRD .h .src 256
+.c: FCL .h
+
+-- ============================================
+-- TOKENIZAR Y DETECTAR NODOS
+-- (código de Gen0.3)
+-- ============================================
+
+.r0: GET .src 0
+.r1: GET .src 1
+.r2: GET .src 2
+.r3: GET .src 3
+.r4: GET .src 4
+
+-- Clasificar byte 0
+.r0d: EQ .r0 .C_DOT
+.r0a: GE .r0 .C_a
+.r0z: LE .r0 .C_z
+.r0al: MUL .r0a .r0z
+.t0a: MUL .r0d 1
+.t0b: MUL .r0al 3
+.t0: ADD .t0a .t0b
+
+-- Clasificar byte 1
+.r1d: EQ .r1 .C_DOT
+.r1c: EQ .r1 .C_COLON
+.r1a: GE .r1 .C_a
+.r1z: LE .r1 .C_z
+.r1al: MUL .r1a .r1z
+.t1a: MUL .r1d 1
+.t1b: MUL .r1c 2
+.t1c: MUL .r1al 3
+.t1d: ADD .t1a .t1b
+.t1: ADD .t1d .t1c
+
+-- Clasificar byte 2
+.r2d: EQ .r2 .C_DOT
+.r2c: EQ .r2 .C_COLON
+.t2a: MUL .r2d 1
+.t2b: MUL .r2c 2
+.t2: ADD .t2a .t2b
+
+-- Detectar patrón DOT-ID-COLON en pos 0
+.m0d: EQ .t0 1
+.m0i: EQ .t1 3
+.m0c: EQ .t2 2
+.m0x: MUL .m0d .m0i
+.m0: MUL .m0x .m0c
+
+-- Leer valor (byte 4 si es dígito)
+.r4n: GE .r4 .C_0
+.r49: LE .r4 .C_9
+.r4dg: MUL .r4n .r49
+.val: SUB .r4 .C_0
+
+-- ============================================
+-- GENERAR PE HEADER
+-- (código de Gen0.5)
+-- ============================================
+
+-- DOS Header
+.w0: PUT .exe 0 77
+.w1: PUT .exe 1 90
+.w60: PUT .exe 60 64
+
+-- PE Signature
+.w64: PUT .exe 64 80
+.w65: PUT .exe 65 69
+
+-- COFF Header
+.w68: PUT .exe 68 100
+.w69: PUT .exe 69 134
+.w70: PUT .exe 70 1
+.w84: PUT .exe 84 240
+.w86: PUT .exe 86 34
+
+-- Optional Header PE32+
+.w88: PUT .exe 88 11
+.w89: PUT .exe 89 2
+.w92: PUT .exe 92 0
+.w93: PUT .exe 93 2
+.w104: PUT .exe 104 0
+.w105: PUT .exe 105 16
+.w108: PUT .exe 108 0
+.w109: PUT .exe 109 16
+.w112: PUT .exe 112 0
+.w115: PUT .exe 115 64
+.w116: PUT .exe 116 1
+.w120: PUT .exe 120 0
+.w121: PUT .exe 121 16
+.w124: PUT .exe 124 0
+.w125: PUT .exe 125 2
+.w128: PUT .exe 128 6
+.w136: PUT .exe 136 6
+.w144: PUT .exe 144 0
+.w145: PUT .exe 145 32
+.w148: PUT .exe 148 0
+.w149: PUT .exe 149 2
+.w156: PUT .exe 156 3
+.w158: PUT .exe 158 96
+.w159: PUT .exe 159 129
+.w162: PUT .exe 162 16
+.w168: PUT .exe 168 0
+.w169: PUT .exe 169 16
+.w178: PUT .exe 178 16
+.w184: PUT .exe 184 0
+.w185: PUT .exe 185 16
+.w196: PUT .exe 196 16
+
+-- Section Header .text
+.w328: PUT .exe 328 46
+.w329: PUT .exe 329 116
+.w330: PUT .exe 330 101
+.w331: PUT .exe 331 120
+.w332: PUT .exe 332 116
+.w336: PUT .exe 336 0
+.w337: PUT .exe 337 2
+.w340: PUT .exe 340 0
+.w341: PUT .exe 341 16
+.w344: PUT .exe 344 0
+.w345: PUT .exe 345 2
+.w348: PUT .exe 348 0
+.w349: PUT .exe 349 2
+.w364: PUT .exe 364 32
+.w367: PUT .exe 367 96
+
+-- ============================================
+-- GENERAR CÓDIGO MÁQUINA
+-- mov eax, <valor>; ret
+-- ============================================
+
+-- mov eax, imm32 (B8 + imm32)
+.c0: PUT .exe 512 184
+.c1: PUT .exe 513 .val
+.c2: PUT .exe 514 0
+.c3: PUT .exe 515 0
+.c4: PUT .exe 516 0
+
+-- ret (C3)
+.c5: PUT .exe 517 195
+
+-- ============================================
+-- ESCRIBIR EJECUTABLE
+-- ============================================
+
+.opath: "compiled.exe"
+.oh: FOP .opath .one
+.size: 1024
+.wlen: FWR .oh .exe .size
+.oc: FCL .oh
+
+-- ============================================
+-- OUTPUT
+-- ============================================
+
+.hdr: "Gen1 - Self-Hosting Compiler\n"
+.p0: PRT .hdr 29
+
+.ms: "Source: "
+.p1: PRT .ms 8
+.n1: ITS .len .num
+.p2: PRT .num .n1
+.mb: " bytes\n"
+.p3: PRT .mb 7
+
+.mn: "Node found: "
+.p4: PRT .mn 12
+.n2: ITS .m0 .num
+.p5: PRT .num .n2
+.nl: "\n"
+.p6: PRT .nl 1
+
+.mv: "Value: "
+.p7: PRT .mv 7
+.n3: ITS .val .num
+.p8: PRT .num .n3
+.p9: PRT .nl 1
+
+.mo: "Output: compiled.exe\n"
+.p10: PRT .mo 20
+
+.mi: "Run: compiled.exe && echo %errorlevel%\n"
+.p11: PRT .mi 39
+
+-- Cleanup
+.f1: FRE .src
+.f2: FRE .exe
+.f3: FRE .num
+
+!

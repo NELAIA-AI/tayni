@@ -1,0 +1,341 @@
+-- TAYNI Gen4.1 - Compilador Autónomo Completo
+-- Lee input.tyn, genera compiled.exe
+-- TODO usando syscalls (sin Rust)
+-- Fecha: 2026-06-16
+
+.zero: 0
+.one: 1
+
+-- Template con imports
+.template: ALC 8192
+.tpath: "fileio2.exe.exe"
+.th: FOP .tpath .zero
+.tlen: FRD .th .template 8192
+.tc: FCL .th
+
+-- Buffer para PE de salida
+.outpe: ALC 2048
+
+-- ===== GENERAR PE HEADER EN outpe =====
+
+-- DOS Header
+.h0: PUT .outpe 0 77
+.h1: PUT .outpe 1 90
+.h60: PUT .outpe 60 64
+
+-- PE Signature at 0x40
+.h64: PUT .outpe 64 80
+.h65: PUT .outpe 65 69
+
+-- COFF Header
+.h68: PUT .outpe 68 100
+.h69: PUT .outpe 69 134
+.h70: PUT .outpe 70 1
+.h84: PUT .outpe 84 240
+.h86: PUT .outpe 86 34
+
+-- Optional Header PE32+
+.h88: PUT .outpe 88 11
+.h89: PUT .outpe 89 2
+.h93: PUT .outpe 93 2
+.h105: PUT .outpe 105 16
+.h109: PUT .outpe 109 16
+.h115: PUT .outpe 115 64
+.h116: PUT .outpe 116 1
+.h121: PUT .outpe 121 16
+.h125: PUT .outpe 125 2
+.h128: PUT .outpe 128 6
+.h136: PUT .outpe 136 6
+.h145: PUT .outpe 145 32
+.h149: PUT .outpe 149 2
+.h156: PUT .outpe 156 3
+.h158: PUT .outpe 158 96
+.h159: PUT .outpe 159 129
+.h162: PUT .outpe 162 16
+.h169: PUT .outpe 169 16
+.h178: PUT .outpe 178 16
+.h185: PUT .outpe 185 16
+.h196: PUT .outpe 196 16
+
+-- Section Header .text
+.s328: PUT .outpe 328 46
+.s329: PUT .outpe 329 116
+.s330: PUT .outpe 330 101
+.s331: PUT .outpe 331 120
+.s332: PUT .outpe 332 116
+.s337: PUT .outpe 337 2
+.s341: PUT .outpe 341 16
+.s345: PUT .outpe 345 2
+.s349: PUT .outpe 349 2
+.s364: PUT .outpe 364 32
+.s367: PUT .outpe 367 96
+
+-- ===== CÓDIGO EN template PARA LEER Y COMPILAR =====
+
+-- sub rsp, 120
+.c0: PUT .template 512 72
+.c1: PUT .template 513 131
+.c2: PUT .template 514 236
+.c3: PUT .template 515 120
+
+-- lea rcx, [rip+path] (input.tyn at 0x3000)
+.c4: PUT .template 516 72
+.c5: PUT .template 517 141
+.c6: PUT .template 518 13
+.c7: PUT .template 519 245
+.c8: PUT .template 520 31
+.c9: PUT .template 521 0
+.ca: PUT .template 522 0
+
+-- mov edx, 0x80000000
+.cb: PUT .template 523 186
+.cc: PUT .template 524 0
+.cd: PUT .template 525 0
+.ce: PUT .template 526 0
+.cf: PUT .template 527 128
+
+-- xor r8d, r8d
+.c10: PUT .template 528 69
+.c11: PUT .template 529 49
+.c12: PUT .template 530 192
+
+-- xor r9d, r9d
+.c13: PUT .template 531 69
+.c14: PUT .template 532 49
+.c15: PUT .template 533 201
+
+-- mov qword [rsp+32], 3
+.c16: PUT .template 534 72
+.c17: PUT .template 535 199
+.c18: PUT .template 536 68
+.c19: PUT .template 537 36
+.c1a: PUT .template 538 32
+.c1b: PUT .template 539 3
+.c1c: PUT .template 540 0
+.c1d: PUT .template 541 0
+.c1e: PUT .template 542 0
+
+-- mov qword [rsp+40], 0
+.c1f: PUT .template 543 72
+.c20: PUT .template 544 199
+.c21: PUT .template 545 68
+.c22: PUT .template 546 36
+.c23: PUT .template 547 40
+.c24: PUT .template 548 0
+.c25: PUT .template 549 0
+.c26: PUT .template 550 0
+.c27: PUT .template 551 0
+
+-- mov qword [rsp+48], 0
+.c28: PUT .template 552 72
+.c29: PUT .template 553 199
+.c2a: PUT .template 554 68
+.c2b: PUT .template 555 36
+.c2c: PUT .template 556 48
+.c2d: PUT .template 557 0
+.c2e: PUT .template 558 0
+.c2f: PUT .template 559 0
+.c30: PUT .template 560 0
+
+-- call [CreateFileA]
+.c31: PUT .template 561 255
+.c32: PUT .template 562 21
+.c33: PUT .template 563 233
+.c34: PUT .template 564 15
+.c35: PUT .template 565 0
+.c36: PUT .template 566 0
+
+-- mov [rsp+112], rax
+.c37: PUT .template 567 72
+.c38: PUT .template 568 137
+.c39: PUT .template 569 68
+.c3a: PUT .template 570 36
+.c3b: PUT .template 571 112
+
+-- mov rcx, rax
+.c3c: PUT .template 572 72
+.c3d: PUT .template 573 137
+.c3e: PUT .template 574 193
+
+-- lea rdx, [rsp+56]
+.c3f: PUT .template 575 72
+.c40: PUT .template 576 141
+.c41: PUT .template 577 84
+.c42: PUT .template 578 36
+.c43: PUT .template 579 56
+
+-- mov r8d, 32
+.c44: PUT .template 580 65
+.c45: PUT .template 581 184
+.c46: PUT .template 582 32
+.c47: PUT .template 583 0
+.c48: PUT .template 584 0
+.c49: PUT .template 585 0
+
+-- lea r9, [rsp+88]
+.c4a: PUT .template 586 76
+.c4b: PUT .template 587 141
+.c4c: PUT .template 588 76
+.c4d: PUT .template 589 36
+.c4e: PUT .template 590 88
+
+-- mov qword [rsp+32], 0
+.c4f: PUT .template 591 72
+.c50: PUT .template 592 199
+.c51: PUT .template 593 68
+.c52: PUT .template 594 36
+.c53: PUT .template 595 32
+.c54: PUT .template 596 0
+.c55: PUT .template 597 0
+.c56: PUT .template 598 0
+.c57: PUT .template 599 0
+
+-- call [ReadFile]
+.c58: PUT .template 600 255
+.c59: PUT .template 601 21
+.c5a: PUT .template 602 202
+.c5b: PUT .template 603 15
+.c5c: PUT .template 604 0
+.c5d: PUT .template 605 0
+
+-- movzx eax, byte [rsp+60]
+.c5e: PUT .template 606 15
+.c5f: PUT .template 607 182
+.c60: PUT .template 608 68
+.c61: PUT .template 609 36
+.c62: PUT .template 610 60
+
+-- sub eax, 48
+.c63: PUT .template 611 131
+.c64: PUT .template 612 232
+.c65: PUT .template 613 48
+
+-- mov [rsp+96], eax
+.c66: PUT .template 614 137
+.c67: PUT .template 615 68
+.c68: PUT .template 616 36
+.c69: PUT .template 617 96
+
+-- CloseHandle
+.c6a: PUT .template 618 72
+.c6b: PUT .template 619 139
+.c6c: PUT .template 620 76
+.c6d: PUT .template 621 36
+.c6e: PUT .template 622 112
+.c6f: PUT .template 623 255
+.c70: PUT .template 624 21
+.c71: PUT .template 625 187
+.c72: PUT .template 626 15
+.c73: PUT .template 627 0
+.c74: PUT .template 628 0
+
+-- Print "OK\n"
+.c75: PUT .template 629 185
+.c76: PUT .template 630 245
+.c77: PUT .template 631 255
+.c78: PUT .template 632 255
+.c79: PUT .template 633 255
+.c7a: PUT .template 634 255
+.c7b: PUT .template 635 21
+.c7c: PUT .template 636 128
+.c7d: PUT .template 637 15
+.c7e: PUT .template 638 0
+.c7f: PUT .template 639 0
+.c80: PUT .template 640 72
+.c81: PUT .template 641 137
+.c82: PUT .template 642 193
+.c83: PUT .template 643 72
+.c84: PUT .template 644 141
+.c85: PUT .template 645 21
+.c86: PUT .template 646 86
+.c87: PUT .template 647 0
+.c88: PUT .template 648 0
+.c89: PUT .template 649 0
+.c8a: PUT .template 650 65
+.c8b: PUT .template 651 184
+.c8c: PUT .template 652 3
+.c8d: PUT .template 653 0
+.c8e: PUT .template 654 0
+.c8f: PUT .template 655 0
+.c90: PUT .template 656 76
+.c91: PUT .template 657 141
+.c92: PUT .template 658 76
+.c93: PUT .template 659 36
+.c94: PUT .template 660 100
+.c95: PUT .template 661 72
+.c96: PUT .template 662 199
+.c97: PUT .template 663 68
+.c98: PUT .template 664 36
+.c99: PUT .template 665 32
+.c9a: PUT .template 666 0
+.c9b: PUT .template 667 0
+.c9c: PUT .template 668 0
+.c9d: PUT .template 669 0
+.c9e: PUT .template 670 255
+.c9f: PUT .template 671 21
+.ca0: PUT .template 672 100
+.ca1: PUT .template 673 15
+.ca2: PUT .template 674 0
+.ca3: PUT .template 675 0
+
+-- ExitProcess(value)
+.ca4: PUT .template 676 139
+.ca5: PUT .template 677 76
+.ca6: PUT .template 678 36
+.ca7: PUT .template 679 96
+.ca8: PUT .template 680 255
+.ca9: PUT .template 681 21
+.caa: PUT .template 682 98
+.cab: PUT .template 683 15
+.cac: PUT .template 684 0
+.cad: PUT .template 685 0
+
+-- Message "OK\n"
+.m0: PUT .template 736 79
+.m1: PUT .template 737 75
+.m2: PUT .template 738 10
+
+-- Data: "input.tyn"
+.d0: PUT .template 3072 105
+.d1: PUT .template 3073 110
+.d2: PUT .template 3074 112
+.d3: PUT .template 3075 117
+.d4: PUT .template 3076 116
+.d5: PUT .template 3077 46
+.d6: PUT .template 3078 116
+.d7: PUT .template 3079 121
+.d8: PUT .template 3080 110
+.d9: PUT .template 3081 0
+
+-- ===== CÓDIGO MÁQUINA EN outpe =====
+-- mov eax, <value>; ret
+-- El valor se insertará dinámicamente
+
+-- Por ahora, valor fijo 42 para test
+.x0: PUT .outpe 512 184
+.x1: PUT .outpe 513 42
+.x2: PUT .outpe 514 0
+.x3: PUT .outpe 515 0
+.x4: PUT .outpe 516 0
+.x5: PUT .outpe 517 195
+
+-- ===== ESCRIBIR gen4.exe (compilador) =====
+.opath: "gen4.exe"
+.oh: FOP .opath .one
+.wlen: FWR .oh .template .tlen
+.oc: FCL .oh
+
+-- ===== ESCRIBIR compiled.exe (output) =====
+.opath2: "compiled.exe"
+.oh2: FOP .opath2 .one
+.size2: 1024
+.wlen2: FWR .oh2 .outpe .size2
+.oc2: FCL .oh2
+
+.hdr: "Gen4.1: Compilador + Output\n"
+.p0: PRT .hdr 28
+
+.f1: FRE .template
+.f2: FRE .outpe
+
+!

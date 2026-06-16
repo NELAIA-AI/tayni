@@ -1,0 +1,174 @@
+-- TAYNI Gen7.4 - Assembler Multi-Call
+-- Multiples llamadas con offsets automaticos
+-- AI-Native: declarativo y sin errores
+-- Fecha: 2026-06-16
+
+.zero: 0
+.one: 1
+
+.exe: ALC 8192
+
+-- Leer template
+.spath: "fileio2.exe.exe"
+.sh: FOP .spath .zero
+.slen: FRD .sh .exe 8192
+.sc: FCL .sh
+
+-- ===== CONSTANTES =====
+.CODE_BASE: 512
+.RVA_BASE: 4096
+
+-- IAT RVAs
+.IAT_GetStdHandle: 8192
+.IAT_WriteFile: 8200
+.IAT_ExitProcess: 8208
+
+-- ===== MACRO: CALC_DISP(call_offset, iat_rva) =====
+-- Formula: disp = iat_rva - (RVA_BASE + (call_offset - CODE_BASE) + 6)
+
+-- ===== GENERAR CODIGO =====
+-- Programa: 
+--   sub rsp, 56
+--   mov ecx, -11 (STD_OUTPUT_HANDLE)
+--   call GetStdHandle
+--   mov rcx, rax
+--   lea rdx, [rip+msg]
+--   mov r8d, 3
+--   lea r9, [rsp+48]
+--   mov qword [rsp+32], 0
+--   call WriteFile
+--   xor ecx, ecx
+--   call ExitProcess
+
+-- Offset 512: sub rsp, 56 (48 83 EC 38) - 4 bytes
+.i0: PUT .exe 512 72
+.i1: PUT .exe 513 131
+.i2: PUT .exe 514 236
+.i3: PUT .exe 515 56
+
+-- Offset 516: mov ecx, -11 (B9 F5 FF FF FF) - 5 bytes
+.i4: PUT .exe 516 185
+.i5: PUT .exe 517 245
+.i6: PUT .exe 518 255
+.i7: PUT .exe 519 255
+.i8: PUT .exe 520 255
+
+-- Offset 521: call [GetStdHandle] (FF 15 disp32) - 6 bytes
+.c1_off: 521
+.c1_rva: ADD .RVA_BASE 9
+.c1_rip: ADD .c1_rva 6
+.c1_disp: SUB .IAT_GetStdHandle .c1_rip
+.c1_b0: MOD .c1_disp 256
+.c1_t1: DIV .c1_disp 256
+.c1_b1: MOD .c1_t1 256
+
+.i9: PUT .exe 521 255
+.i10: PUT .exe 522 21
+.i11: PUT .exe 523 .c1_b0
+.i12: PUT .exe 524 .c1_b1
+.i13: PUT .exe 525 0
+.i14: PUT .exe 526 0
+
+-- Offset 527: mov rcx, rax (48 89 C1) - 3 bytes
+.i15: PUT .exe 527 72
+.i16: PUT .exe 528 137
+.i17: PUT .exe 529 193
+
+-- Offset 530: lea rdx, [rip+msg] - 7 bytes
+-- msg at RVA 0x1080 (file 0x280)
+-- RVA 0x1012, RIP=0x1019, disp=0x1080-0x1019=0x67
+.i18: PUT .exe 530 72
+.i19: PUT .exe 531 141
+.i20: PUT .exe 532 21
+.i21: PUT .exe 533 103
+.i22: PUT .exe 534 0
+.i23: PUT .exe 535 0
+.i24: PUT .exe 536 0
+
+-- Offset 537: mov r8d, 3 (41 B8 03 00 00 00) - 6 bytes
+.i25: PUT .exe 537 65
+.i26: PUT .exe 538 184
+.i27: PUT .exe 539 3
+.i28: PUT .exe 540 0
+.i29: PUT .exe 541 0
+.i30: PUT .exe 542 0
+
+-- Offset 543: lea r9, [rsp+48] (4C 8D 4C 24 30) - 5 bytes
+.i31: PUT .exe 543 76
+.i32: PUT .exe 544 141
+.i33: PUT .exe 545 76
+.i34: PUT .exe 546 36
+.i35: PUT .exe 547 48
+
+-- Offset 548: mov qword [rsp+32], 0 (48 C7 44 24 20 00 00 00 00) - 9 bytes
+.i36: PUT .exe 548 72
+.i37: PUT .exe 549 199
+.i38: PUT .exe 550 68
+.i39: PUT .exe 551 36
+.i40: PUT .exe 552 32
+.i41: PUT .exe 553 0
+.i42: PUT .exe 554 0
+.i43: PUT .exe 555 0
+.i44: PUT .exe 556 0
+
+-- Offset 557: call [WriteFile] (FF 15 disp32) - 6 bytes
+-- RVA = 0x1000 + (557-512) = 0x102D
+-- RIP = 0x1033
+-- disp = 0x2008 - 0x1033 = 0x0FD5
+.c2_off: 557
+.c2_rva_off: SUB .c2_off .CODE_BASE
+.c2_rva: ADD .RVA_BASE .c2_rva_off
+.c2_rip: ADD .c2_rva 6
+.c2_disp: SUB .IAT_WriteFile .c2_rip
+.c2_b0: MOD .c2_disp 256
+.c2_t1: DIV .c2_disp 256
+.c2_b1: MOD .c2_t1 256
+
+.i45: PUT .exe 557 255
+.i46: PUT .exe 558 21
+.i47: PUT .exe 559 .c2_b0
+.i48: PUT .exe 560 .c2_b1
+.i49: PUT .exe 561 0
+.i50: PUT .exe 562 0
+
+-- Offset 563: xor ecx, ecx (31 C9) - 2 bytes
+.i51: PUT .exe 563 49
+.i52: PUT .exe 564 201
+
+-- Offset 565: call [ExitProcess] (FF 15 disp32) - 6 bytes
+-- RVA = 0x1000 + (565-512) = 0x1035
+-- RIP = 0x103B
+-- disp = 0x2010 - 0x103B = 0x0FD5
+.c3_off: 565
+.c3_rva_off: SUB .c3_off .CODE_BASE
+.c3_rva: ADD .RVA_BASE .c3_rva_off
+.c3_rip: ADD .c3_rva 6
+.c3_disp: SUB .IAT_ExitProcess .c3_rip
+.c3_b0: MOD .c3_disp 256
+.c3_t1: DIV .c3_disp 256
+.c3_b1: MOD .c3_t1 256
+
+.i53: PUT .exe 565 255
+.i54: PUT .exe 566 21
+.i55: PUT .exe 567 .c3_b0
+.i56: PUT .exe 568 .c3_b1
+.i57: PUT .exe 569 0
+.i58: PUT .exe 570 0
+
+-- ===== DATA: "OK\n" at offset 0x280 (RVA 0x1080) =====
+.d0: PUT .exe 640 79
+.d1: PUT .exe 641 75
+.d2: PUT .exe 642 10
+
+-- ===== ESCRIBIR PE =====
+.opath: "print.exe"
+.oh: FOP .opath .one
+.wlen: FWR .oh .exe .slen
+.oc: FCL .oh
+
+.hdr: "Gen7.4: print.exe (imprime OK)\n"
+.p0: PRT .hdr 31
+
+.f1: FRE .exe
+
+!

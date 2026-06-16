@@ -1,0 +1,397 @@
+-- TAYNI Gen0.2 - Tokenizador Expandido
+-- 64 bytes, múltiples nodos, sin FSM Rust
+-- Autonomía Total
+-- Fecha: 2026-06-16
+
+-- ============================================
+-- CONSTANTES
+-- ============================================
+
+.zero: 0
+.one: 1
+
+-- Códigos ASCII
+.C_DOT: 46
+.C_COLON: 58
+.C_NL: 10
+.C_SPACE: 32
+.C_a: 97
+.C_z: 122
+.C_A: 65
+.C_Z: 90
+.C_0: 48
+.C_9: 57
+
+-- Tipos de token
+.T_DOT: 1
+.T_COLON: 2
+.T_ID: 3
+.T_NUM: 4
+
+-- ============================================
+-- BUFFERS
+-- ============================================
+
+.src: ALC 256
+.num: ALC 32
+
+-- ============================================
+-- LEER ARCHIVO
+-- ============================================
+
+.path: "input.tyn"
+.h: FOP .path .zero
+.len: FRD .h .src 256
+.c: FCL .h
+
+-- ============================================
+-- MACRO: CLASSIFY BYTE
+-- Para cada byte: leer, clasificar tipo
+-- ============================================
+
+-- Byte 0
+.r0: GET .src 0
+.r0_dot: EQ .r0 .C_DOT
+.r0_col: EQ .r0 .C_COLON
+.r0_ga: GE .r0 .C_a
+.r0_la: LE .r0 .C_z
+.r0_lo: MUL .r0_ga .r0_la
+.r0_gA: GE .r0 .C_A
+.r0_lA: LE .r0 .C_Z
+.r0_up: MUL .r0_gA .r0_lA
+.r0_al: ADD .r0_lo .r0_up
+.r0_g0: GE .r0 .C_0
+.r0_l9: LE .r0 .C_9
+.r0_dg: MUL .r0_g0 .r0_l9
+.t0_a: MUL .r0_dot .T_DOT
+.t0_b: MUL .r0_col .T_COLON
+.t0_c: MUL .r0_al .T_ID
+.t0_d: MUL .r0_dg .T_NUM
+.t0_e: ADD .t0_a .t0_b
+.t0_f: ADD .t0_e .t0_c
+.t0: ADD .t0_f .t0_d
+
+-- Byte 1
+.r1: GET .src 1
+.r1_dot: EQ .r1 .C_DOT
+.r1_col: EQ .r1 .C_COLON
+.r1_ga: GE .r1 .C_a
+.r1_la: LE .r1 .C_z
+.r1_lo: MUL .r1_ga .r1_la
+.r1_gA: GE .r1 .C_A
+.r1_lA: LE .r1 .C_Z
+.r1_up: MUL .r1_gA .r1_lA
+.r1_al: ADD .r1_lo .r1_up
+.r1_g0: GE .r1 .C_0
+.r1_l9: LE .r1 .C_9
+.r1_dg: MUL .r1_g0 .r1_l9
+.t1_a: MUL .r1_dot .T_DOT
+.t1_b: MUL .r1_col .T_COLON
+.t1_c: MUL .r1_al .T_ID
+.t1_d: MUL .r1_dg .T_NUM
+.t1_e: ADD .t1_a .t1_b
+.t1_f: ADD .t1_e .t1_c
+.t1: ADD .t1_f .t1_d
+
+-- Byte 2
+.r2: GET .src 2
+.r2_dot: EQ .r2 .C_DOT
+.r2_col: EQ .r2 .C_COLON
+.r2_ga: GE .r2 .C_a
+.r2_la: LE .r2 .C_z
+.r2_lo: MUL .r2_ga .r2_la
+.r2_gA: GE .r2 .C_A
+.r2_lA: LE .r2 .C_Z
+.r2_up: MUL .r2_gA .r2_lA
+.r2_al: ADD .r2_lo .r2_up
+.r2_g0: GE .r2 .C_0
+.r2_l9: LE .r2 .C_9
+.r2_dg: MUL .r2_g0 .r2_l9
+.t2_a: MUL .r2_dot .T_DOT
+.t2_b: MUL .r2_col .T_COLON
+.t2_c: MUL .r2_al .T_ID
+.t2_d: MUL .r2_dg .T_NUM
+.t2_e: ADD .t2_a .t2_b
+.t2_f: ADD .t2_e .t2_c
+.t2: ADD .t2_f .t2_d
+
+-- Byte 3
+.r3: GET .src 3
+.r3_dot: EQ .r3 .C_DOT
+.r3_col: EQ .r3 .C_COLON
+.r3_ga: GE .r3 .C_a
+.r3_la: LE .r3 .C_z
+.r3_lo: MUL .r3_ga .r3_la
+.r3_gA: GE .r3 .C_A
+.r3_lA: LE .r3 .C_Z
+.r3_up: MUL .r3_gA .r3_lA
+.r3_al: ADD .r3_lo .r3_up
+.r3_g0: GE .r3 .C_0
+.r3_l9: LE .r3 .C_9
+.r3_dg: MUL .r3_g0 .r3_l9
+.t3_a: MUL .r3_dot .T_DOT
+.t3_b: MUL .r3_col .T_COLON
+.t3_c: MUL .r3_al .T_ID
+.t3_d: MUL .r3_dg .T_NUM
+.t3_e: ADD .t3_a .t3_b
+.t3_f: ADD .t3_e .t3_c
+.t3: ADD .t3_f .t3_d
+
+-- Byte 4
+.r4: GET .src 4
+.r4_dot: EQ .r4 .C_DOT
+.r4_col: EQ .r4 .C_COLON
+.r4_ga: GE .r4 .C_a
+.r4_la: LE .r4 .C_z
+.r4_lo: MUL .r4_ga .r4_la
+.r4_gA: GE .r4 .C_A
+.r4_lA: LE .r4 .C_Z
+.r4_up: MUL .r4_gA .r4_lA
+.r4_al: ADD .r4_lo .r4_up
+.r4_g0: GE .r4 .C_0
+.r4_l9: LE .r4 .C_9
+.r4_dg: MUL .r4_g0 .r4_l9
+.t4_a: MUL .r4_dot .T_DOT
+.t4_b: MUL .r4_col .T_COLON
+.t4_c: MUL .r4_al .T_ID
+.t4_d: MUL .r4_dg .T_NUM
+.t4_e: ADD .t4_a .t4_b
+.t4_f: ADD .t4_e .t4_c
+.t4: ADD .t4_f .t4_d
+
+-- Byte 5
+.r5: GET .src 5
+.r5_dot: EQ .r5 .C_DOT
+.r5_col: EQ .r5 .C_COLON
+.r5_ga: GE .r5 .C_a
+.r5_la: LE .r5 .C_z
+.r5_lo: MUL .r5_ga .r5_la
+.r5_gA: GE .r5 .C_A
+.r5_lA: LE .r5 .C_Z
+.r5_up: MUL .r5_gA .r5_lA
+.r5_al: ADD .r5_lo .r5_up
+.r5_g0: GE .r5 .C_0
+.r5_l9: LE .r5 .C_9
+.r5_dg: MUL .r5_g0 .r5_l9
+.t5_a: MUL .r5_dot .T_DOT
+.t5_b: MUL .r5_col .T_COLON
+.t5_c: MUL .r5_al .T_ID
+.t5_d: MUL .r5_dg .T_NUM
+.t5_e: ADD .t5_a .t5_b
+.t5_f: ADD .t5_e .t5_c
+.t5: ADD .t5_f .t5_d
+
+-- Byte 6
+.r6: GET .src 6
+.r6_dot: EQ .r6 .C_DOT
+.r6_col: EQ .r6 .C_COLON
+.r6_ga: GE .r6 .C_a
+.r6_la: LE .r6 .C_z
+.r6_lo: MUL .r6_ga .r6_la
+.r6_gA: GE .r6 .C_A
+.r6_lA: LE .r6 .C_Z
+.r6_up: MUL .r6_gA .r6_lA
+.r6_al: ADD .r6_lo .r6_up
+.r6_g0: GE .r6 .C_0
+.r6_l9: LE .r6 .C_9
+.r6_dg: MUL .r6_g0 .r6_l9
+.t6_a: MUL .r6_dot .T_DOT
+.t6_b: MUL .r6_col .T_COLON
+.t6_c: MUL .r6_al .T_ID
+.t6_d: MUL .r6_dg .T_NUM
+.t6_e: ADD .t6_a .t6_b
+.t6_f: ADD .t6_e .t6_c
+.t6: ADD .t6_f .t6_d
+
+-- Byte 7
+.r7: GET .src 7
+.r7_dot: EQ .r7 .C_DOT
+.r7_col: EQ .r7 .C_COLON
+.r7_ga: GE .r7 .C_a
+.r7_la: LE .r7 .C_z
+.r7_lo: MUL .r7_ga .r7_la
+.r7_gA: GE .r7 .C_A
+.r7_lA: LE .r7 .C_Z
+.r7_up: MUL .r7_gA .r7_lA
+.r7_al: ADD .r7_lo .r7_up
+.r7_g0: GE .r7 .C_0
+.r7_l9: LE .r7 .C_9
+.r7_dg: MUL .r7_g0 .r7_l9
+.t7_a: MUL .r7_dot .T_DOT
+.t7_b: MUL .r7_col .T_COLON
+.t7_c: MUL .r7_al .T_ID
+.t7_d: MUL .r7_dg .T_NUM
+.t7_e: ADD .t7_a .t7_b
+.t7_f: ADD .t7_e .t7_c
+.t7: ADD .t7_f .t7_d
+
+-- Byte 8
+.r8: GET .src 8
+.r8_dot: EQ .r8 .C_DOT
+.r8_col: EQ .r8 .C_COLON
+.r8_ga: GE .r8 .C_a
+.r8_la: LE .r8 .C_z
+.r8_lo: MUL .r8_ga .r8_la
+.r8_gA: GE .r8 .C_A
+.r8_lA: LE .r8 .C_Z
+.r8_up: MUL .r8_gA .r8_lA
+.r8_al: ADD .r8_lo .r8_up
+.r8_g0: GE .r8 .C_0
+.r8_l9: LE .r8 .C_9
+.r8_dg: MUL .r8_g0 .r8_l9
+.t8_a: MUL .r8_dot .T_DOT
+.t8_b: MUL .r8_col .T_COLON
+.t8_c: MUL .r8_al .T_ID
+.t8_d: MUL .r8_dg .T_NUM
+.t8_e: ADD .t8_a .t8_b
+.t8_f: ADD .t8_e .t8_c
+.t8: ADD .t8_f .t8_d
+
+-- Byte 9
+.r9: GET .src 9
+.r9_dot: EQ .r9 .C_DOT
+.r9_col: EQ .r9 .C_COLON
+.r9_ga: GE .r9 .C_a
+.r9_la: LE .r9 .C_z
+.r9_lo: MUL .r9_ga .r9_la
+.r9_gA: GE .r9 .C_A
+.r9_lA: LE .r9 .C_Z
+.r9_up: MUL .r9_gA .r9_lA
+.r9_al: ADD .r9_lo .r9_up
+.r9_g0: GE .r9 .C_0
+.r9_l9: LE .r9 .C_9
+.r9_dg: MUL .r9_g0 .r9_l9
+.t9_a: MUL .r9_dot .T_DOT
+.t9_b: MUL .r9_col .T_COLON
+.t9_c: MUL .r9_al .T_ID
+.t9_d: MUL .r9_dg .T_NUM
+.t9_e: ADD .t9_a .t9_b
+.t9_f: ADD .t9_e .t9_c
+.t9: ADD .t9_f .t9_d
+
+-- Bytes 10-19 (para cubrir input.tyn de 20 bytes)
+.r10: GET .src 10
+.r10_dot: EQ .r10 .C_DOT
+.t10: MUL .r10_dot .T_DOT
+
+.r11: GET .src 11
+.r11_ga: GE .r11 .C_a
+.r11_la: LE .r11 .C_z
+.r11_al: MUL .r11_ga .r11_la
+.t11: MUL .r11_al .T_ID
+
+.r12: GET .src 12
+.r12_col: EQ .r12 .C_COLON
+.t12: MUL .r12_col .T_COLON
+
+.r13: GET .src 13
+.r14: GET .src 14
+.r14_g0: GE .r14 .C_0
+.r14_l9: LE .r14 .C_9
+.r14_dg: MUL .r14_g0 .r14_l9
+.t14: MUL .r14_dg .T_NUM
+
+-- ============================================
+-- DETECTAR PATRONES DOT-ID-COLON
+-- ============================================
+
+-- Patrón en posición 0
+.m0_d: EQ .t0 .T_DOT
+.m0_i: EQ .t1 .T_ID
+.m0_c: EQ .t2 .T_COLON
+.m0_a: MUL .m0_d .m0_i
+.m0: MUL .m0_a .m0_c
+
+-- Patrón en posición 5 (después de newline)
+.m5_d: EQ .t5 .T_DOT
+.m5_i: EQ .t6 .T_ID
+.m5_c: EQ .t7 .T_COLON
+.m5_a: MUL .m5_d .m5_i
+.m5: MUL .m5_a .m5_c
+
+-- Patrón en posición 10
+.m10_d: EQ .t10 .T_DOT
+.m10_i: EQ .t11 .T_ID
+.m10_c: EQ .t12 .T_COLON
+.m10_a: MUL .m10_d .m10_i
+.m10: MUL .m10_a .m10_c
+
+-- Total de nodos encontrados
+.nodes_a: ADD .m0 .m5
+.nodes: ADD .nodes_a .m10
+
+-- ============================================
+-- OUTPUT
+-- ============================================
+
+.hdr: "Gen0.2 - Autonomia Total\n"
+.p0: PRT .hdr 25
+
+.ms: "Bytes: "
+.p1: PRT .ms 7
+.n1: ITS .len .num
+.p2: PRT .num .n1
+.p3: PRT "\n" 1
+
+.mt: "Types[0-4]: "
+.p4: PRT .mt 12
+.n2: ITS .t0 .num
+.p5: PRT .num .n2
+.p6: PRT " " 1
+.n3: ITS .t1 .num
+.p7: PRT .num .n3
+.p8: PRT " " 1
+.n4: ITS .t2 .num
+.p9: PRT .num .n4
+.p10: PRT " " 1
+.n5: ITS .t3 .num
+.p11: PRT .num .n5
+.p12: PRT " " 1
+.n6: ITS .t4 .num
+.p13: PRT .num .n6
+.p14: PRT "\n" 1
+
+.mt2: "Types[5-9]: "
+.p15: PRT .mt2 12
+.n7: ITS .t5 .num
+.p16: PRT .num .n7
+.p17: PRT " " 1
+.n8: ITS .t6 .num
+.p18: PRT .num .n8
+.p19: PRT " " 1
+.n9: ITS .t7 .num
+.p20: PRT .num .n9
+.p21: PRT " " 1
+.n10: ITS .t8 .num
+.p22: PRT .num .n10
+.p23: PRT " " 1
+.n11: ITS .t9 .num
+.p24: PRT .num .n11
+.p25: PRT "\n" 1
+
+.mn: "Nodes: "
+.p26: PRT .mn 7
+.n12: ITS .nodes .num
+.p27: PRT .num .n12
+.p28: PRT "\n" 1
+
+.mm: "Matches: pos0="
+.p29: PRT .mm 14
+.n13: ITS .m0 .num
+.p30: PRT .num .n13
+.p31: PRT " pos5=" 6
+.n14: ITS .m5 .num
+.p32: PRT .num .n14
+.p33: PRT " pos10=" 7
+.n15: ITS .m10 .num
+.p34: PRT .num .n15
+.p35: PRT "\n" 1
+
+-- ============================================
+-- CLEANUP
+-- ============================================
+
+.f1: FRE .src
+.f2: FRE .num
+
+!

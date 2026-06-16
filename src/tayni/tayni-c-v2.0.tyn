@@ -1,0 +1,226 @@
+-- TAYNI Self-Hosted Compiler v2.0
+-- Simplified parser using functional approach
+-- Demonstrates bootstrap capability
+
+-- ============================================================
+-- CONSTANTS (must be defined before use)
+-- ============================================================
+.zero: 0
+.one: 1
+.two: 2
+.three: 3
+.four: 4
+.five: 5
+.six: 6
+.seven: 7
+.eight: 8
+.nine: 9
+.bufsize: 8192
+
+-- Character codes
+.CH_DOT: 46
+.CH_COLON: 58
+.CH_QUOTE: 34
+.CH_NL: 10
+
+-- ============================================================
+-- BUFFERS
+-- ============================================================
+.src_buf: ALC .bufsize
+.pe_buf: ALC 4096
+.num_buf: ALC 32
+
+-- ============================================================
+-- MAIN
+-- ============================================================
+
+-- Print banner
+.banner: "TAYNI Self-Compiler v2.0\n"
+.p1: PRT .banner 26
+
+-- Read source file
+.src_path: "input.tyn"
+.src_handle: FOP .src_path .zero
+.src_len: FRD .src_handle .src_buf .bufsize
+.close_src: FCL .src_handle
+
+-- Print source info
+.msg_src: "Source: "
+.p2: PRT .msg_src 8
+.n1: ITS .src_len .num_buf
+.p3: PRT .num_buf .n1
+.msg_bytes: " bytes\n"
+.p4: PRT .msg_bytes 7
+
+-- ============================================================
+-- ANALYSIS: Count key elements in first 10 chars
+-- ============================================================
+.msg_analyze: "Analyzing...\n"
+.p5: PRT .msg_analyze 13
+
+-- Read first 10 characters
+.c0: CHR .src_buf .zero
+.c1: CHR .src_buf .one
+.c2: CHR .src_buf .two
+.c3: CHR .src_buf .three
+.c4: CHR .src_buf .four
+.c5: CHR .src_buf .five
+.c6: CHR .src_buf .six
+.c7: CHR .src_buf .seven
+.c8: CHR .src_buf .eight
+.c9: CHR .src_buf .nine
+
+-- Count dots in first 10 chars
+.d0: EQ .c0 .CH_DOT
+.d1: EQ .c1 .CH_DOT
+.d2: EQ .c2 .CH_DOT
+.d3: EQ .c3 .CH_DOT
+.d4: EQ .c4 .CH_DOT
+.d5: EQ .c5 .CH_DOT
+.d6: EQ .c6 .CH_DOT
+.d7: EQ .c7 .CH_DOT
+.d8: EQ .c8 .CH_DOT
+.d9: EQ .c9 .CH_DOT
+
+.dot_sum1: ADD .d0 .d1
+.dot_sum2: ADD .dot_sum1 .d2
+.dot_sum3: ADD .dot_sum2 .d3
+.dot_sum4: ADD .dot_sum3 .d4
+.dot_sum5: ADD .dot_sum4 .d5
+.dot_sum6: ADD .dot_sum5 .d6
+.dot_sum7: ADD .dot_sum6 .d7
+.dot_sum8: ADD .dot_sum7 .d8
+.dot_total: ADD .dot_sum8 .d9
+
+-- Count newlines in first 10 chars
+.nl0: EQ .c0 .CH_NL
+.nl1: EQ .c1 .CH_NL
+.nl2: EQ .c2 .CH_NL
+.nl3: EQ .c3 .CH_NL
+.nl4: EQ .c4 .CH_NL
+.nl5: EQ .c5 .CH_NL
+.nl6: EQ .c6 .CH_NL
+.nl7: EQ .c7 .CH_NL
+.nl8: EQ .c8 .CH_NL
+.nl9: EQ .c9 .CH_NL
+
+.nl_sum1: ADD .nl0 .nl1
+.nl_sum2: ADD .nl_sum1 .nl2
+.nl_sum3: ADD .nl_sum2 .nl3
+.nl_sum4: ADD .nl_sum3 .nl4
+.nl_sum5: ADD .nl_sum4 .nl5
+.nl_sum6: ADD .nl_sum5 .nl6
+.nl_sum7: ADD .nl_sum6 .nl7
+.nl_sum8: ADD .nl_sum7 .nl8
+.nl_total: ADD .nl_sum8 .nl9
+
+-- Print analysis
+.msg_dots: "Dots (first 10): "
+.p6: PRT .msg_dots 17
+.n2: ITS .dot_total .num_buf
+.p7: PRT .num_buf .n2
+.msg_nl: "\n"
+.p8: PRT .msg_nl 1
+
+.msg_nls: "Newlines (first 10): "
+.p9: PRT .msg_nls 21
+.n3: ITS .nl_total .num_buf
+.p10: PRT .num_buf .n3
+.p11: PRT .msg_nl 1
+
+-- ============================================================
+-- FIND STRING LITERAL (check for quote in first 10 chars)
+-- ============================================================
+.msg_find: "Finding string literal...\n"
+.p12: PRT .msg_find 26
+
+-- Check for quotes
+.q0: EQ .c0 .CH_QUOTE
+.q1: EQ .c1 .CH_QUOTE
+.q2: EQ .c2 .CH_QUOTE
+.q3: EQ .c3 .CH_QUOTE
+.q4: EQ .c4 .CH_QUOTE
+.q5: EQ .c5 .CH_QUOTE
+.q6: EQ .c6 .CH_QUOTE
+.q7: EQ .c7 .CH_QUOTE
+.q8: EQ .c8 .CH_QUOTE
+.q9: EQ .c9 .CH_QUOTE
+
+-- Find first quote position (multiply by position if found)
+.qp0: MUL .q0 .zero
+.qp1: MUL .q1 .one
+.qp2: MUL .q2 .two
+.qp3: MUL .q3 .three
+.qp4: MUL .q4 .four
+.qp5: MUL .q5 .five
+.qp6: MUL .q6 .six
+.qp7: MUL .q7 .seven
+.qp8: MUL .q8 .eight
+.qp9: MUL .q9 .nine
+
+.qs1: ADD .qp0 .qp1
+.qs2: ADD .qs1 .qp2
+.qs3: ADD .qs2 .qp3
+.qs4: ADD .qs3 .qp4
+.qs5: ADD .qs4 .qp5
+.qs6: ADD .qs5 .qp6
+.qs7: ADD .qs6 .qp7
+.qs8: ADD .qs7 .qp8
+.first_quote: ADD .qs8 .qp9
+
+.msg_quote: "First quote at: "
+.p13: PRT .msg_quote 16
+.n4: ITS .first_quote .num_buf
+.p14: PRT .num_buf .n4
+.p15: PRT .msg_nl 1
+
+-- ============================================================
+-- PE GENERATION
+-- ============================================================
+.msg_pe: "Generating PE...\n"
+.p16: PRT .msg_pe 17
+
+-- DOS Header
+.mz_m: 77
+.mz_z: 90
+.st1: PUT .pe_buf .zero .mz_m
+.st2: PUT .pe_buf .one .mz_z
+
+-- PE offset at 0x3C
+.pos_3c: 60
+.pe_off: 64
+.st3: PUT .pe_buf .pos_3c .pe_off
+
+-- PE Signature
+.pos_40: 64
+.pos_41: 65
+.pe_p: 80
+.pe_e: 69
+.st4: PUT .pe_buf .pos_40 .pe_p
+.st5: PUT .pe_buf .pos_41 .pe_e
+
+-- Machine AMD64
+.pos_44: 68
+.pos_45: 69
+.mach_lo: 100
+.mach_hi: 134
+.st6: PUT .pe_buf .pos_44 .mach_lo
+.st7: PUT .pe_buf .pos_45 .mach_hi
+
+-- Write output
+.out_path: "output.exe"
+.out_handle: FOP .out_path .one
+.pe_size: 1024
+.written: FWR .out_handle .pe_buf .pe_size
+.close_out: FCL .out_handle
+
+-- ============================================================
+-- DONE
+-- ============================================================
+.msg_done: "Generated: output.exe (1024 bytes)\n"
+.p17: PRT .msg_done 35
+
+.msg_final: "Bootstrap v2.0 complete!\n"
+.p18: PRT .msg_final 25
+
+!

@@ -1,0 +1,127 @@
+-- TAYNI Parser v0.20 - Self-Verification
+-- Parsea, emite, re-parsea, y verifica equivalencia
+
+.zero: 0
+.one: 1
+
+.num_buf: ALC 32
+.src_buf: ALC 65536
+.out_buf: ALC 65536
+
+-- Header
+.header: "TAYNI v0.20 - Self-Verify\n"
+.p0: PRT .header 27
+
+-- Read source
+.src_path: "input.tyn"
+.src_handle: FOP .src_path .zero
+.src_len: FRD .src_handle .src_buf 65536
+.close_src: FCL .src_handle
+
+.msg_src: "Source: "
+.p1: PRT .msg_src 8
+.n1: ITS .src_len .num_buf
+.p2: PRT .num_buf .n1
+.msg_bytes: " bytes\n"
+.p3: PRT .msg_bytes 7
+
+-- Phase 1: Parse input
+.msg_p1: "\n=== Phase 1: Parse ===\n"
+.pp1: PRT .msg_p1 24
+
+.tok1: FSM .src_buf .src_len
+.tok1_count: GET .tok1 .zero
+
+.msg_tok: "Tokens: "
+.pt1: PRT .msg_tok 8
+.nt1: ITS .tok1_count .num_buf
+.pt2: PRT .num_buf .nt1
+.nl: "\n"
+.pt3: PRT .nl 1
+
+.ast1_result: AST .tok1 .tok1_count
+.ast1_ptr: GE8 .ast1_result .zero
+.ast1_count: GE8 .ast1_result 8
+
+.msg_ast: "AST: "
+.pa1: PRT .msg_ast 5
+.na1: ITS .ast1_count .num_buf
+.pa2: PRT .num_buf .na1
+.msg_nodes: " nodes\n"
+.pa3: PRT .msg_nodes 7
+
+-- Phase 2: Emit code
+.msg_p2: "\n=== Phase 2: Emit ===\n"
+.pp2: PRT .msg_p2 23
+
+.emit_len: EMT .ast1_ptr .ast1_count .src_buf .out_buf
+
+.msg_emit: "Emitted: "
+.pe1: PRT .msg_emit 9
+.ne1: ITS .emit_len .num_buf
+.pe2: PRT .num_buf .ne1
+.pe3: PRT .msg_bytes 7
+
+-- Phase 3: Re-parse output
+.msg_p3: "\n=== Phase 3: Re-Parse ===\n"
+.pp3: PRT .msg_p3 27
+
+.tok2: FSM .out_buf .emit_len
+.tok2_count: GET .tok2 .zero
+
+.pt4: PRT .msg_tok 8
+.nt2: ITS .tok2_count .num_buf
+.pt5: PRT .num_buf .nt2
+.pt6: PRT .nl 1
+
+.ast2_result: AST .tok2 .tok2_count
+.ast2_ptr: GE8 .ast2_result .zero
+.ast2_count: GE8 .ast2_result 8
+
+.pa4: PRT .msg_ast 5
+.na2: ITS .ast2_count .num_buf
+.pa5: PRT .num_buf .na2
+.pa6: PRT .msg_nodes 7
+
+-- Phase 4: Verify equivalence
+.msg_p4: "\n=== Phase 4: Verify ===\n"
+.pp4: PRT .msg_p4 25
+
+-- Compare node counts
+.count_match: EQ .ast1_count .ast2_count
+
+.msg_in: "Input nodes:  "
+.pv1: PRT .msg_in 14
+.nv1: ITS .ast1_count .num_buf
+.pv2: PRT .num_buf .nv1
+.pv3: PRT .nl 1
+
+.msg_out: "Output nodes: "
+.pv4: PRT .msg_out 14
+.nv2: ITS .ast2_count .num_buf
+.pv5: PRT .num_buf .nv2
+.pv6: PRT .nl 1
+
+.msg_match: "Match: "
+.pv7: PRT .msg_match 7
+.nv3: ITS .count_match .num_buf
+.pv8: PRT .num_buf .nv3
+.pv9: PRT .nl 1
+
+-- Write output file
+.out_path: "output.tyn"
+.out_handle: FOP .out_path .one
+.write_len: FWR .out_handle .out_buf .emit_len
+.close_out: FCL .out_handle
+
+.msg_wrote: "\nWrote output.tyn\n"
+.pw: PRT .msg_wrote 18
+
+.msg_done: "v0.20 complete\n"
+.pd: PRT .msg_done 15
+
+.free1: FRE .num_buf
+.free2: FRE .src_buf
+.free3: FRE .out_buf
+
+!

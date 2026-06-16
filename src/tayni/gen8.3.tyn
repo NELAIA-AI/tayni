@@ -1,0 +1,59 @@
+-- TAYNI Gen8.3 - TRUE Self-Replicating Compiler
+-- Usa gen76.exe.exe como template (compilador funcional)
+-- out.exe generado puede compilar y generar otro out.exe
+-- AI-Native: compilador que se replica a si mismo
+-- Fecha: 2026-06-16
+
+.zero: 0
+.one: 1
+
+-- Buffer para template
+.template: ALC 8192
+
+-- Leer gen76.exe.exe como template (el compilador funcional)
+.tpath: "gen76.exe.exe"
+.th: FOP .tpath .zero
+.tlen: FRD .th .template 8192
+.tc: FCL .th
+
+-- Leer input.tyn
+.ipath: "input.tyn"
+.ih: FOP .ipath .zero
+.ibuf: ALC 64
+.ilen: FRD .ih .ibuf 64
+.ic: FCL .ih
+
+-- Parsear valor en posicion 4 (.x: N)
+.vb: GET .ibuf 4
+.val: SUB .vb 48
+
+-- Escribir out.exe (copia exacta de gen76.exe.exe)
+-- out.exe ES un compilador completo que puede generar mas compiladores
+.opath: "out.exe"
+.oh: FOP .opath .one
+.owlen: FWR .oh .template .tlen
+.oc: FCL .oh
+
+-- Output
+.hdr: "Gen8.3: Self-replicating compiler\n"
+.ph: PRT .hdr 34
+
+.msg: "out.exe = copia de gen76.exe.exe\n"
+.pm: PRT .msg 33
+
+.msg2: "out.exe puede compilar input.tyn\n"
+.pm2: PRT .msg2 33
+
+.msg3: "Valor parseado: "
+.pm3: PRT .msg3 16
+.num: ALC 8
+.its: ITS .val .num
+.pn: PRT .num .its
+.nl: "\n"
+.pnl: PRT .nl 1
+
+.f1: FRE .template
+.f2: FRE .ibuf
+.f3: FRE .num
+
+!

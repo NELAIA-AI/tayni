@@ -1,0 +1,107 @@
+.zero: 0
+.one: 1
+.buf: ALC 2048
+.num: ALC 32
+.pe: ALC 4096
+.msg: "TAYNI Bootstrap v5.1\n"
+.p1: PRT .msg 21
+.src: "input.tyn"
+.h: FOP .src .zero
+.len: FRD .h .buf 2048
+.c: FCL .h
+.m2: "Source: "
+.p2: PRT .m2 8
+.n: ITS .len .num
+.p3: PRT .num .n
+.m3: " bytes\n"
+.p4: PRT .m3 7
+.tok: FSM .buf .len
+.tc: GET .tok .zero
+.m4: "Tokens: "
+.p5: PRT .m4 8
+.n2: ITS .tc .num
+.p6: PRT .num .n2
+.nl: "\n"
+.p7: PRT .nl 1
+.tpl: "pe_template.bin"
+.th: FOP .tpl .zero
+.tl: FRD .th .pe 4096
+.tc2: FCL .th
+.m5: "Template: "
+.p8: PRT .m5 10
+.n3: ITS .tl .num
+.p9: PRT .num .n3
+.p10: PRT .m3 7
+.code_off: 512
+.hello: "Self-compiled!\n"
+.hlen: 15
+.str_off: 1536
+.i0: 0
+.c0: CHR .hello .i0
+.off0: ADD .str_off .i0
+.st0: PUT .pe .off0 .c0
+.i1: 1
+.c1: CHR .hello .i1
+.off1: ADD .str_off .i1
+.st1: PUT .pe .off1 .c1
+.i2: 2
+.c2: CHR .hello .i2
+.off2: ADD .str_off .i2
+.st2: PUT .pe .off2 .c2
+.i3: 3
+.c3: CHR .hello .i3
+.off3: ADD .str_off .i3
+.st3: PUT .pe .off3 .c3
+.i4: 4
+.c4: CHR .hello .i4
+.off4: ADD .str_off .i4
+.st4: PUT .pe .off4 .c4
+.i5: 5
+.c5: CHR .hello .i5
+.off5: ADD .str_off .i5
+.st5: PUT .pe .off5 .c5
+.i6: 6
+.c6: CHR .hello .i6
+.off6: ADD .str_off .i6
+.st6: PUT .pe .off6 .c6
+.i7: 7
+.c7: CHR .hello .i7
+.off7: ADD .str_off .i7
+.st7: PUT .pe .off7 .c7
+.i8: 8
+.c8: CHR .hello .i8
+.off8: ADD .str_off .i8
+.st8: PUT .pe .off8 .c8
+.i9: 9
+.c9: CHR .hello .i9
+.off9: ADD .str_off .i9
+.st9: PUT .pe .off9 .c9
+.i10: 10
+.c10: CHR .hello .i10
+.off10: ADD .str_off .i10
+.st10: PUT .pe .off10 .c10
+.i11: 11
+.c11: CHR .hello .i11
+.off11: ADD .str_off .i11
+.st11: PUT .pe .off11 .c11
+.i12: 12
+.c12: CHR .hello .i12
+.off12: ADD .str_off .i12
+.st12: PUT .pe .off12 .c12
+.i13: 13
+.c13: CHR .hello .i13
+.off13: ADD .str_off .i13
+.st13: PUT .pe .off13 .c13
+.i14: 14
+.c14: CHR .hello .i14
+.off14: ADD .str_off .i14
+.st14: PUT .pe .off14 .c14
+.out: "output.exe"
+.oh: FOP .out .one
+.w: FWR .oh .pe .tl
+.oc: FCL .oh
+.m6: "Generated: output.exe\n"
+.p11: PRT .m6 22
+.m7: "Run: .\\output.exe\n"
+.p12: PRT .m7 18
+!

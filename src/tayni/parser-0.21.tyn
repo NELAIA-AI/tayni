@@ -1,0 +1,163 @@
+-- TAYNI Parser v0.21 - Perfect Pipeline
+-- Verifica equivalencia byte por byte
+
+.zero: 0
+.one: 1
+
+.num_buf: ALC 32
+.src_buf: ALC 65536
+.out_buf: ALC 65536
+
+-- Header
+.header: "TAYNI v0.21 - Perfect Pipeline\n"
+.p0: PRT .header 32
+
+-- Read source
+.src_path: "input.tyn"
+.src_handle: FOP .src_path .zero
+.src_len: FRD .src_handle .src_buf 65536
+.close_src: FCL .src_handle
+
+.msg_src: "Source: "
+.p1: PRT .msg_src 8
+.n1: ITS .src_len .num_buf
+.p2: PRT .num_buf .n1
+.msg_bytes: " bytes\n"
+.p3: PRT .msg_bytes 7
+
+-- Parse and emit
+.tok: FSM .src_buf .src_len
+.tok_count: GET .tok .zero
+
+.ast_result: AST .tok .tok_count
+.ast_ptr: GE8 .ast_result .zero
+.ast_count: GE8 .ast_result 8
+
+.msg_ast: "AST: "
+.pa1: PRT .msg_ast 5
+.na1: ITS .ast_count .num_buf
+.pa2: PRT .num_buf .na1
+.msg_nodes: " nodes\n"
+.pa3: PRT .msg_nodes 7
+
+.emit_len: EMT .ast_ptr .ast_count .src_buf .out_buf
+
+.msg_emit: "Emitted: "
+.pe1: PRT .msg_emit 9
+.ne1: ITS .emit_len .num_buf
+.pe2: PRT .num_buf .ne1
+.pe3: PRT .msg_bytes 7
+
+-- Compare
+.msg_cmp: "\n=== Comparison ===\n"
+.pc0: PRT .msg_cmp 20
+
+-- Compare lengths
+.len_match: EQ .src_len .emit_len
+.msg_len: "Length: "
+.pl1: PRT .msg_len 8
+.nl1: ITS .src_len .num_buf
+.pl2: PRT .num_buf .nl1
+.msg_vs: " vs "
+.pl3: PRT .msg_vs 4
+.nl2: ITS .emit_len .num_buf
+.pl4: PRT .num_buf .nl2
+.msg_eq: " = "
+.pl5: PRT .msg_eq 3
+.nl3: ITS .len_match .num_buf
+.pl6: PRT .num_buf .nl3
+.nl: "\n"
+.pl7: PRT .nl 1
+
+-- Sample first 10 bytes from each
+.msg_sample: "First bytes:\n"
+.ps0: PRT .msg_sample 13
+
+.msg_in: "  Input:  "
+.psi: PRT .msg_in 10
+.b0: GET .src_buf 0
+.b1: GET .src_buf 1
+.b2: GET .src_buf 2
+.b3: GET .src_buf 3
+.b4: GET .src_buf 4
+.sb0: ITS .b0 .num_buf
+.psb0: PRT .num_buf .sb0
+.psp: PRT " " 1
+.sb1: ITS .b1 .num_buf
+.psb1: PRT .num_buf .sb1
+.psp1: PRT " " 1
+.sb2: ITS .b2 .num_buf
+.psb2: PRT .num_buf .sb2
+.psp2: PRT " " 1
+.sb3: ITS .b3 .num_buf
+.psb3: PRT .num_buf .sb3
+.psp3: PRT " " 1
+.sb4: ITS .b4 .num_buf
+.psb4: PRT .num_buf .sb4
+.pnl1: PRT .nl 1
+
+.msg_out: "  Output: "
+.pso: PRT .msg_out 10
+.o0: GET .out_buf 0
+.o1: GET .out_buf 1
+.o2: GET .out_buf 2
+.o3: GET .out_buf 3
+.o4: GET .out_buf 4
+.so0: ITS .o0 .num_buf
+.pso0: PRT .num_buf .so0
+.psp4: PRT " " 1
+.so1: ITS .o1 .num_buf
+.pso1: PRT .num_buf .so1
+.psp5: PRT " " 1
+.so2: ITS .o2 .num_buf
+.pso2: PRT .num_buf .so2
+.psp6: PRT " " 1
+.so3: ITS .o3 .num_buf
+.pso3: PRT .num_buf .so3
+.psp7: PRT " " 1
+.so4: ITS .o4 .num_buf
+.pso4: PRT .num_buf .so4
+.pnl2: PRT .nl 1
+
+-- Check if first 5 bytes match
+.m0: EQ .b0 .o0
+.m1: EQ .b1 .o1
+.m2: EQ .b2 .o2
+.m3: EQ .b3 .o3
+.m4: EQ .b4 .o4
+.ma: AND .m0 .m1
+.mb: AND .ma .m2
+.mc: AND .mb .m3
+.md: AND .mc .m4
+
+.msg_match: "First 5 match: "
+.pm1: PRT .msg_match 15
+.nm1: ITS .md .num_buf
+.pm2: PRT .num_buf .nm1
+.pm3: PRT .nl 1
+
+-- Final
+.msg_final: "\n=== Result ===\n"
+.pf0: PRT .msg_final 16
+
+.all_match: AND .len_match .md
+.msg_status: "Perfect: "
+.pfs: PRT .msg_status 9
+.nfs: ITS .all_match .num_buf
+.pfs2: PRT .num_buf .nfs
+.pfs3: PRT .nl 1
+
+-- Write output
+.out_path: "output.tyn"
+.out_handle: FOP .out_path .one
+.write_len: FWR .out_handle .out_buf .emit_len
+.close_out: FCL .out_handle
+
+.msg_wrote: "\nWrote output.tyn\n"
+.pw: PRT .msg_wrote 18
+
+.free1: FRE .num_buf
+.free2: FRE .src_buf
+.free3: FRE .out_buf
+
+!

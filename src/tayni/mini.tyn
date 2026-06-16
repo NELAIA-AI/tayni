@@ -1,0 +1,39 @@
+-- TAYNI mini.tyn - PE minimo basado en template
+-- Copia fileio2.exe.exe y pone: mov eax, 0; ret
+-- Template para compiler.exe
+-- Fecha: 2026-06-16
+
+.zero: 0
+.one: 1
+
+.exe: ALC 8192
+
+-- Leer template valido
+.spath: "fileio2.exe.exe"
+.sh: FOP .spath .zero
+.slen: FRD .sh .exe 8192
+.sc: FCL .sh
+
+-- ===== CODE at 0x200 =====
+-- mov eax, 0 (B8 00 00 00 00)
+.mc0: PUT .exe 512 184
+.mc1: PUT .exe 513 0
+.mc2: PUT .exe 514 0
+.mc3: PUT .exe 515 0
+.mc4: PUT .exe 516 0
+
+-- ret (C3)
+.mc5: PUT .exe 517 195
+
+-- Escribir
+.opath: "mini.exe"
+.oh: FOP .opath .one
+.wlen: FWR .oh .exe .slen
+.oc: FCL .oh
+
+.hdr: "mini.exe created\n"
+.p0: PRT .hdr 17
+
+.f1: FRE .exe
+
+!

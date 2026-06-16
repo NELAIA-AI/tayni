@@ -1,0 +1,319 @@
+-- TAYNI Gen2.2 - Print OK (basado en syscall.exe)
+-- Copia estructura de syscall.exe que funciona
+-- Agrega GetStdHandle, WriteFile
+-- Autonomía Total - Criterio IA
+-- Fecha: 2026-06-16
+
+.zero: 0
+.one: 1
+
+.exe: ALC 4096
+
+-- ============================================
+-- COPIAR ESTRUCTURA DE syscall.exe
+-- (PE header que sabemos que funciona)
+-- ============================================
+
+-- DOS Header (MZ + e_lfanew=0x80)
+.d0: PUT .exe 0 77
+.d1: PUT .exe 1 90
+.d60: PUT .exe 60 128
+
+-- PE Signature at 0x80
+.p80: PUT .exe 128 80
+.p81: PUT .exe 129 69
+
+-- COFF: x86-64, 2 sections
+.c84: PUT .exe 132 100
+.c85: PUT .exe 133 134
+.c86: PUT .exe 134 2
+.c98: PUT .exe 148 240
+.c9a: PUT .exe 150 34
+
+-- Optional Header
+.o9c: PUT .exe 152 11
+.o9d: PUT .exe 153 2
+.oa0: PUT .exe 160 0
+.oa1: PUT .exe 161 4
+.oa8: PUT .exe 168 0
+.oa9: PUT .exe 169 16
+.oac: PUT .exe 172 0
+.oad: PUT .exe 173 16
+.ob0: PUT .exe 176 0
+.ob3: PUT .exe 179 64
+.ob4: PUT .exe 180 1
+.ob8: PUT .exe 184 0
+.ob9: PUT .exe 185 16
+.obc: PUT .exe 188 0
+.obd: PUT .exe 189 2
+.oc0: PUT .exe 192 6
+.oc8: PUT .exe 200 6
+.od0: PUT .exe 208 0
+.od1: PUT .exe 209 48
+.od4: PUT .exe 212 0
+.od5: PUT .exe 213 4
+.odc: PUT .exe 220 3
+.ode: PUT .exe 222 96
+.odf: PUT .exe 223 129
+.oe2: PUT .exe 226 16
+.oe8: PUT .exe 232 0
+.oe9: PUT .exe 233 16
+.of2: PUT .exe 242 16
+.of8: PUT .exe 248 0
+.of9: PUT .exe 249 16
+.o104: PUT .exe 260 16
+
+-- Import Directory RVA (0x2000) Size (0x28)
+.i108: PUT .exe 264 0
+.i109: PUT .exe 265 32
+.i10c: PUT .exe 268 40
+
+-- Section .text
+.s188: PUT .exe 392 46
+.s189: PUT .exe 393 116
+.s18a: PUT .exe 394 101
+.s18b: PUT .exe 395 120
+.s18c: PUT .exe 396 116
+.s190: PUT .exe 400 0
+.s191: PUT .exe 401 4
+.s194: PUT .exe 404 0
+.s195: PUT .exe 405 16
+.s198: PUT .exe 408 0
+.s199: PUT .exe 409 4
+.s19c: PUT .exe 412 0
+.s19d: PUT .exe 413 4
+.s1ac: PUT .exe 428 32
+.s1af: PUT .exe 431 96
+
+-- Section .idata
+.s1b0: PUT .exe 432 46
+.s1b1: PUT .exe 433 105
+.s1b2: PUT .exe 434 100
+.s1b3: PUT .exe 435 97
+.s1b4: PUT .exe 436 116
+.s1b5: PUT .exe 437 97
+.s1b8: PUT .exe 440 0
+.s1b9: PUT .exe 441 1
+.s1bc: PUT .exe 444 0
+.s1bd: PUT .exe 445 32
+.s1c0: PUT .exe 448 0
+.s1c1: PUT .exe 449 2
+.s1c4: PUT .exe 452 0
+.s1c5: PUT .exe 453 8
+.s1d4: PUT .exe 468 64
+.s1d7: PUT .exe 471 192
+
+-- ============================================
+-- CODE at 0x400 (1024)
+-- GetStdHandle(-11) -> WriteFile -> ExitProcess(0)
+-- ============================================
+
+-- sub rsp, 56
+.x0: PUT .exe 1024 72
+.x1: PUT .exe 1025 131
+.x2: PUT .exe 1026 236
+.x3: PUT .exe 1027 56
+
+-- mov ecx, -11 (STD_OUTPUT_HANDLE)
+.x4: PUT .exe 1028 185
+.x5: PUT .exe 1029 245
+.x6: PUT .exe 1030 255
+.x7: PUT .exe 1031 255
+.x8: PUT .exe 1032 255
+
+-- call [GetStdHandle] at IAT 0x2050
+-- FF 15 xx xx xx xx (call [rip+disp32])
+-- After FF 15, RIP = 0x100F, IAT = 0x2050
+-- disp = 0x2050 - 0x100F = 0x1041
+.x9: PUT .exe 1033 255
+.x10: PUT .exe 1034 21
+.x11: PUT .exe 1035 65
+.x12: PUT .exe 1036 16
+.x13: PUT .exe 1037 0
+.x14: PUT .exe 1038 0
+
+-- mov rcx, rax (handle)
+.x15: PUT .exe 1039 72
+.x16: PUT .exe 1040 137
+.x17: PUT .exe 1041 193
+
+-- lea rdx, [rip+msg] ; msg at 0x1060, RIP=0x1012
+-- disp = 0x1060 - 0x1012 = 0x4E
+.x18: PUT .exe 1042 72
+.x19: PUT .exe 1043 141
+.x20: PUT .exe 1044 21
+.x21: PUT .exe 1045 78
+.x22: PUT .exe 1046 0
+.x23: PUT .exe 1047 0
+.x24: PUT .exe 1048 0
+
+-- mov r8d, 3 (length "OK\n")
+.x25: PUT .exe 1049 65
+.x26: PUT .exe 1050 184
+.x27: PUT .exe 1051 3
+.x28: PUT .exe 1052 0
+.x29: PUT .exe 1053 0
+.x30: PUT .exe 1054 0
+
+-- lea r9, [rsp+48] (written ptr)
+.x31: PUT .exe 1055 76
+.x32: PUT .exe 1056 141
+.x33: PUT .exe 1057 76
+.x34: PUT .exe 1058 36
+.x35: PUT .exe 1059 48
+
+-- mov qword [rsp+32], 0 (lpOverlapped)
+.x36: PUT .exe 1060 72
+.x37: PUT .exe 1061 199
+.x38: PUT .exe 1062 68
+.x39: PUT .exe 1063 36
+.x40: PUT .exe 1064 32
+.x41: PUT .exe 1065 0
+.x42: PUT .exe 1066 0
+.x43: PUT .exe 1067 0
+.x44: PUT .exe 1068 0
+
+-- call [WriteFile] at IAT 0x2058
+-- After FF 15, RIP = 0x102D, disp = 0x2058 - 0x102D = 0x102B
+.x45: PUT .exe 1069 255
+.x46: PUT .exe 1070 21
+.x47: PUT .exe 1071 43
+.x48: PUT .exe 1072 16
+.x49: PUT .exe 1073 0
+.x50: PUT .exe 1074 0
+
+-- xor ecx, ecx
+.x51: PUT .exe 1075 49
+.x52: PUT .exe 1076 201
+
+-- call [ExitProcess] at IAT 0x2060
+-- After FF 15, RIP = 0x1039, disp = 0x2060 - 0x1039 = 0x1027
+.x53: PUT .exe 1077 255
+.x54: PUT .exe 1078 21
+.x55: PUT .exe 1079 39
+.x56: PUT .exe 1080 16
+.x57: PUT .exe 1081 0
+.x58: PUT .exe 1082 0
+
+-- Message "OK\n" at 0x1060 (file 0x460)
+.m0: PUT .exe 1120 79
+.m1: PUT .exe 1121 75
+.m2: PUT .exe 1122 10
+
+-- ============================================
+-- IMPORT TABLE at 0x800 (file 0x800)
+-- ============================================
+
+-- Import Directory Entry
+-- OriginalFirstThunk RVA = 0x2068
+.i800: PUT .exe 2048 104
+.i801: PUT .exe 2049 32
+-- TimeDateStamp = 0
+-- ForwarderChain = 0
+-- Name RVA = 0x20A0
+.i80c: PUT .exe 2060 160
+.i80d: PUT .exe 2061 32
+-- FirstThunk (IAT) RVA = 0x2050
+.i810: PUT .exe 2064 80
+.i811: PUT .exe 2065 32
+
+-- Null terminator (20 bytes zeros already)
+
+-- IAT at 0x2050 (file 0x850)
+-- GetStdHandle hint/name at 0x2080
+.a850: PUT .exe 2128 128
+.a851: PUT .exe 2129 32
+-- WriteFile hint/name at 0x2090
+.a858: PUT .exe 2136 144
+.a859: PUT .exe 2137 32
+-- ExitProcess hint/name at 0x20B0
+.a860: PUT .exe 2144 176
+.a861: PUT .exe 2145 32
+-- Null terminator
+
+-- Import Lookup Table at 0x2068 (file 0x868)
+.l868: PUT .exe 2152 128
+.l869: PUT .exe 2153 32
+.l870: PUT .exe 2160 144
+.l871: PUT .exe 2161 32
+.l878: PUT .exe 2168 176
+.l879: PUT .exe 2169 32
+
+-- Hint/Name GetStdHandle at 0x2080 (file 0x880)
+.h880: PUT .exe 2176 0
+.h881: PUT .exe 2177 0
+.n880: PUT .exe 2178 71
+.n881: PUT .exe 2179 101
+.n882: PUT .exe 2180 116
+.n883: PUT .exe 2181 83
+.n884: PUT .exe 2182 116
+.n885: PUT .exe 2183 100
+.n886: PUT .exe 2184 72
+.n887: PUT .exe 2185 97
+.n888: PUT .exe 2186 110
+.n889: PUT .exe 2187 100
+.n88a: PUT .exe 2188 108
+.n88b: PUT .exe 2189 101
+.n88c: PUT .exe 2190 0
+
+-- Hint/Name WriteFile at 0x2090 (file 0x890)
+.h890: PUT .exe 2192 0
+.h891: PUT .exe 2193 0
+.n890: PUT .exe 2194 87
+.n891: PUT .exe 2195 114
+.n892: PUT .exe 2196 105
+.n893: PUT .exe 2197 116
+.n894: PUT .exe 2198 101
+.n895: PUT .exe 2199 70
+.n896: PUT .exe 2200 105
+.n897: PUT .exe 2201 108
+.n898: PUT .exe 2202 101
+.n899: PUT .exe 2203 0
+
+-- Hint/Name ExitProcess at 0x20B0 (file 0x8B0)
+.h8b0: PUT .exe 2224 0
+.h8b1: PUT .exe 2225 0
+.n8b0: PUT .exe 2226 69
+.n8b1: PUT .exe 2227 120
+.n8b2: PUT .exe 2228 105
+.n8b3: PUT .exe 2229 116
+.n8b4: PUT .exe 2230 80
+.n8b5: PUT .exe 2231 114
+.n8b6: PUT .exe 2232 111
+.n8b7: PUT .exe 2233 99
+.n8b8: PUT .exe 2234 101
+.n8b9: PUT .exe 2235 115
+.n8ba: PUT .exe 2236 115
+.n8bb: PUT .exe 2237 0
+
+-- DLL Name at 0x20A0 (file 0x8A0)
+.d8a0: PUT .exe 2208 107
+.d8a1: PUT .exe 2209 101
+.d8a2: PUT .exe 2210 114
+.d8a3: PUT .exe 2211 110
+.d8a4: PUT .exe 2212 101
+.d8a5: PUT .exe 2213 108
+.d8a6: PUT .exe 2214 51
+.d8a7: PUT .exe 2215 50
+.d8a8: PUT .exe 2216 46
+.d8a9: PUT .exe 2217 100
+.d8aa: PUT .exe 2218 108
+.d8ab: PUT .exe 2219 108
+.d8ac: PUT .exe 2220 0
+
+-- ============================================
+-- ESCRIBIR
+-- ============================================
+
+.opath: "ok.exe"
+.oh: FOP .opath .one
+.size: 4096
+.wlen: FWR .oh .exe .size
+.oc: FCL .oh
+
+.hdr: "Gen2.2: ok.exe\n"
+.p0: PRT .hdr 15
+
+.f1: FRE .exe
+
+!

@@ -1,0 +1,212 @@
+-- TAYNI Parser v0.12 - Dynamic node parsing
+-- Maneja nodos de longitud variable
+
+.zero: 0
+.one: 1
+.four: 4
+
+.num_buf: ALC 32
+.src_buf: ALC 65536
+
+-- Token types (FSM v3)
+.TT_DOT: 1
+.TT_COLON: 2
+.TT_ID: 3
+.TT_NUM: 4
+.TT_STR: 5
+.TT_NL: 6
+
+-- Header
+.header: "TAYNI Parser v0.12\n"
+.p0: PRT .header 19
+
+-- Read source
+.src_path: "input.tyn"
+.src_handle: FOP .src_path .zero
+.src_len: FRD .src_handle .src_buf 65536
+.close_src: FCL .src_handle
+
+.msg_src: "Source: "
+.p1: PRT .msg_src 8
+.n1: ITS .src_len .num_buf
+.p2: PRT .num_buf .n1
+.msg_bytes: " bytes\n"
+.p3: PRT .msg_bytes 7
+
+-- Tokenize
+.tok: FSM .src_buf .src_len
+.tok_count: GET .tok .zero
+
+.msg_tok: "Tokens: "
+.p4: PRT .msg_tok 8
+.n2: ITS .tok_count .num_buf
+.p5: PRT .num_buf .n2
+.nl: "\n"
+.p6: PRT .nl 1
+
+-- Check position 0 (first node)
+.t0: GET .tok 8
+.t1: GET .tok 12
+.t2: GET .tok 16
+.t3: GET .tok 20
+
+.p0_dot: EQ .t0 .TT_DOT
+.p0_id: EQ .t1 .TT_ID
+.p0_colon: EQ .t2 .TT_COLON
+.p0_a: AND .p0_dot .p0_id
+.p0_valid: AND .p0_a .p0_colon
+
+.p0_is_num: EQ .t3 .TT_NUM
+.p0_is_str: EQ .t3 .TT_STR
+.p0_is_ref: EQ .t3 .TT_DOT
+.p0_is_op: EQ .t3 .TT_ID
+.p0_is_lit: OR .p0_is_num .p0_is_str
+
+-- Check position 5 (second node, after literal+NL)
+.t5_0: GET .tok 28
+.t5_1: GET .tok 32
+.t5_2: GET .tok 36
+.t5_3: GET .tok 40
+
+.p5_dot: EQ .t5_0 .TT_DOT
+.p5_id: EQ .t5_1 .TT_ID
+.p5_colon: EQ .t5_2 .TT_COLON
+.p5_a: AND .p5_dot .p5_id
+.p5_valid: AND .p5_a .p5_colon
+
+.p5_is_num: EQ .t5_3 .TT_NUM
+.p5_is_str: EQ .t5_3 .TT_STR
+.p5_is_ref: EQ .t5_3 .TT_DOT
+.p5_is_op: EQ .t5_3 .TT_ID
+.p5_is_lit: OR .p5_is_num .p5_is_str
+
+-- Check position 10 (third node, after two literals+NL)
+.t10_0: GET .tok 48
+.t10_1: GET .tok 52
+.t10_2: GET .tok 56
+.t10_3: GET .tok 60
+
+.p10_dot: EQ .t10_0 .TT_DOT
+.p10_id: EQ .t10_1 .TT_ID
+.p10_colon: EQ .t10_2 .TT_COLON
+.p10_a: AND .p10_dot .p10_id
+.p10_valid: AND .p10_a .p10_colon
+
+.p10_is_num: EQ .t10_3 .TT_NUM
+.p10_is_str: EQ .t10_3 .TT_STR
+.p10_is_ref: EQ .t10_3 .TT_DOT
+.p10_is_op: EQ .t10_3 .TT_ID
+.p10_is_lit: OR .p10_is_num .p10_is_str
+
+-- Check position 11 (third node, after lit+ref+NL)
+.t11_0: GET .tok 52
+.t11_1: GET .tok 56
+.t11_2: GET .tok 60
+.t11_3: GET .tok 64
+
+.p11_dot: EQ .t11_0 .TT_DOT
+.p11_id: EQ .t11_1 .TT_ID
+.p11_colon: EQ .t11_2 .TT_COLON
+.p11_a: AND .p11_dot .p11_id
+.p11_valid: AND .p11_a .p11_colon
+
+.p11_is_num: EQ .t11_3 .TT_NUM
+.p11_is_str: EQ .t11_3 .TT_STR
+.p11_is_ref: EQ .t11_3 .TT_DOT
+.p11_is_op: EQ .t11_3 .TT_ID
+.p11_is_lit: OR .p11_is_num .p11_is_str
+
+-- Count totals (avoiding double counting)
+.p5_not: NOT .p5_valid
+.p10_not: NOT .p10_valid
+.p11_use: AND .p11_valid .p10_not
+
+-- Node count
+.nc_01: ADD .p0_valid .p5_valid
+.nc_012: ADD .nc_01 .p10_valid
+.node_count: ADD .nc_012 .p11_use
+
+-- Literal count
+.lc_01: ADD .p0_is_lit .p5_is_lit
+.lc_012: ADD .lc_01 .p10_is_lit
+.p11_lit_use: AND .p11_is_lit .p11_use
+.lit_count: ADD .lc_012 .p11_lit_use
+
+-- Reference count
+.rc_01: ADD .p0_is_ref .p5_is_ref
+.rc_012: ADD .rc_01 .p10_is_ref
+.p11_ref_use: AND .p11_is_ref .p11_use
+.ref_count: ADD .rc_012 .p11_ref_use
+
+-- Operation count
+.oc_01: ADD .p0_is_op .p5_is_op
+.oc_012: ADD .oc_01 .p10_is_op
+.p11_op_use: AND .p11_is_op .p11_use
+.op_count: ADD .oc_012 .p11_op_use
+
+-- Output results
+.msg_valid: "\nParsed nodes: "
+.p7: PRT .msg_valid 15
+.n3: ITS .node_count .num_buf
+.p8: PRT .num_buf .n3
+.p9: PRT .nl 1
+
+.msg_lit: "  Literals: "
+.p10: PRT .msg_lit 12
+.n4: ITS .lit_count .num_buf
+.p11: PRT .num_buf .n4
+.p12: PRT .nl 1
+
+.msg_ref: "  References: "
+.p13: PRT .msg_ref 14
+.n5: ITS .ref_count .num_buf
+.p14: PRT .num_buf .n5
+.p15: PRT .nl 1
+
+.msg_op: "  Operations: "
+.p16: PRT .msg_op 14
+.n6: ITS .op_count .num_buf
+.p17: PRT .num_buf .n6
+.p18: PRT .nl 1
+
+-- Debug: show first 8 token types
+.msg_debug: "\nFirst 8 tokens: "
+.p19: PRT .msg_debug 17
+.sp: " "
+
+.nt0: ITS .t0 .num_buf
+.p20: PRT .num_buf .nt0
+.p21: PRT .sp 1
+.nt1: ITS .t1 .num_buf
+.p22: PRT .num_buf .nt1
+.p23: PRT .sp 1
+.nt2: ITS .t2 .num_buf
+.p24: PRT .num_buf .nt2
+.p25: PRT .sp 1
+.nt3: ITS .t3 .num_buf
+.p26: PRT .num_buf .nt3
+.p27: PRT .sp 1
+
+.t4: GET .tok 24
+.nt4: ITS .t4 .num_buf
+.p28: PRT .num_buf .nt4
+.p29: PRT .sp 1
+
+.nt5: ITS .t5_0 .num_buf
+.p30: PRT .num_buf .nt5
+.p31: PRT .sp 1
+.nt6: ITS .t5_1 .num_buf
+.p32: PRT .num_buf .nt6
+.p33: PRT .sp 1
+.nt7: ITS .t5_2 .num_buf
+.p34: PRT .num_buf .nt7
+.p35: PRT .nl 1
+
+-- Done
+.msg_done: "\nParser v0.12 complete.\n"
+.p36: PRT .msg_done 24
+
+.free1: FRE .num_buf
+.free2: FRE .src_buf
+
+!

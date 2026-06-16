@@ -1,0 +1,314 @@
+-- TAYNI Parser v0.13 - Complete Parser
+-- Escanea posiciones buscando patrones DOT-ID-COLON
+
+.zero: 0
+.one: 1
+.four: 4
+
+.num_buf: ALC 32
+.src_buf: ALC 65536
+
+-- Token types (FSM v3)
+.TT_DOT: 1
+.TT_COLON: 2
+.TT_ID: 3
+.TT_NUM: 4
+.TT_STR: 5
+.TT_NL: 6
+
+-- Header
+.header: "TAYNI Parser v0.13\n"
+.p0: PRT .header 19
+
+-- Read source
+.src_path: "input.tyn"
+.src_handle: FOP .src_path .zero
+.src_len: FRD .src_handle .src_buf 65536
+.close_src: FCL .src_handle
+
+.msg_src: "Source: "
+.p1: PRT .msg_src 8
+.n1: ITS .src_len .num_buf
+.p2: PRT .num_buf .n1
+.msg_bytes: " bytes\n"
+.p3: PRT .msg_bytes 7
+
+-- Tokenize
+.tok: FSM .src_buf .src_len
+.tok_count: GET .tok .zero
+
+.msg_tok: "Tokens: "
+.p4: PRT .msg_tok 8
+.n2: ITS .tok_count .num_buf
+.p5: PRT .num_buf .n2
+.nl: "\n"
+.p6: PRT .nl 1
+
+-- Position 0
+.t_0_0: GET .tok 8
+.t_0_1: GET .tok 12
+.t_0_2: GET .tok 16
+.t_0_3: GET .tok 20
+.p0_dot: EQ .t_0_0 .TT_DOT
+.p0_id: EQ .t_0_1 .TT_ID
+.p0_colon: EQ .t_0_2 .TT_COLON
+.p0_a: AND .p0_dot .p0_id
+.p0_valid: AND .p0_a .p0_colon
+.p0_num: EQ .t_0_3 .TT_NUM
+.p0_str: EQ .t_0_3 .TT_STR
+.p0_is_lit: OR .p0_num .p0_str
+.p0_is_ref: EQ .t_0_3 .TT_DOT
+.p0_is_op: EQ .t_0_3 .TT_ID
+
+-- Position 5
+.t_5_0: GET .tok 28
+.t_5_1: GET .tok 32
+.t_5_2: GET .tok 36
+.t_5_3: GET .tok 40
+.p5_dot: EQ .t_5_0 .TT_DOT
+.p5_id: EQ .t_5_1 .TT_ID
+.p5_colon: EQ .t_5_2 .TT_COLON
+.p5_a: AND .p5_dot .p5_id
+.p5_valid: AND .p5_a .p5_colon
+.p5_num: EQ .t_5_3 .TT_NUM
+.p5_str: EQ .t_5_3 .TT_STR
+.p5_is_lit: OR .p5_num .p5_str
+.p5_is_ref: EQ .t_5_3 .TT_DOT
+.p5_is_op: EQ .t_5_3 .TT_ID
+
+-- Position 6
+.t_6_0: GET .tok 32
+.t_6_1: GET .tok 36
+.t_6_2: GET .tok 40
+.t_6_3: GET .tok 44
+.p6_dot: EQ .t_6_0 .TT_DOT
+.p6_id: EQ .t_6_1 .TT_ID
+.p6_colon: EQ .t_6_2 .TT_COLON
+.p6_a: AND .p6_dot .p6_id
+.p6_valid: AND .p6_a .p6_colon
+.p6_num: EQ .t_6_3 .TT_NUM
+.p6_str: EQ .t_6_3 .TT_STR
+.p6_is_lit: OR .p6_num .p6_str
+.p6_is_ref: EQ .t_6_3 .TT_DOT
+.p6_is_op: EQ .t_6_3 .TT_ID
+
+-- Position 10
+.t_10_0: GET .tok 48
+.t_10_1: GET .tok 52
+.t_10_2: GET .tok 56
+.t_10_3: GET .tok 60
+.p10_dot: EQ .t_10_0 .TT_DOT
+.p10_id: EQ .t_10_1 .TT_ID
+.p10_colon: EQ .t_10_2 .TT_COLON
+.p10_a: AND .p10_dot .p10_id
+.p10_valid: AND .p10_a .p10_colon
+.p10_num: EQ .t_10_3 .TT_NUM
+.p10_str: EQ .t_10_3 .TT_STR
+.p10_is_lit: OR .p10_num .p10_str
+.p10_is_ref: EQ .t_10_3 .TT_DOT
+.p10_is_op: EQ .t_10_3 .TT_ID
+
+-- Position 11
+.t_11_0: GET .tok 52
+.t_11_1: GET .tok 56
+.t_11_2: GET .tok 60
+.t_11_3: GET .tok 64
+.p11_dot: EQ .t_11_0 .TT_DOT
+.p11_id: EQ .t_11_1 .TT_ID
+.p11_colon: EQ .t_11_2 .TT_COLON
+.p11_a: AND .p11_dot .p11_id
+.p11_valid: AND .p11_a .p11_colon
+.p11_num: EQ .t_11_3 .TT_NUM
+.p11_str: EQ .t_11_3 .TT_STR
+.p11_is_lit: OR .p11_num .p11_str
+.p11_is_ref: EQ .t_11_3 .TT_DOT
+.p11_is_op: EQ .t_11_3 .TT_ID
+
+-- Position 15
+.t_15_0: GET .tok 68
+.t_15_1: GET .tok 72
+.t_15_2: GET .tok 76
+.t_15_3: GET .tok 80
+.p15_dot: EQ .t_15_0 .TT_DOT
+.p15_id: EQ .t_15_1 .TT_ID
+.p15_colon: EQ .t_15_2 .TT_COLON
+.p15_a: AND .p15_dot .p15_id
+.p15_valid: AND .p15_a .p15_colon
+.p15_num: EQ .t_15_3 .TT_NUM
+.p15_str: EQ .t_15_3 .TT_STR
+.p15_is_lit: OR .p15_num .p15_str
+.p15_is_ref: EQ .t_15_3 .TT_DOT
+.p15_is_op: EQ .t_15_3 .TT_ID
+
+-- Position 16
+.t_16_0: GET .tok 72
+.t_16_1: GET .tok 76
+.t_16_2: GET .tok 80
+.t_16_3: GET .tok 84
+.p16_dot: EQ .t_16_0 .TT_DOT
+.p16_id: EQ .t_16_1 .TT_ID
+.p16_colon: EQ .t_16_2 .TT_COLON
+.p16_a: AND .p16_dot .p16_id
+.p16_valid: AND .p16_a .p16_colon
+.p16_num: EQ .t_16_3 .TT_NUM
+.p16_str: EQ .t_16_3 .TT_STR
+.p16_is_lit: OR .p16_num .p16_str
+.p16_is_ref: EQ .t_16_3 .TT_DOT
+.p16_is_op: EQ .t_16_3 .TT_ID
+
+-- Position 20
+.t_20_0: GET .tok 88
+.t_20_1: GET .tok 92
+.t_20_2: GET .tok 96
+.t_20_3: GET .tok 100
+.p20_dot: EQ .t_20_0 .TT_DOT
+.p20_id: EQ .t_20_1 .TT_ID
+.p20_colon: EQ .t_20_2 .TT_COLON
+.p20_a: AND .p20_dot .p20_id
+.p20_valid: AND .p20_a .p20_colon
+.p20_num: EQ .t_20_3 .TT_NUM
+.p20_str: EQ .t_20_3 .TT_STR
+.p20_is_lit: OR .p20_num .p20_str
+.p20_is_ref: EQ .t_20_3 .TT_DOT
+.p20_is_op: EQ .t_20_3 .TT_ID
+
+-- Position 21
+.t_21_0: GET .tok 92
+.t_21_1: GET .tok 96
+.t_21_2: GET .tok 100
+.t_21_3: GET .tok 104
+.p21_dot: EQ .t_21_0 .TT_DOT
+.p21_id: EQ .t_21_1 .TT_ID
+.p21_colon: EQ .t_21_2 .TT_COLON
+.p21_a: AND .p21_dot .p21_id
+.p21_valid: AND .p21_a .p21_colon
+.p21_num: EQ .t_21_3 .TT_NUM
+.p21_str: EQ .t_21_3 .TT_STR
+.p21_is_lit: OR .p21_num .p21_str
+.p21_is_ref: EQ .t_21_3 .TT_DOT
+.p21_is_op: EQ .t_21_3 .TT_ID
+
+-- Avoid double counting
+.p0_not: NOT .p0_valid
+.p5_not: NOT .p5_valid
+.p6_not: NOT .p6_valid
+.p10_not: NOT .p10_valid
+.p11_not: NOT .p11_valid
+.p15_not: NOT .p15_valid
+.p16_not: NOT .p16_valid
+.p20_not: NOT .p20_valid
+
+-- Count nodes
+.nc_0: ADD .p0_valid .zero
+.nc_5: AND .p5_valid .p0_not
+.nc_5_6: AND .p5_not .p0_not
+.nc_6: AND .p6_valid .nc_5_6
+.nc_10: AND .p10_valid .p6_not
+.nc_10_11: AND .p10_not .p6_not
+.nc_11: AND .p11_valid .nc_10_11
+.nc_15: AND .p15_valid .p11_not
+.nc_15_16: AND .p15_not .p11_not
+.nc_16: AND .p16_valid .nc_15_16
+.nc_20: AND .p20_valid .p16_not
+.nc_20_21: AND .p20_not .p16_not
+.nc_21: AND .p21_valid .nc_20_21
+
+-- Sum nodes
+.nc_a: ADD .nc_0 .nc_5
+.nc_b: ADD .nc_a .nc_6
+.nc_c: ADD .nc_b .nc_10
+.nc_d: ADD .nc_c .nc_11
+.nc_e: ADD .nc_d .nc_15
+.nc_f: ADD .nc_e .nc_16
+.nc_g: ADD .nc_f .nc_20
+.node_count: ADD .nc_g .nc_21
+
+-- Count literals
+.lc_0: AND .nc_0 .p0_is_lit
+.lc_5: AND .nc_5 .p5_is_lit
+.lc_6: AND .nc_6 .p6_is_lit
+.lc_10: AND .nc_10 .p10_is_lit
+.lc_11: AND .nc_11 .p11_is_lit
+.lc_15: AND .nc_15 .p15_is_lit
+.lc_16: AND .nc_16 .p16_is_lit
+.lc_20: AND .nc_20 .p20_is_lit
+.lc_21: AND .nc_21 .p21_is_lit
+.lc_a: ADD .lc_0 .lc_5
+.lc_b: ADD .lc_a .lc_6
+.lc_c: ADD .lc_b .lc_10
+.lc_d: ADD .lc_c .lc_11
+.lc_e: ADD .lc_d .lc_15
+.lc_f: ADD .lc_e .lc_16
+.lc_g: ADD .lc_f .lc_20
+.lit_count: ADD .lc_g .lc_21
+
+-- Count references
+.rc_0: AND .nc_0 .p0_is_ref
+.rc_5: AND .nc_5 .p5_is_ref
+.rc_6: AND .nc_6 .p6_is_ref
+.rc_10: AND .nc_10 .p10_is_ref
+.rc_11: AND .nc_11 .p11_is_ref
+.rc_15: AND .nc_15 .p15_is_ref
+.rc_16: AND .nc_16 .p16_is_ref
+.rc_20: AND .nc_20 .p20_is_ref
+.rc_21: AND .nc_21 .p21_is_ref
+.rc_a: ADD .rc_0 .rc_5
+.rc_b: ADD .rc_a .rc_6
+.rc_c: ADD .rc_b .rc_10
+.rc_d: ADD .rc_c .rc_11
+.rc_e: ADD .rc_d .rc_15
+.rc_f: ADD .rc_e .rc_16
+.rc_g: ADD .rc_f .rc_20
+.ref_count: ADD .rc_g .rc_21
+
+-- Count operations
+.oc_0: AND .nc_0 .p0_is_op
+.oc_5: AND .nc_5 .p5_is_op
+.oc_6: AND .nc_6 .p6_is_op
+.oc_10: AND .nc_10 .p10_is_op
+.oc_11: AND .nc_11 .p11_is_op
+.oc_15: AND .nc_15 .p15_is_op
+.oc_16: AND .nc_16 .p16_is_op
+.oc_20: AND .nc_20 .p20_is_op
+.oc_21: AND .nc_21 .p21_is_op
+.oc_a: ADD .oc_0 .oc_5
+.oc_b: ADD .oc_a .oc_6
+.oc_c: ADD .oc_b .oc_10
+.oc_d: ADD .oc_c .oc_11
+.oc_e: ADD .oc_d .oc_15
+.oc_f: ADD .oc_e .oc_16
+.oc_g: ADD .oc_f .oc_20
+.op_count: ADD .oc_g .oc_21
+
+-- Output
+.msg_valid: "\nParsed nodes: "
+.p7: PRT .msg_valid 15
+.n3: ITS .node_count .num_buf
+.p8: PRT .num_buf .n3
+.p9: PRT .nl 1
+
+.msg_lit: "  Literals: "
+.p10: PRT .msg_lit 12
+.n4: ITS .lit_count .num_buf
+.p11: PRT .num_buf .n4
+.p12: PRT .nl 1
+
+.msg_ref: "  References: "
+.p13: PRT .msg_ref 14
+.n5: ITS .ref_count .num_buf
+.p14: PRT .num_buf .n5
+.p15: PRT .nl 1
+
+.msg_op: "  Operations: "
+.p16: PRT .msg_op 14
+.n6: ITS .op_count .num_buf
+.p17: PRT .num_buf .n6
+.p18: PRT .nl 1
+
+.msg_done: "\nParser v0.13 complete.\n"
+.p19: PRT .msg_done 24
+
+.free1: FRE .num_buf
+.free2: FRE .src_buf
+
+!

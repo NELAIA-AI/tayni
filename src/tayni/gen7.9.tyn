@@ -1,0 +1,61 @@
+-- TAYNI Gen7.9 - Compiler que genera PE
+-- Basado en Gen7.5 que funciona + generacion de PE
+-- AI-Native: offsets calculados automaticamente
+-- Fecha: 2026-06-16
+
+.zero: 0
+.one: 1
+
+.exe: ALC 8192
+.out: ALC 4096
+
+-- Leer template para compiler
+.spath: "fileio2.exe.exe"
+.sh: FOP .spath .zero
+.slen: FRD .sh .exe 8192
+.sc: FCL .sh
+
+-- Leer template para output (mini.exe)
+.mpath: "mini.exe"
+.mh: FOP .mpath .zero
+.mlen: FRD .mh .out 4096
+.mc: FCL .mh
+
+-- Leer input
+.ipath: "input.tyn"
+.ih: FOP .ipath .zero
+.ibuf: ALC 32
+.ilen: FRD .ih .ibuf 32
+.ic: FCL .ih
+
+-- Parsear byte 4
+.vb: GET .ibuf 4
+.val: SUB .vb 48
+
+-- Modificar out: poner valor en offset 513
+.ov: PUT .out 513 .val
+
+-- Escribir out.exe
+.opath: "out.exe"
+.oh: FOP .opath .one
+.owlen: FWR .oh .out .mlen
+.oc: FCL .oh
+
+-- Output
+.hdr: "Gen7.9: Compilado -> out.exe\n"
+.p0: PRT .hdr 29
+
+.msg: "Valor: "
+.p1: PRT .msg 7
+.num: ALC 8
+.its: ITS .val .num
+.p2: PRT .num .its
+.nl: "\n"
+.p3: PRT .nl 1
+
+.f1: FRE .exe
+.f2: FRE .out
+.f3: FRE .ibuf
+.f4: FRE .num
+
+!

@@ -1,0 +1,86 @@
+-- TAYNI Compiler v0.1 - AI-Native
+-- Genera LLVM IR directamente desde código TAYNI
+-- Sin dependencia de parser Rust
+
+.zero: 0
+.one: 1
+.newline: 10
+
+.num_buf: ALC 32
+.src_buf: ALC 65536
+.out_buf: ALC 65536
+.out_pos: 0
+
+-- Header
+.header: "TAYNI Compiler v0.1 - AI-Native\n"
+.p0: PRT .header 32
+
+-- Read source
+.src_path: "input.tyn"
+.src_handle: FOP .src_path .zero
+.src_len: FRD .src_handle .src_buf 65536
+.close_src: FCL .src_handle
+
+.msg_src: "Source: "
+.p1: PRT .msg_src 8
+.n1: ITS .src_len .num_buf
+.p2: PRT .num_buf .n1
+.msg_bytes: " bytes\n"
+.p3: PRT .msg_bytes 7
+
+-- Parse
+.tok: FSM .src_buf .src_len
+.tok_count: GET .tok .zero
+
+.ast_result: AST .tok .tok_count
+.ast_ptr: GE8 .ast_result .zero
+.ast_count: GE8 .ast_result 8
+
+.msg_ast: "AST: "
+.pa1: PRT .msg_ast 5
+.na1: ITS .ast_count .num_buf
+.pa2: PRT .num_buf .na1
+.msg_nodes: " nodes\n"
+.pa3: PRT .msg_nodes 7
+
+-- Write LLVM IR header
+.llvm_header: "; TAYNI v0.1 AI-Native Compiler Output\ntarget triple = \"x86_64-pc-windows-msvc\"\n\ndeclare dllimport i8* @GetStdHandle(i32)\ndeclare dllimport i32 @WriteFile(i8*, i8*, i32, i32*, i8*)\ndeclare dllimport void @ExitProcess(i32)\ndeclare dllimport i8* @VirtualAlloc(i8*, i64, i32, i32)\ndeclare dllimport i32 @VirtualFree(i8*, i64, i32)\n\n@.one = private global i32 1\n@.stdout = private global i8* null\n@.bytes_read = private global i32 0\n\ndefine void @_init_io() {\n  %h = call i8* @GetStdHandle(i32 -11)\n  store i8* %h, i8** @.stdout\n  ret void\n}\n\ndefine i64 @sys_write(i32 %fd, i8* %buf, i64 %count) {\n  %h = load i8*, i8** @.stdout\n  %c32 = trunc i64 %count to i32\n  %written = alloca i32\n  store i32 0, i32* %written\n  call i32 @WriteFile(i8* %h, i8* %buf, i32 %c32, i32* %written, i8* null)\n  %w = load i32, i32* %written\n  %r = sext i32 %w to i64\n  ret i64 %r\n}\n\ndefine void @sys_exit(i32 %code) {\n  call void @ExitProcess(i32 %code)\n  unreachable\n}\n\ndefine i32 @TAYNI_main() {\nentry:\n"
+.hdr_len: 1050
+.w1: WRT .out_buf .out_pos .llvm_header .hdr_len
+.out_pos2: ADD .out_pos .hdr_len
+
+-- For each literal node, emit: %name = add i64 0, value\n
+-- EMT already does this but outputs TAYNI, we need LLVM IR
+-- For now, emit a simple test
+
+.test_line: "  %test = add i64 0, 42\n"
+.test_len: 25
+.w2: WRT .out_buf .out_pos2 .test_line .test_len
+.out_pos3: ADD .out_pos2 .test_len
+
+-- Write LLVM IR footer
+.llvm_footer: "  ret i32 0\n}\n\ndefine void @mainCRTStartup() {\n  call void @_init_io()\n  %r = call i32 @TAYNI_main()\n  call void @sys_exit(i32 %r)\n  unreachable\n}\n"
+.ftr_len: 148
+.w3: WRT .out_buf .out_pos3 .llvm_footer .ftr_len
+.out_pos4: ADD .out_pos3 .ftr_len
+
+-- Write output
+.out_path: "output.ll"
+.out_handle: FOP .out_path .one
+.write_len: FWR .out_handle .out_buf .out_pos4
+.close_out: FCL .out_handle
+
+.msg_wrote: "Wrote output.ll: "
+.pw1: PRT .msg_wrote 17
+.nw1: ITS .out_pos4 .num_buf
+.pw2: PRT .num_buf .nw1
+.pw3: PRT .msg_bytes 7
+
+.msg_done: "\nCompile with: clang output.ll -o output.exe\n"
+.pd: PRT .msg_done 46
+
+.free1: FRE .num_buf
+.free2: FRE .src_buf
+.free3: FRE .out_buf
+
+!

@@ -1,0 +1,19 @@
+-- Test FOP/FRD
+.zero: 0
+.buf: ALC 64
+.path: "input.tyn"
+.h: FOP .path .zero
+.len: FRD .h .buf 64
+.c: FCL .h
+
+.msg: "Read "
+.p0: PRT .msg 5
+.num: ALC 16
+.its: ITS .len .num
+.p1: PRT .num .its
+.msg2: " bytes\n"
+.p2: PRT .msg2 7
+
+.f1: FRE .buf
+.f2: FRE .num
+!

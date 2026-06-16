@@ -1,0 +1,56 @@
+-- TAYNI Gen2.3 - Copiar syscall.exe exacto + modificar
+-- Enfoque AI: copiar bytes que funcionan, modificar mínimo
+-- Fecha: 2026-06-16
+
+.zero: 0
+.one: 1
+
+.exe: ALC 4096
+
+-- ============================================
+-- COPIAR syscall.exe BYTE POR BYTE
+-- Solo modificar el código y agregar imports
+-- ============================================
+
+-- Leer syscall.exe
+.spath: "syscall.exe"
+.sh: FOP .spath .zero
+.slen: FRD .sh .exe 4096
+.sc: FCL .sh
+
+-- Ahora .exe contiene syscall.exe exacto
+-- Solo necesito modificar:
+-- 1. El código en 0x400
+-- 2. La import table en 0x800
+
+-- ============================================
+-- MODIFICAR CÓDIGO (0x400)
+-- Original: sub rsp,40; xor ecx,ecx; call ExitProcess
+-- Nuevo: imprimir "OK" y salir
+-- ============================================
+
+-- Por ahora, solo cambiar el exit code a 42
+-- mov ecx, 42 en lugar de xor ecx,ecx
+-- B9 2A 00 00 00 en lugar de 31 C9
+
+.c4: PUT .exe 1028 185
+.c5: PUT .exe 1029 42
+.c6: PUT .exe 1030 0
+.c7: PUT .exe 1031 0
+.c8: PUT .exe 1032 0
+
+-- ============================================
+-- ESCRIBIR
+-- ============================================
+
+.opath: "test42.exe"
+.oh: FOP .opath .one
+.wlen: FWR .oh .exe .slen
+.oc: FCL .oh
+
+.hdr: "Gen2.3: test42.exe (exit 42)\n"
+.p0: PRT .hdr 29
+
+.f1: FRE .exe
+
+!

@@ -486,8 +486,16 @@ pub enum Op {
     Trn,  // TRN input rule -> apply rule to each element, return vector
     // Finite State Machine
     Fsm,  // FSM input len rules -> tokenize with state machine
+    // Parse Scan - AI-native token pattern scanner
+    Psc,  // PSC tokens count -> scan for DOT-ID-COLON patterns, return [total, lits, refs, ops]
+    // AST Builder - AI-native AST generator
+    Ast,  // AST tokens count -> build AST from tokens, return [ast_ptr, node_count]
+    // Code Emitter - AI-native code generator
+    Emt,  // EMT ast_ptr node_count src_buf out_buf -> emit code, return bytes written
     // Effects (I/O)
     Prt, Inp, Opn, Acc, Get, Put, Cls, Err,
+    // Read i64 from memory
+    Ge8,  // GE8 ptr offset -> read i64
     // Network
     Tcp, Udp, Bnd, Lst, Con, Xmt, Rcv,
     // Async I/O
@@ -536,6 +544,8 @@ pub enum Op {
     Scm,  // SCM str1 str2 len -> 0 if equal, non-zero if different
     Wrt,  // WRT dst pos src len -> write src to dst at pos, returns pos+len
     Ifz,  // IFZ cond val_zero val_nonzero -> select value based on cond
+    // Graph Transform (AI-native iteration) - Trn already defined above
+    Red,  // RED input op init -> reduce input using op, starting with init
     // Error handling
     Chk,
     // GUI - Window Management

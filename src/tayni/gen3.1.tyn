@@ -1,0 +1,280 @@
+-- TAYNI Gen3.1 - PE que lee archivo y lo imprime
+-- Lee test.txt y lo imprime a stdout
+-- Usa fileio2.exe.exe como template
+-- Fecha: 2026-06-16
+
+.zero: 0
+.one: 1
+
+.exe: ALC 8192
+
+-- Leer fileio2.exe.exe (tiene CreateFileA, ReadFile, WriteFile, etc.)
+.spath: "fileio2.exe.exe"
+.sh: FOP .spath .zero
+.slen: FRD .sh .exe 8192
+.sc: FCL .sh
+
+-- IAT en fileio2.exe.exe:
+--   0x2000: GetStdHandle
+--   0x2008: WriteFile
+--   0x2010: ExitProcess
+--   0x2018: VirtualAlloc
+--   0x2020: CreateFileA
+--   0x2028: ReadFile
+--   0x2030: CloseHandle
+
+-- Data section at 0xC00 (RVA 0x3000) ya tiene "test.txt"
+
+-- Código:
+-- 1. CreateFileA("test.txt", GENERIC_READ, 0, NULL, OPEN_EXISTING, 0, NULL)
+-- 2. ReadFile(handle, buffer, 64, &bytesRead, NULL)
+-- 3. GetStdHandle(-11)
+-- 4. WriteFile(stdout, buffer, bytesRead, &written, NULL)
+-- 5. CloseHandle(file)
+-- 6. ExitProcess(0)
+
+-- sub rsp, 88 (0x58) - más espacio para variables locales
+.c0: PUT .exe 512 72
+.c1: PUT .exe 513 131
+.c2: PUT .exe 514 236
+.c3: PUT .exe 515 88
+
+-- ===== CreateFileA =====
+-- lea rcx, [rip+path] ; path at RVA 0x3000
+-- LEA at RVA 0x1004, after (7 bytes) RIP = 0x100B
+-- disp = 0x3000 - 0x100B = 0x1FF5
+.c4: PUT .exe 516 72
+.c5: PUT .exe 517 141
+.c6: PUT .exe 518 13
+.c7: PUT .exe 519 245
+.c8: PUT .exe 520 31
+.c9: PUT .exe 521 0
+.ca: PUT .exe 522 0
+
+-- mov edx, 0x80000000 (GENERIC_READ)
+.cb: PUT .exe 523 186
+.cc: PUT .exe 524 0
+.cd: PUT .exe 525 0
+.ce: PUT .exe 526 0
+.cf: PUT .exe 527 128
+
+-- xor r8d, r8d (dwShareMode = 0)
+.c10: PUT .exe 528 69
+.c11: PUT .exe 529 49
+.c12: PUT .exe 530 192
+
+-- xor r9d, r9d (lpSecurityAttributes = NULL)
+.c13: PUT .exe 531 69
+.c14: PUT .exe 532 49
+.c15: PUT .exe 533 201
+
+-- mov qword [rsp+32], 3 (OPEN_EXISTING)
+.c16: PUT .exe 534 72
+.c17: PUT .exe 535 199
+.c18: PUT .exe 536 68
+.c19: PUT .exe 537 36
+.c1a: PUT .exe 538 32
+.c1b: PUT .exe 539 3
+.c1c: PUT .exe 540 0
+.c1d: PUT .exe 541 0
+.c1e: PUT .exe 542 0
+
+-- mov qword [rsp+40], 0 (dwFlagsAndAttributes)
+.c1f: PUT .exe 543 72
+.c20: PUT .exe 544 199
+.c21: PUT .exe 545 68
+.c22: PUT .exe 546 36
+.c23: PUT .exe 547 40
+.c24: PUT .exe 548 0
+.c25: PUT .exe 549 0
+.c26: PUT .exe 550 0
+.c27: PUT .exe 551 0
+
+-- mov qword [rsp+48], 0 (hTemplateFile = NULL)
+.c28: PUT .exe 552 72
+.c29: PUT .exe 553 199
+.c2a: PUT .exe 554 68
+.c2b: PUT .exe 555 36
+.c2c: PUT .exe 556 48
+.c2d: PUT .exe 557 0
+.c2e: PUT .exe 558 0
+.c2f: PUT .exe 559 0
+.c30: PUT .exe 560 0
+
+-- call [CreateFileA] at IAT 0x2020
+-- Instruction at RVA 0x1031, after (6 bytes) RIP = 0x1037
+-- disp = 0x2020 - 0x1037 = 0x0FE9
+.c31: PUT .exe 561 255
+.c32: PUT .exe 562 21
+.c33: PUT .exe 563 233
+.c34: PUT .exe 564 15
+.c35: PUT .exe 565 0
+.c36: PUT .exe 566 0
+
+-- mov [rsp+80], rax (save file handle)
+.c37: PUT .exe 567 72
+.c38: PUT .exe 568 137
+.c39: PUT .exe 569 68
+.c3a: PUT .exe 570 36
+.c3b: PUT .exe 571 80
+
+-- ===== ReadFile =====
+-- mov rcx, rax (file handle)
+.c3c: PUT .exe 572 72
+.c3d: PUT .exe 573 137
+.c3e: PUT .exe 574 193
+
+-- lea rdx, [rsp+56] (buffer on stack)
+.c3f: PUT .exe 575 72
+.c40: PUT .exe 576 141
+.c41: PUT .exe 577 84
+.c42: PUT .exe 578 36
+.c43: PUT .exe 579 56
+
+-- mov r8d, 24 (nNumberOfBytesToRead)
+.c44: PUT .exe 580 65
+.c45: PUT .exe 581 184
+.c46: PUT .exe 582 24
+.c47: PUT .exe 583 0
+.c48: PUT .exe 584 0
+.c49: PUT .exe 585 0
+
+-- lea r9, [rsp+72] (lpNumberOfBytesRead)
+.c4a: PUT .exe 586 76
+.c4b: PUT .exe 587 141
+.c4c: PUT .exe 588 76
+.c4d: PUT .exe 589 36
+.c4e: PUT .exe 590 72
+
+-- mov qword [rsp+32], 0 (lpOverlapped = NULL)
+.c4f: PUT .exe 591 72
+.c50: PUT .exe 592 199
+.c51: PUT .exe 593 68
+.c52: PUT .exe 594 36
+.c53: PUT .exe 595 32
+.c54: PUT .exe 596 0
+.c55: PUT .exe 597 0
+.c56: PUT .exe 598 0
+.c57: PUT .exe 599 0
+
+-- call [ReadFile] at IAT 0x2028
+-- Instruction at RVA 0x1058, after (6 bytes) RIP = 0x105E
+-- disp = 0x2028 - 0x105E = 0x0FCA
+.c58: PUT .exe 600 255
+.c59: PUT .exe 601 21
+.c5a: PUT .exe 602 202
+.c5b: PUT .exe 603 15
+.c5c: PUT .exe 604 0
+.c5d: PUT .exe 605 0
+
+-- ===== GetStdHandle =====
+-- mov ecx, -11 (STD_OUTPUT_HANDLE)
+.c5e: PUT .exe 606 185
+.c5f: PUT .exe 607 245
+.c60: PUT .exe 608 255
+.c61: PUT .exe 609 255
+.c62: PUT .exe 610 255
+
+-- call [GetStdHandle] at IAT 0x2000
+-- Instruction at RVA 0x1063, after (6 bytes) RIP = 0x1069
+-- disp = 0x2000 - 0x1069 = 0x0F97
+.c63: PUT .exe 611 255
+.c64: PUT .exe 612 21
+.c65: PUT .exe 613 151
+.c66: PUT .exe 614 15
+.c67: PUT .exe 615 0
+.c68: PUT .exe 616 0
+
+-- ===== WriteFile =====
+-- mov rcx, rax (stdout handle)
+.c69: PUT .exe 617 72
+.c6a: PUT .exe 618 137
+.c6b: PUT .exe 619 193
+
+-- lea rdx, [rsp+56] (buffer)
+.c6c: PUT .exe 620 72
+.c6d: PUT .exe 621 141
+.c6e: PUT .exe 622 84
+.c6f: PUT .exe 623 36
+.c70: PUT .exe 624 56
+
+-- mov r8d, [rsp+72] (bytesRead)
+.c71: PUT .exe 625 68
+.c72: PUT .exe 626 139
+.c73: PUT .exe 627 68
+.c74: PUT .exe 628 36
+.c75: PUT .exe 629 72
+
+-- lea r9, [rsp+76] (lpNumberOfBytesWritten)
+.c76: PUT .exe 630 76
+.c77: PUT .exe 631 141
+.c78: PUT .exe 632 76
+.c79: PUT .exe 633 36
+.c7a: PUT .exe 634 76
+
+-- mov qword [rsp+32], 0 (lpOverlapped = NULL)
+.c7b: PUT .exe 635 72
+.c7c: PUT .exe 636 199
+.c7d: PUT .exe 637 68
+.c7e: PUT .exe 638 36
+.c7f: PUT .exe 639 32
+.c80: PUT .exe 640 0
+.c81: PUT .exe 641 0
+.c82: PUT .exe 642 0
+.c83: PUT .exe 643 0
+
+-- call [WriteFile] at IAT 0x2008
+-- Instruction at RVA 0x1084, after (6 bytes) RIP = 0x108A
+-- disp = 0x2008 - 0x108A = 0x0F7E
+.c84: PUT .exe 644 255
+.c85: PUT .exe 645 21
+.c86: PUT .exe 646 126
+.c87: PUT .exe 647 15
+.c88: PUT .exe 648 0
+.c89: PUT .exe 649 0
+
+-- ===== CloseHandle =====
+-- mov rcx, [rsp+80] (file handle)
+.c8a: PUT .exe 650 72
+.c8b: PUT .exe 651 139
+.c8c: PUT .exe 652 76
+.c8d: PUT .exe 653 36
+.c8e: PUT .exe 654 80
+
+-- call [CloseHandle] at IAT 0x2030
+-- Instruction at RVA 0x108F, after (6 bytes) RIP = 0x1095
+-- disp = 0x2030 - 0x1095 = 0x0F9B
+.c8f: PUT .exe 655 255
+.c90: PUT .exe 656 21
+.c91: PUT .exe 657 155
+.c92: PUT .exe 658 15
+.c93: PUT .exe 659 0
+.c94: PUT .exe 660 0
+
+-- ===== ExitProcess =====
+-- xor ecx, ecx (exit code 0)
+.c95: PUT .exe 661 49
+.c96: PUT .exe 662 201
+
+-- call [ExitProcess] at IAT 0x2010
+-- Instruction at RVA 0x1097, after (6 bytes) RIP = 0x109D
+-- disp = 0x2010 - 0x109D = 0x0F73
+.c97: PUT .exe 663 255
+.c98: PUT .exe 664 21
+.c99: PUT .exe 665 115
+.c9a: PUT .exe 666 15
+.c9b: PUT .exe 667 0
+.c9c: PUT .exe 668 0
+
+-- Escribir
+.opath: "gen31.exe"
+.oh: FOP .opath .one
+.wlen: FWR .oh .exe .slen
+.oc: FCL .oh
+
+.hdr: "Gen3.1: gen31.exe\n"
+.p0: PRT .hdr 18
+
+.f1: FRE .exe
+
+!

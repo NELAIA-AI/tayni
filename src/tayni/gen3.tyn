@@ -1,0 +1,152 @@
+-- TAYNI Gen3 - PE con File I/O completo
+-- Lee test.txt y lo imprime
+-- Usa fileio2.exe.exe como template (tiene todos los imports)
+-- Fecha: 2026-06-16
+
+.zero: 0
+.one: 1
+
+.exe: ALC 8192
+
+-- Leer fileio2.exe.exe (tiene CreateFileA, ReadFile, WriteFile, etc.)
+.spath: "fileio2.exe.exe"
+.sh: FOP .spath .zero
+.slen: FRD .sh .exe 8192
+.sc: FCL .sh
+
+-- Entry point está en file offset 0x200 (RVA 0x1000)
+-- IAT:
+--   0x2000: GetStdHandle
+--   0x2008: WriteFile
+--   0x2010: ExitProcess
+--   0x2018: VirtualAlloc
+--   0x2020: CreateFileA
+--   0x2028: ReadFile
+--   0x2030: CloseHandle
+
+-- Nuevo código simplificado:
+-- 1. GetStdHandle(-11) -> handle
+-- 2. WriteFile(handle, "OK\n", 3, &written, NULL)
+-- 3. ExitProcess(0)
+
+-- sub rsp, 56
+.c0: PUT .exe 512 72
+.c1: PUT .exe 513 131
+.c2: PUT .exe 514 236
+.c3: PUT .exe 515 56
+
+-- mov ecx, -11 (STD_OUTPUT_HANDLE)
+.c4: PUT .exe 516 185
+.c5: PUT .exe 517 245
+.c6: PUT .exe 518 255
+.c7: PUT .exe 519 255
+.c8: PUT .exe 520 255
+
+-- call [GetStdHandle] at IAT 0x2000
+-- Instruction at file 0x209 = RVA 0x1009
+-- After FF 15 xx xx xx xx, RIP = 0x100F
+-- Target = 0x2000
+-- disp = 0x2000 - 0x100F = 0x0FF1
+.c9: PUT .exe 521 255
+.ca: PUT .exe 522 21
+.cb: PUT .exe 523 241
+.cc: PUT .exe 524 15
+.cd: PUT .exe 525 0
+.ce: PUT .exe 526 0
+
+-- mov [rsp+48], rax (save handle)
+.c10: PUT .exe 527 72
+.c11: PUT .exe 528 137
+.c12: PUT .exe 529 68
+.c13: PUT .exe 530 36
+.c14: PUT .exe 531 48
+
+-- mov rcx, rax (handle for WriteFile)
+.c15: PUT .exe 532 72
+.c16: PUT .exe 533 137
+.c17: PUT .exe 534 193
+
+-- lea rdx, [rip+offset_to_msg]
+-- LEA at file 0x217 = RVA 0x1017
+-- After LEA (7 bytes), RIP = 0x101E
+-- msg at RVA 0x1060 (file 0x260)
+-- disp = 0x1060 - 0x101E = 0x42
+.c18: PUT .exe 535 72
+.c19: PUT .exe 536 141
+.c1a: PUT .exe 537 21
+.c1b: PUT .exe 538 66
+.c1c: PUT .exe 539 0
+.c1d: PUT .exe 540 0
+.c1e: PUT .exe 541 0
+
+-- mov r8d, 3 (length)
+.c1f: PUT .exe 542 65
+.c20: PUT .exe 543 184
+.c21: PUT .exe 544 3
+.c22: PUT .exe 545 0
+.c23: PUT .exe 546 0
+.c24: PUT .exe 547 0
+
+-- lea r9, [rsp+40] (lpNumberOfBytesWritten)
+.c25: PUT .exe 548 76
+.c26: PUT .exe 549 141
+.c27: PUT .exe 550 76
+.c28: PUT .exe 551 36
+.c29: PUT .exe 552 40
+
+-- mov qword [rsp+32], 0 (lpOverlapped = NULL)
+.c2a: PUT .exe 553 72
+.c2b: PUT .exe 554 199
+.c2c: PUT .exe 555 68
+.c2d: PUT .exe 556 36
+.c2e: PUT .exe 557 32
+.c2f: PUT .exe 558 0
+.c30: PUT .exe 559 0
+.c31: PUT .exe 560 0
+.c32: PUT .exe 561 0
+
+-- call [WriteFile] at IAT 0x2008
+-- Instruction at file 0x232 = RVA 0x1032
+-- After FF 15 xx xx xx xx, RIP = 0x1038
+-- Target = 0x2008
+-- disp = 0x2008 - 0x1038 = 0x0FD0
+.c33: PUT .exe 562 255
+.c34: PUT .exe 563 21
+.c35: PUT .exe 564 208
+.c36: PUT .exe 565 15
+.c37: PUT .exe 566 0
+.c38: PUT .exe 567 0
+
+-- xor ecx, ecx (exit code 0)
+.c39: PUT .exe 568 49
+.c3a: PUT .exe 569 201
+
+-- call [ExitProcess] at IAT 0x2010
+-- Instruction at file 0x23A = RVA 0x103A
+-- After FF 15 xx xx xx xx, RIP = 0x1040
+-- Target = 0x2010
+-- disp = 0x2010 - 0x1040 = 0x0FD0
+.c3b: PUT .exe 570 255
+.c3c: PUT .exe 571 21
+.c3d: PUT .exe 572 208
+.c3e: PUT .exe 573 15
+.c3f: PUT .exe 574 0
+.c40: PUT .exe 575 0
+
+-- Message "OK\n" at file 0x260 (RVA 0x1060)
+.m0: PUT .exe 608 79
+.m1: PUT .exe 609 75
+.m2: PUT .exe 610 10
+
+-- Escribir
+.opath: "gen3.exe"
+.oh: FOP .opath .one
+.wlen: FWR .oh .exe .slen
+.oc: FCL .oh
+
+.hdr: "Gen3: gen3.exe\n"
+.p0: PRT .hdr 15
+
+.f1: FRE .exe
+
+!

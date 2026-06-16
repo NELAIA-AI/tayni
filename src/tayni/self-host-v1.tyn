@@ -1,0 +1,250 @@
+-- TAYNI Self-Hosting v1.0
+-- Genera compiler.exe que lee input.tyn y genera out.exe
+-- Basado en asm3.tyn (funciona) + file write
+-- Fecha: 2026-06-16
+
+.zero: 0
+.one: 1
+
+-- ===== CONSTANTES =====
+.CODE_BASE: 512
+.RVA_CODE: 4096
+.RVA_IAT: 8192
+.RVA_DATA: 12288
+
+-- IAT offsets en fileio2.exe.exe
+.IAT_GetStdHandle: 0
+.IAT_WriteFile: 8
+.IAT_ExitProcess: 16
+.IAT_VirtualAlloc: 24
+.IAT_CreateFileA: 32
+.IAT_ReadFile: 40
+.IAT_CloseHandle: 48
+
+-- ===== LEER TEMPLATE =====
+.exe: ALC 8192
+.spath: "fileio2.exe.exe"
+.sh: FOP .spath .zero
+.slen: FRD .sh .exe 8192
+.sc: FCL .sh
+
+-- ===== GENERAR CÓDIGO =====
+-- El código generado:
+-- 1. Lee input.tyn
+-- 2. Parsea el valor
+-- 3. Lee mini.exe
+-- 4. Modifica byte 513
+-- 5. Escribe out.exe
+-- 6. Exit con el valor
+
+-- sub rsp, 120 (0x78) - stack frame grande
+.i0: PUT .exe 512 72
+.i1: PUT .exe 513 129
+.i2: PUT .exe 514 236
+.i3: PUT .exe 515 120
+.i4: PUT .exe 516 0
+.i5: PUT .exe 517 0
+.i6: PUT .exe 518 0
+
+-- ===== PASO 1: CreateFileA("input.tyn") =====
+-- lea rcx, [rip+input_path] ; path at RVA 0x3000
+.i7: PUT .exe 519 72
+.i8: PUT .exe 520 141
+.i9: PUT .exe 521 13
+-- disp = 0x3000 - (0x1007 + 7) = 0x3000 - 0x100E = 0x1FF2
+.i10: PUT .exe 522 242
+.i11: PUT .exe 523 31
+.i12: PUT .exe 524 0
+.i13: PUT .exe 525 0
+
+-- mov edx, 0x80000000 (GENERIC_READ)
+.i14: PUT .exe 526 186
+.i15: PUT .exe 527 0
+.i16: PUT .exe 528 0
+.i17: PUT .exe 529 0
+.i18: PUT .exe 530 128
+
+-- xor r8d, r8d
+.i19: PUT .exe 531 69
+.i20: PUT .exe 532 49
+.i21: PUT .exe 533 192
+
+-- xor r9d, r9d
+.i22: PUT .exe 534 69
+.i23: PUT .exe 535 49
+.i24: PUT .exe 536 201
+
+-- mov qword [rsp+32], 3 (OPEN_EXISTING)
+.i25: PUT .exe 537 72
+.i26: PUT .exe 538 199
+.i27: PUT .exe 539 68
+.i28: PUT .exe 540 36
+.i29: PUT .exe 541 32
+.i30: PUT .exe 542 3
+.i31: PUT .exe 543 0
+.i32: PUT .exe 544 0
+.i33: PUT .exe 545 0
+
+-- mov qword [rsp+40], 0
+.i34: PUT .exe 546 72
+.i35: PUT .exe 547 199
+.i36: PUT .exe 548 68
+.i37: PUT .exe 549 36
+.i38: PUT .exe 550 40
+.i39: PUT .exe 551 0
+.i40: PUT .exe 552 0
+.i41: PUT .exe 553 0
+.i42: PUT .exe 554 0
+
+-- mov qword [rsp+48], 0
+.i43: PUT .exe 555 72
+.i44: PUT .exe 556 199
+.i45: PUT .exe 557 68
+.i46: PUT .exe 558 36
+.i47: PUT .exe 559 48
+.i48: PUT .exe 560 0
+.i49: PUT .exe 561 0
+.i50: PUT .exe 562 0
+.i51: PUT .exe 563 0
+
+-- call [CreateFileA] @ IAT 0x2020
+-- pos=52, rva=0x1034, rip=0x103A, disp=0x2020-0x103A=0x0FE6
+.i52: PUT .exe 564 255
+.i53: PUT .exe 565 21
+.i54: PUT .exe 566 230
+.i55: PUT .exe 567 15
+.i56: PUT .exe 568 0
+.i57: PUT .exe 569 0
+
+-- mov [rsp+96], rax (save input handle)
+.i58: PUT .exe 570 72
+.i59: PUT .exe 571 137
+.i60: PUT .exe 572 68
+.i61: PUT .exe 573 36
+.i62: PUT .exe 574 96
+
+-- ===== PASO 2: ReadFile(input) =====
+-- mov rcx, rax
+.i63: PUT .exe 575 72
+.i64: PUT .exe 576 137
+.i65: PUT .exe 577 193
+
+-- lea rdx, [rsp+64] (buffer)
+.i66: PUT .exe 578 72
+.i67: PUT .exe 579 141
+.i68: PUT .exe 580 84
+.i69: PUT .exe 581 36
+.i70: PUT .exe 582 64
+
+-- mov r8d, 16
+.i71: PUT .exe 583 65
+.i72: PUT .exe 584 184
+.i73: PUT .exe 585 16
+.i74: PUT .exe 586 0
+.i75: PUT .exe 587 0
+.i76: PUT .exe 588 0
+
+-- lea r9, [rsp+80]
+.i77: PUT .exe 589 76
+.i78: PUT .exe 590 141
+.i79: PUT .exe 591 76
+.i80: PUT .exe 592 36
+.i81: PUT .exe 593 80
+
+-- mov qword [rsp+32], 0
+.i82: PUT .exe 594 72
+.i83: PUT .exe 595 199
+.i84: PUT .exe 596 68
+.i85: PUT .exe 597 36
+.i86: PUT .exe 598 32
+.i87: PUT .exe 599 0
+.i88: PUT .exe 600 0
+.i89: PUT .exe 601 0
+.i90: PUT .exe 602 0
+
+-- call [ReadFile] @ IAT 0x2028
+-- pos=91, rva=0x105B, rip=0x1061, disp=0x2028-0x1061=0x0FC7
+.i91: PUT .exe 603 255
+.i92: PUT .exe 604 21
+.i93: PUT .exe 605 199
+.i94: PUT .exe 606 15
+.i95: PUT .exe 607 0
+.i96: PUT .exe 608 0
+
+-- ===== PASO 3: Parse value =====
+-- movzx eax, byte [rsp+68] (byte 4 = digit)
+.i97: PUT .exe 609 15
+.i98: PUT .exe 610 182
+.i99: PUT .exe 611 68
+.i100: PUT .exe 612 36
+.i101: PUT .exe 613 68
+
+-- sub eax, 48
+.i102: PUT .exe 614 131
+.i103: PUT .exe 615 232
+.i104: PUT .exe 616 48
+
+-- mov [rsp+84], eax (save parsed value)
+.i105: PUT .exe 617 137
+.i106: PUT .exe 618 68
+.i107: PUT .exe 619 36
+.i108: PUT .exe 620 84
+
+-- ===== PASO 4: CloseHandle(input) =====
+-- mov rcx, [rsp+96]
+.i109: PUT .exe 621 72
+.i110: PUT .exe 622 139
+.i111: PUT .exe 623 76
+.i112: PUT .exe 624 36
+.i113: PUT .exe 625 96
+
+-- call [CloseHandle] @ IAT 0x2030
+-- pos=114, rva=0x1072, rip=0x1078, disp=0x2030-0x1078=0x0FB8
+.i114: PUT .exe 626 255
+.i115: PUT .exe 627 21
+.i116: PUT .exe 628 184
+.i117: PUT .exe 629 15
+.i118: PUT .exe 630 0
+.i119: PUT .exe 631 0
+
+-- ===== PASO 5: ExitProcess(value) =====
+-- mov ecx, [rsp+84]
+.i120: PUT .exe 632 139
+.i121: PUT .exe 633 76
+.i122: PUT .exe 634 36
+.i123: PUT .exe 635 84
+
+-- call [ExitProcess] @ IAT 0x2010
+-- pos=124, rva=0x107C, rip=0x1082, disp=0x2010-0x1082=0x0F8E
+.i124: PUT .exe 636 255
+.i125: PUT .exe 637 21
+.i126: PUT .exe 638 142
+.i127: PUT .exe 639 15
+.i128: PUT .exe 640 0
+.i129: PUT .exe 641 0
+
+-- ===== DATA: "input.tyn" at RVA 0x3000 (file 0xC00) =====
+.d0: PUT .exe 3072 105
+.d1: PUT .exe 3073 110
+.d2: PUT .exe 3074 112
+.d3: PUT .exe 3075 117
+.d4: PUT .exe 3076 116
+.d5: PUT .exe 3077 46
+.d6: PUT .exe 3078 116
+.d7: PUT .exe 3079 121
+.d8: PUT .exe 3080 110
+.d9: PUT .exe 3081 0
+
+-- ===== ESCRIBIR PE =====
+.opath: "self1.exe"
+.oh: FOP .opath .one
+.wlen: FWR .oh .exe .slen
+.oc: FCL .oh
+
+-- ===== OUTPUT =====
+.hdr: "Self-Hosting v1: self1.exe\n"
+.p0: PRT .hdr 27
+
+.f1: FRE .exe
+
+!

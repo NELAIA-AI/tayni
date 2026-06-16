@@ -1,0 +1,242 @@
+-- TAYNI Gen0.1 - Tokenizador TAYNI Puro
+-- Sin FSM de Rust - Clasificación manual de bytes
+-- Límite: 64 bytes de input
+-- Fecha: 2026-06-16
+
+-- ============================================
+-- CONSTANTES
+-- ============================================
+
+.zero: 0
+.one: 1
+
+-- Códigos ASCII
+.ASCII_DOT: 46
+.ASCII_COLON: 58
+.ASCII_NL: 10
+.ASCII_SPACE: 32
+.ASCII_TAB: 9
+.ASCII_a: 97
+.ASCII_z: 122
+.ASCII_A: 65
+.ASCII_Z: 90
+.ASCII_0: 48
+.ASCII_9: 57
+.ASCII_UNDERSCORE: 95
+
+-- Tipos de token
+.T_OTHER: 0
+.T_DOT: 1
+.T_COLON: 2
+.T_ID: 3
+.T_NUM: 4
+
+-- ============================================
+-- BUFFERS
+-- ============================================
+
+.src_buf: ALC 256
+.num_buf: ALC 32
+
+-- ============================================
+-- LEER ARCHIVO
+-- ============================================
+
+.src_path: "input.tyn"
+.src_handle: FOP .src_path .zero
+.src_len: FRD .src_handle .src_buf 256
+.close_src: FCL .src_handle
+
+-- ============================================
+-- CLASIFICAR CADA BYTE (desenrollado)
+-- ============================================
+
+-- Byte 0
+.b0: GET .src_buf 0
+.b0_is_dot: EQ .b0 .ASCII_DOT
+.b0_is_colon: EQ .b0 .ASCII_COLON
+.b0_ge_a: GE .b0 .ASCII_a
+.b0_le_z: LE .b0 .ASCII_z
+.b0_is_lower: MUL .b0_ge_a .b0_le_z
+.b0_ge_A: GE .b0 .ASCII_A
+.b0_le_Z: LE .b0 .ASCII_Z
+.b0_is_upper: MUL .b0_ge_A .b0_le_Z
+.b0_is_alpha: ADD .b0_is_lower .b0_is_upper
+.b0_ge_0: GE .b0 .ASCII_0
+.b0_le_9: LE .b0 .ASCII_9
+.b0_is_digit: MUL .b0_ge_0 .b0_le_9
+-- Tipo: DOT=1, COLON=2, ALPHA=3, DIGIT=4
+.b0_t1: MUL .b0_is_dot .T_DOT
+.b0_t2: MUL .b0_is_colon .T_COLON
+.b0_t3: MUL .b0_is_alpha .T_ID
+.b0_t4: MUL .b0_is_digit .T_NUM
+.b0_type_a: ADD .b0_t1 .b0_t2
+.b0_type_b: ADD .b0_type_a .b0_t3
+.b0_type: ADD .b0_type_b .b0_t4
+
+-- Byte 1
+.b1: GET .src_buf 1
+.b1_is_dot: EQ .b1 .ASCII_DOT
+.b1_is_colon: EQ .b1 .ASCII_COLON
+.b1_ge_a: GE .b1 .ASCII_a
+.b1_le_z: LE .b1 .ASCII_z
+.b1_is_lower: MUL .b1_ge_a .b1_le_z
+.b1_ge_A: GE .b1 .ASCII_A
+.b1_le_Z: LE .b1 .ASCII_Z
+.b1_is_upper: MUL .b1_ge_A .b1_le_Z
+.b1_is_alpha: ADD .b1_is_lower .b1_is_upper
+.b1_ge_0: GE .b1 .ASCII_0
+.b1_le_9: LE .b1 .ASCII_9
+.b1_is_digit: MUL .b1_ge_0 .b1_le_9
+.b1_t1: MUL .b1_is_dot .T_DOT
+.b1_t2: MUL .b1_is_colon .T_COLON
+.b1_t3: MUL .b1_is_alpha .T_ID
+.b1_t4: MUL .b1_is_digit .T_NUM
+.b1_type_a: ADD .b1_t1 .b1_t2
+.b1_type_b: ADD .b1_type_a .b1_t3
+.b1_type: ADD .b1_type_b .b1_t4
+
+-- Byte 2
+.b2: GET .src_buf 2
+.b2_is_dot: EQ .b2 .ASCII_DOT
+.b2_is_colon: EQ .b2 .ASCII_COLON
+.b2_ge_a: GE .b2 .ASCII_a
+.b2_le_z: LE .b2 .ASCII_z
+.b2_is_lower: MUL .b2_ge_a .b2_le_z
+.b2_ge_A: GE .b2 .ASCII_A
+.b2_le_Z: LE .b2 .ASCII_Z
+.b2_is_upper: MUL .b2_ge_A .b2_le_Z
+.b2_is_alpha: ADD .b2_is_lower .b2_is_upper
+.b2_ge_0: GE .b2 .ASCII_0
+.b2_le_9: LE .b2 .ASCII_9
+.b2_is_digit: MUL .b2_ge_0 .b2_le_9
+.b2_t1: MUL .b2_is_dot .T_DOT
+.b2_t2: MUL .b2_is_colon .T_COLON
+.b2_t3: MUL .b2_is_alpha .T_ID
+.b2_t4: MUL .b2_is_digit .T_NUM
+.b2_type_a: ADD .b2_t1 .b2_t2
+.b2_type_b: ADD .b2_type_a .b2_t3
+.b2_type: ADD .b2_type_b .b2_t4
+
+-- Byte 3
+.b3: GET .src_buf 3
+.b3_is_dot: EQ .b3 .ASCII_DOT
+.b3_is_colon: EQ .b3 .ASCII_COLON
+.b3_ge_a: GE .b3 .ASCII_a
+.b3_le_z: LE .b3 .ASCII_z
+.b3_is_lower: MUL .b3_ge_a .b3_le_z
+.b3_ge_A: GE .b3 .ASCII_A
+.b3_le_Z: LE .b3 .ASCII_Z
+.b3_is_upper: MUL .b3_ge_A .b3_le_Z
+.b3_is_alpha: ADD .b3_is_lower .b3_is_upper
+.b3_ge_0: GE .b3 .ASCII_0
+.b3_le_9: LE .b3 .ASCII_9
+.b3_is_digit: MUL .b3_ge_0 .b3_le_9
+.b3_t1: MUL .b3_is_dot .T_DOT
+.b3_t2: MUL .b3_is_colon .T_COLON
+.b3_t3: MUL .b3_is_alpha .T_ID
+.b3_t4: MUL .b3_is_digit .T_NUM
+.b3_type_a: ADD .b3_t1 .b3_t2
+.b3_type_b: ADD .b3_type_a .b3_t3
+.b3_type: ADD .b3_type_b .b3_t4
+
+-- Byte 4
+.b4: GET .src_buf 4
+.b4_is_dot: EQ .b4 .ASCII_DOT
+.b4_is_colon: EQ .b4 .ASCII_COLON
+.b4_ge_a: GE .b4 .ASCII_a
+.b4_le_z: LE .b4 .ASCII_z
+.b4_is_lower: MUL .b4_ge_a .b4_le_z
+.b4_ge_A: GE .b4 .ASCII_A
+.b4_le_Z: LE .b4 .ASCII_Z
+.b4_is_upper: MUL .b4_ge_A .b4_le_Z
+.b4_is_alpha: ADD .b4_is_lower .b4_is_upper
+.b4_ge_0: GE .b4 .ASCII_0
+.b4_le_9: LE .b4 .ASCII_9
+.b4_is_digit: MUL .b4_ge_0 .b4_le_9
+.b4_t1: MUL .b4_is_dot .T_DOT
+.b4_t2: MUL .b4_is_colon .T_COLON
+.b4_t3: MUL .b4_is_alpha .T_ID
+.b4_t4: MUL .b4_is_digit .T_NUM
+.b4_type_a: ADD .b4_t1 .b4_t2
+.b4_type_b: ADD .b4_type_a .b4_t3
+.b4_type: ADD .b4_type_b .b4_t4
+
+-- ============================================
+-- DETECTAR PATRÓN DOT-ID-COLON
+-- Posición 0: b0=DOT, b1=ID, b2=COLON
+-- ============================================
+
+.p0_dot: EQ .b0_type .T_DOT
+.p0_id: EQ .b1_type .T_ID
+.p0_col: EQ .b2_type .T_COLON
+.p0_a: MUL .p0_dot .p0_id
+.p0_match: MUL .p0_a .p0_col
+
+-- ============================================
+-- OUTPUT
+-- ============================================
+
+.header: "TAYNI Gen0.1 - Tokenizador Puro\n"
+.p0: PRT .header 33
+
+.msg_src: "Source: "
+.ps1: PRT .msg_src 8
+.ns1: ITS .src_len .num_buf
+.ps2: PRT .num_buf .ns1
+.msg_bytes: " bytes\n"
+.ps3: PRT .msg_bytes 7
+
+-- Mostrar bytes leídos
+.msg_raw: "Bytes: "
+.pr1: PRT .msg_raw 7
+.nr0: ITS .b0 .num_buf
+.pr2: PRT .num_buf .nr0
+.pr3: PRT " " 1
+.nr1: ITS .b1 .num_buf
+.pr4: PRT .num_buf .nr1
+.pr5: PRT " " 1
+.nr2: ITS .b2 .num_buf
+.pr6: PRT .num_buf .nr2
+.pr7: PRT " " 1
+.nr3: ITS .b3 .num_buf
+.pr8: PRT .num_buf .nr3
+.pr9: PRT " " 1
+.nr4: ITS .b4 .num_buf
+.pr10: PRT .num_buf .nr4
+.pr11: PRT "\n" 1
+
+-- Mostrar tipos clasificados
+.msg_types: "Types: "
+.pt1: PRT .msg_types 7
+.nt0: ITS .b0_type .num_buf
+.pt2: PRT .num_buf .nt0
+.pt3: PRT " " 1
+.nt1: ITS .b1_type .num_buf
+.pt4: PRT .num_buf .nt1
+.pt5: PRT " " 1
+.nt2: ITS .b2_type .num_buf
+.pt6: PRT .num_buf .nt2
+.pt7: PRT " " 1
+.nt3: ITS .b3_type .num_buf
+.pt8: PRT .num_buf .nt3
+.pt9: PRT " " 1
+.nt4: ITS .b4_type .num_buf
+.pt10: PRT .num_buf .nt4
+.pt11: PRT "\n" 1
+
+-- Mostrar match
+.msg_match: "Pattern match at 0: "
+.pm1: PRT .msg_match 20
+.nm1: ITS .p0_match .num_buf
+.pm2: PRT .num_buf .nm1
+.pm3: PRT "\n" 1
+
+-- ============================================
+-- CLEANUP
+-- ============================================
+
+.free1: FRE .src_buf
+.free2: FRE .num_buf
+
+!

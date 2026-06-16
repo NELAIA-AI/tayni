@@ -1,0 +1,220 @@
+-- TAYNI Gen5 - Self-Hosting Compiler
+-- Compila programas TAYNI simples a PE
+-- Soporta: literales, ADD, SUB, MUL
+-- Fecha: 2026-06-16
+
+.zero: 0
+.one: 1
+
+-- ASCII
+.C_DOT: 46
+.C_COLON: 58
+.C_SPACE: 32
+.C_NL: 10
+.C_CR: 13
+.C_BANG: 33
+.C_0: 48
+.C_9: 57
+.C_a: 97
+.C_z: 122
+.C_A: 65
+.C_D: 68
+.C_M: 77
+.C_S: 83
+.C_U: 85
+.C_B: 66
+
+-- Buffers
+.src: ALC 512
+.exe: ALC 4096
+.code: ALC 256
+
+-- Variables para valores parseados
+.v0: 0
+.v1: 0
+.v2: 0
+.result: 0
+
+-- ===== LEER INPUT =====
+.path: "input.tyn"
+.h: FOP .path .zero
+.len: FRD .h .src 512
+.c: FCL .h
+
+-- ===== PARSEAR NODO 0 =====
+-- Formato: .x: N\n
+
+.n0_b0: GET .src 0
+.n0_b4: GET .src 4
+.n0_val: SUB .n0_b4 .C_0
+
+-- ===== PARSEAR NODO 1 (offset 7 para \r\n) =====
+
+.n1_b0: GET .src 7
+.n1_b4: GET .src 11
+.n1_val: SUB .n1_b4 .C_0
+
+-- ===== PARSEAR NODO 2 (offset 14) =====
+-- Puede ser literal o operacion
+
+.n2_b0: GET .src 14
+.n2_b1: GET .src 15
+.n2_b2: GET .src 16
+.n2_b3: GET .src 17
+.n2_b4: GET .src 18
+
+-- Detectar si es operacion (A=ADD, S=SUB, M=MUL)
+.is_A: EQ .n2_b4 .C_A
+.is_S: EQ .n2_b4 .C_S
+.is_M: EQ .n2_b4 .C_M
+
+-- Si es operacion, calcular resultado
+-- ADD: v0 + v1
+-- SUB: v0 - v1
+-- MUL: v0 * v1
+
+.add_res: ADD .n0_val .n1_val
+.sub_res: SUB .n0_val .n1_val
+.mul_res: MUL .n0_val .n1_val
+
+-- Seleccionar resultado segun operacion
+.r_add: MUL .is_A .add_res
+.r_sub: MUL .is_S .sub_res
+.r_mul: MUL .is_M .mul_res
+.r_op: ADD .r_add .r_sub
+.res_op: ADD .r_op .r_mul
+
+-- Si no es operacion, usar n2 como literal
+.is_op: ADD .is_A .is_S
+.is_op2: ADD .is_op .is_M
+.not_op: SUB .one .is_op2
+.n2_lit: SUB .n2_b4 .C_0
+.r_lit: MUL .not_op .n2_lit
+.final: ADD .res_op .r_lit
+
+-- ===== GENERAR PE HEADER =====
+
+-- DOS Header
+.d0: PUT .exe 0 77
+.d1: PUT .exe 1 90
+.d60: PUT .exe 60 64
+
+-- PE Signature
+.pe0: PUT .exe 64 80
+.pe1: PUT .exe 65 69
+
+-- COFF Header
+.cf0: PUT .exe 68 100
+.cf1: PUT .exe 69 134
+.cf2: PUT .exe 70 1
+.cf16: PUT .exe 84 240
+.cf18: PUT .exe 86 34
+
+-- Optional Header
+.oh0: PUT .exe 88 11
+.oh1: PUT .exe 89 2
+.oh5: PUT .exe 93 2
+.oh17: PUT .exe 105 16
+.oh21: PUT .exe 109 16
+.oh27: PUT .exe 115 64
+.oh28: PUT .exe 116 1
+.oh33: PUT .exe 121 16
+.oh37: PUT .exe 125 2
+.oh40: PUT .exe 128 6
+.oh48: PUT .exe 136 6
+.oh57: PUT .exe 145 32
+.oh61: PUT .exe 149 2
+.oh68: PUT .exe 156 3
+.oh70: PUT .exe 158 96
+.oh71: PUT .exe 159 129
+.oh74: PUT .exe 162 16
+.oh81: PUT .exe 169 16
+.oh90: PUT .exe 178 16
+.oh97: PUT .exe 185 16
+.oh108: PUT .exe 196 16
+
+-- Section Header .text
+.sh0: PUT .exe 328 46
+.sh1: PUT .exe 329 116
+.sh2: PUT .exe 330 101
+.sh3: PUT .exe 331 120
+.sh4: PUT .exe 332 116
+.sh9: PUT .exe 337 2
+.sh13: PUT .exe 341 16
+.sh17: PUT .exe 345 2
+.sh21: PUT .exe 349 2
+.sh36: PUT .exe 364 32
+.sh39: PUT .exe 367 96
+
+-- ===== GENERAR CODIGO =====
+-- mov eax, <final>; ret
+
+.mc0: PUT .exe 512 184
+.mc1: PUT .exe 513 .final
+.mc2: PUT .exe 514 0
+.mc3: PUT .exe 515 0
+.mc4: PUT .exe 516 0
+.mc5: PUT .exe 517 195
+
+-- ===== ESCRIBIR PE =====
+.opath: "output.exe"
+.oh2: FOP .opath .one
+.size: 1024
+.wlen: FWR .oh2 .exe .size
+.oc: FCL .oh2
+
+-- ===== OUTPUT =====
+.msg: "Gen5 Compiler\n"
+.p0: PRT .msg 14
+
+.msg1: "Input values: "
+.p1: PRT .msg1 14
+
+.num: ALC 8
+.its0: ITS .n0_val .num
+.p2: PRT .num .its0
+.sp: " "
+.p3: PRT .sp 1
+.its1: ITS .n1_val .num
+.p4: PRT .num .its1
+.nl: "\n"
+.p5: PRT .nl 1
+
+.msg2: "Operation: "
+.p6: PRT .msg2 11
+.msg_a: "ADD"
+.msg_s: "SUB"
+.msg_m: "MUL"
+.msg_n: "LIT"
+
+-- Imprimir operacion detectada
+.pa: MUL .is_A 3
+.ps: MUL .is_S 3
+.pm: MUL .is_M 3
+.pn: MUL .not_op 3
+
+.p7a: IFZ .is_A .zero .pa
+.p7: PRT .msg_a .p7a
+.p8a: IFZ .is_S .zero .ps
+.p8: PRT .msg_s .p8a
+.p9a: IFZ .is_M .zero .pm
+.p9: PRT .msg_m .p9a
+.p10a: IFZ .is_op2 .pn .zero
+.p10: PRT .msg_n .p10a
+.p11: PRT .nl 1
+
+.msg3: "Result: "
+.p12: PRT .msg3 8
+.its2: ITS .final .num
+.p13: PRT .num .its2
+.p14: PRT .nl 1
+
+.msg4: "Output: output.exe\n"
+.p15: PRT .msg4 19
+
+.f1: FRE .src
+.f2: FRE .exe
+.f3: FRE .code
+.f4: FRE .num
+
+!

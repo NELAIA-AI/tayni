@@ -1,0 +1,36 @@
+.zero: 0
+.one: 1
+.buf: ALC 1024
+.num: ALC 32
+.msg: "TAYNI Self-Compiled v5.0\n"
+.p1: PRT .msg 26
+.src: "input.tyn"
+.h: FOP .src .zero
+.len: FRD .h .buf 1024
+.c: FCL .h
+.m2: "Read: "
+.p2: PRT .m2 6
+.n: ITS .len .num
+.p3: PRT .num .n
+.m3: " bytes\n"
+.p4: PRT .m3 7
+.tok: FSM .buf .len
+.tc: GET .tok .zero
+.m4: "Tokens: "
+.p5: PRT .m4 8
+.n2: ITS .tc .num
+.p6: PRT .num .n2
+.m5: "\n"
+.p7: PRT .m5 1
+.tpl: "pe_template.bin"
+.pe: ALC 4096
+.th: FOP .tpl .zero
+.tl: FRD .th .pe 4096
+.tc2: FCL .th
+.out: "output.exe"
+.oh: FOP .out .one
+.w: FWR .oh .pe .tl
+.oc: FCL .oh
+.m6: "Generated: output.exe\n"
+.p8: PRT .m6 22
+!

@@ -1,0 +1,4 @@
+-- Test simple PRT
+.msg: "Hello TAYNI\n"
+.p: PRT .msg 12
+!

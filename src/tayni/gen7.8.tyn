@@ -1,0 +1,327 @@
+-- TAYNI Gen7.8 - Debug version
+-- Imprime el valor parseado antes de generar out.exe
+-- Fecha: 2026-06-16
+
+.zero: 0
+.one: 1
+
+.exe: ALC 8192
+
+-- Leer template
+.spath: "fileio2.exe.exe"
+.sh: FOP .spath .zero
+.slen: FRD .sh .exe 8192
+.sc: FCL .sh
+
+-- ===== CONSTANTES =====
+.CODE_BASE: 512
+.RVA_BASE: 4096
+
+-- IAT RVAs
+.IAT_GetStdHandle: 8192
+.IAT_WriteFile: 8200
+.IAT_ExitProcess: 8208
+.IAT_CreateFileA: 8224
+.IAT_ReadFile: 8232
+.IAT_CloseHandle: 8240
+
+-- ===== GENERAR CODIGO =====
+-- 1. Leer input.tyn
+-- 2. Parsear valor
+-- 3. Imprimir valor + 48 como ASCII
+-- 4. ExitProcess(valor)
+
+-- sub rsp, 88
+.i0: PUT .exe 512 72
+.i1: PUT .exe 513 131
+.i2: PUT .exe 514 236
+.i3: PUT .exe 515 88
+
+-- ===== CreateFileA("input.tyn") =====
+-- lea rcx, [rip+path] at RVA 0x3000
+.i4: PUT .exe 516 72
+.i5: PUT .exe 517 141
+.i6: PUT .exe 518 13
+.i7: PUT .exe 519 245
+.i8: PUT .exe 520 31
+.i9: PUT .exe 521 0
+.i10: PUT .exe 522 0
+
+-- mov edx, 0x80000000
+.i11: PUT .exe 523 186
+.i12: PUT .exe 524 0
+.i13: PUT .exe 525 0
+.i14: PUT .exe 526 0
+.i15: PUT .exe 527 128
+
+-- xor r8d, r8d
+.i16: PUT .exe 528 69
+.i17: PUT .exe 529 49
+.i18: PUT .exe 530 192
+
+-- xor r9d, r9d
+.i19: PUT .exe 531 69
+.i20: PUT .exe 532 49
+.i21: PUT .exe 533 201
+
+-- mov qword [rsp+32], 3
+.i22: PUT .exe 534 72
+.i23: PUT .exe 535 199
+.i24: PUT .exe 536 68
+.i25: PUT .exe 537 36
+.i26: PUT .exe 538 32
+.i27: PUT .exe 539 3
+.i28: PUT .exe 540 0
+.i29: PUT .exe 541 0
+.i30: PUT .exe 542 0
+
+-- mov qword [rsp+40], 0
+.i31: PUT .exe 543 72
+.i32: PUT .exe 544 199
+.i33: PUT .exe 545 68
+.i34: PUT .exe 546 36
+.i35: PUT .exe 547 40
+.i36: PUT .exe 548 0
+.i37: PUT .exe 549 0
+.i38: PUT .exe 550 0
+.i39: PUT .exe 551 0
+
+-- mov qword [rsp+48], 0
+.i40: PUT .exe 552 72
+.i41: PUT .exe 553 199
+.i42: PUT .exe 554 68
+.i43: PUT .exe 555 36
+.i44: PUT .exe 556 48
+.i45: PUT .exe 557 0
+.i46: PUT .exe 558 0
+.i47: PUT .exe 559 0
+.i48: PUT .exe 560 0
+
+-- call [CreateFileA]
+.i49: PUT .exe 561 255
+.i50: PUT .exe 562 21
+.i51: PUT .exe 563 233
+.i52: PUT .exe 564 15
+.i53: PUT .exe 565 0
+.i54: PUT .exe 566 0
+
+-- mov [rsp+80], rax
+.i55: PUT .exe 567 72
+.i56: PUT .exe 568 137
+.i57: PUT .exe 569 68
+.i58: PUT .exe 570 36
+.i59: PUT .exe 571 80
+
+-- ===== ReadFile =====
+-- mov rcx, rax
+.i60: PUT .exe 572 72
+.i61: PUT .exe 573 137
+.i62: PUT .exe 574 193
+
+-- lea rdx, [rsp+56]
+.i63: PUT .exe 575 72
+.i64: PUT .exe 576 141
+.i65: PUT .exe 577 84
+.i66: PUT .exe 578 36
+.i67: PUT .exe 579 56
+
+-- mov r8d, 24
+.i68: PUT .exe 580 65
+.i69: PUT .exe 581 184
+.i70: PUT .exe 582 24
+.i71: PUT .exe 583 0
+.i72: PUT .exe 584 0
+.i73: PUT .exe 585 0
+
+-- lea r9, [rsp+72]
+.i74: PUT .exe 586 76
+.i75: PUT .exe 587 141
+.i76: PUT .exe 588 76
+.i77: PUT .exe 589 36
+.i78: PUT .exe 590 72
+
+-- mov qword [rsp+32], 0
+.i79: PUT .exe 591 72
+.i80: PUT .exe 592 199
+.i81: PUT .exe 593 68
+.i82: PUT .exe 594 36
+.i83: PUT .exe 595 32
+.i84: PUT .exe 596 0
+.i85: PUT .exe 597 0
+.i86: PUT .exe 598 0
+.i87: PUT .exe 599 0
+
+-- call [ReadFile]
+.i88: PUT .exe 600 255
+.i89: PUT .exe 601 21
+.i90: PUT .exe 602 202
+.i91: PUT .exe 603 15
+.i92: PUT .exe 604 0
+.i93: PUT .exe 605 0
+
+-- ===== Parse valor =====
+-- movzx r12d, byte [rsp+60] (byte 4)
+.i94: PUT .exe 606 68
+.i95: PUT .exe 607 15
+.i96: PUT .exe 608 182
+.i97: PUT .exe 609 100
+.i98: PUT .exe 610 36
+.i99: PUT .exe 611 60
+
+-- sub r12d, 48
+.i100: PUT .exe 612 65
+.i101: PUT .exe 613 131
+.i102: PUT .exe 614 236
+.i103: PUT .exe 615 48
+
+-- ===== CloseHandle =====
+-- mov rcx, [rsp+80]
+.i104: PUT .exe 616 72
+.i105: PUT .exe 617 139
+.i106: PUT .exe 618 76
+.i107: PUT .exe 619 36
+.i108: PUT .exe 620 80
+
+-- call [CloseHandle]
+.i109: PUT .exe 621 255
+.i110: PUT .exe 622 21
+.i111: PUT .exe 623 187
+.i112: PUT .exe 624 15
+.i113: PUT .exe 625 0
+.i114: PUT .exe 626 0
+
+-- ===== Print valor como ASCII =====
+-- GetStdHandle(-11)
+-- mov ecx, -11
+.i115: PUT .exe 627 185
+.i116: PUT .exe 628 245
+.i117: PUT .exe 629 255
+.i118: PUT .exe 630 255
+.i119: PUT .exe 631 255
+
+-- call [GetStdHandle]
+-- RVA = 0x1078, RIP = 0x107E, disp = 0x2000 - 0x107E = 0x0F82
+.i120: PUT .exe 632 255
+.i121: PUT .exe 633 21
+.i122: PUT .exe 634 130
+.i123: PUT .exe 635 15
+.i124: PUT .exe 636 0
+.i125: PUT .exe 637 0
+
+-- mov [rsp+76], rax (stdout)
+.i126: PUT .exe 638 72
+.i127: PUT .exe 639 137
+.i128: PUT .exe 640 68
+.i129: PUT .exe 641 36
+.i130: PUT .exe 642 76
+
+-- Poner valor+48 en buffer
+-- add r12d, 48 (41 83 C4 30)
+.i131: PUT .exe 643 65
+.i132: PUT .exe 644 131
+.i133: PUT .exe 645 196
+.i134: PUT .exe 646 48
+
+-- mov [rsp+84], r12b (44 88 64 24 54)
+.i136: PUT .exe 647 68
+.i137: PUT .exe 648 136
+.i138: PUT .exe 649 100
+.i139: PUT .exe 650 36
+.i140a: PUT .exe 651 84
+
+-- WriteFile
+-- mov rcx, [rsp+76]
+.i140: PUT .exe 652 72
+.i141: PUT .exe 653 139
+.i142: PUT .exe 654 76
+.i143: PUT .exe 655 36
+.i144: PUT .exe 656 76
+
+-- lea rdx, [rsp+84]
+.i145: PUT .exe 657 72
+.i146: PUT .exe 658 141
+.i147: PUT .exe 659 84
+.i148: PUT .exe 660 36
+.i149: PUT .exe 661 84
+
+-- mov r8d, 1
+.i150: PUT .exe 662 65
+.i151: PUT .exe 663 184
+.i152: PUT .exe 664 1
+.i153: PUT .exe 665 0
+.i154: PUT .exe 666 0
+.i155: PUT .exe 667 0
+
+-- lea r9, [rsp+72]
+.i156: PUT .exe 668 76
+.i157: PUT .exe 669 141
+.i158: PUT .exe 670 76
+.i159: PUT .exe 671 36
+.i160: PUT .exe 672 72
+
+-- mov qword [rsp+32], 0
+.i161: PUT .exe 673 72
+.i162: PUT .exe 674 199
+.i163: PUT .exe 675 68
+.i164: PUT .exe 676 36
+.i165: PUT .exe 677 32
+.i166: PUT .exe 678 0
+.i167: PUT .exe 679 0
+.i168: PUT .exe 680 0
+.i169: PUT .exe 681 0
+
+-- call [WriteFile]
+-- RVA = 0x10AA, RIP = 0x10B0, disp = 0x2008 - 0x10B0 = 0x0F58
+.i170: PUT .exe 682 255
+.i171: PUT .exe 683 21
+.i172: PUT .exe 684 88
+.i173: PUT .exe 685 15
+.i174: PUT .exe 686 0
+.i175: PUT .exe 687 0
+
+-- ===== ExitProcess(valor) =====
+-- sub r12d, 48 (restore original value)
+.i176a: PUT .exe 688 65
+.i176b: PUT .exe 689 131
+.i176c: PUT .exe 690 236
+.i176d: PUT .exe 691 48
+
+-- mov ecx, r12d
+.i176: PUT .exe 692 68
+.i177: PUT .exe 693 137
+.i178: PUT .exe 694 225
+
+-- call [ExitProcess]
+-- RVA = 0x10B7, RIP = 0x10BD, disp = 0x2010 - 0x10BD = 0x0F53
+.i179: PUT .exe 695 255
+.i180: PUT .exe 696 21
+.i181: PUT .exe 697 83
+.i182: PUT .exe 698 15
+.i183: PUT .exe 699 0
+.i184: PUT .exe 700 0
+
+-- ===== DATA =====
+-- "input.tyn" at 0xC00
+.d0: PUT .exe 3072 105
+.d1: PUT .exe 3073 110
+.d2: PUT .exe 3074 112
+.d3: PUT .exe 3075 117
+.d4: PUT .exe 3076 116
+.d5: PUT .exe 3077 46
+.d6: PUT .exe 3078 116
+.d7: PUT .exe 3079 121
+.d8: PUT .exe 3080 110
+.d9: PUT .exe 3081 0
+
+-- ===== ESCRIBIR PE =====
+.opath: "debug.exe"
+.oh: FOP .opath .one
+.wlen: FWR .oh .exe .slen
+.oc: FCL .oh
+
+.hdr: "Gen7.8: debug.exe\n"
+.p0: PRT .hdr 18
+
+.f1: FRE .exe
+
+!

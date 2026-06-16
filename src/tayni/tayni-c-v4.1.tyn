@@ -1,0 +1,359 @@
+-- TAYNI Self-Hosted Compiler v4.1
+-- Generates valid PE with import table for ExitProcess
+-- Full bootstrap capability
+
+-- ============================================================
+-- CONSTANTS
+-- ============================================================
+.zero: 0
+.one: 1
+.two: 2
+.three: 3
+.four: 4
+.five: 5
+.six: 6
+.seven: 7
+.eight: 8
+.bufsize: 8192
+
+-- Token types
+.TT_DOT: 1
+.TT_COLON: 2
+.TT_ID: 3
+.TT_NUM: 4
+
+-- ============================================================
+-- BUFFERS
+-- ============================================================
+.src_buf: ALC .bufsize
+.pe_buf: ALC 8192
+.num_buf: ALC 32
+
+-- ============================================================
+-- MAIN
+-- ============================================================
+.banner: "TAYNI Self-Compiler v4.1 (Valid PE)\n"
+.p1: PRT .banner 36
+
+-- Read source
+.src_path: "input.tyn"
+.src_handle: FOP .src_path .zero
+.src_len: FRD .src_handle .src_buf .bufsize
+.close_src: FCL .src_handle
+
+.msg_src: "Source: "
+.p2: PRT .msg_src 8
+.n1: ITS .src_len .num_buf
+.p3: PRT .num_buf .n1
+.msg_bytes: " bytes\n"
+.p4: PRT .msg_bytes 7
+
+-- Tokenize
+.msg_tok: "Tokenizing...\n"
+.p5: PRT .msg_tok 14
+.tok_result: FSM .src_buf .src_len
+.tok_count: GET .tok_result .zero
+.msg_tokens: "Tokens: "
+.p6: PRT .msg_tokens 8
+.n2: ITS .tok_count .num_buf
+.p7: PRT .num_buf .n2
+.msg_nl: "\n"
+.p8: PRT .msg_nl 1
+
+-- ============================================================
+-- PE GENERATION - Copy from working template
+-- ============================================================
+.msg_pe: "Building PE...\n"
+.p9: PRT .msg_pe 15
+
+-- DOS Header (64 bytes)
+.st0: PUT .pe_buf 0 77
+.st1: PUT .pe_buf 1 90
+.st2: PUT .pe_buf 2 144
+.st3: PUT .pe_buf 4 3
+.st4: PUT .pe_buf 8 4
+.st5: PUT .pe_buf 12 255
+.st6: PUT .pe_buf 13 255
+.st7: PUT .pe_buf 24 184
+.st8: PUT .pe_buf 36 64
+.st9: PUT .pe_buf 60 128
+
+-- PE Signature at 0x80
+.st10: PUT .pe_buf 128 80
+.st11: PUT .pe_buf 129 69
+
+-- COFF Header (Machine AMD64, 3 sections)
+.st12: PUT .pe_buf 132 100
+.st13: PUT .pe_buf 133 134
+.st14: PUT .pe_buf 134 3
+
+-- Size of optional header: 240
+.st15: PUT .pe_buf 148 240
+
+-- Characteristics: 0x22
+.st16: PUT .pe_buf 150 34
+
+-- Optional Header PE32+
+.st17: PUT .pe_buf 152 11
+.st18: PUT .pe_buf 153 2
+.st19: PUT .pe_buf 154 14
+
+-- Size of code: 0x200
+.st20: PUT .pe_buf 156 0
+.st21: PUT .pe_buf 157 2
+
+-- Size of initialized data: 0x400
+.st22: PUT .pe_buf 160 0
+.st23: PUT .pe_buf 161 4
+
+-- Entry point: 0x1000
+.st24: PUT .pe_buf 168 0
+.st25: PUT .pe_buf 169 16
+
+-- Base of code: 0x1000
+.st26: PUT .pe_buf 172 0
+.st27: PUT .pe_buf 173 16
+
+-- Image base: 0x140000000
+.st28: PUT .pe_buf 184 0
+.st29: PUT .pe_buf 188 64
+.st30: PUT .pe_buf 189 1
+
+-- Section alignment: 0x1000
+.st31: PUT .pe_buf 192 0
+.st32: PUT .pe_buf 193 16
+
+-- File alignment: 0x200
+.st33: PUT .pe_buf 196 0
+.st34: PUT .pe_buf 197 2
+
+-- OS version 6.0
+.st35: PUT .pe_buf 200 6
+.st36: PUT .pe_buf 204 6
+
+-- Size of image: 0x4000
+.st37: PUT .pe_buf 216 0
+.st38: PUT .pe_buf 217 64
+
+-- Size of headers: 0x200
+.st39: PUT .pe_buf 220 0
+.st40: PUT .pe_buf 221 2
+
+-- Subsystem: 3 (console)
+.st41: PUT .pe_buf 228 3
+
+-- DLL characteristics: 0x8160
+.st42: PUT .pe_buf 230 96
+.st43: PUT .pe_buf 231 129
+
+-- Stack reserve: 0x100000
+.st44: PUT .pe_buf 235 16
+
+-- Stack commit: 0x1000
+.st45: PUT .pe_buf 241 16
+
+-- Heap reserve: 0x100000
+.st46: PUT .pe_buf 251 16
+
+-- Heap commit: 0x1000
+.st47: PUT .pe_buf 257 16
+
+-- Number of RVA: 16
+.st48: PUT .pe_buf 268 16
+
+-- Import table RVA: 0x2000, size: 0x28
+.st49: PUT .pe_buf 280 0
+.st50: PUT .pe_buf 281 32
+.st51: PUT .pe_buf 284 40
+
+-- ============================================================
+-- SECTION HEADERS (at 0x188 = 392)
+-- ============================================================
+
+-- .text section
+.st60: PUT .pe_buf 392 46
+.st61: PUT .pe_buf 393 116
+.st62: PUT .pe_buf 394 101
+.st63: PUT .pe_buf 395 120
+.st64: PUT .pe_buf 396 116
+
+-- Virtual size: 0x200
+.st65: PUT .pe_buf 400 0
+.st66: PUT .pe_buf 401 2
+
+-- Virtual address: 0x1000
+.st67: PUT .pe_buf 404 0
+.st68: PUT .pe_buf 405 16
+
+-- Size of raw data: 0x200
+.st69: PUT .pe_buf 408 0
+.st70: PUT .pe_buf 409 2
+
+-- Pointer to raw data: 0x200
+.st71: PUT .pe_buf 412 0
+.st72: PUT .pe_buf 413 2
+
+-- Characteristics: 0x60000020
+.st73: PUT .pe_buf 428 32
+.st74: PUT .pe_buf 431 96
+
+-- .rdata section (at 0x1B0 = 432)
+.st80: PUT .pe_buf 432 46
+.st81: PUT .pe_buf 433 114
+.st82: PUT .pe_buf 434 100
+.st83: PUT .pe_buf 435 97
+.st84: PUT .pe_buf 436 116
+.st85: PUT .pe_buf 437 97
+
+-- Virtual size: 0x200
+.st86: PUT .pe_buf 440 0
+.st87: PUT .pe_buf 441 2
+
+-- Virtual address: 0x2000
+.st88: PUT .pe_buf 444 0
+.st89: PUT .pe_buf 445 32
+
+-- Size of raw data: 0x200
+.st90: PUT .pe_buf 448 0
+.st91: PUT .pe_buf 449 2
+
+-- Pointer to raw data: 0x400
+.st92: PUT .pe_buf 452 0
+.st93: PUT .pe_buf 453 4
+
+-- Characteristics: 0x40000040
+.st94: PUT .pe_buf 468 64
+.st95: PUT .pe_buf 471 64
+
+-- .data section (at 0x1D8 = 472)
+.st100: PUT .pe_buf 472 46
+.st101: PUT .pe_buf 473 100
+.st102: PUT .pe_buf 474 97
+.st103: PUT .pe_buf 475 116
+.st104: PUT .pe_buf 476 97
+
+-- Virtual size: 0x200
+.st105: PUT .pe_buf 480 0
+.st106: PUT .pe_buf 481 2
+
+-- Virtual address: 0x3000
+.st107: PUT .pe_buf 484 0
+.st108: PUT .pe_buf 485 48
+
+-- Size of raw data: 0x200
+.st109: PUT .pe_buf 488 0
+.st110: PUT .pe_buf 489 2
+
+-- Pointer to raw data: 0x600
+.st111: PUT .pe_buf 492 0
+.st112: PUT .pe_buf 493 6
+
+-- Characteristics: 0xC0000040
+.st113: PUT .pe_buf 508 64
+.st114: PUT .pe_buf 511 192
+
+-- ============================================================
+-- CODE SECTION at 0x200 (512)
+-- ============================================================
+-- xor ecx, ecx (exit code 0)
+.st200: PUT .pe_buf 512 49
+.st201: PUT .pe_buf 513 201
+
+-- mov rax, [rel ExitProcess]
+.st202: PUT .pe_buf 514 72
+.st203: PUT .pe_buf 515 139
+.st204: PUT .pe_buf 516 5
+-- RIP-relative offset to IAT: 0x2000 - 0x1007 = 0xFF9
+.st205: PUT .pe_buf 517 249
+.st206: PUT .pe_buf 518 15
+.st207: PUT .pe_buf 519 0
+.st208: PUT .pe_buf 520 0
+
+-- call rax
+.st209: PUT .pe_buf 521 255
+.st210: PUT .pe_buf 522 208
+
+-- ============================================================
+-- IMPORT TABLE at 0x400 (1024) - .rdata section
+-- ============================================================
+-- Import Directory Entry for kernel32.dll
+-- OriginalFirstThunk (INT): 0x2028
+.st300: PUT .pe_buf 1024 40
+.st301: PUT .pe_buf 1025 32
+
+-- TimeDateStamp: 0
+-- ForwarderChain: 0
+
+-- Name RVA: 0x2040
+.st302: PUT .pe_buf 1036 64
+.st303: PUT .pe_buf 1037 32
+
+-- FirstThunk (IAT): 0x2050
+.st304: PUT .pe_buf 1040 80
+.st305: PUT .pe_buf 1041 32
+
+-- Null terminator entry (20 bytes of zeros already)
+
+-- Import Name Table (INT) at 0x2028 = file offset 0x428 = 1064
+.st310: PUT .pe_buf 1064 96
+.st311: PUT .pe_buf 1065 32
+
+-- Null terminator
+
+-- "kernel32.dll" at 0x2040 = file offset 0x440 = 1088
+.st320: PUT .pe_buf 1088 107
+.st321: PUT .pe_buf 1089 101
+.st322: PUT .pe_buf 1090 114
+.st323: PUT .pe_buf 1091 110
+.st324: PUT .pe_buf 1092 101
+.st325: PUT .pe_buf 1093 108
+.st326: PUT .pe_buf 1094 51
+.st327: PUT .pe_buf 1095 50
+.st328: PUT .pe_buf 1096 46
+.st329: PUT .pe_buf 1097 100
+.st330: PUT .pe_buf 1098 108
+.st331: PUT .pe_buf 1099 108
+
+-- Import Address Table (IAT) at 0x2050 = file offset 0x450 = 1104
+.st340: PUT .pe_buf 1104 96
+.st341: PUT .pe_buf 1105 32
+
+-- Hint/Name at 0x2060 = file offset 0x460 = 1120
+-- Hint: 0
+.st350: PUT .pe_buf 1120 0
+.st351: PUT .pe_buf 1121 0
+-- "ExitProcess"
+.st352: PUT .pe_buf 1122 69
+.st353: PUT .pe_buf 1123 120
+.st354: PUT .pe_buf 1124 105
+.st355: PUT .pe_buf 1125 116
+.st356: PUT .pe_buf 1126 80
+.st357: PUT .pe_buf 1127 114
+.st358: PUT .pe_buf 1128 111
+.st359: PUT .pe_buf 1129 99
+.st360: PUT .pe_buf 1130 101
+.st361: PUT .pe_buf 1131 115
+.st362: PUT .pe_buf 1132 115
+
+-- ============================================================
+-- WRITE OUTPUT
+-- ============================================================
+.out_path: "output.exe"
+.out_handle: FOP .out_path .one
+.pe_size: 2048
+.written: FWR .out_handle .pe_buf .pe_size
+.close_out: FCL .out_handle
+
+-- ============================================================
+-- SUMMARY
+-- ============================================================
+.msg_done: "\nGenerated: output.exe (2048 bytes)\n"
+.p10: PRT .msg_done 36
+
+.msg_test: "Testing: run .\\output.exe\n"
+.p11: PRT .msg_test 26
+
+.msg_final: "Bootstrap v4.1 complete!\n"
+.p12: PRT .msg_final 25
+
+!

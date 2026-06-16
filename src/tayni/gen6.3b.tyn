@@ -1,0 +1,350 @@
+-- TAYNI Gen6.3b - Compiler simplificado
+-- Solo lee input, lee template, escribe out.exe
+-- Sin modificar el valor (para debug)
+-- Fecha: 2026-06-16
+
+.zero: 0
+.one: 1
+
+.exe: ALC 8192
+
+-- Leer template
+.spath: "fileio2.exe.exe"
+.sh: FOP .spath .zero
+.slen: FRD .sh .exe 8192
+.sc: FCL .sh
+
+-- sub rsp, 1200 (espacio para buffer de 1024 + extras)
+-- 48 81 EC B0 04 00 00
+.c0: PUT .exe 512 72
+.c1: PUT .exe 513 129
+.c2: PUT .exe 514 236
+.c3: PUT .exe 515 176
+.c4: PUT .exe 516 4
+.c5: PUT .exe 517 0
+.c6: PUT .exe 518 0
+
+-- ===== 1. CreateFileA("mini.exe") =====
+-- lea rcx, [rip+path] at RVA 0x3000
+-- RVA 0x1007, RIP=0x100E, disp=0x1FF2
+.c7: PUT .exe 519 72
+.c8: PUT .exe 520 141
+.c9: PUT .exe 521 13
+.c10: PUT .exe 522 242
+.c11: PUT .exe 523 31
+.c12: PUT .exe 524 0
+.c13: PUT .exe 525 0
+
+-- mov edx, 0x80000000
+.c14: PUT .exe 526 186
+.c15: PUT .exe 527 0
+.c16: PUT .exe 528 0
+.c17: PUT .exe 529 0
+.c18: PUT .exe 530 128
+
+-- xor r8d, r8d
+.c19: PUT .exe 531 69
+.c20: PUT .exe 532 49
+.c21: PUT .exe 533 192
+
+-- xor r9d, r9d
+.c22: PUT .exe 534 69
+.c23: PUT .exe 535 49
+.c24: PUT .exe 536 201
+
+-- mov qword [rsp+32], 3
+.c25: PUT .exe 537 72
+.c26: PUT .exe 538 199
+.c27: PUT .exe 539 68
+.c28: PUT .exe 540 36
+.c29: PUT .exe 541 32
+.c30: PUT .exe 542 3
+.c31: PUT .exe 543 0
+.c32: PUT .exe 544 0
+.c33: PUT .exe 545 0
+
+-- mov qword [rsp+40], 0
+.c34: PUT .exe 546 72
+.c35: PUT .exe 547 199
+.c36: PUT .exe 548 68
+.c37: PUT .exe 549 36
+.c38: PUT .exe 550 40
+.c39: PUT .exe 551 0
+.c40: PUT .exe 552 0
+.c41: PUT .exe 553 0
+.c42: PUT .exe 554 0
+
+-- mov qword [rsp+48], 0
+.c43: PUT .exe 555 72
+.c44: PUT .exe 556 199
+.c45: PUT .exe 557 68
+.c46: PUT .exe 558 36
+.c47: PUT .exe 559 48
+.c48: PUT .exe 560 0
+.c49: PUT .exe 561 0
+.c50: PUT .exe 562 0
+.c51: PUT .exe 563 0
+
+-- call [CreateFileA] 0x2020
+-- RVA 0x1034, RIP=0x103A, disp=0x0FE6
+.c52: PUT .exe 564 255
+.c53: PUT .exe 565 21
+.c54: PUT .exe 566 230
+.c55: PUT .exe 567 15
+.c56: PUT .exe 568 0
+.c57: PUT .exe 569 0
+
+-- mov r12, rax
+.c58: PUT .exe 570 73
+.c59: PUT .exe 571 137
+.c60: PUT .exe 572 196
+
+-- ===== 2. ReadFile template into [rsp+64] =====
+-- mov rcx, r12
+.c61: PUT .exe 573 76
+.c62: PUT .exe 574 137
+.c63: PUT .exe 575 225
+
+-- lea rdx, [rsp+64]
+.c64: PUT .exe 576 72
+.c65: PUT .exe 577 141
+.c66: PUT .exe 578 84
+.c67: PUT .exe 579 36
+.c68: PUT .exe 580 64
+
+-- mov r8d, 1024
+.c69: PUT .exe 581 65
+.c70: PUT .exe 582 184
+.c71: PUT .exe 583 0
+.c72: PUT .exe 584 4
+.c73: PUT .exe 585 0
+.c74: PUT .exe 586 0
+
+-- lea r9, [rsp+56]
+.c75: PUT .exe 587 76
+.c76: PUT .exe 588 141
+.c77: PUT .exe 589 76
+.c78: PUT .exe 590 36
+.c79: PUT .exe 591 56
+
+-- mov qword [rsp+32], 0
+.c80: PUT .exe 592 72
+.c81: PUT .exe 593 199
+.c82: PUT .exe 594 68
+.c83: PUT .exe 595 36
+.c84: PUT .exe 596 32
+.c85: PUT .exe 597 0
+.c86: PUT .exe 598 0
+.c87: PUT .exe 599 0
+.c88: PUT .exe 600 0
+
+-- call [ReadFile] 0x2028
+-- RVA 0x1059, RIP=0x105F, disp=0x0FC9
+.c89: PUT .exe 601 255
+.c90: PUT .exe 602 21
+.c91: PUT .exe 603 201
+.c92: PUT .exe 604 15
+.c93: PUT .exe 605 0
+.c94: PUT .exe 606 0
+
+-- ===== 3. CloseHandle =====
+-- mov rcx, r12
+.c95: PUT .exe 607 76
+.c96: PUT .exe 608 137
+.c97: PUT .exe 609 225
+
+-- call [CloseHandle] 0x2030
+-- RVA 0x1062, RIP=0x1068, disp=0x0FC8
+.c98: PUT .exe 610 255
+.c99: PUT .exe 611 21
+.c100: PUT .exe 612 200
+.c101: PUT .exe 613 15
+.c102: PUT .exe 614 0
+.c103: PUT .exe 615 0
+
+-- ===== 4. CreateFileA("out.exe") WRITE =====
+-- lea rcx, [rip+path_out] at RVA 0x3010
+-- RVA 0x1068, RIP=0x106F, disp=0x1FA1
+.c104: PUT .exe 616 72
+.c105: PUT .exe 617 141
+.c106: PUT .exe 618 13
+.c107: PUT .exe 619 161
+.c108: PUT .exe 620 31
+.c109: PUT .exe 621 0
+.c110: PUT .exe 622 0
+
+-- mov edx, 0x40000000 (GENERIC_WRITE)
+.c111: PUT .exe 623 186
+.c112: PUT .exe 624 0
+.c113: PUT .exe 625 0
+.c114: PUT .exe 626 0
+.c115: PUT .exe 627 64
+
+-- xor r8d, r8d
+.c116: PUT .exe 628 69
+.c117: PUT .exe 629 49
+.c118: PUT .exe 630 192
+
+-- xor r9d, r9d
+.c119: PUT .exe 631 69
+.c120: PUT .exe 632 49
+.c121: PUT .exe 633 201
+
+-- mov qword [rsp+32], 2 (CREATE_ALWAYS)
+.c122: PUT .exe 634 72
+.c123: PUT .exe 635 199
+.c124: PUT .exe 636 68
+.c125: PUT .exe 637 36
+.c126: PUT .exe 638 32
+.c127: PUT .exe 639 2
+.c128: PUT .exe 640 0
+.c129: PUT .exe 641 0
+.c130: PUT .exe 642 0
+
+-- mov qword [rsp+40], 0
+.c131: PUT .exe 643 72
+.c132: PUT .exe 644 199
+.c133: PUT .exe 645 68
+.c134: PUT .exe 646 36
+.c135: PUT .exe 647 40
+.c136: PUT .exe 648 0
+.c137: PUT .exe 649 0
+.c138: PUT .exe 650 0
+.c139: PUT .exe 651 0
+
+-- mov qword [rsp+48], 0
+.c140: PUT .exe 652 72
+.c141: PUT .exe 653 199
+.c142: PUT .exe 654 68
+.c143: PUT .exe 655 36
+.c144: PUT .exe 656 48
+.c145: PUT .exe 657 0
+.c146: PUT .exe 658 0
+.c147: PUT .exe 659 0
+.c148: PUT .exe 660 0
+
+-- call [CreateFileA] 0x2020
+-- RVA 0x1095, RIP=0x109B, disp=0x0F85
+.c149: PUT .exe 661 255
+.c150: PUT .exe 662 21
+.c151: PUT .exe 663 133
+.c152: PUT .exe 664 15
+.c153: PUT .exe 665 0
+.c154: PUT .exe 666 0
+
+-- mov r13, rax
+.c155: PUT .exe 667 73
+.c156: PUT .exe 668 137
+.c157: PUT .exe 669 197
+
+-- ===== 5. WriteFile =====
+-- mov rcx, r13
+.c158: PUT .exe 670 76
+.c159: PUT .exe 671 137
+.c160: PUT .exe 672 233
+
+-- lea rdx, [rsp+64]
+.c161: PUT .exe 673 72
+.c162: PUT .exe 674 141
+.c163: PUT .exe 675 84
+.c164: PUT .exe 676 36
+.c165: PUT .exe 677 64
+
+-- mov r8d, 1024
+.c166: PUT .exe 678 65
+.c167: PUT .exe 679 184
+.c168: PUT .exe 680 0
+.c169: PUT .exe 681 4
+.c170: PUT .exe 682 0
+.c171: PUT .exe 683 0
+
+-- lea r9, [rsp+56]
+.c172: PUT .exe 684 76
+.c173: PUT .exe 685 141
+.c174: PUT .exe 686 76
+.c175: PUT .exe 687 36
+.c176: PUT .exe 688 56
+
+-- mov qword [rsp+32], 0
+.c177: PUT .exe 689 72
+.c178: PUT .exe 690 199
+.c179: PUT .exe 691 68
+.c180: PUT .exe 692 36
+.c181: PUT .exe 693 32
+.c182: PUT .exe 694 0
+.c183: PUT .exe 695 0
+.c184: PUT .exe 696 0
+.c185: PUT .exe 697 0
+
+-- call [WriteFile] 0x2008
+-- RVA 0x10BA, RIP=0x10C0, disp=0x0F48
+.c186: PUT .exe 698 255
+.c187: PUT .exe 699 21
+.c188: PUT .exe 700 72
+.c189: PUT .exe 701 15
+.c190: PUT .exe 702 0
+.c191: PUT .exe 703 0
+
+-- ===== 6. CloseHandle output =====
+-- mov rcx, r13
+.c192: PUT .exe 704 76
+.c193: PUT .exe 705 137
+.c194: PUT .exe 706 233
+
+-- call [CloseHandle] 0x2030
+-- RVA 0x10C3, RIP=0x10C9, disp=0x0F67
+.c195: PUT .exe 707 255
+.c196: PUT .exe 708 21
+.c197: PUT .exe 709 103
+.c198: PUT .exe 710 15
+.c199: PUT .exe 711 0
+.c200: PUT .exe 712 0
+
+-- ===== 7. ExitProcess(0) =====
+-- xor ecx, ecx
+.c201: PUT .exe 713 49
+.c202: PUT .exe 714 201
+
+-- call [ExitProcess] 0x2010
+-- RVA 0x10CB, RIP=0x10D1, disp=0x0F3F
+.c203: PUT .exe 715 255
+.c204: PUT .exe 716 21
+.c205: PUT .exe 717 63
+.c206: PUT .exe 718 15
+.c207: PUT .exe 719 0
+.c208: PUT .exe 720 0
+
+-- ===== DATA =====
+-- "mini.exe" at 0xC00 (RVA 0x3000)
+.d0: PUT .exe 3072 109
+.d1: PUT .exe 3073 105
+.d2: PUT .exe 3074 110
+.d3: PUT .exe 3075 105
+.d4: PUT .exe 3076 46
+.d5: PUT .exe 3077 101
+.d6: PUT .exe 3078 120
+.d7: PUT .exe 3079 101
+.d8: PUT .exe 3080 0
+
+-- "out.exe" at 0xC10 (RVA 0x3010)
+.d9: PUT .exe 3088 111
+.d10: PUT .exe 3089 117
+.d11: PUT .exe 3090 116
+.d12: PUT .exe 3091 46
+.d13: PUT .exe 3092 101
+.d14: PUT .exe 3093 120
+.d15: PUT .exe 3094 101
+.d16: PUT .exe 3095 0
+
+-- Escribir
+.opath: "copy.exe"
+.oh: FOP .opath .one
+.wlen: FWR .oh .exe .slen
+.oc: FCL .oh
+
+.hdr: "Gen6.3b: copy.exe (copia mini.exe a out.exe)\n"
+.p0: PRT .hdr 46
+
+.f1: FRE .exe
+
+!

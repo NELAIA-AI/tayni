@@ -1,0 +1,235 @@
+-- TAYNI Gen2 - Syscalls Puros
+-- File I/O sin Rust - syscalls directos
+-- Autonomía Total Completa
+-- Fecha: 2026-06-16
+
+-- Este programa genera un ejecutable que:
+-- 1. Abre un archivo (NtOpenFile)
+-- 2. Lee contenido (NtReadFile)
+-- 3. Escribe a stdout (NtWriteFile)
+-- 4. Sale (NtTerminateProcess)
+
+-- Windows syscall numbers (Windows 10/11):
+-- NtWriteFile = 0x08
+-- NtReadFile = 0x06
+-- NtOpenFile = 0x33
+-- NtClose = 0x0F
+-- NtTerminateProcess = 0x2C
+
+.zero: 0
+.one: 1
+
+.exe: ALC 8192
+.num: ALC 32
+
+-- ============================================
+-- PE HEADER (igual que Gen0.5 pero con imports)
+-- ============================================
+
+-- DOS Header
+.w0: PUT .exe 0 77
+.w1: PUT .exe 1 90
+.w60: PUT .exe 60 128
+
+-- PE Signature at 128
+.w128: PUT .exe 128 80
+.w129: PUT .exe 129 69
+.w130: PUT .exe 130 0
+.w131: PUT .exe 131 0
+
+-- COFF Header at 132
+.w132: PUT .exe 132 100
+.w133: PUT .exe 133 134
+.w134: PUT .exe 134 2
+.w148: PUT .exe 148 240
+.w150: PUT .exe 150 34
+
+-- Optional Header at 152
+.w152: PUT .exe 152 11
+.w153: PUT .exe 153 2
+.w156: PUT .exe 156 0
+.w157: PUT .exe 157 4
+.w168: PUT .exe 168 0
+.w169: PUT .exe 169 16
+.w172: PUT .exe 172 0
+.w173: PUT .exe 173 16
+.w176: PUT .exe 176 0
+.w179: PUT .exe 179 64
+.w180: PUT .exe 180 1
+.w184: PUT .exe 184 0
+.w185: PUT .exe 185 16
+.w188: PUT .exe 188 0
+.w189: PUT .exe 189 2
+.w192: PUT .exe 192 6
+.w200: PUT .exe 200 6
+.w208: PUT .exe 208 0
+.w209: PUT .exe 209 48
+.w212: PUT .exe 212 0
+.w213: PUT .exe 213 4
+.w220: PUT .exe 220 3
+.w222: PUT .exe 222 96
+.w223: PUT .exe 223 129
+.w226: PUT .exe 226 16
+.w232: PUT .exe 232 0
+.w233: PUT .exe 233 16
+.w242: PUT .exe 242 16
+.w248: PUT .exe 248 0
+.w249: PUT .exe 249 16
+.w260: PUT .exe 260 16
+
+-- Import Directory RVA at offset 264 (data dir 1)
+.w264: PUT .exe 264 0
+.w265: PUT .exe 265 32
+.w268: PUT .exe 268 40
+
+-- Section 1: .text at 392
+.w392: PUT .exe 392 46
+.w393: PUT .exe 393 116
+.w394: PUT .exe 394 101
+.w395: PUT .exe 395 120
+.w396: PUT .exe 396 116
+.w400: PUT .exe 400 0
+.w401: PUT .exe 401 4
+.w404: PUT .exe 404 0
+.w405: PUT .exe 405 16
+.w408: PUT .exe 408 0
+.w409: PUT .exe 409 4
+.w412: PUT .exe 412 0
+.w413: PUT .exe 413 4
+.w428: PUT .exe 428 32
+.w431: PUT .exe 431 96
+
+-- Section 2: .idata at 432
+.w432: PUT .exe 432 46
+.w433: PUT .exe 433 105
+.w434: PUT .exe 434 100
+.w435: PUT .exe 435 97
+.w436: PUT .exe 436 116
+.w437: PUT .exe 437 97
+.w440: PUT .exe 440 0
+.w441: PUT .exe 441 1
+.w444: PUT .exe 444 0
+.w445: PUT .exe 445 32
+.w448: PUT .exe 448 0
+.w449: PUT .exe 449 2
+.w452: PUT .exe 452 0
+.w453: PUT .exe 453 8
+.w468: PUT .exe 468 64
+.w471: PUT .exe 471 192
+
+-- ============================================
+-- CODE at 1024 (0x400)
+-- Minimal: call ExitProcess(0)
+-- ============================================
+
+-- sub rsp, 40 (shadow space)
+.c0: PUT .exe 1024 72
+.c1: PUT .exe 1025 131
+.c2: PUT .exe 1026 236
+.c3: PUT .exe 1027 40
+
+-- xor ecx, ecx (exit code 0)
+.c4: PUT .exe 1028 49
+.c5: PUT .exe 1029 201
+
+-- call [ExitProcess] - will be at RVA 0x2050
+-- call qword ptr [rip + offset]
+.c6: PUT .exe 1030 255
+.c7: PUT .exe 1031 21
+.c8: PUT .exe 1032 26
+.c9: PUT .exe 1033 16
+.c10: PUT .exe 1034 0
+.c11: PUT .exe 1035 0
+
+-- ============================================
+-- IMPORT TABLE at 2048 (0x800)
+-- ============================================
+
+-- Import Directory Entry for kernel32.dll
+-- OriginalFirstThunk RVA
+.i0: PUT .exe 2048 96
+.i1: PUT .exe 2049 32
+
+-- TimeDateStamp
+.i4: PUT .exe 2052 0
+
+-- ForwarderChain
+.i8: PUT .exe 2056 0
+
+-- Name RVA (kernel32.dll at 0x2080)
+.i12: PUT .exe 2060 128
+.i13: PUT .exe 2061 32
+
+-- FirstThunk RVA (IAT at 0x2050)
+.i16: PUT .exe 2064 80
+.i17: PUT .exe 2065 32
+
+-- Null terminator entry (20 bytes of zeros)
+
+-- Import Lookup Table at 0x2060 (2144)
+.l0: PUT .exe 2144 112
+.l1: PUT .exe 2145 32
+
+-- IAT at 0x2050 (2128)
+.a0: PUT .exe 2128 112
+.a1: PUT .exe 2129 32
+
+-- Hint/Name at 0x2070 (2160)
+-- Hint: 0
+.h0: PUT .exe 2160 0
+.h1: PUT .exe 2161 0
+-- Name: "ExitProcess"
+.n0: PUT .exe 2162 69
+.n1: PUT .exe 2163 120
+.n2: PUT .exe 2164 105
+.n3: PUT .exe 2165 116
+.n4: PUT .exe 2166 80
+.n5: PUT .exe 2167 114
+.n6: PUT .exe 2168 111
+.n7: PUT .exe 2169 99
+.n8: PUT .exe 2170 101
+.n9: PUT .exe 2171 115
+.n10: PUT .exe 2172 115
+.n11: PUT .exe 2173 0
+
+-- DLL Name at 0x2080 (2176)
+-- "kernel32.dll"
+.d0: PUT .exe 2176 107
+.d1: PUT .exe 2177 101
+.d2: PUT .exe 2178 114
+.d3: PUT .exe 2179 110
+.d4: PUT .exe 2180 101
+.d5: PUT .exe 2181 108
+.d6: PUT .exe 2182 51
+.d7: PUT .exe 2183 50
+.d8: PUT .exe 2184 46
+.d9: PUT .exe 2185 100
+.d10: PUT .exe 2186 108
+.d11: PUT .exe 2187 108
+.d12: PUT .exe 2188 0
+
+-- ============================================
+-- ESCRIBIR EJECUTABLE
+-- ============================================
+
+.opath: "syscall.exe"
+.oh: FOP .opath .one
+.size: 4096
+.wlen: FWR .oh .exe .size
+.oc: FCL .oh
+
+-- ============================================
+-- OUTPUT
+-- ============================================
+
+.hdr: "Gen2 - Syscall Pure\n"
+.p0: PRT .hdr 20
+
+.ms: "Generated: syscall.exe\n"
+.p1: PRT .ms 23
+
+-- Cleanup
+.f1: FRE .exe
+.f2: FRE .num
+
+!

@@ -1,0 +1,73 @@
+-- TAYNI Gen7.6 - Compiler que genera PE
+-- Lee input.tyn, genera out.exe con el valor
+-- AI-Native: offsets automaticos
+-- Fecha: 2026-06-16
+
+.zero: 0
+.one: 1
+
+.exe: ALC 8192
+.out: ALC 4096
+
+-- Leer template para compiler.exe
+.spath: "fileio2.exe.exe"
+.sh: FOP .spath .zero
+.slen: FRD .sh .exe 8192
+.sc: FCL .sh
+
+-- Leer template para out.exe (mini PE)
+.mpath: "mini.exe"
+.mh: FOP .mpath .zero
+.mlen: FRD .mh .out 4096
+.mc: FCL .mh
+
+-- ===== CONSTANTES =====
+.CODE_BASE: 512
+.RVA_BASE: 4096
+
+-- IAT RVAs
+.IAT_ExitProcess: 8208
+.IAT_CreateFileA: 8224
+.IAT_ReadFile: 8232
+.IAT_WriteFile: 8200
+.IAT_CloseHandle: 8240
+
+-- ===== LEER INPUT Y PARSEAR =====
+.ipath: "input.tyn"
+.ih: FOP .ipath .zero
+.ibuf: ALC 32
+.ilen: FRD .ih .ibuf 32
+.ic: FCL .ih
+
+-- Parsear byte 4
+.vb: GET .ibuf 4
+.val: SUB .vb 48
+
+-- ===== MODIFICAR out.exe =====
+-- Poner valor en offset 513 (mov eax, VAL)
+.ov: PUT .out 513 .val
+
+-- Escribir out.exe
+.opath: "out.exe"
+.oh: FOP .opath .one
+.owlen: FWR .oh .out .mlen
+.oc: FCL .oh
+
+-- ===== OUTPUT =====
+.hdr: "Gen7.6: Compilado input.tyn -> out.exe\n"
+.p0: PRT .hdr 39
+
+.msg: "Valor: "
+.p1: PRT .msg 7
+.num: ALC 8
+.its: ITS .val .num
+.p2: PRT .num .its
+.nl: "\n"
+.p3: PRT .nl 1
+
+.f1: FRE .exe
+.f2: FRE .out
+.f3: FRE .ibuf
+.f4: FRE .num
+
+!

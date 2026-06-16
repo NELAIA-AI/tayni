@@ -1,0 +1,15 @@
+-- Test file for TAYNI Parser v0.10
+-- Contains: literals, references, operations
+
+.x: 42
+.y: 3.14
+.msg: "Hello TAYNI"
+
+.ref_x: .x
+.ref_y: .y
+
+.sum: ADD .x .y
+.product: MUL .x 10
+.greeting: CAT .msg " World"
+
+!

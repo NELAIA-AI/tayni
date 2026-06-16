@@ -1,0 +1,56 @@
+-- TAYNI Gen9 - Self-Replicating Compiler (Quine-like)
+-- out.exe generado ES una copia del compilador
+-- Cada out.exe puede generar mas out.exe identicos
+-- AI-Native: replicacion infinita verdadera
+-- Fecha: 2026-06-16
+
+.zero: 0
+.one: 1
+
+-- Buffer para leer el compilador mismo
+.self: ALC 8192
+
+-- Leer ESTE MISMO EJECUTABLE (gen9.exe.exe o out.exe)
+-- Usamos un nombre fijo que se renombra en cada generacion
+.spath: "compiler.exe"
+.sh: FOP .spath .zero
+.slen: FRD .sh .self 8192
+.sc: FCL .sh
+
+-- Leer input.tyn
+.ipath: "input.tyn"
+.ih: FOP .ipath .zero
+.ibuf: ALC 64
+.ilen: FRD .ih .ibuf 64
+.ic: FCL .ih
+
+-- Parsear valor en posicion 4 (.x: N)
+.vb: GET .ibuf 4
+.val: SUB .vb 48
+
+-- Escribir out.exe como COPIA EXACTA del compilador
+.opath: "out.exe"
+.oh: FOP .opath .one
+.owlen: FWR .oh .self .slen
+.oc: FCL .oh
+
+-- Output
+.hdr: "TAYNI Self-Replicating Compiler\n"
+.ph: PRT .hdr 32
+
+.msg: "Compilado: input.tyn -> out.exe\n"
+.pm: PRT .msg 32
+
+.msg2: "Valor: "
+.pm2: PRT .msg2 7
+.num: ALC 8
+.its: ITS .val .num
+.pn: PRT .num .its
+.nl: "\n"
+.pnl: PRT .nl 1
+
+.f1: FRE .self
+.f2: FRE .ibuf
+.f3: FRE .num
+
+!

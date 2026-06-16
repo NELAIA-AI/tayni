@@ -1,0 +1,3 @@
+.msg: "Hello from TAYNI!\n"
+.out: PRT .msg 18
+!

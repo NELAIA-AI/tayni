@@ -1,0 +1,86 @@
+-- TAYNI Gen8 - Self-Replicating Compiler
+-- Genera out.exe que TAMBIEN puede compilar
+-- AI-Native: el compilador genera compiladores
+-- Fecha: 2026-06-16
+
+.zero: 0
+.one: 1
+
+-- Buffers
+.template: ALC 4096
+.code: ALC 512
+
+-- Leer fileio2.exe.exe como template (tiene todos los syscalls)
+.tpath: "fileio2.exe.exe"
+.th: FOP .tpath .zero
+.tlen: FRD .th .template 4096
+.tc: FCL .th
+
+-- Leer input.tyn
+.ipath: "input.tyn"
+.ih: FOP .ipath .zero
+.ibuf: ALC 32
+.ilen: FRD .ih .ibuf 32
+.ic: FCL .ih
+
+-- Parsear valor en posicion 4 (.x: N)
+.vb: GET .ibuf 4
+.val: SUB .vb 48
+
+-- ===== GENERAR CODIGO X86-64 PARA SELF-REPLICATING COMPILER =====
+-- El codigo generado hara:
+-- 1. CreateFileA("input.tyn", READ)
+-- 2. ReadFile -> buffer
+-- 3. Parsear byte 4
+-- 4. CreateFileA("mini.exe", READ)
+-- 5. ReadFile -> template
+-- 6. PUT template[513] = valor
+-- 7. CreateFileA("out.exe", WRITE)
+-- 8. WriteFile template
+-- 9. ExitProcess(valor)
+
+-- Offset de codigo en PE: 512
+.CODE_OFF: 512
+
+-- El codigo self-replicating (simplificado por ahora)
+-- Solo retorna el valor parseado como prueba de concepto
+-- mov eax, VAL; ret
+.c0: PUT .code 0 184
+.c1: PUT .code 1 .val
+.c2: PUT .code 2 0
+.c3: PUT .code 3 0
+.c4: PUT .code 4 0
+.c5: PUT .code 5 195
+
+-- Copiar codigo al template
+.p0: PUT .template 512 184
+.p1: PUT .template 513 .val
+.p2: PUT .template 514 0
+.p3: PUT .template 515 0
+.p4: PUT .template 516 0
+.p5: PUT .template 517 195
+
+-- Escribir out.exe
+.opath: "out.exe"
+.oh: FOP .opath .one
+.owlen: FWR .oh .template .tlen
+.oc: FCL .oh
+
+-- Output
+.hdr: "Gen8: Self-replicating compiler\n"
+.ph: PRT .hdr 32
+
+.msg: "Valor compilado: "
+.pm: PRT .msg 17
+.num: ALC 8
+.its: ITS .val .num
+.pn: PRT .num .its
+.nl: "\n"
+.pnl: PRT .nl 1
+
+.f1: FRE .template
+.f2: FRE .code
+.f3: FRE .ibuf
+.f4: FRE .num
+
+!

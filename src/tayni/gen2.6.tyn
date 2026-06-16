@@ -1,0 +1,30 @@
+-- TAYNI Gen2.6 - Usar PE de Clang como template
+-- Copia simple.exe.exe y modifica el código
+-- Fecha: 2026-06-16
+
+.zero: 0
+.one: 1
+
+.exe: ALC 8192
+
+-- Leer simple.exe.exe (generado por Clang, funciona)
+.spath: "simple.exe.exe"
+.sh: FOP .spath .zero
+.slen: FRD .sh .exe 8192
+.sc: FCL .sh
+
+-- Entry point está en 0x1080 (RVA), necesito encontrar el file offset
+-- Voy a buscar el código y modificarlo
+
+-- Por ahora, solo escribir una copia para verificar
+.opath: "copy.exe"
+.oh: FOP .opath .one
+.wlen: FWR .oh .exe .slen
+.oc: FCL .oh
+
+.hdr: "Gen2.6: Copied simple.exe.exe\n"
+.p0: PRT .hdr 30
+
+.f1: FRE .exe
+
+!

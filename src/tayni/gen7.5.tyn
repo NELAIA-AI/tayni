@@ -1,0 +1,275 @@
+-- TAYNI Gen7.5 - Compiler Completo con Offsets Automaticos
+-- Lee input.tyn, genera out.exe
+-- AI-Native: sin errores de offset
+-- Fecha: 2026-06-16
+
+.zero: 0
+.one: 1
+
+.exe: ALC 8192
+
+-- Leer template
+.spath: "fileio2.exe.exe"
+.sh: FOP .spath .zero
+.slen: FRD .sh .exe 8192
+.sc: FCL .sh
+
+-- ===== CONSTANTES =====
+.CODE_BASE: 512
+.RVA_BASE: 4096
+
+-- IAT RVAs
+.IAT_GetStdHandle: 8192
+.IAT_WriteFile: 8200
+.IAT_ExitProcess: 8208
+.IAT_CreateFileA: 8224
+.IAT_ReadFile: 8232
+.IAT_CloseHandle: 8240
+
+-- ===== GENERAR CODIGO DEL COMPILADOR =====
+-- El PE generado:
+-- 1. CreateFileA("input.tyn")
+-- 2. ReadFile -> buffer en stack
+-- 3. Parsear byte 4
+-- 4. CloseHandle
+-- 5. ExitProcess(valor)
+
+-- Offset 512: sub rsp, 88 (48 83 EC 58) - 4 bytes
+.i0: PUT .exe 512 72
+.i1: PUT .exe 513 131
+.i2: PUT .exe 514 236
+.i3: PUT .exe 515 88
+
+-- Offset 516: lea rcx, [rip+path] - 7 bytes
+-- path at RVA 0x3000 (file 0xC00)
+-- RVA 0x1004, RIP=0x100B, disp=0x3000-0x100B=0x1FF5
+.i4: PUT .exe 516 72
+.i5: PUT .exe 517 141
+.i6: PUT .exe 518 13
+.i7: PUT .exe 519 245
+.i8: PUT .exe 520 31
+.i9: PUT .exe 521 0
+.i10: PUT .exe 522 0
+
+-- Offset 523: mov edx, 0x80000000 (BA 00 00 00 80) - 5 bytes
+.i11: PUT .exe 523 186
+.i12: PUT .exe 524 0
+.i13: PUT .exe 525 0
+.i14: PUT .exe 526 0
+.i15: PUT .exe 527 128
+
+-- Offset 528: xor r8d, r8d (45 31 C0) - 3 bytes
+.i16: PUT .exe 528 69
+.i17: PUT .exe 529 49
+.i18: PUT .exe 530 192
+
+-- Offset 531: xor r9d, r9d (45 31 C9) - 3 bytes
+.i19: PUT .exe 531 69
+.i20: PUT .exe 532 49
+.i21: PUT .exe 533 201
+
+-- Offset 534: mov qword [rsp+32], 3 - 9 bytes
+.i22: PUT .exe 534 72
+.i23: PUT .exe 535 199
+.i24: PUT .exe 536 68
+.i25: PUT .exe 537 36
+.i26: PUT .exe 538 32
+.i27: PUT .exe 539 3
+.i28: PUT .exe 540 0
+.i29: PUT .exe 541 0
+.i30: PUT .exe 542 0
+
+-- Offset 543: mov qword [rsp+40], 0 - 9 bytes
+.i31: PUT .exe 543 72
+.i32: PUT .exe 544 199
+.i33: PUT .exe 545 68
+.i34: PUT .exe 546 36
+.i35: PUT .exe 547 40
+.i36: PUT .exe 548 0
+.i37: PUT .exe 549 0
+.i38: PUT .exe 550 0
+.i39: PUT .exe 551 0
+
+-- Offset 552: mov qword [rsp+48], 0 - 9 bytes
+.i40: PUT .exe 552 72
+.i41: PUT .exe 553 199
+.i42: PUT .exe 554 68
+.i43: PUT .exe 555 36
+.i44: PUT .exe 556 48
+.i45: PUT .exe 557 0
+.i46: PUT .exe 558 0
+.i47: PUT .exe 559 0
+.i48: PUT .exe 560 0
+
+-- Offset 561: call [CreateFileA] - 6 bytes
+-- RVA = 0x1031, RIP = 0x1037, disp = 0x2020 - 0x1037 = 0x0FE9
+.c1_off: 561
+.c1_rva_off: SUB .c1_off .CODE_BASE
+.c1_rva: ADD .RVA_BASE .c1_rva_off
+.c1_rip: ADD .c1_rva 6
+.c1_disp: SUB .IAT_CreateFileA .c1_rip
+.c1_b0: MOD .c1_disp 256
+.c1_t1: DIV .c1_disp 256
+.c1_b1: MOD .c1_t1 256
+
+.i49: PUT .exe 561 255
+.i50: PUT .exe 562 21
+.i51: PUT .exe 563 .c1_b0
+.i52: PUT .exe 564 .c1_b1
+.i53: PUT .exe 565 0
+.i54: PUT .exe 566 0
+
+-- Offset 567: mov [rsp+80], rax - 5 bytes
+.i55: PUT .exe 567 72
+.i56: PUT .exe 568 137
+.i57: PUT .exe 569 68
+.i58: PUT .exe 570 36
+.i59: PUT .exe 571 80
+
+-- Offset 572: mov rcx, rax - 3 bytes
+.i60: PUT .exe 572 72
+.i61: PUT .exe 573 137
+.i62: PUT .exe 574 193
+
+-- Offset 575: lea rdx, [rsp+56] - 5 bytes
+.i63: PUT .exe 575 72
+.i64: PUT .exe 576 141
+.i65: PUT .exe 577 84
+.i66: PUT .exe 578 36
+.i67: PUT .exe 579 56
+
+-- Offset 580: mov r8d, 24 - 6 bytes
+.i68: PUT .exe 580 65
+.i69: PUT .exe 581 184
+.i70: PUT .exe 582 24
+.i71: PUT .exe 583 0
+.i72: PUT .exe 584 0
+.i73: PUT .exe 585 0
+
+-- Offset 586: lea r9, [rsp+72] - 5 bytes
+.i74: PUT .exe 586 76
+.i75: PUT .exe 587 141
+.i76: PUT .exe 588 76
+.i77: PUT .exe 589 36
+.i78: PUT .exe 590 72
+
+-- Offset 591: mov qword [rsp+32], 0 - 9 bytes
+.i79: PUT .exe 591 72
+.i80: PUT .exe 592 199
+.i81: PUT .exe 593 68
+.i82: PUT .exe 594 36
+.i83: PUT .exe 595 32
+.i84: PUT .exe 596 0
+.i85: PUT .exe 597 0
+.i86: PUT .exe 598 0
+.i87: PUT .exe 599 0
+
+-- Offset 600: call [ReadFile] - 6 bytes
+-- RVA = 0x1058, RIP = 0x105E, disp = 0x2028 - 0x105E = 0x0FCA
+.c2_off: 600
+.c2_rva_off: SUB .c2_off .CODE_BASE
+.c2_rva: ADD .RVA_BASE .c2_rva_off
+.c2_rip: ADD .c2_rva 6
+.c2_disp: SUB .IAT_ReadFile .c2_rip
+.c2_b0: MOD .c2_disp 256
+.c2_t1: DIV .c2_disp 256
+.c2_b1: MOD .c2_t1 256
+
+.i88: PUT .exe 600 255
+.i89: PUT .exe 601 21
+.i90: PUT .exe 602 .c2_b0
+.i91: PUT .exe 603 .c2_b1
+.i92: PUT .exe 604 0
+.i93: PUT .exe 605 0
+
+-- Offset 606: movzx eax, byte [rsp+60] - 5 bytes
+.i94: PUT .exe 606 15
+.i95: PUT .exe 607 182
+.i96: PUT .exe 608 68
+.i97: PUT .exe 609 36
+.i98: PUT .exe 610 60
+
+-- Offset 611: sub eax, 48 - 3 bytes
+.i99: PUT .exe 611 131
+.i100: PUT .exe 612 232
+.i101: PUT .exe 613 48
+
+-- Offset 614: mov [rsp+76], eax - 4 bytes
+.i102: PUT .exe 614 137
+.i103: PUT .exe 615 68
+.i104: PUT .exe 616 36
+.i105: PUT .exe 617 76
+
+-- Offset 618: mov rcx, [rsp+80] - 5 bytes
+.i106: PUT .exe 618 72
+.i107: PUT .exe 619 139
+.i108: PUT .exe 620 76
+.i109: PUT .exe 621 36
+.i110: PUT .exe 622 80
+
+-- Offset 623: call [CloseHandle] - 6 bytes
+-- RVA = 0x106F, RIP = 0x1075, disp = 0x2030 - 0x1075 = 0x0FBB
+.c3_off: 623
+.c3_rva_off: SUB .c3_off .CODE_BASE
+.c3_rva: ADD .RVA_BASE .c3_rva_off
+.c3_rip: ADD .c3_rva 6
+.c3_disp: SUB .IAT_CloseHandle .c3_rip
+.c3_b0: MOD .c3_disp 256
+.c3_t1: DIV .c3_disp 256
+.c3_b1: MOD .c3_t1 256
+
+.i111: PUT .exe 623 255
+.i112: PUT .exe 624 21
+.i113: PUT .exe 625 .c3_b0
+.i114: PUT .exe 626 .c3_b1
+.i115: PUT .exe 627 0
+.i116: PUT .exe 628 0
+
+-- Offset 629: mov ecx, [rsp+76] - 4 bytes
+.i117: PUT .exe 629 139
+.i118: PUT .exe 630 76
+.i119: PUT .exe 631 36
+.i120: PUT .exe 632 76
+
+-- Offset 633: call [ExitProcess] - 6 bytes
+-- RVA = 0x1079, RIP = 0x107F, disp = 0x2010 - 0x107F = 0x0F91
+.c4_off: 633
+.c4_rva_off: SUB .c4_off .CODE_BASE
+.c4_rva: ADD .RVA_BASE .c4_rva_off
+.c4_rip: ADD .c4_rva 6
+.c4_disp: SUB .IAT_ExitProcess .c4_rip
+.c4_b0: MOD .c4_disp 256
+.c4_t1: DIV .c4_disp 256
+.c4_b1: MOD .c4_t1 256
+
+.i121: PUT .exe 633 255
+.i122: PUT .exe 634 21
+.i123: PUT .exe 635 .c4_b0
+.i124: PUT .exe 636 .c4_b1
+.i125: PUT .exe 637 0
+.i126: PUT .exe 638 0
+
+-- ===== DATA: "input.tyn" at 0xC00 (RVA 0x3000) =====
+.d0: PUT .exe 3072 105
+.d1: PUT .exe 3073 110
+.d2: PUT .exe 3074 112
+.d3: PUT .exe 3075 117
+.d4: PUT .exe 3076 116
+.d5: PUT .exe 3077 46
+.d6: PUT .exe 3078 116
+.d7: PUT .exe 3079 121
+.d8: PUT .exe 3080 110
+.d9: PUT .exe 3081 0
+
+-- ===== ESCRIBIR PE =====
+.opath: "compiler.exe"
+.oh: FOP .opath .one
+.wlen: FWR .oh .exe .slen
+.oc: FCL .oh
+
+.hdr: "Gen7.5: compiler.exe (offsets automaticos)\n"
+.p0: PRT .hdr 43
+
+.f1: FRE .exe
+
+!

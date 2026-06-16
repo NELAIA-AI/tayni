@@ -1,0 +1,12 @@
+.zero: 0
+.one: 1
+.buf: ALC 64
+.path: "test.txt"
+.h: FOP .path .zero
+.len: FRD .h .buf 64
+.c: FCL .h
+.h2: FOP .path .one
+.w: FWR .h2 .buf .len
+.c2: FCL .h2
+.f: FRE .buf
+!

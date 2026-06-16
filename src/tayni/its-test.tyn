@@ -1,0 +1,109 @@
+-- TAYNI ITS (Int to String) en TAYNI puro
+-- Convierte entero a string ASCII usando division sucesiva
+-- Sin loops: codigo desenrollado para numeros 0-999
+-- Fecha: 2026-06-16
+
+.zero: 0
+.one: 1
+.ten: 10
+.ascii0: 48
+
+-- Buffer para resultado (max 4 digitos + null)
+.buf: ALC 8
+
+-- Valor a convertir
+.val: 42
+
+-- ===== ALGORITMO: Division sucesiva =====
+-- Para 123:
+--   123 / 10 = 12, resto 3 -> digito[2] = '3'
+--   12 / 10 = 1, resto 2 -> digito[1] = '2'
+--   1 / 10 = 0, resto 1 -> digito[0] = '1'
+
+-- Digito 0 (centenas)
+.d0q: DIV .val .ten
+.d0qx: DIV .d0q .ten
+.d0: MOD .d0qx .ten
+.d0c: ADD .d0 .ascii0
+
+-- Digito 1 (decenas)
+.d1: MOD .d0q .ten
+.d1c: ADD .d1 .ascii0
+
+-- Digito 2 (unidades)
+.d2: MOD .val .ten
+.d2c: ADD .d2 .ascii0
+
+-- Determinar cuantos digitos (para no imprimir ceros a la izquierda)
+-- Si val >= 100: 3 digitos
+-- Si val >= 10: 2 digitos
+-- Si val >= 0: 1 digito
+
+.ge100: GE .val 100
+.ge10: GE .val 10
+
+-- Escribir digitos en buffer
+-- Posicion depende de cuantos digitos
+
+-- Caso 3 digitos (100-999)
+.p0_3: MUL .ge100 0
+.p1_3: MUL .ge100 1
+.p2_3: MUL .ge100 2
+
+-- Caso 2 digitos (10-99): no ge100, si ge10
+.not100: SUB .one .ge100
+.is2d: MUL .not100 .ge10
+.p0_2: MUL .is2d 0
+.p1_2: MUL .is2d 1
+
+-- Caso 1 digito (0-9): no ge100, no ge10
+.not10: SUB .one .ge10
+.is1d: MUL .not100 .not10
+
+-- Escribir en buffer segun caso
+-- 3 digitos: buf[0]=d0, buf[1]=d1, buf[2]=d2
+-- 2 digitos: buf[0]=d1, buf[1]=d2
+-- 1 digito: buf[0]=d2
+
+-- Simplificacion: siempre escribir 3 digitos, luego ajustar puntero
+.w0: PUT .buf 0 .d0c
+.w1: PUT .buf 1 .d1c
+.w2: PUT .buf 2 .d2c
+.w3: PUT .buf 3 0
+
+-- Calcular offset inicial y longitud
+-- 3 digitos: offset=0, len=3
+-- 2 digitos: offset=1, len=2
+-- 1 digito: offset=2, len=1
+
+.off3: MUL .ge100 0
+.off2: MUL .is2d 1
+.off1: MUL .is1d 2
+.offa: ADD .off3 .off2
+.offset: ADD .offa .off1
+
+.len3: MUL .ge100 3
+.len2: MUL .is2d 2
+.len1: MUL .is1d 1
+.lena: ADD .len3 .len2
+.length: ADD .lena .len1
+
+-- Imprimir resultado
+.msg: "Value: "
+.p0: PRT .msg 7
+
+-- Imprimir desde offset correcto
+-- Necesitamos ADD al puntero del buffer
+.bufptr: ADD .buf .offset
+.p1: PRT .bufptr .length
+
+.nl: "\n"
+.p2: PRT .nl 1
+
+-- Verificacion
+.vmsg: "Expected: 7\n"
+.p3: PRT .vmsg 12
+
+.f: FRE .buf
+
+!

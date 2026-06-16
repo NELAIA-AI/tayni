@@ -1,0 +1,62 @@
+-- TAYNI Gen7.1 - Assembler con Tabla de Instrucciones
+-- Define instrucciones como datos, genera codigo automaticamente
+-- AI-Native: declarativo, sin offsets manuales
+-- Fecha: 2026-06-16
+
+.zero: 0
+.one: 1
+
+.exe: ALC 8192
+.code: ALC 512
+
+-- Leer template
+.spath: "fileio2.exe.exe"
+.sh: FOP .spath .zero
+.slen: FRD .sh .exe 8192
+.sc: FCL .sh
+
+-- ===== DEFINIR INSTRUCCIONES COMO DATOS =====
+-- Formato: [opcode_len, opcode_bytes..., operand_type, operand_value]
+-- operand_type: 0=none, 1=imm8, 2=imm32, 3=reg
+
+-- Instruccion 0: mov eax, 42
+-- B8 = mov eax, imm32
+.inst0_op: 184
+.inst0_val: 42
+
+-- Instruccion 1: ret
+-- C3 = ret
+.inst1_op: 195
+
+-- ===== GENERAR CODIGO =====
+-- Posicion base: 512 (0x200)
+.pos: 512
+
+-- Escribir inst0: mov eax, imm32 (5 bytes)
+.w0: PUT .exe .pos .inst0_op
+.pos1: ADD .pos 1
+.w1: PUT .exe .pos1 .inst0_val
+.pos2: ADD .pos1 1
+.w2: PUT .exe .pos2 0
+.pos3: ADD .pos2 1
+.w3: PUT .exe .pos3 0
+.pos4: ADD .pos3 1
+.w4: PUT .exe .pos4 0
+.pos5: ADD .pos4 1
+
+-- Escribir inst1: ret (1 byte)
+.w5: PUT .exe .pos5 .inst1_op
+
+-- ===== ESCRIBIR PE =====
+.opath: "asm.exe"
+.oh: FOP .opath .one
+.wlen: FWR .oh .exe .slen
+.oc: FCL .oh
+
+.hdr: "Gen7.1: asm.exe generado con tabla de instrucciones\n"
+.p0: PRT .hdr 52
+
+.f1: FRE .exe
+.f2: FRE .code
+
+!

@@ -1,0 +1,315 @@
+-- TAYNI Gen2.1 - Print sin Rust
+-- Genera exe que imprime "OK" usando WriteFile
+-- Autonomía Total Completa
+-- Fecha: 2026-06-16
+
+.zero: 0
+.one: 1
+
+.exe: ALC 8192
+.num: ALC 32
+
+-- ============================================
+-- PE HEADER con imports kernel32
+-- ============================================
+
+-- DOS Header
+.w0: PUT .exe 0 77
+.w1: PUT .exe 1 90
+.w60: PUT .exe 60 128
+
+-- PE Signature at 128
+.w128: PUT .exe 128 80
+.w129: PUT .exe 129 69
+
+-- COFF Header at 132
+.w132: PUT .exe 132 100
+.w133: PUT .exe 133 134
+.w134: PUT .exe 134 2
+.w148: PUT .exe 148 240
+.w150: PUT .exe 150 34
+
+-- Optional Header at 152
+.w152: PUT .exe 152 11
+.w153: PUT .exe 153 2
+.w156: PUT .exe 156 0
+.w157: PUT .exe 157 8
+.w168: PUT .exe 168 0
+.w169: PUT .exe 169 16
+.w172: PUT .exe 172 0
+.w173: PUT .exe 173 16
+.w176: PUT .exe 176 0
+.w179: PUT .exe 179 64
+.w180: PUT .exe 180 1
+.w184: PUT .exe 184 0
+.w185: PUT .exe 185 16
+.w188: PUT .exe 188 0
+.w189: PUT .exe 189 2
+.w192: PUT .exe 192 6
+.w200: PUT .exe 200 6
+.w208: PUT .exe 208 0
+.w209: PUT .exe 209 48
+.w212: PUT .exe 212 0
+.w213: PUT .exe 213 8
+.w220: PUT .exe 220 3
+.w222: PUT .exe 222 96
+.w223: PUT .exe 223 129
+.w226: PUT .exe 226 16
+.w232: PUT .exe 232 0
+.w233: PUT .exe 233 16
+.w242: PUT .exe 242 16
+.w248: PUT .exe 248 0
+.w249: PUT .exe 249 16
+.w260: PUT .exe 260 16
+
+-- Import Directory at offset 264
+.w264: PUT .exe 264 0
+.w265: PUT .exe 265 32
+.w268: PUT .exe 268 60
+
+-- Section .text at 392
+.w392: PUT .exe 392 46
+.w393: PUT .exe 393 116
+.w394: PUT .exe 394 101
+.w395: PUT .exe 395 120
+.w396: PUT .exe 396 116
+.w400: PUT .exe 400 0
+.w401: PUT .exe 401 8
+.w404: PUT .exe 404 0
+.w405: PUT .exe 405 16
+.w408: PUT .exe 408 0
+.w409: PUT .exe 409 8
+.w412: PUT .exe 412 0
+.w413: PUT .exe 413 4
+.w428: PUT .exe 428 32
+.w431: PUT .exe 431 96
+
+-- Section .idata at 432
+.w432: PUT .exe 432 46
+.w433: PUT .exe 433 105
+.w434: PUT .exe 434 100
+.w435: PUT .exe 435 97
+.w436: PUT .exe 436 116
+.w437: PUT .exe 437 97
+.w440: PUT .exe 440 0
+.w441: PUT .exe 441 2
+.w444: PUT .exe 444 0
+.w445: PUT .exe 445 32
+.w448: PUT .exe 448 0
+.w449: PUT .exe 449 4
+.w452: PUT .exe 452 0
+.w453: PUT .exe 453 8
+.w468: PUT .exe 468 64
+.w471: PUT .exe 471 192
+
+-- ============================================
+-- CODE at 1024 (0x400)
+-- ============================================
+
+-- sub rsp, 56 (shadow + locals)
+.c0: PUT .exe 1024 72
+.c1: PUT .exe 1025 131
+.c2: PUT .exe 1026 236
+.c3: PUT .exe 1027 56
+
+-- mov ecx, -11 (STD_OUTPUT_HANDLE)
+.c4: PUT .exe 1028 185
+.c5: PUT .exe 1029 245
+.c6: PUT .exe 1030 255
+.c7: PUT .exe 1031 255
+.c8: PUT .exe 1032 255
+
+-- call GetStdHandle
+.c9: PUT .exe 1033 255
+.c10: PUT .exe 1034 21
+.c11: PUT .exe 1035 71
+.c12: PUT .exe 1036 16
+.c13: PUT .exe 1037 0
+.c14: PUT .exe 1038 0
+
+-- mov rcx, rax (handle)
+.c15: PUT .exe 1039 72
+.c16: PUT .exe 1040 137
+.c17: PUT .exe 1041 193
+
+-- lea rdx, [rip + msg] (buffer)
+.c18: PUT .exe 1042 72
+.c19: PUT .exe 1043 141
+.c20: PUT .exe 1044 21
+.c21: PUT .exe 1045 45
+.c22: PUT .exe 1046 0
+.c23: PUT .exe 1047 0
+.c24: PUT .exe 1048 0
+
+-- mov r8d, 3 (length)
+.c25: PUT .exe 1049 65
+.c26: PUT .exe 1050 184
+.c27: PUT .exe 1051 3
+.c28: PUT .exe 1052 0
+.c29: PUT .exe 1053 0
+.c30: PUT .exe 1054 0
+
+-- lea r9, [rsp+48] (written)
+.c31: PUT .exe 1055 76
+.c32: PUT .exe 1056 141
+.c33: PUT .exe 1057 76
+.c34: PUT .exe 1058 36
+.c35: PUT .exe 1059 48
+
+-- mov qword [rsp+32], 0 (lpOverlapped)
+.c36: PUT .exe 1060 72
+.c37: PUT .exe 1061 199
+.c38: PUT .exe 1062 68
+.c39: PUT .exe 1063 36
+.c40: PUT .exe 1064 32
+.c41: PUT .exe 1065 0
+.c42: PUT .exe 1066 0
+.c43: PUT .exe 1067 0
+.c44: PUT .exe 1068 0
+
+-- call WriteFile
+.c45: PUT .exe 1069 255
+.c46: PUT .exe 1070 21
+.c47: PUT .exe 1071 27
+.c48: PUT .exe 1072 16
+.c49: PUT .exe 1073 0
+.c50: PUT .exe 1074 0
+
+-- xor ecx, ecx
+.c51: PUT .exe 1075 49
+.c52: PUT .exe 1076 201
+
+-- call ExitProcess
+.c53: PUT .exe 1077 255
+.c54: PUT .exe 1078 21
+.c55: PUT .exe 1079 23
+.c56: PUT .exe 1080 16
+.c57: PUT .exe 1081 0
+.c58: PUT .exe 1082 0
+
+-- Message "OK\n" at 1096
+.m0: PUT .exe 1096 79
+.m1: PUT .exe 1097 75
+.m2: PUT .exe 1098 10
+
+-- ============================================
+-- IMPORT TABLE at 2048 (0x800)
+-- ============================================
+
+-- Import Directory Entry
+.i0: PUT .exe 2048 128
+.i1: PUT .exe 2049 32
+.i12: PUT .exe 2060 176
+.i13: PUT .exe 2061 32
+.i16: PUT .exe 2064 80
+.i17: PUT .exe 2065 32
+
+-- Import Lookup Table at 0x2080 (2176)
+-- GetStdHandle
+.l0: PUT .exe 2176 208
+.l1: PUT .exe 2177 32
+-- WriteFile
+.l8: PUT .exe 2184 224
+.l9: PUT .exe 2185 32
+-- ExitProcess
+.l16: PUT .exe 2192 240
+.l17: PUT .exe 2193 32
+
+-- IAT at 0x2050 (2128)
+.a0: PUT .exe 2128 208
+.a1: PUT .exe 2129 32
+.a8: PUT .exe 2136 224
+.a9: PUT .exe 2137 32
+.a16: PUT .exe 2144 240
+.a17: PUT .exe 2145 32
+
+-- Hint/Name GetStdHandle at 0x20D0 (2256)
+.h0: PUT .exe 2256 0
+.h1: PUT .exe 2257 0
+.n0: PUT .exe 2258 71
+.n1: PUT .exe 2259 101
+.n2: PUT .exe 2260 116
+.n3: PUT .exe 2261 83
+.n4: PUT .exe 2262 116
+.n5: PUT .exe 2263 100
+.n6: PUT .exe 2264 72
+.n7: PUT .exe 2265 97
+.n8: PUT .exe 2266 110
+.n9: PUT .exe 2267 100
+.n10: PUT .exe 2268 108
+.n11: PUT .exe 2269 101
+.n12: PUT .exe 2270 0
+
+-- Hint/Name WriteFile at 0x20E0 (2272)
+.h20: PUT .exe 2272 0
+.h21: PUT .exe 2273 0
+.n20: PUT .exe 2274 87
+.n21: PUT .exe 2275 114
+.n22: PUT .exe 2276 105
+.n23: PUT .exe 2277 116
+.n24: PUT .exe 2278 101
+.n25: PUT .exe 2279 70
+.n26: PUT .exe 2280 105
+.n27: PUT .exe 2281 108
+.n28: PUT .exe 2282 101
+.n29: PUT .exe 2283 0
+
+-- Hint/Name ExitProcess at 0x20F0 (2288)
+.h30: PUT .exe 2288 0
+.h31: PUT .exe 2289 0
+.n30: PUT .exe 2290 69
+.n31: PUT .exe 2291 120
+.n32: PUT .exe 2292 105
+.n33: PUT .exe 2293 116
+.n34: PUT .exe 2294 80
+.n35: PUT .exe 2295 114
+.n36: PUT .exe 2296 111
+.n37: PUT .exe 2297 99
+.n38: PUT .exe 2298 101
+.n39: PUT .exe 2299 115
+.n40: PUT .exe 2300 115
+.n41: PUT .exe 2301 0
+
+-- DLL Name at 0x20B0 (2224)
+.d0: PUT .exe 2224 107
+.d1: PUT .exe 2225 101
+.d2: PUT .exe 2226 114
+.d3: PUT .exe 2227 110
+.d4: PUT .exe 2228 101
+.d5: PUT .exe 2229 108
+.d6: PUT .exe 2230 51
+.d7: PUT .exe 2231 50
+.d8: PUT .exe 2232 46
+.d9: PUT .exe 2233 100
+.d10: PUT .exe 2234 108
+.d11: PUT .exe 2235 108
+.d12: PUT .exe 2236 0
+
+-- ============================================
+-- ESCRIBIR EJECUTABLE
+-- ============================================
+
+.opath: "print.exe"
+.oh: FOP .opath .one
+.size: 4096
+.wlen: FWR .oh .exe .size
+.oc: FCL .oh
+
+-- ============================================
+-- OUTPUT
+-- ============================================
+
+.hdr: "Gen2.1 - Print Pure\n"
+.p0: PRT .hdr 20
+
+.ms: "Generated: print.exe\n"
+.p1: PRT .ms 21
+
+.mt: "Run it to see 'OK'\n"
+.p2: PRT .mt 19
+
+-- Cleanup
+.f1: FRE .exe
+.f2: FRE .num
+
+!

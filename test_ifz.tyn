@@ -1,0 +1,16 @@
+.zero: 0
+.one: 1
+.ten: 10
+
+.x: 5
+.is_zero: EQ .x .zero
+.result: IFZ .is_zero .ten .one
+
+.msg: "Result: "
+.p1: PRT .msg 8
+.num_buf: ALC 16
+.n1: ITS .result .num_buf
+.p2: PRT .num_buf .n1
+.nl: "\n"
+.p3: PRT .nl 1
+!

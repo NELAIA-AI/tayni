@@ -1,0 +1,128 @@
+.zero: 0
+.one: 1
+.buf: ALC 2048
+.pe: ALC 4096
+.num: ALC 32
+.msg: "TAYNI Mini-Compiler 0.9\n"
+.p1: PRT .msg 24
+.src: "input.tyn"
+.h: FOP .src .zero
+.len: FRD .h .buf 2048
+.c: FCL .h
+.m2: "Input: "
+.p2: PRT .m2 7
+.n: ITS .len .num
+.p3: PRT .num .n
+.m3: " bytes\n"
+.p4: PRT .m3 7
+.tok: FSM .buf .len
+.tc: GET .tok .zero
+.m4: "Tokens: "
+.p5: PRT .m4 8
+.n2: ITS .tc .num
+.p6: PRT .num .n2
+.nl: "\n"
+.p7: PRT .nl 1
+.t0: GET .tok 8
+.t1: GET .tok 12
+.t2: GET .tok 16
+.t3: GET .tok 20
+.TT_STR: 5
+.is_str: EQ .t3 .TT_STR
+.m5: "Has string: "
+.p8: PRT .m5 12
+.n3: ITS .is_str .num
+.p9: PRT .num .n3
+.p10: PRT .nl 1
+.tpl: "pe_template.bin"
+.th: FOP .tpl .zero
+.tl: FRD .th .pe 4096
+.tc2: FCL .th
+.str_off: 1536
+.two: 2
+.three: 3
+.four: 4
+.five: 5
+.six: 6
+.seven: 7
+.eight: 8
+.nine: 9
+.ten: 10
+.eleven: 11
+.twelve: 12
+.thirteen: 13
+.t3_start_off: 21
+.t3_start: GET .tok .t3_start_off
+.t3_len_off: 22
+.t3_len: GET .tok .t3_len_off
+.m6: "String at: "
+.p11: PRT .m6 11
+.n4: ITS .t3_start .num
+.p12: PRT .num .n4
+.m7: ", len: "
+.p13: PRT .m7 7
+.n5: ITS .t3_len .num
+.p14: PRT .num .n5
+.p15: PRT .nl 1
+.src_str_off: ADD .t3_start .one
+.c0: CHR .buf .src_str_off
+.ss0: PUT .pe .str_off .c0
+.off1: ADD .src_str_off .one
+.c1: CHR .buf .off1
+.so1: ADD .str_off .one
+.ss1: PUT .pe .so1 .c1
+.off2: ADD .off1 .one
+.c2: CHR .buf .off2
+.so2: ADD .str_off .two
+.ss2: PUT .pe .so2 .c2
+.off3: ADD .off2 .one
+.c3: CHR .buf .off3
+.so3: ADD .str_off .three
+.ss3: PUT .pe .so3 .c3
+.off4: ADD .off3 .one
+.c4: CHR .buf .off4
+.so4: ADD .str_off .four
+.ss4: PUT .pe .so4 .c4
+.off5: ADD .off4 .one
+.c5: CHR .buf .off5
+.so5: ADD .str_off .five
+.ss5: PUT .pe .so5 .c5
+.off6: ADD .off5 .one
+.c6: CHR .buf .off6
+.so6: ADD .str_off .six
+.ss6: PUT .pe .so6 .c6
+.off7: ADD .off6 .one
+.c7: CHR .buf .off7
+.so7: ADD .str_off .seven
+.ss7: PUT .pe .so7 .c7
+.off8: ADD .off7 .one
+.c8: CHR .buf .off8
+.so8: ADD .str_off .eight
+.ss8: PUT .pe .so8 .c8
+.off9: ADD .off8 .one
+.c9: CHR .buf .off9
+.so9: ADD .str_off .nine
+.ss9: PUT .pe .so9 .c9
+.off10: ADD .off9 .one
+.c10: CHR .buf .off10
+.so10: ADD .str_off .ten
+.ss10: PUT .pe .so10 .c10
+.off11: ADD .off10 .one
+.c11: CHR .buf .off11
+.so11: ADD .str_off .eleven
+.ss11: PUT .pe .so11 .c11
+.off12: ADD .off11 .one
+.c12: CHR .buf .off12
+.so12: ADD .str_off .twelve
+.ss12: PUT .pe .so12 .c12
+.off13: ADD .off12 .one
+.c13: CHR .buf .off13
+.so13: ADD .str_off .thirteen
+.ss13: PUT .pe .so13 .c13
+.out: "output.exe"
+.oh: FOP .out .one
+.w: FWR .oh .pe .tl
+.oc: FCL .oh
+.m9: "Generated: output.exe\n"
+.p16: PRT .m9 22
+!

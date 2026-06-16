@@ -1,0 +1,194 @@
+-- TAYNI Self-Hosted Compiler - Core Operations
+-- Migración de operaciones Rust a TAYNI puro
+-- Fecha: 2026-06-16
+-- Objetivo: Eliminar dependencia de Rust
+
+-- ============================================
+-- OPERACIONES LÓGICAS (reemplazan AND, OR, NOT de Rust)
+-- ============================================
+
+-- AND lógico: si ambos != 0, retorna 1, sino 0
+-- Implementación: (a != 0) * (b != 0)
+-- Uso: .result: MUL (NE .a 0) (NE .b 0)
+
+-- OR lógico: si alguno != 0, retorna 1, sino 0  
+-- Implementación: ((a != 0) + (b != 0)) > 0
+-- Uso: .result: GT (ADD (NE .a 0) (NE .b 0)) 0
+
+-- NOT lógico: si a == 0, retorna 1, sino 0
+-- Implementación: a == 0
+-- Uso: .result: EQ .a 0
+
+-- ============================================
+-- LECTURA DE i64 (reemplaza GE8 de Rust)
+-- ============================================
+
+-- Leer 8 bytes como i64 usando GET (1 byte) x 8
+-- Little-endian: byte0 + byte1*256 + byte2*65536 + ...
+
+-- Ejemplo de uso:
+-- .b0: GET .ptr 0
+-- .b1: GET .ptr 1
+-- .b2: GET .ptr 2
+-- .b3: GET .ptr 3
+-- .b4: GET .ptr 4
+-- .b5: GET .ptr 5
+-- .b6: GET .ptr 6
+-- .b7: GET .ptr 7
+-- .v0: MUL .b1 256
+-- .v1: MUL .b2 65536
+-- .v2: MUL .b3 16777216
+-- .v3: MUL .b4 4294967296
+-- .v4: MUL .b5 1099511627776
+-- .v5: MUL .b6 281474976710656
+-- .v6: MUL .b7 72057594037927936
+-- .sum1: ADD .b0 .v0
+-- .sum2: ADD .sum1 .v1
+-- .sum3: ADD .sum2 .v2
+-- .sum4: ADD .sum3 .v3
+-- .sum5: ADD .sum4 .v4
+-- .sum6: ADD .sum5 .v5
+-- .result: ADD .sum6 .v6
+
+-- ============================================
+-- PARSE SCAN (reemplaza PSC de Rust)
+-- ============================================
+
+-- Escanea tokens buscando patrón DOT-ID-COLON
+-- Input: buffer de tokens (formato FSM), count
+-- Output: [total_nodes, lit_count, ref_count, op_count]
+
+-- El FSM genera tokens de 4 bytes cada uno:
+--   byte 0: tipo (1=DOT, 2=COLON, 3=ID, 4=NUM, 5=STR, 6=NL)
+--   byte 1: posición inicio en source
+--   byte 2: longitud
+--   byte 3: reservado
+
+-- Algoritmo en TAYNI:
+-- 1. Iterar sobre tokens (i = 0 hasta count-3)
+-- 2. Leer tipo de token[i], token[i+1], token[i+2], token[i+3]
+-- 3. Si patrón es DOT-ID-COLON, incrementar contador según token[i+3]
+-- 4. Retornar contadores
+
+-- ============================================
+-- AST BUILD (reemplaza AST de Rust)
+-- ============================================
+
+-- Construye AST desde tokens
+-- Input: buffer de tokens, count
+-- Output: [ast_ptr, node_count]
+
+-- Formato de nodo AST (48 bytes, 6 campos i64):
+--   0-7:   tipo (1=lit, 2=ref, 3=op)
+--   8-15:  id_start
+--   16-23: id_len
+--   24-31: val_start
+--   32-39: val_len
+--   40-47: val_type
+
+-- Algoritmo:
+-- 1. Alocar buffer para AST (256 nodos * 48 bytes)
+-- 2. Iterar tokens buscando DOT-ID-COLON
+-- 3. Para cada match, escribir nodo AST
+-- 4. Retornar ptr y count
+
+-- ============================================
+-- CODE EMIT (reemplaza EMT de Rust)
+-- ============================================
+
+-- Emite código TAYNI desde AST
+-- Input: ast_ptr, node_count, src_buf, out_buf
+-- Output: bytes escritos
+
+-- Algoritmo:
+-- 1. Para cada nodo en AST:
+--    a. Escribir "."
+--    b. Copiar id desde src_buf[id_start..id_start+id_len]
+--    c. Escribir ": "
+--    d. Copiar value desde src_buf[val_start..val_start+val_len]
+--    e. Escribir "\n"
+-- 2. Escribir "!\n"
+-- 3. Retornar posición final
+
+-- ============================================
+-- IMPLEMENTACIÓN: Self-Hosted Compiler v0.1
+-- ============================================
+
+.zero: 0
+.one: 1
+
+-- Constantes para multiplicación (potencias de 256)
+.p1: 256
+.p2: 65536
+.p3: 16777216
+.p4: 4294967296
+.p5: 1099511627776
+.p6: 281474976710656
+.p7: 72057594037927936
+
+-- Buffers
+.src_buf: ALC 65536
+.tok_buf: ALC 8192
+.ast_buf: ALC 12288
+.out_buf: ALC 65536
+.num_buf: ALC 32
+
+-- Header
+.header: "TAYNI Self-Hosted Compiler v0.1\n"
+.p0: PRT .header 32
+
+-- Leer archivo fuente
+.src_path: "input.tyn"
+.src_handle: FOP .src_path .zero
+.src_len: FRD .src_handle .src_buf 65536
+.close_src: FCL .src_handle
+
+.msg_read: "Read: "
+.pr1: PRT .msg_read 6
+.nr1: ITS .src_len .num_buf
+.pr2: PRT .num_buf .nr1
+.msg_bytes: " bytes\n"
+.pr3: PRT .msg_bytes 7
+
+-- Tokenizar usando FSM (esto sí usa Rust por ahora)
+.tok: FSM .src_buf .src_len
+.tok_count: GET .tok .zero
+
+.msg_tok: "Tokens: "
+.pt1: PRT .msg_tok 8
+.nt1: ITS .tok_count .num_buf
+.pt2: PRT .num_buf .nt1
+.pt3: PRT "\n" 1
+
+-- ============================================
+-- PARSE SCAN en TAYNI puro
+-- ============================================
+
+-- Inicializar contadores
+.node_count: 0
+.lit_count: 0
+.ref_count: 0
+.op_count: 0
+
+-- Calcular límite (count - 3)
+.limit: SUB .tok_count 3
+
+-- TODO: Implementar loop de escaneo sin usar PSC de Rust
+-- Por ahora usamos PSC para demostrar el concepto
+-- La migración completa requiere implementar el loop en TAYNI
+
+.msg_scan: "Scanning tokens...\n"
+.ps1: PRT .msg_scan 19
+
+-- Resultado temporal
+.msg_done: "Migration in progress\n"
+.pd: PRT .msg_done 22
+
+-- Liberar memoria
+.free1: FRE .src_buf
+.free2: FRE .tok_buf
+.free3: FRE .ast_buf
+.free4: FRE .out_buf
+.free5: FRE .num_buf
+
+!

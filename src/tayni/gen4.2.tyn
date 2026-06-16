@@ -1,0 +1,118 @@
+-- TAYNI Gen4.2 - PE con valor dinamico
+-- Lee input.tyn, extrae valor, genera PE que retorna ese valor
+-- Fecha: 2026-06-16
+
+.zero: 0
+.one: 1
+
+-- ASCII
+.C_0: 48
+
+-- Buffers
+.src: ALC 64
+.exe: ALC 2048
+
+-- ===== LEER INPUT =====
+.path: "input.tyn"
+.h: FOP .path .zero
+.len: FRD .h .src 64
+.c: FCL .h
+
+-- ===== PARSEAR VALOR =====
+-- Formato: .x: N\n (byte 4 es el digito)
+.b4: GET .src 4
+.val: SUB .b4 .C_0
+
+-- ===== GENERAR PE HEADER =====
+
+-- DOS Header
+.d0: PUT .exe 0 77
+.d1: PUT .exe 1 90
+.d60: PUT .exe 60 64
+
+-- PE Signature at 0x40
+.pe0: PUT .exe 64 80
+.pe1: PUT .exe 65 69
+
+-- COFF Header
+.cf0: PUT .exe 68 100
+.cf1: PUT .exe 69 134
+.cf2: PUT .exe 70 1
+.cf16: PUT .exe 84 240
+.cf18: PUT .exe 86 34
+
+-- Optional Header PE32+
+.oh0: PUT .exe 88 11
+.oh1: PUT .exe 89 2
+.oh5: PUT .exe 93 2
+.oh17: PUT .exe 105 16
+.oh21: PUT .exe 109 16
+.oh27: PUT .exe 115 64
+.oh28: PUT .exe 116 1
+.oh33: PUT .exe 121 16
+.oh37: PUT .exe 125 2
+.oh40: PUT .exe 128 6
+.oh48: PUT .exe 136 6
+.oh57: PUT .exe 145 32
+.oh61: PUT .exe 149 2
+.oh68: PUT .exe 156 3
+.oh70: PUT .exe 158 96
+.oh71: PUT .exe 159 129
+.oh74: PUT .exe 162 16
+.oh81: PUT .exe 169 16
+.oh90: PUT .exe 178 16
+.oh97: PUT .exe 185 16
+.oh108: PUT .exe 196 16
+
+-- Section Header .text
+.sh0: PUT .exe 328 46
+.sh1: PUT .exe 329 116
+.sh2: PUT .exe 330 101
+.sh3: PUT .exe 331 120
+.sh4: PUT .exe 332 116
+.sh9: PUT .exe 337 2
+.sh13: PUT .exe 341 16
+.sh17: PUT .exe 345 2
+.sh21: PUT .exe 349 2
+.sh36: PUT .exe 364 32
+.sh39: PUT .exe 367 96
+
+-- ===== GENERAR CODIGO MAQUINA =====
+-- mov eax, <valor>; ret
+
+-- mov eax, imm32 (B8 + valor)
+.mc0: PUT .exe 512 184
+.mc1: PUT .exe 513 .val
+.mc2: PUT .exe 514 0
+.mc3: PUT .exe 515 0
+.mc4: PUT .exe 516 0
+
+-- ret (C3)
+.mc5: PUT .exe 517 195
+
+-- ===== ESCRIBIR PE =====
+.opath: "dynamic.exe"
+.oh2: FOP .opath .one
+.size: 1024
+.wlen: FWR .oh2 .exe .size
+.oc: FCL .oh2
+
+-- ===== OUTPUT =====
+.msg: "Gen4.2: Valor parseado = "
+.p0: PRT .msg 25
+
+.num: ALC 8
+.its: ITS .val .num
+.p1: PRT .num .its
+
+.nl: "\n"
+.p2: PRT .nl 1
+
+.msg2: "Output: dynamic.exe\n"
+.p3: PRT .msg2 20
+
+.f1: FRE .src
+.f2: FRE .exe
+.f3: FRE .num
+
+!

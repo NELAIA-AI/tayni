@@ -1,0 +1,251 @@
+-- TAYNI Gen2.5 - PE con imports correcto
+-- Genera PE que llama ExitProcess(42)
+-- Calcula offsets correctamente
+-- Fecha: 2026-06-16
+
+.zero: 0
+.one: 1
+
+.exe: ALC 4096
+
+-- ============================================
+-- DOS HEADER (64 bytes)
+-- ============================================
+.d0: PUT .exe 0 77
+.d1: PUT .exe 1 90
+-- e_lfanew = 0x80 (128)
+.d3c: PUT .exe 60 128
+
+-- ============================================
+-- PE SIGNATURE at 0x80
+-- ============================================
+.pe0: PUT .exe 128 80
+.pe1: PUT .exe 129 69
+
+-- ============================================
+-- COFF HEADER at 0x84 (20 bytes)
+-- ============================================
+-- Machine: x86-64 (0x8664)
+.cf0: PUT .exe 132 100
+.cf1: PUT .exe 133 134
+-- NumberOfSections: 2
+.cf2: PUT .exe 134 2
+-- SizeOfOptionalHeader: 240 (0xF0)
+.cf10: PUT .exe 148 240
+-- Characteristics: EXECUTABLE_IMAGE | LARGE_ADDRESS_AWARE
+.cf12: PUT .exe 150 34
+
+-- ============================================
+-- OPTIONAL HEADER at 0x98 (240 bytes)
+-- ============================================
+-- Magic: PE32+ (0x20B)
+.oh0: PUT .exe 152 11
+.oh1: PUT .exe 153 2
+-- SizeOfCode
+.oh4: PUT .exe 156 0
+.oh5: PUT .exe 157 2
+-- AddressOfEntryPoint: 0x1000
+.oh10: PUT .exe 168 0
+.oh11: PUT .exe 169 16
+-- BaseOfCode: 0x1000
+.oh14: PUT .exe 172 0
+.oh15: PUT .exe 173 16
+-- ImageBase: 0x140000000
+.oh18: PUT .exe 176 0
+.oh1b: PUT .exe 179 64
+.oh1c: PUT .exe 180 1
+-- SectionAlignment: 0x1000
+.oh20: PUT .exe 184 0
+.oh21: PUT .exe 185 16
+-- FileAlignment: 0x200
+.oh24: PUT .exe 188 0
+.oh25: PUT .exe 189 2
+-- MajorOSVersion: 6
+.oh28: PUT .exe 192 6
+-- MajorSubsystemVersion: 6
+.oh30: PUT .exe 200 6
+-- SizeOfImage: 0x3000
+.oh38: PUT .exe 208 0
+.oh39: PUT .exe 209 48
+-- SizeOfHeaders: 0x200
+.oh3c: PUT .exe 212 0
+.oh3d: PUT .exe 213 2
+-- Subsystem: CONSOLE (3)
+.oh44: PUT .exe 220 3
+-- DllCharacteristics
+.oh46: PUT .exe 222 96
+.oh47: PUT .exe 223 129
+-- SizeOfStackReserve
+.oh4a: PUT .exe 226 16
+-- SizeOfStackCommit
+.oh52: PUT .exe 232 0
+.oh53: PUT .exe 233 16
+-- SizeOfHeapReserve
+.oh5a: PUT .exe 242 16
+-- SizeOfHeapCommit
+.oh62: PUT .exe 248 0
+.oh63: PUT .exe 249 16
+-- NumberOfRvaAndSizes: 16
+.oh68: PUT .exe 260 16
+
+-- Import Directory (Data Directory 1) at offset 264
+-- RVA: 0x2000, Size: 40
+.id0: PUT .exe 264 0
+.id1: PUT .exe 265 32
+.id4: PUT .exe 268 40
+
+-- ============================================
+-- SECTION HEADERS at 0x188
+-- ============================================
+
+-- .text section at 0x188
+.st0: PUT .exe 392 46
+.st1: PUT .exe 393 116
+.st2: PUT .exe 394 101
+.st3: PUT .exe 395 120
+.st4: PUT .exe 396 116
+-- VirtualSize: 0x200
+.st8: PUT .exe 400 0
+.st9: PUT .exe 401 2
+-- VirtualAddress: 0x1000
+.stc: PUT .exe 404 0
+.std: PUT .exe 405 16
+-- SizeOfRawData: 0x200
+.st10: PUT .exe 408 0
+.st11: PUT .exe 409 2
+-- PointerToRawData: 0x200
+.st14: PUT .exe 412 0
+.st15: PUT .exe 413 2
+-- Characteristics: CODE | EXECUTE | READ
+.st24: PUT .exe 428 32
+.st27: PUT .exe 431 96
+
+-- .idata section at 0x1B0
+.si0: PUT .exe 432 46
+.si1: PUT .exe 433 105
+.si2: PUT .exe 434 100
+.si3: PUT .exe 435 97
+.si4: PUT .exe 436 116
+.si5: PUT .exe 437 97
+-- VirtualSize: 0x100
+.si8: PUT .exe 440 0
+.si9: PUT .exe 441 1
+-- VirtualAddress: 0x2000
+.sic: PUT .exe 444 0
+.sid: PUT .exe 445 32
+-- SizeOfRawData: 0x200
+.si10: PUT .exe 448 0
+.si11: PUT .exe 449 2
+-- PointerToRawData: 0x400
+.si14: PUT .exe 452 0
+.si15: PUT .exe 453 4
+-- Characteristics: INITIALIZED_DATA | READ
+.si24: PUT .exe 468 64
+.si27: PUT .exe 471 192
+
+-- ============================================
+-- CODE at 0x200 (RVA 0x1000)
+-- ============================================
+
+-- sub rsp, 40
+.c0: PUT .exe 512 72
+.c1: PUT .exe 513 131
+.c2: PUT .exe 514 236
+.c3: PUT .exe 515 40
+
+-- mov ecx, 42
+.c4: PUT .exe 516 185
+.c5: PUT .exe 517 42
+.c6: PUT .exe 518 0
+.c7: PUT .exe 519 0
+.c8: PUT .exe 520 0
+
+-- call [ExitProcess] at IAT RVA 0x2060
+-- Instruction at RVA 0x100D (file 0x20D)
+-- After FF 15 xx xx xx xx, RIP = 0x1013
+-- Target = 0x2060
+-- disp32 = 0x2060 - 0x1013 = 0x104D
+.c9: PUT .exe 521 255
+.ca: PUT .exe 522 21
+.cb: PUT .exe 523 77
+.cc: PUT .exe 524 16
+.cd: PUT .exe 525 0
+.ce: PUT .exe 526 0
+
+-- ============================================
+-- IMPORT TABLE at 0x400 (RVA 0x2000)
+-- ============================================
+
+-- Import Directory Entry (20 bytes)
+-- OriginalFirstThunk: 0x2028
+.i0: PUT .exe 1024 40
+.i1: PUT .exe 1025 32
+-- TimeDateStamp: 0
+-- ForwarderChain: 0
+-- Name: 0x2040 (kernel32.dll)
+.i12: PUT .exe 1036 64
+.i13: PUT .exe 1037 32
+-- FirstThunk (IAT): 0x2060
+.i16: PUT .exe 1040 96
+.i17: PUT .exe 1041 32
+
+-- Null terminator entry (20 bytes of zeros)
+
+-- Import Lookup Table at 0x2028 (file 0x428)
+-- Points to Hint/Name at 0x2050
+.l0: PUT .exe 1064 80
+.l1: PUT .exe 1065 32
+-- Null terminator (8 bytes)
+
+-- DLL Name "kernel32.dll" at 0x2040 (file 0x440)
+.n0: PUT .exe 1088 107
+.n1: PUT .exe 1089 101
+.n2: PUT .exe 1090 114
+.n3: PUT .exe 1091 110
+.n4: PUT .exe 1092 101
+.n5: PUT .exe 1093 108
+.n6: PUT .exe 1094 51
+.n7: PUT .exe 1095 50
+.n8: PUT .exe 1096 46
+.n9: PUT .exe 1097 100
+.na: PUT .exe 1098 108
+.nb: PUT .exe 1099 108
+
+-- Hint/Name at 0x2050 (file 0x450)
+-- Hint: 0
+.h0: PUT .exe 1104 0
+.h1: PUT .exe 1105 0
+-- Name: "ExitProcess"
+.e0: PUT .exe 1106 69
+.e1: PUT .exe 1107 120
+.e2: PUT .exe 1108 105
+.e3: PUT .exe 1109 116
+.e4: PUT .exe 1110 80
+.e5: PUT .exe 1111 114
+.e6: PUT .exe 1112 111
+.e7: PUT .exe 1113 99
+.e8: PUT .exe 1114 101
+.e9: PUT .exe 1115 115
+.ea: PUT .exe 1116 115
+
+-- IAT at 0x2060 (file 0x460)
+-- Same as Import Lookup Table initially
+.a0: PUT .exe 1120 80
+.a1: PUT .exe 1121 32
+
+-- ============================================
+-- WRITE
+-- ============================================
+
+.opath: "exit42v2.exe"
+.oh: FOP .opath .one
+.size: 1536
+.wlen: FWR .oh .exe .size
+.oc: FCL .oh
+
+.hdr: "Gen2.5: exit42v2.exe\n"
+.p0: PRT .hdr 21
+
+.f1: FRE .exe
+
+!

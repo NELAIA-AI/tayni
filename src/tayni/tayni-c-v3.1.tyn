@@ -1,0 +1,215 @@
+-- TAYNI Self-Hosted Compiler v3.1
+-- Parses tokens into bindings and operations
+-- Uses AI-native operations (no imperative loops)
+
+-- ============================================================
+-- CONSTANTS
+-- ============================================================
+.zero: 0
+.one: 1
+.two: 2
+.three: 3
+.four: 4
+.five: 5
+.six: 6
+.seven: 7
+.eight: 8
+.bufsize: 8192
+
+-- Token types from FSM
+.TT_DOT: 1
+.TT_COLON: 2
+.TT_ID: 3
+.TT_NUM: 4
+.TT_STR: 5
+.TT_NL: 6
+.TT_WS: 7
+
+-- ============================================================
+-- BUFFERS
+-- ============================================================
+.src_buf: ALC .bufsize
+.pe_buf: ALC 4096
+.num_buf: ALC 32
+.ast_buf: ALC 4096
+
+-- ============================================================
+-- MAIN
+-- ============================================================
+
+-- Print banner
+.banner: "TAYNI Self-Compiler v3.1 (Parser)\n"
+.p1: PRT .banner 34
+
+-- Read source file
+.src_path: "input.tyn"
+.src_handle: FOP .src_path .zero
+.src_len: FRD .src_handle .src_buf .bufsize
+.close_src: FCL .src_handle
+
+-- Print source info
+.msg_src: "Source: "
+.p2: PRT .msg_src 8
+.n1: ITS .src_len .num_buf
+.p3: PRT .num_buf .n1
+.msg_bytes: " bytes\n"
+.p4: PRT .msg_bytes 7
+
+-- ============================================================
+-- TOKENIZATION
+-- ============================================================
+.msg_tok: "Tokenizing...\n"
+.p5: PRT .msg_tok 14
+
+.tok_result: FSM .src_buf .src_len
+.tok_count: GET .tok_result .zero
+
+.msg_tokens: "Tokens: "
+.p6: PRT .msg_tokens 8
+.n2: ITS .tok_count .num_buf
+.p7: PRT .num_buf .n2
+.msg_nl: "\n"
+.p8: PRT .msg_nl 1
+
+-- ============================================================
+-- PARSING: Count bindings and operations
+-- ============================================================
+.msg_parse: "Parsing...\n"
+.p9: PRT .msg_parse 11
+
+-- Token buffer layout:
+-- [0]: count (i64)
+-- [8+i*4]: token entry (type:i8, start:i8, len:i8, reserved:i8)
+
+-- Read first few tokens to analyze structure
+-- Token 0 at offset 8
+.t0_off: 8
+.t0_type: GET .tok_result .t0_off
+
+-- Token 1 at offset 12 (8 + 1*4)
+.t1_off: 12
+.t1_type: GET .tok_result .t1_off
+
+-- Token 2 at offset 16 (8 + 2*4)
+.t2_off: 16
+.t2_type: GET .tok_result .t2_off
+
+-- Token 3 at offset 20 (8 + 3*4)
+.t3_off: 20
+.t3_type: GET .tok_result .t3_off
+
+-- Token 4 at offset 24 (8 + 4*4)
+.t4_off: 24
+.t4_type: GET .tok_result .t4_off
+
+-- Check for binding pattern: DOT ID COLON
+-- A binding starts with DOT (type 1)
+.is_dot0: EQ .t0_type .TT_DOT
+.is_dot1: EQ .t1_type .TT_DOT
+.is_dot2: EQ .t2_type .TT_DOT
+.is_dot3: EQ .t3_type .TT_DOT
+.is_dot4: EQ .t4_type .TT_DOT
+
+-- Count dots (potential binding starts)
+.dot_sum1: ADD .is_dot0 .is_dot1
+.dot_sum2: ADD .dot_sum1 .is_dot2
+.dot_sum3: ADD .dot_sum2 .is_dot3
+.dot_count: ADD .dot_sum3 .is_dot4
+
+.msg_dots: "Binding starts (first 5): "
+.p10: PRT .msg_dots 26
+.n3: ITS .dot_count .num_buf
+.p11: PRT .num_buf .n3
+.p12: PRT .msg_nl 1
+
+-- Print token types for debugging
+.msg_t0: "Token 0 type: "
+.p13: PRT .msg_t0 14
+.n4: ITS .t0_type .num_buf
+.p14: PRT .num_buf .n4
+.p15: PRT .msg_nl 1
+
+.msg_t1: "Token 1 type: "
+.p16: PRT .msg_t1 14
+.n5: ITS .t1_type .num_buf
+.p17: PRT .num_buf .n5
+.p18: PRT .msg_nl 1
+
+.msg_t2: "Token 2 type: "
+.p19: PRT .msg_t2 14
+.n6: ITS .t2_type .num_buf
+.p20: PRT .num_buf .n6
+.p21: PRT .msg_nl 1
+
+.msg_t3: "Token 3 type: "
+.p25: PRT .msg_t3 14
+.n7: ITS .t3_type .num_buf
+.p26: PRT .num_buf .n7
+.p27: PRT .msg_nl 1
+
+.msg_t4: "Token 4 type: "
+.p28: PRT .msg_t4 14
+.n8: ITS .t4_type .num_buf
+.p29: PRT .num_buf .n8
+.p30: PRT .msg_nl 1
+
+-- Token 5 at offset 28 (8 + 5*4)
+.t5_off: 28
+.t5_type: GET .tok_result .t5_off
+
+.msg_t5: "Token 5 type: "
+.p31: PRT .msg_t5 14
+.n9: ITS .t5_type .num_buf
+.p32: PRT .num_buf .n9
+.p33: PRT .msg_nl 1
+
+-- ============================================================
+-- PE GENERATION (minimal)
+-- ============================================================
+.msg_gen: "Generating PE...\n"
+.p22: PRT .msg_gen 17
+
+-- DOS Header
+.mz_m: 77
+.mz_z: 90
+.st1: PUT .pe_buf .zero .mz_m
+.st2: PUT .pe_buf .one .mz_z
+
+-- PE offset at 0x3C
+.pos_3c: 60
+.pe_off: 64
+.st3: PUT .pe_buf .pos_3c .pe_off
+
+-- PE Signature
+.pos_40: 64
+.pos_41: 65
+.pe_p: 80
+.pe_e: 69
+.st4: PUT .pe_buf .pos_40 .pe_p
+.st5: PUT .pe_buf .pos_41 .pe_e
+
+-- Machine AMD64
+.pos_44: 68
+.pos_45: 69
+.mach_lo: 100
+.mach_hi: 134
+.st6: PUT .pe_buf .pos_44 .mach_lo
+.st7: PUT .pe_buf .pos_45 .mach_hi
+
+-- Write output
+.out_path: "output.exe"
+.out_handle: FOP .out_path .one
+.pe_size: 512
+.written: FWR .out_handle .pe_buf .pe_size
+.close_out: FCL .out_handle
+
+-- ============================================================
+-- SUMMARY
+-- ============================================================
+.msg_done: "Generated: output.exe (512 bytes)\n"
+.p23: PRT .msg_done 34
+
+.msg_final: "Bootstrap v3.1 complete!\n"
+.p24: PRT .msg_final 25
+
+!

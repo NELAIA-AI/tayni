@@ -1,0 +1,96 @@
+-- TAYNI Parser v0.18 - Code Emitter (Debug)
+-- Parsea TAYNI y emite código regenerado
+
+.zero: 0
+.one: 1
+
+.num_buf: ALC 32
+.src_buf: ALC 65536
+.out_buf: ALC 65536
+
+-- Header
+.header: "TAYNI Parser v0.18\n"
+.p0: PRT .header 19
+
+-- Read source
+.src_path: "input.tyn"
+.src_handle: FOP .src_path .zero
+.src_len: FRD .src_handle .src_buf 65536
+.close_src: FCL .src_handle
+
+.msg_src: "Source: "
+.p1: PRT .msg_src 8
+.n1: ITS .src_len .num_buf
+.p2: PRT .num_buf .n1
+.msg_bytes: " bytes\n"
+.p3: PRT .msg_bytes 7
+
+-- Tokenize
+.tok: FSM .src_buf .src_len
+.tok_count: GET .tok .zero
+
+.msg_tok: "Tokens: "
+.p4: PRT .msg_tok 8
+.n2: ITS .tok_count .num_buf
+.p5: PRT .num_buf .n2
+.nl: "\n"
+.p6: PRT .nl 1
+
+-- Build AST
+.ast_result: AST .tok .tok_count
+.ast_ptr: GE8 .ast_result .zero
+.node_count: GE8 .ast_result 8
+
+.msg_ast: "AST: "
+.pa0: PRT .msg_ast 5
+.na: ITS .node_count .num_buf
+.pa1: PRT .num_buf .na
+.msg_nodes: " nodes\n"
+.pa2: PRT .msg_nodes 7
+
+-- Debug: print AST pointer
+.msg_ptr: "AST ptr: "
+.pp0: PRT .msg_ptr 9
+.np: ITS .ast_ptr .num_buf
+.pp1: PRT .num_buf .np
+.pp2: PRT .nl 1
+
+-- Debug: print src_buf pointer
+.msg_src_ptr: "Src ptr: "
+.ps0: PRT .msg_src_ptr 9
+.ns: ITS .src_buf .num_buf
+.ps1: PRT .num_buf .ns
+.ps2: PRT .nl 1
+
+-- Debug: print out_buf pointer
+.msg_out_ptr: "Out ptr: "
+.po0: PRT .msg_out_ptr 9
+.no: ITS .out_buf .num_buf
+.po1: PRT .num_buf .no
+.po2: PRT .nl 1
+
+-- Emit code
+.msg_emit: "\nEmitting...\n"
+.pe0: PRT .msg_emit 13
+
+.emit_len: EMT .ast_ptr .node_count .src_buf .out_buf
+
+.msg_done: "Emitted: "
+.pd0: PRT .msg_done 9
+.ne: ITS .emit_len .num_buf
+.pd1: PRT .num_buf .ne
+.pd2: PRT .msg_bytes 7
+
+-- Print emitted code
+.msg_code: "\n--- Generated ---\n"
+.pc0: PRT .msg_code 18
+.pc1: PRT .out_buf .emit_len
+
+.msg_ok: "\nv0.18 OK\n"
+.pok: PRT .msg_ok 10
+
+.free1: FRE .num_buf
+.free2: FRE .src_buf
+.free3: FRE .out_buf
+
+!

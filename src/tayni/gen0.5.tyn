@@ -1,0 +1,352 @@
+-- TAYNI Gen0.5 - Generar Ejecutable PE
+-- Sin LLVM - escribe bytes PE directamente
+-- Genera hello.exe que imprime "OK"
+-- Autonomía Total
+-- Fecha: 2026-06-16
+
+.zero: 0
+.one: 1
+
+-- Buffer para el ejecutable (4KB suficiente para PE mínimo)
+.exe: ALC 4096
+
+-- ============================================
+-- DOS HEADER (64 bytes)
+-- ============================================
+
+-- MZ signature
+.w0: PUT .exe 0 77
+.w1: PUT .exe 1 90
+
+-- e_lfanew at offset 60 (pointer to PE header)
+-- PE header starts at 64 (0x40)
+.w60: PUT .exe 60 64
+.w61: PUT .exe 61 0
+.w62: PUT .exe 62 0
+.w63: PUT .exe 63 0
+
+-- ============================================
+-- PE SIGNATURE (4 bytes at offset 64)
+-- ============================================
+
+.w64: PUT .exe 64 80
+.w65: PUT .exe 65 69
+.w66: PUT .exe 66 0
+.w67: PUT .exe 67 0
+
+-- ============================================
+-- COFF HEADER (20 bytes at offset 68)
+-- ============================================
+
+-- Machine: x86-64 (0x8664)
+.w68: PUT .exe 68 100
+.w69: PUT .exe 69 134
+
+-- NumberOfSections: 1
+.w70: PUT .exe 70 1
+.w71: PUT .exe 71 0
+
+-- TimeDateStamp: 0
+.w72: PUT .exe 72 0
+.w73: PUT .exe 73 0
+.w74: PUT .exe 74 0
+.w75: PUT .exe 75 0
+
+-- PointerToSymbolTable: 0
+.w76: PUT .exe 76 0
+.w77: PUT .exe 77 0
+.w78: PUT .exe 78 0
+.w79: PUT .exe 79 0
+
+-- NumberOfSymbols: 0
+.w80: PUT .exe 80 0
+.w81: PUT .exe 81 0
+.w82: PUT .exe 82 0
+.w83: PUT .exe 83 0
+
+-- SizeOfOptionalHeader: 240 (0xF0) for PE32+
+.w84: PUT .exe 84 240
+.w85: PUT .exe 85 0
+
+-- Characteristics: EXECUTABLE_IMAGE | LARGE_ADDRESS_AWARE
+.w86: PUT .exe 86 34
+.w87: PUT .exe 87 0
+
+-- ============================================
+-- OPTIONAL HEADER PE32+ (240 bytes at offset 88)
+-- ============================================
+
+-- Magic: PE32+ (0x20B)
+.w88: PUT .exe 88 11
+.w89: PUT .exe 89 2
+
+-- MajorLinkerVersion, MinorLinkerVersion
+.w90: PUT .exe 90 14
+.w91: PUT .exe 91 0
+
+-- SizeOfCode: 512 (0x200)
+.w92: PUT .exe 92 0
+.w93: PUT .exe 93 2
+.w94: PUT .exe 94 0
+.w95: PUT .exe 95 0
+
+-- SizeOfInitializedData: 0
+.w96: PUT .exe 96 0
+.w97: PUT .exe 97 0
+.w98: PUT .exe 98 0
+.w99: PUT .exe 99 0
+
+-- SizeOfUninitializedData: 0
+.w100: PUT .exe 100 0
+.w101: PUT .exe 101 0
+.w102: PUT .exe 102 0
+.w103: PUT .exe 103 0
+
+-- AddressOfEntryPoint: 0x1000 (start of .text)
+.w104: PUT .exe 104 0
+.w105: PUT .exe 105 16
+.w106: PUT .exe 106 0
+.w107: PUT .exe 107 0
+
+-- BaseOfCode: 0x1000
+.w108: PUT .exe 108 0
+.w109: PUT .exe 109 16
+.w110: PUT .exe 110 0
+.w111: PUT .exe 111 0
+
+-- ImageBase: 0x140000000 (default for 64-bit)
+.w112: PUT .exe 112 0
+.w113: PUT .exe 113 0
+.w114: PUT .exe 114 0
+.w115: PUT .exe 115 64
+.w116: PUT .exe 116 1
+.w117: PUT .exe 117 0
+.w118: PUT .exe 118 0
+.w119: PUT .exe 119 0
+
+-- SectionAlignment: 0x1000
+.w120: PUT .exe 120 0
+.w121: PUT .exe 121 16
+.w122: PUT .exe 122 0
+.w123: PUT .exe 123 0
+
+-- FileAlignment: 0x200
+.w124: PUT .exe 124 0
+.w125: PUT .exe 125 2
+.w126: PUT .exe 126 0
+.w127: PUT .exe 127 0
+
+-- OS Version: 6.0
+.w128: PUT .exe 128 6
+.w129: PUT .exe 129 0
+.w130: PUT .exe 130 0
+.w131: PUT .exe 131 0
+
+-- Image Version: 0.0
+.w132: PUT .exe 132 0
+.w133: PUT .exe 133 0
+.w134: PUT .exe 134 0
+.w135: PUT .exe 135 0
+
+-- Subsystem Version: 6.0
+.w136: PUT .exe 136 6
+.w137: PUT .exe 137 0
+.w138: PUT .exe 138 0
+.w139: PUT .exe 139 0
+
+-- Win32VersionValue: 0
+.w140: PUT .exe 140 0
+.w141: PUT .exe 141 0
+.w142: PUT .exe 142 0
+.w143: PUT .exe 143 0
+
+-- SizeOfImage: 0x2000 (8KB)
+.w144: PUT .exe 144 0
+.w145: PUT .exe 145 32
+.w146: PUT .exe 146 0
+.w147: PUT .exe 147 0
+
+-- SizeOfHeaders: 0x200 (512)
+.w148: PUT .exe 148 0
+.w149: PUT .exe 149 2
+.w150: PUT .exe 150 0
+.w151: PUT .exe 151 0
+
+-- CheckSum: 0
+.w152: PUT .exe 152 0
+.w153: PUT .exe 153 0
+.w154: PUT .exe 154 0
+.w155: PUT .exe 155 0
+
+-- Subsystem: CONSOLE (3)
+.w156: PUT .exe 156 3
+.w157: PUT .exe 157 0
+
+-- DllCharacteristics: NX_COMPAT | DYNAMIC_BASE | TERMINAL_SERVER_AWARE
+.w158: PUT .exe 158 96
+.w159: PUT .exe 159 129
+
+-- SizeOfStackReserve: 0x100000 (1MB)
+.w160: PUT .exe 160 0
+.w161: PUT .exe 161 0
+.w162: PUT .exe 162 16
+.w163: PUT .exe 163 0
+.w164: PUT .exe 164 0
+.w165: PUT .exe 165 0
+.w166: PUT .exe 166 0
+.w167: PUT .exe 167 0
+
+-- SizeOfStackCommit: 0x1000
+.w168: PUT .exe 168 0
+.w169: PUT .exe 169 16
+.w170: PUT .exe 170 0
+.w171: PUT .exe 171 0
+.w172: PUT .exe 172 0
+.w173: PUT .exe 173 0
+.w174: PUT .exe 174 0
+.w175: PUT .exe 175 0
+
+-- SizeOfHeapReserve: 0x100000
+.w176: PUT .exe 176 0
+.w177: PUT .exe 177 0
+.w178: PUT .exe 178 16
+.w179: PUT .exe 179 0
+.w180: PUT .exe 180 0
+.w181: PUT .exe 181 0
+.w182: PUT .exe 182 0
+.w183: PUT .exe 183 0
+
+-- SizeOfHeapCommit: 0x1000
+.w184: PUT .exe 184 0
+.w185: PUT .exe 185 16
+.w186: PUT .exe 186 0
+.w187: PUT .exe 187 0
+.w188: PUT .exe 188 0
+.w189: PUT .exe 189 0
+.w190: PUT .exe 190 0
+.w191: PUT .exe 191 0
+
+-- LoaderFlags: 0
+.w192: PUT .exe 192 0
+.w193: PUT .exe 193 0
+.w194: PUT .exe 194 0
+.w195: PUT .exe 195 0
+
+-- NumberOfRvaAndSizes: 16
+.w196: PUT .exe 196 16
+.w197: PUT .exe 197 0
+.w198: PUT .exe 198 0
+.w199: PUT .exe 199 0
+
+-- Data directories (16 * 8 = 128 bytes, all zeros for minimal exe)
+-- Offset 200-327: zeros (already zero from ALC)
+
+-- ============================================
+-- SECTION HEADER .text (40 bytes at offset 328)
+-- ============================================
+
+-- Name: ".text\0\0\0"
+.w328: PUT .exe 328 46
+.w329: PUT .exe 329 116
+.w330: PUT .exe 330 101
+.w331: PUT .exe 331 120
+.w332: PUT .exe 332 116
+.w333: PUT .exe 333 0
+.w334: PUT .exe 334 0
+.w335: PUT .exe 335 0
+
+-- VirtualSize: 512
+.w336: PUT .exe 336 0
+.w337: PUT .exe 337 2
+.w338: PUT .exe 338 0
+.w339: PUT .exe 339 0
+
+-- VirtualAddress: 0x1000
+.w340: PUT .exe 340 0
+.w341: PUT .exe 341 16
+.w342: PUT .exe 342 0
+.w343: PUT .exe 343 0
+
+-- SizeOfRawData: 512
+.w344: PUT .exe 344 0
+.w345: PUT .exe 345 2
+.w346: PUT .exe 346 0
+.w347: PUT .exe 347 0
+
+-- PointerToRawData: 0x200 (512)
+.w348: PUT .exe 348 0
+.w349: PUT .exe 349 2
+.w350: PUT .exe 350 0
+.w351: PUT .exe 351 0
+
+-- PointerToRelocations: 0
+.w352: PUT .exe 352 0
+.w353: PUT .exe 353 0
+.w354: PUT .exe 354 0
+.w355: PUT .exe 355 0
+
+-- PointerToLinenumbers: 0
+.w356: PUT .exe 356 0
+.w357: PUT .exe 357 0
+.w358: PUT .exe 358 0
+.w359: PUT .exe 359 0
+
+-- NumberOfRelocations: 0
+.w360: PUT .exe 360 0
+.w361: PUT .exe 361 0
+
+-- NumberOfLinenumbers: 0
+.w362: PUT .exe 362 0
+.w363: PUT .exe 363 0
+
+-- Characteristics: CODE | EXECUTE | READ
+.w364: PUT .exe 364 32
+.w365: PUT .exe 365 0
+.w366: PUT .exe 366 0
+.w367: PUT .exe 367 96
+
+-- ============================================
+-- CODE SECTION at offset 512 (0x200)
+-- Simple: mov eax, 0; ret (exit with 0)
+-- ============================================
+
+-- xor eax, eax (31 C0)
+.c0: PUT .exe 512 49
+.c1: PUT .exe 513 192
+
+-- ret (C3)
+.c2: PUT .exe 514 195
+
+-- ============================================
+-- ESCRIBIR ARCHIVO
+-- ============================================
+
+.opath: "hello.exe"
+.oh: FOP .opath .one
+.size: 1024
+.wlen: FWR .oh .exe .size
+.oc: FCL .oh
+
+-- ============================================
+-- OUTPUT
+-- ============================================
+
+.hdr: "Gen0.5 - PE Generator\n"
+.num: ALC 32
+.p0: PRT .hdr 22
+
+.ms: "Generated: hello.exe ("
+.p1: PRT .ms 22
+.n1: ITS .size .num
+.p2: PRT .num .n1
+.mb: " bytes)\n"
+.p3: PRT .mb 8
+
+.mt: "Entry: xor eax,eax; ret\n"
+.p4: PRT .mt 24
+
+-- Cleanup
+.f1: FRE .exe
+.f2: FRE .num
+
+!

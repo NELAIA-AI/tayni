@@ -1,0 +1,269 @@
+-- TAYNI Parser v0.15 - Full Token Scanner
+-- Verifica TODAS las posiciones de 0 a 50
+
+.zero: 0
+.one: 1
+
+.num_buf: ALC 32
+.src_buf: ALC 65536
+
+-- Token types (FSM v3)
+.TT_DOT: 1
+.TT_COLON: 2
+.TT_ID: 3
+.TT_NUM: 4
+.TT_STR: 5
+.TT_NL: 6
+
+-- Header
+.header: "TAYNI Parser v0.15\n"
+.p0: PRT .header 19
+
+-- Read source
+.src_path: "input.tyn"
+.src_handle: FOP .src_path .zero
+.src_len: FRD .src_handle .src_buf 65536
+.close_src: FCL .src_handle
+
+.msg_src: "Source: "
+.p1: PRT .msg_src 8
+.n1: ITS .src_len .num_buf
+.p2: PRT .num_buf .n1
+.msg_bytes: " bytes\n"
+.p3: PRT .msg_bytes 7
+
+-- Tokenize
+.tok: FSM .src_buf .src_len
+.tok_count: GET .tok .zero
+
+.msg_tok: "Tokens: "
+.p4: PRT .msg_tok 8
+.n2: ITS .tok_count .num_buf
+.p5: PRT .num_buf .n2
+.nl: "\n"
+.p6: PRT .nl 1
+
+-- Read all tokens (0-50)
+.t0: GET .tok 8
+.t1: GET .tok 12
+.t2: GET .tok 16
+.t3: GET .tok 20
+.t4: GET .tok 24
+.t5: GET .tok 28
+.t6: GET .tok 32
+.t7: GET .tok 36
+.t8: GET .tok 40
+.t9: GET .tok 44
+.t10: GET .tok 48
+.t11: GET .tok 52
+.t12: GET .tok 56
+.t13: GET .tok 60
+.t14: GET .tok 64
+.t15: GET .tok 68
+.t16: GET .tok 72
+.t17: GET .tok 76
+.t18: GET .tok 80
+.t19: GET .tok 84
+.t20: GET .tok 88
+.t21: GET .tok 92
+.t22: GET .tok 96
+.t23: GET .tok 100
+.t24: GET .tok 104
+.t25: GET .tok 108
+.t26: GET .tok 112
+.t27: GET .tok 116
+.t28: GET .tok 120
+.t29: GET .tok 124
+.t30: GET .tok 128
+.t31: GET .tok 132
+.t32: GET .tok 136
+.t33: GET .tok 140
+.t34: GET .tok 144
+.t35: GET .tok 148
+.t36: GET .tok 152
+.t37: GET .tok 156
+.t38: GET .tok 160
+.t39: GET .tok 164
+.t40: GET .tok 168
+.t41: GET .tok 172
+.t42: GET .tok 176
+.t43: GET .tok 180
+.t44: GET .tok 184
+.t45: GET .tok 188
+.t46: GET .tok 192
+.t47: GET .tok 196
+.t48: GET .tok 200
+.t49: GET .tok 204
+
+-- Check each position for DOT-ID-COLON pattern
+-- A valid node starts with DOT ID COLON
+
+-- Pos 0
+.v0_dot: EQ .t0 .TT_DOT
+.v0_id: EQ .t1 .TT_ID
+.v0_colon: EQ .t2 .TT_COLON
+.v0_a: AND .v0_dot .v0_id
+.v0: AND .v0_a .v0_colon
+.v0_num: EQ .t3 .TT_NUM
+.v0_str: EQ .t3 .TT_STR
+.v0_lit: OR .v0_num .v0_str
+.v0_ref: EQ .t3 .TT_DOT
+.v0_op: EQ .t3 .TT_ID
+
+-- Pos 5
+.v5_dot: EQ .t5 .TT_DOT
+.v5_id: EQ .t6 .TT_ID
+.v5_colon: EQ .t7 .TT_COLON
+.v5_a: AND .v5_dot .v5_id
+.v5: AND .v5_a .v5_colon
+.v5_num: EQ .t8 .TT_NUM
+.v5_str: EQ .t8 .TT_STR
+.v5_lit: OR .v5_num .v5_str
+.v5_ref: EQ .t8 .TT_DOT
+.v5_op: EQ .t8 .TT_ID
+
+-- Pos 12 (after .x:42\n and .y:3.14\n which is 5+7=12)
+.v12_dot: EQ .t12 .TT_DOT
+.v12_id: EQ .t13 .TT_ID
+.v12_colon: EQ .t14 .TT_COLON
+.v12_a: AND .v12_dot .v12_id
+.v12: AND .v12_a .v12_colon
+.v12_num: EQ .t15 .TT_NUM
+.v12_str: EQ .t15 .TT_STR
+.v12_lit: OR .v12_num .v12_str
+.v12_ref: EQ .t15 .TT_DOT
+.v12_op: EQ .t15 .TT_ID
+
+-- Pos 17 (after .msg:"Hello"\n = 12+5=17)
+.v17_dot: EQ .t17 .TT_DOT
+.v17_id: EQ .t18 .TT_ID
+.v17_colon: EQ .t19 .TT_COLON
+.v17_a: AND .v17_dot .v17_id
+.v17: AND .v17_a .v17_colon
+.v17_num: EQ .t20 .TT_NUM
+.v17_str: EQ .t20 .TT_STR
+.v17_lit: OR .v17_num .v17_str
+.v17_ref: EQ .t20 .TT_DOT
+.v17_op: EQ .t20 .TT_ID
+
+-- Pos 23 (after .ref:.x\n = 17+6=23)
+.v23_dot: EQ .t23 .TT_DOT
+.v23_id: EQ .t24 .TT_ID
+.v23_colon: EQ .t25 .TT_COLON
+.v23_a: AND .v23_dot .v23_id
+.v23: AND .v23_a .v23_colon
+.v23_num: EQ .t26 .TT_NUM
+.v23_str: EQ .t26 .TT_STR
+.v23_lit: OR .v23_num .v23_str
+.v23_ref: EQ .t26 .TT_DOT
+.v23_op: EQ .t26 .TT_ID
+
+-- Pos 32 (after .sum:ADD .x .y\n = 23+9=32)
+.v32_dot: EQ .t32 .TT_DOT
+.v32_id: EQ .t33 .TT_ID
+.v32_colon: EQ .t34 .TT_COLON
+.v32_a: AND .v32_dot .v32_id
+.v32: AND .v32_a .v32_colon
+.v32_num: EQ .t35 .TT_NUM
+.v32_str: EQ .t35 .TT_STR
+.v32_lit: OR .v32_num .v32_str
+.v32_ref: EQ .t35 .TT_DOT
+.v32_op: EQ .t35 .TT_ID
+
+-- Pos 41 (after .diff:SUB .y .x\n = 32+9=41)
+.v41_dot: EQ .t41 .TT_DOT
+.v41_id: EQ .t42 .TT_ID
+.v41_colon: EQ .t43 .TT_COLON
+.v41_a: AND .v41_dot .v41_id
+.v41: AND .v41_a .v41_colon
+.v41_num: EQ .t44 .TT_NUM
+.v41_str: EQ .t44 .TT_STR
+.v41_lit: OR .v41_num .v41_str
+.v41_ref: EQ .t44 .TT_DOT
+.v41_op: EQ .t44 .TT_ID
+
+-- Sum valid nodes
+.nc_a: ADD .v0 .v5
+.nc_b: ADD .nc_a .v12
+.nc_c: ADD .nc_b .v17
+.nc_d: ADD .nc_c .v23
+.nc_e: ADD .nc_d .v32
+.node_count: ADD .nc_e .v41
+
+-- Sum literals
+.v0_is_lit: AND .v0 .v0_lit
+.v5_is_lit: AND .v5 .v5_lit
+.v12_is_lit: AND .v12 .v12_lit
+.v17_is_lit: AND .v17 .v17_lit
+.v23_is_lit: AND .v23 .v23_lit
+.v32_is_lit: AND .v32 .v32_lit
+.v41_is_lit: AND .v41 .v41_lit
+.lc_a: ADD .v0_is_lit .v5_is_lit
+.lc_b: ADD .lc_a .v12_is_lit
+.lc_c: ADD .lc_b .v17_is_lit
+.lc_d: ADD .lc_c .v23_is_lit
+.lc_e: ADD .lc_d .v32_is_lit
+.lit_count: ADD .lc_e .v41_is_lit
+
+-- Sum refs
+.v0_is_ref: AND .v0 .v0_ref
+.v5_is_ref: AND .v5 .v5_ref
+.v12_is_ref: AND .v12 .v12_ref
+.v17_is_ref: AND .v17 .v17_ref
+.v23_is_ref: AND .v23 .v23_ref
+.v32_is_ref: AND .v32 .v32_ref
+.v41_is_ref: AND .v41 .v41_ref
+.rc_a: ADD .v0_is_ref .v5_is_ref
+.rc_b: ADD .rc_a .v12_is_ref
+.rc_c: ADD .rc_b .v17_is_ref
+.rc_d: ADD .rc_c .v23_is_ref
+.rc_e: ADD .rc_d .v32_is_ref
+.ref_count: ADD .rc_e .v41_is_ref
+
+-- Sum ops
+.v0_is_op: AND .v0 .v0_op
+.v5_is_op: AND .v5 .v5_op
+.v12_is_op: AND .v12 .v12_op
+.v17_is_op: AND .v17 .v17_op
+.v23_is_op: AND .v23 .v23_op
+.v32_is_op: AND .v32 .v32_op
+.v41_is_op: AND .v41 .v41_op
+.oc_a: ADD .v0_is_op .v5_is_op
+.oc_b: ADD .oc_a .v12_is_op
+.oc_c: ADD .oc_b .v17_is_op
+.oc_d: ADD .oc_c .v23_is_op
+.oc_e: ADD .oc_d .v32_is_op
+.op_count: ADD .oc_e .v41_is_op
+
+-- Output
+.msg_valid: "\nParsed nodes: "
+.pv0: PRT .msg_valid 15
+.nv: ITS .node_count .num_buf
+.pv1: PRT .num_buf .nv
+.pv2: PRT .nl 1
+
+.msg_lit: "  Literals: "
+.pl0: PRT .msg_lit 12
+.nl_: ITS .lit_count .num_buf
+.pl1: PRT .num_buf .nl_
+.pl2: PRT .nl 1
+
+.msg_ref: "  References: "
+.pr0: PRT .msg_ref 14
+.nr: ITS .ref_count .num_buf
+.pr1: PRT .num_buf .nr
+.pr2: PRT .nl 1
+
+.msg_op: "  Operations: "
+.po0: PRT .msg_op 14
+.no: ITS .op_count .num_buf
+.po1: PRT .num_buf .no
+.po2: PRT .nl 1
+
+.msg_done: "\nParser v0.15 complete.\n"
+.pd: PRT .msg_done 24
+
+.free1: FRE .num_buf
+.free2: FRE .src_buf
+
+!

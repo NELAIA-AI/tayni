@@ -1,0 +1,317 @@
+-- TAYNI Gen0.3 - Detección correcta de nodos
+-- Busca DOT-ID-COLON en todas las posiciones
+-- Autonomía Total
+-- Fecha: 2026-06-16
+
+.zero: 0
+.one: 1
+
+-- ASCII
+.C_DOT: 46
+.C_COLON: 58
+.C_a: 97
+.C_z: 122
+.C_0: 48
+.C_9: 57
+
+-- Tipos
+.T_DOT: 1
+.T_COLON: 2
+.T_ID: 3
+.T_NUM: 4
+
+-- Buffers
+.src: ALC 256
+.num: ALC 32
+
+-- Leer
+.path: "input.tyn"
+.h: FOP .path .zero
+.len: FRD .h .src 256
+.c: FCL .h
+
+-- ============================================
+-- CLASIFICAR BYTES 0-19
+-- ============================================
+
+-- Función inline: clasificar byte
+-- DOT=1, COLON=2, alpha=3, digit=4, else=0
+
+.r0: GET .src 0
+.r0d: EQ .r0 .C_DOT
+.r0c: EQ .r0 .C_COLON
+.r0a: GE .r0 .C_a
+.r0z: LE .r0 .C_z
+.r0al: MUL .r0a .r0z
+.r0n: GE .r0 .C_0
+.r09: LE .r0 .C_9
+.r0dg: MUL .r0n .r09
+.t0a: MUL .r0d 1
+.t0b: MUL .r0c 2
+.t0c: MUL .r0al 3
+.t0d: MUL .r0dg 4
+.t0e: ADD .t0a .t0b
+.t0f: ADD .t0e .t0c
+.t0: ADD .t0f .t0d
+
+.r1: GET .src 1
+.r1d: EQ .r1 .C_DOT
+.r1c: EQ .r1 .C_COLON
+.r1a: GE .r1 .C_a
+.r1z: LE .r1 .C_z
+.r1al: MUL .r1a .r1z
+.r1n: GE .r1 .C_0
+.r19: LE .r1 .C_9
+.r1dg: MUL .r1n .r19
+.t1a: MUL .r1d 1
+.t1b: MUL .r1c 2
+.t1c: MUL .r1al 3
+.t1d: MUL .r1dg 4
+.t1e: ADD .t1a .t1b
+.t1f: ADD .t1e .t1c
+.t1: ADD .t1f .t1d
+
+.r2: GET .src 2
+.r2d: EQ .r2 .C_DOT
+.r2c: EQ .r2 .C_COLON
+.r2a: GE .r2 .C_a
+.r2z: LE .r2 .C_z
+.r2al: MUL .r2a .r2z
+.r2n: GE .r2 .C_0
+.r29: LE .r2 .C_9
+.r2dg: MUL .r2n .r29
+.t2a: MUL .r2d 1
+.t2b: MUL .r2c 2
+.t2c: MUL .r2al 3
+.t2d: MUL .r2dg 4
+.t2e: ADD .t2a .t2b
+.t2f: ADD .t2e .t2c
+.t2: ADD .t2f .t2d
+
+.r3: GET .src 3
+.r3d: EQ .r3 .C_DOT
+.r3c: EQ .r3 .C_COLON
+.r3a: GE .r3 .C_a
+.r3z: LE .r3 .C_z
+.r3al: MUL .r3a .r3z
+.r3n: GE .r3 .C_0
+.r39: LE .r3 .C_9
+.r3dg: MUL .r3n .r39
+.t3a: MUL .r3d 1
+.t3b: MUL .r3c 2
+.t3c: MUL .r3al 3
+.t3d: MUL .r3dg 4
+.t3e: ADD .t3a .t3b
+.t3f: ADD .t3e .t3c
+.t3: ADD .t3f .t3d
+
+.r4: GET .src 4
+.r4d: EQ .r4 .C_DOT
+.r4c: EQ .r4 .C_COLON
+.r4a: GE .r4 .C_a
+.r4z: LE .r4 .C_z
+.r4al: MUL .r4a .r4z
+.r4n: GE .r4 .C_0
+.r49: LE .r4 .C_9
+.r4dg: MUL .r4n .r49
+.t4a: MUL .r4d 1
+.t4b: MUL .r4c 2
+.t4c: MUL .r4al 3
+.t4d: MUL .r4dg 4
+.t4e: ADD .t4a .t4b
+.t4f: ADD .t4e .t4c
+.t4: ADD .t4f .t4d
+
+.r5: GET .src 5
+.r5d: EQ .r5 .C_DOT
+.t5: MUL .r5d 1
+
+.r6: GET .src 6
+.r6d: EQ .r6 .C_DOT
+.r6c: EQ .r6 .C_COLON
+.r6a: GE .r6 .C_a
+.r6z: LE .r6 .C_z
+.r6al: MUL .r6a .r6z
+.t6a: MUL .r6d 1
+.t6b: MUL .r6c 2
+.t6c: MUL .r6al 3
+.t6e: ADD .t6a .t6b
+.t6: ADD .t6e .t6c
+
+.r7: GET .src 7
+.r7d: EQ .r7 .C_DOT
+.r7c: EQ .r7 .C_COLON
+.r7a: GE .r7 .C_a
+.r7z: LE .r7 .C_z
+.r7al: MUL .r7a .r7z
+.t7a: MUL .r7d 1
+.t7b: MUL .r7c 2
+.t7c: MUL .r7al 3
+.t7e: ADD .t7a .t7b
+.t7: ADD .t7e .t7c
+
+.r8: GET .src 8
+.r8d: EQ .r8 .C_DOT
+.r8c: EQ .r8 .C_COLON
+.r8a: GE .r8 .C_a
+.r8z: LE .r8 .C_z
+.r8al: MUL .r8a .r8z
+.t8a: MUL .r8d 1
+.t8b: MUL .r8c 2
+.t8c: MUL .r8al 3
+.t8e: ADD .t8a .t8b
+.t8: ADD .t8e .t8c
+
+.r9: GET .src 9
+.r9d: EQ .r9 .C_DOT
+.t9: MUL .r9d 1
+
+.r10: GET .src 10
+.r10d: EQ .r10 .C_DOT
+.r10n: GE .r10 .C_0
+.r109: LE .r10 .C_9
+.r10dg: MUL .r10n .r109
+.t10a: MUL .r10d 1
+.t10b: MUL .r10dg 4
+.t10: ADD .t10a .t10b
+
+.r11: GET .src 11
+.r11d: EQ .r11 .C_DOT
+.t11: MUL .r11d 1
+
+.r12: GET .src 12
+.r12d: EQ .r12 .C_DOT
+.r12c: EQ .r12 .C_COLON
+.r12a: GE .r12 .C_a
+.r12z: LE .r12 .C_z
+.r12al: MUL .r12a .r12z
+.t12a: MUL .r12d 1
+.t12b: MUL .r12c 2
+.t12c: MUL .r12al 3
+.t12e: ADD .t12a .t12b
+.t12: ADD .t12e .t12c
+
+.r13: GET .src 13
+.r13d: EQ .r13 .C_DOT
+.r13c: EQ .r13 .C_COLON
+.r13a: GE .r13 .C_a
+.r13z: LE .r13 .C_z
+.r13al: MUL .r13a .r13z
+.t13a: MUL .r13d 1
+.t13b: MUL .r13c 2
+.t13c: MUL .r13al 3
+.t13e: ADD .t13a .t13b
+.t13: ADD .t13e .t13c
+
+.r14: GET .src 14
+.r14d: EQ .r14 .C_DOT
+.r14c: EQ .r14 .C_COLON
+.r14a: GE .r14 .C_a
+.r14z: LE .r14 .C_z
+.r14al: MUL .r14a .r14z
+.t14a: MUL .r14d 1
+.t14b: MUL .r14c 2
+.t14c: MUL .r14al 3
+.t14e: ADD .t14a .t14b
+.t14: ADD .t14e .t14c
+
+-- ============================================
+-- DETECTAR PATRONES DOT(1)-ID(3)-COLON(2)
+-- Posiciones: 0, 6, 12 (cada línea tiene 6 bytes)
+-- ============================================
+
+-- Pos 0: t0=DOT, t1=ID, t2=COLON
+.m0d: EQ .t0 1
+.m0i: EQ .t1 3
+.m0c: EQ .t2 2
+.m0x: MUL .m0d .m0i
+.m0: MUL .m0x .m0c
+
+-- Pos 6: t6=DOT, t7=ID, t8=COLON
+.m6d: EQ .t6 1
+.m6i: EQ .t7 3
+.m6c: EQ .t8 2
+.m6x: MUL .m6d .m6i
+.m6: MUL .m6x .m6c
+
+-- Pos 12: t12=DOT, t13=ID, t14=COLON
+.m12d: EQ .t12 1
+.m12i: EQ .t13 3
+.m12c: EQ .t14 2
+.m12x: MUL .m12d .m12i
+.m12: MUL .m12x .m12c
+
+-- Total
+.na: ADD .m0 .m6
+.nodes: ADD .na .m12
+
+-- ============================================
+-- OUTPUT
+-- ============================================
+
+.hdr: "Gen0.3 - Autonomia Total\n"
+.p0: PRT .hdr 25
+
+.ms: "Bytes: "
+.p1: PRT .ms 7
+.n1: ITS .len .num
+.p2: PRT .num .n1
+.p3: PRT "\n" 1
+
+.mt: "Types: "
+.p4: PRT .mt 7
+.n2: ITS .t0 .num
+.p5: PRT .num .n2
+.sp: " "
+.p6: PRT .sp 1
+.n3: ITS .t1 .num
+.p7: PRT .num .n3
+.p8: PRT .sp 1
+.n4: ITS .t2 .num
+.p9: PRT .num .n4
+.p10: PRT .sp 1
+.n5: ITS .t6 .num
+.p11: PRT .num .n5
+.p12: PRT .sp 1
+.n6: ITS .t7 .num
+.p13: PRT .num .n6
+.p14: PRT .sp 1
+.n7: ITS .t8 .num
+.p15: PRT .num .n7
+.p16: PRT .sp 1
+.n8: ITS .t12 .num
+.p17: PRT .num .n8
+.p18: PRT .sp 1
+.n9: ITS .t13 .num
+.p19: PRT .num .n9
+.p20: PRT .sp 1
+.n10: ITS .t14 .num
+.p21: PRT .num .n10
+.nl: "\n"
+.p22: PRT .nl 1
+
+.mn: "Nodes: "
+.p23: PRT .mn 7
+.n11: ITS .nodes .num
+.p24: PRT .num .n11
+.p25: PRT .nl 1
+
+.mm: "Match@0: "
+.p26: PRT .mm 9
+.n12: ITS .m0 .num
+.p27: PRT .num .n12
+.m1: " @6: "
+.p28: PRT .m1 5
+.n13: ITS .m6 .num
+.p29: PRT .num .n13
+.m2: " @12: "
+.p30: PRT .m2 6
+.n14: ITS .m12 .num
+.p31: PRT .num .n14
+.p32: PRT .nl 1
+
+-- Cleanup
+.f1: FRE .src
+.f2: FRE .num
+
+!

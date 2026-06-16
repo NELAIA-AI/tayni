@@ -1,0 +1,33 @@
+-- TAYNI Debug - Solo lee template y lo escribe
+-- Para verificar que FOP/FRD/FWR funcionan
+-- Fecha: 2026-06-16
+
+.zero: 0
+.one: 1
+
+-- Leer template
+.buf: ALC 8192
+.spath: "fileio2.exe.exe"
+.sh: FOP .spath .zero
+.slen: FRD .sh .buf 8192
+.sc: FCL .sh
+
+-- Escribir copia
+.opath: "copy.exe"
+.oh: FOP .opath .one
+.wlen: FWR .oh .buf .slen
+.oc: FCL .oh
+
+-- Output
+.msg: "Copied "
+.p0: PRT .msg 7
+.num: ALC 16
+.its: ITS .slen .num
+.p1: PRT .num .its
+.msg2: " bytes\n"
+.p2: PRT .msg2 7
+
+.f1: FRE .buf
+.f2: FRE .num
+
+!

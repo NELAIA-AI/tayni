@@ -1,0 +1,106 @@
+.zero: 0
+.one: 1
+.buf: ALC 4096
+.num: ALC 32
+.pe: ALC 8192
+.msg: "TAYNI 0.8\n"
+.p1: PRT .msg 10
+.src: "input.tyn"
+.h: FOP .src .zero
+.len: FRD .h .buf 4096
+.c: FCL .h
+.m2: "Src: "
+.p2: PRT .m2 5
+.n: ITS .len .num
+.p3: PRT .num .n
+.m3: " bytes, "
+.p4: PRT .m3 8
+.tok: FSM .buf .len
+.tc: GET .tok .zero
+.m4: "Tok: "
+.p5: PRT .m4 5
+.n2: ITS .tc .num
+.p6: PRT .num .n2
+.nl: "\n"
+.p7: PRT .nl 1
+.tpl: "pe_template.bin"
+.th: FOP .tpl .zero
+.tl: FRD .th .pe 8192
+.tc2: FCL .th
+.str_off: 1536
+.outmsg: "TAYNI 0.8 Output\n"
+.si0: 0
+.sc0: CHR .outmsg .si0
+.so0: ADD .str_off .si0
+.ss0: PUT .pe .so0 .sc0
+.si1: 1
+.sc1: CHR .outmsg .si1
+.so1: ADD .str_off .si1
+.ss1: PUT .pe .so1 .sc1
+.si2: 2
+.sc2: CHR .outmsg .si2
+.so2: ADD .str_off .si2
+.ss2: PUT .pe .so2 .sc2
+.si3: 3
+.sc3: CHR .outmsg .si3
+.so3: ADD .str_off .si3
+.ss3: PUT .pe .so3 .sc3
+.si4: 4
+.sc4: CHR .outmsg .si4
+.so4: ADD .str_off .si4
+.ss4: PUT .pe .so4 .sc4
+.si5: 5
+.sc5: CHR .outmsg .si5
+.so5: ADD .str_off .si5
+.ss5: PUT .pe .so5 .sc5
+.si6: 6
+.sc6: CHR .outmsg .si6
+.so6: ADD .str_off .si6
+.ss6: PUT .pe .so6 .sc6
+.si7: 7
+.sc7: CHR .outmsg .si7
+.so7: ADD .str_off .si7
+.ss7: PUT .pe .so7 .sc7
+.si8: 8
+.sc8: CHR .outmsg .si8
+.so8: ADD .str_off .si8
+.ss8: PUT .pe .so8 .sc8
+.si9: 9
+.sc9: CHR .outmsg .si9
+.so9: ADD .str_off .si9
+.ss9: PUT .pe .so9 .sc9
+.si10: 10
+.sc10: CHR .outmsg .si10
+.so10: ADD .str_off .si10
+.ss10: PUT .pe .so10 .sc10
+.si11: 11
+.sc11: CHR .outmsg .si11
+.so11: ADD .str_off .si11
+.ss11: PUT .pe .so11 .sc11
+.si12: 12
+.sc12: CHR .outmsg .si12
+.so12: ADD .str_off .si12
+.ss12: PUT .pe .so12 .sc12
+.si13: 13
+.sc13: CHR .outmsg .si13
+.so13: ADD .str_off .si13
+.ss13: PUT .pe .so13 .sc13
+.si14: 14
+.sc14: CHR .outmsg .si14
+.so14: ADD .str_off .si14
+.ss14: PUT .pe .so14 .sc14
+.si15: 15
+.sc15: CHR .outmsg .si15
+.so15: ADD .str_off .si15
+.ss15: PUT .pe .so15 .sc15
+.si16: 16
+.sc16: CHR .outmsg .si16
+.so16: ADD .str_off .si16
+.ss16: PUT .pe .so16 .sc16
+.out: "output.exe"
+.oh: FOP .out .one
+.w: FWR .oh .pe .tl
+.oc: FCL .oh
+.m9: "OK\n"
+.p15: PRT .m9 3
+!

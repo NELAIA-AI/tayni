@@ -1,0 +1,224 @@
+-- TAYNI Gen5.1 - Compilador con operaciones expandidas
+-- Genera codigo x86-64 para ADD, SUB, MUL, DIV
+-- Fecha: 2026-06-16
+
+.zero: 0
+.one: 1
+
+-- ASCII
+.C_0: 48
+.C_A: 65
+.C_S: 83
+.C_M: 77
+.C_D: 68
+
+-- Buffers
+.src: ALC 128
+.exe: ALC 2048
+
+-- Leer input
+.path: "input.tyn"
+.h: FOP .path .zero
+.len: FRD .h .src 128
+.c: FCL .h
+
+-- Parsear nodo 0: .a: N
+.n0_b4: GET .src 4
+.v0: SUB .n0_b4 .C_0
+
+-- Parsear nodo 1: .b: N (offset 7)
+.n1_b4: GET .src 11
+.v1: SUB .n1_b4 .C_0
+
+-- Parsear operacion (offset 14, byte 4 = letra)
+.op_b: GET .src 18
+.is_A: EQ .op_b .C_A
+.is_S: EQ .op_b .C_S
+.is_M: EQ .op_b .C_M
+.is_D: EQ .op_b .C_D
+
+-- ===== PE HEADER =====
+.d0: PUT .exe 0 77
+.d1: PUT .exe 1 90
+.d60: PUT .exe 60 64
+.pe0: PUT .exe 64 80
+.pe1: PUT .exe 65 69
+.cf0: PUT .exe 68 100
+.cf1: PUT .exe 69 134
+.cf2: PUT .exe 70 1
+.cf16: PUT .exe 84 240
+.cf18: PUT .exe 86 34
+.oh0: PUT .exe 88 11
+.oh1: PUT .exe 89 2
+.oh5: PUT .exe 93 2
+.oh17: PUT .exe 105 16
+.oh21: PUT .exe 109 16
+.oh27: PUT .exe 115 64
+.oh28: PUT .exe 116 1
+.oh33: PUT .exe 121 16
+.oh37: PUT .exe 125 2
+.oh40: PUT .exe 128 6
+.oh48: PUT .exe 136 6
+.oh57: PUT .exe 145 32
+.oh61: PUT .exe 149 2
+.oh68: PUT .exe 156 3
+.oh70: PUT .exe 158 96
+.oh71: PUT .exe 159 129
+.oh74: PUT .exe 162 16
+.oh81: PUT .exe 169 16
+.oh90: PUT .exe 178 16
+.oh97: PUT .exe 185 16
+.oh108: PUT .exe 196 16
+.sh0: PUT .exe 328 46
+.sh1: PUT .exe 329 116
+.sh2: PUT .exe 330 101
+.sh3: PUT .exe 331 120
+.sh4: PUT .exe 332 116
+.sh9: PUT .exe 337 2
+.sh13: PUT .exe 341 16
+.sh17: PUT .exe 345 2
+.sh21: PUT .exe 349 2
+.sh36: PUT .exe 364 32
+.sh39: PUT .exe 367 96
+
+-- ===== GENERAR CODIGO x86-64 =====
+-- Codigo base: mov eax, v0; mov ecx, v1; <op>; ret
+
+-- mov eax, v0 (B8 + imm32)
+.mc0: PUT .exe 512 184
+.mc1: PUT .exe 513 .v0
+.mc2: PUT .exe 514 0
+.mc3: PUT .exe 515 0
+.mc4: PUT .exe 516 0
+
+-- mov ecx, v1 (B9 + imm32)
+.mc5: PUT .exe 517 185
+.mc6: PUT .exe 518 .v1
+.mc7: PUT .exe 519 0
+.mc8: PUT .exe 520 0
+.mc9: PUT .exe 521 0
+
+-- Operacion (2-3 bytes)
+-- ADD: 01 C8 (add eax, ecx)
+-- SUB: 29 C8 (sub eax, ecx)
+-- MUL: F7 E1 (mul ecx) - resultado en eax
+-- DIV: 99 F7 F9 (cdq; idiv ecx) - resultado en eax
+
+-- Calcular bytes de operacion
+-- ADD: 01 C8
+.add_b0: MUL .is_A 1
+.add_b1: MUL .is_A 200
+
+-- SUB: 29 C8
+.sub_b0: MUL .is_S 41
+.sub_b1: MUL .is_S 200
+
+-- MUL: F7 E1
+.mul_b0: MUL .is_M 247
+.mul_b1: MUL .is_M 225
+
+-- DIV: 99 (cdq)
+.div_b0: MUL .is_D 153
+
+-- Combinar bytes
+.op_b0: ADD .add_b0 .sub_b0
+.op_b0x: ADD .op_b0 .mul_b0
+.op_b0f: ADD .op_b0x .div_b0
+
+.op_b1: ADD .add_b1 .sub_b1
+.op_b1x: ADD .op_b1 .mul_b1
+
+-- Para DIV, el segundo byte es F7 (247)
+.div_b1: MUL .is_D 247
+.op_b1f: ADD .op_b1x .div_b1
+
+-- Escribir operacion
+.mc10: PUT .exe 522 .op_b0f
+.mc11: PUT .exe 523 .op_b1f
+
+-- Para DIV, necesitamos F9 en 524 y C3 en 525
+-- Para otros, necesitamos C3 en 524
+-- DIV: 99 F7 F9 C3 (4 bytes)
+-- Otros: XX XX C3 (3 bytes)
+
+.div_f9: MUL .is_D 249
+
+-- Escribir ret o F9 en 524
+.not_div: SUB .one .is_D
+.ret_or_f9: MUL .not_div 195
+.f9_or_ret: ADD .ret_or_f9 .div_f9
+.mc14a: PUT .exe 524 .f9_or_ret
+
+-- Escribir ret en 525 solo para DIV
+.div_ret: MUL .is_D 195
+.mc14b: PUT .exe 525 .div_ret
+
+-- ===== ESCRIBIR PE =====
+.opath: "result.exe"
+.oh2: FOP .opath .one
+.size: 1024
+.wlen: FWR .oh2 .exe .size
+.oc: FCL .oh2
+
+-- ===== OUTPUT =====
+.msg: "Gen5.1: "
+.p0: PRT .msg 8
+
+.num: ALC 8
+.its0: ITS .v0 .num
+.p1: PRT .num .its0
+
+-- Imprimir operador
+.op_add: " + "
+.op_sub: " - "
+.op_mul: " * "
+.op_div: " / "
+
+.pa: MUL .is_A 3
+.ps: MUL .is_S 3
+.pm: MUL .is_M 3
+.pd: MUL .is_D 3
+
+.p2a: IFZ .is_A .zero .pa
+.p2: PRT .op_add .p2a
+.p3a: IFZ .is_S .zero .ps
+.p3: PRT .op_sub .p3a
+.p4a: IFZ .is_M .zero .pm
+.p4: PRT .op_mul .p4a
+.p5a: IFZ .is_D .zero .pd
+.p5: PRT .op_div .p5a
+
+.its1: ITS .v1 .num
+.p6: PRT .num .its1
+
+-- Calcular resultado para mostrar
+.r_add: ADD .v0 .v1
+.r_sub: SUB .v0 .v1
+.r_mul: MUL .v0 .v1
+.r_div: DIV .v0 .v1
+
+.ra: MUL .is_A .r_add
+.rs: MUL .is_S .r_sub
+.rm: MUL .is_M .r_mul
+.rd: MUL .is_D .r_div
+
+.res: ADD .ra .rs
+.res2: ADD .res .rm
+.result: ADD .res2 .rd
+
+.eq: " = "
+.p7: PRT .eq 3
+.its2: ITS .result .num
+.p8: PRT .num .its2
+
+.nl: "\n"
+.p9: PRT .nl 1
+
+.msg2: "Output: result.exe\n"
+.p10: PRT .msg2 19
+
+.f1: FRE .src
+.f2: FRE .exe
+.f3: FRE .num
+
+!

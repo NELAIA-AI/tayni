@@ -1,0 +1,149 @@
+-- TAYNI Parser Multi-Nodo
+-- Parsea multiples nodos .id: valor
+-- Codigo desenrollado para hasta 4 nodos
+-- Fecha: 2026-06-16
+
+.zero: 0
+.one: 1
+
+-- ASCII
+.C_DOT: 46
+.C_COLON: 58
+.C_NL: 10
+.C_BANG: 33
+.C_a: 97
+.C_z: 122
+.C_0: 48
+.C_9: 57
+.C_SPACE: 32
+
+-- Buffer
+.src: ALC 128
+
+-- Leer archivo
+.path: "multi.tyn"
+.h: FOP .path .zero
+.len: FRD .h .src 128
+.c: FCL .h
+
+-- ===== PARSEAR NODO 0 (offset 0) =====
+-- Formato: .x: 5\n (6 bytes)
+
+.n0_b0: GET .src 0
+.n0_b1: GET .src 1
+.n0_b2: GET .src 2
+.n0_b3: GET .src 3
+.n0_b4: GET .src 4
+
+-- Verificar patron DOT-ID-COLON
+.n0_dot: EQ .n0_b0 .C_DOT
+.n0_id_a: GE .n0_b1 .C_a
+.n0_id_z: LE .n0_b1 .C_z
+.n0_id: MUL .n0_id_a .n0_id_z
+.n0_col: EQ .n0_b2 .C_COLON
+.n0_spc: EQ .n0_b3 .C_SPACE
+.n0_m1: MUL .n0_dot .n0_id
+.n0_m2: MUL .n0_m1 .n0_col
+.n0_match: MUL .n0_m2 .n0_spc
+
+-- Extraer valor (byte 4)
+.n0_dig: GE .n0_b4 .C_0
+.n0_d9: LE .n0_b4 .C_9
+.n0_isdig: MUL .n0_dig .n0_d9
+.n0_val: SUB .n0_b4 .C_0
+
+-- ===== PARSEAR NODO 1 (offset 7 para \r\n) =====
+
+.n1_b0: GET .src 7
+.n1_b1: GET .src 8
+.n1_b2: GET .src 9
+.n1_b3: GET .src 10
+.n1_b4: GET .src 11
+
+.n1_dot: EQ .n1_b0 .C_DOT
+.n1_id_a: GE .n1_b1 .C_a
+.n1_id_z: LE .n1_b1 .C_z
+.n1_id: MUL .n1_id_a .n1_id_z
+.n1_col: EQ .n1_b2 .C_COLON
+.n1_spc: EQ .n1_b3 .C_SPACE
+.n1_m1: MUL .n1_dot .n1_id
+.n1_m2: MUL .n1_m1 .n1_col
+.n1_match: MUL .n1_m2 .n1_spc
+
+.n1_dig: GE .n1_b4 .C_0
+.n1_d9: LE .n1_b4 .C_9
+.n1_isdig: MUL .n1_dig .n1_d9
+.n1_val: SUB .n1_b4 .C_0
+
+-- ===== PARSEAR NODO 2 (offset 14 para \r\n) =====
+
+.n2_b0: GET .src 14
+.n2_b1: GET .src 15
+.n2_b2: GET .src 16
+.n2_b3: GET .src 17
+.n2_b4: GET .src 18
+
+.n2_dot: EQ .n2_b0 .C_DOT
+.n2_id_a: GE .n2_b1 .C_a
+.n2_id_z: LE .n2_b1 .C_z
+.n2_id: MUL .n2_id_a .n2_id_z
+.n2_col: EQ .n2_b2 .C_COLON
+.n2_spc: EQ .n2_b3 .C_SPACE
+.n2_m1: MUL .n2_dot .n2_id
+.n2_m2: MUL .n2_m1 .n2_col
+.n2_match: MUL .n2_m2 .n2_spc
+
+.n2_dig: GE .n2_b4 .C_0
+.n2_d9: LE .n2_b4 .C_9
+.n2_isdig: MUL .n2_dig .n2_d9
+.n2_val: SUB .n2_b4 .C_0
+
+-- ===== DETECTAR FIN (!) offset 21 =====
+
+.end_b0: GET .src 21
+.is_end: EQ .end_b0 .C_BANG
+
+-- ===== CONTAR NODOS =====
+
+.count: ADD .n0_match .n1_match
+.total: ADD .count .n2_match
+
+-- ===== OUTPUT =====
+
+.msg0: "Parsed nodes: "
+.p0: PRT .msg0 14
+
+.num: ALC 8
+.its0: ITS .total .num
+.p1: PRT .num .its0
+.nl: "\n"
+.p2: PRT .nl 1
+
+.msg1: "Node 0 value: "
+.p3: PRT .msg1 14
+.its1: ITS .n0_val .num
+.p4: PRT .num .its1
+.p5: PRT .nl 1
+
+.msg2: "Node 1 value: "
+.p6: PRT .msg2 14
+.its2: ITS .n1_val .num
+.p7: PRT .num .its2
+.p8: PRT .nl 1
+
+.msg3: "Node 2 value: "
+.p9: PRT .msg3 14
+.its3: ITS .n2_val .num
+.p10: PRT .num .its3
+.p11: PRT .nl 1
+
+.msg4: "End marker: "
+.p12: PRT .msg4 12
+.its4: ITS .is_end .num
+.p13: PRT .num .its4
+.p14: PRT .nl 1
+
+.f1: FRE .src
+.f2: FRE .num
+
+!

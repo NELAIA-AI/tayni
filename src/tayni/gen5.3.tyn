@@ -1,0 +1,219 @@
+-- TAYNI Gen5.3 - Comparaciones
+-- Genera codigo x86-64 para EQ, NE, LT, GT, LE, GE
+-- AI-Native: retorna 1 si true, 0 si false
+-- Fecha: 2026-06-16
+
+.zero: 0
+.one: 1
+
+-- ASCII
+.C_0: 48
+.C_E: 69
+.C_G: 71
+.C_L: 76
+.C_N: 78
+.C_Q: 81
+.C_T: 84
+
+-- Buffers
+.src: ALC 128
+.exe: ALC 2048
+
+-- Leer input
+.path: "input.tyn"
+.h: FOP .path .zero
+.len: FRD .h .src 128
+.c: FCL .h
+
+-- Parsear valores
+.n0_b4: GET .src 4
+.v0: SUB .n0_b4 .C_0
+
+.n1_b4: GET .src 11
+.v1: SUB .n1_b4 .C_0
+
+-- Parsear operacion (2 chars: EQ, NE, LT, GT, LE, GE)
+.op_c0: GET .src 18
+.op_c1: GET .src 19
+
+-- Detectar operacion
+-- EQ: E(69) Q(81)
+-- NE: N(78) E(69)
+-- LT: L(76) T(84)
+-- GT: G(71) T(84)
+-- LE: L(76) E(69)
+-- GE: G(71) E(69)
+
+.c0_E: EQ .op_c0 .C_E
+.c0_N: EQ .op_c0 .C_N
+.c0_L: EQ .op_c0 .C_L
+.c0_G: EQ .op_c0 .C_G
+
+.c1_Q: EQ .op_c1 .C_Q
+.c1_E: EQ .op_c1 .C_E
+.c1_T: EQ .op_c1 .C_T
+
+.is_EQ: MUL .c0_E .c1_Q
+.is_NE: MUL .c0_N .c1_E
+.is_LT: MUL .c0_L .c1_T
+.is_GT: MUL .c0_G .c1_T
+.is_LE: MUL .c0_L .c1_E
+.is_GE: MUL .c0_G .c1_E
+
+-- ===== PE HEADER =====
+.d0: PUT .exe 0 77
+.d1: PUT .exe 1 90
+.d60: PUT .exe 60 64
+.pe0: PUT .exe 64 80
+.pe1: PUT .exe 65 69
+.cf0: PUT .exe 68 100
+.cf1: PUT .exe 69 134
+.cf2: PUT .exe 70 1
+.cf16: PUT .exe 84 240
+.cf18: PUT .exe 86 34
+.oh0: PUT .exe 88 11
+.oh1: PUT .exe 89 2
+.oh5: PUT .exe 93 2
+.oh17: PUT .exe 105 16
+.oh21: PUT .exe 109 16
+.oh27: PUT .exe 115 64
+.oh28: PUT .exe 116 1
+.oh33: PUT .exe 121 16
+.oh37: PUT .exe 125 2
+.oh40: PUT .exe 128 6
+.oh48: PUT .exe 136 6
+.oh57: PUT .exe 145 32
+.oh61: PUT .exe 149 2
+.oh68: PUT .exe 156 3
+.oh70: PUT .exe 158 96
+.oh71: PUT .exe 159 129
+.oh74: PUT .exe 162 16
+.oh81: PUT .exe 169 16
+.oh90: PUT .exe 178 16
+.oh97: PUT .exe 185 16
+.oh108: PUT .exe 196 16
+.sh0: PUT .exe 328 46
+.sh1: PUT .exe 329 116
+.sh2: PUT .exe 330 101
+.sh3: PUT .exe 331 120
+.sh4: PUT .exe 332 116
+.sh9: PUT .exe 337 2
+.sh13: PUT .exe 341 16
+.sh17: PUT .exe 345 2
+.sh21: PUT .exe 349 2
+.sh36: PUT .exe 364 32
+.sh39: PUT .exe 367 96
+
+-- ===== GENERAR CODIGO x86-64 =====
+-- Patron: mov eax, v0; mov ecx, v1; cmp eax, ecx; setXX al; movzx eax, al; ret
+
+-- mov eax, v0
+.mc0: PUT .exe 512 184
+.mc1: PUT .exe 513 .v0
+.mc2: PUT .exe 514 0
+.mc3: PUT .exe 515 0
+.mc4: PUT .exe 516 0
+
+-- mov ecx, v1
+.mc5: PUT .exe 517 185
+.mc6: PUT .exe 518 .v1
+.mc7: PUT .exe 519 0
+.mc8: PUT .exe 520 0
+.mc9: PUT .exe 521 0
+
+-- cmp eax, ecx (39 C8)
+.mc10: PUT .exe 522 57
+.mc11: PUT .exe 523 200
+
+-- setXX al (0F 9X C0)
+-- sete:  0F 94 C0 (EQ)
+-- setne: 0F 95 C0 (NE)
+-- setl:  0F 9C C0 (LT signed)
+-- setg:  0F 9F C0 (GT signed)
+-- setle: 0F 9E C0 (LE signed)
+-- setge: 0F 9D C0 (GE signed)
+
+.mc12: PUT .exe 524 15
+
+-- Segundo byte del setXX
+.set_eq: MUL .is_EQ 148
+.set_ne: MUL .is_NE 149
+.set_lt: MUL .is_LT 156
+.set_gt: MUL .is_GT 159
+.set_le: MUL .is_LE 158
+.set_ge: MUL .is_GE 157
+
+.set_a: ADD .set_eq .set_ne
+.set_b: ADD .set_a .set_lt
+.set_c: ADD .set_b .set_gt
+.set_d: ADD .set_c .set_le
+.set_byte: ADD .set_d .set_ge
+
+.mc13: PUT .exe 525 .set_byte
+.mc14: PUT .exe 526 192
+
+-- movzx eax, al (0F B6 C0)
+.mc15: PUT .exe 527 15
+.mc16: PUT .exe 528 182
+.mc17: PUT .exe 529 192
+
+-- ret
+.mc18: PUT .exe 530 195
+
+-- ===== ESCRIBIR PE =====
+.opath: "cmp.exe"
+.oh2: FOP .opath .one
+.size: 1024
+.wlen: FWR .oh2 .exe .size
+.oc: FCL .oh2
+
+-- ===== OUTPUT =====
+.msg: "Gen5.3 Compare: "
+.p0: PRT .msg 16
+
+.num: ALC 8
+.its0: ITS .v0 .num
+.p1: PRT .num .its0
+
+-- Imprimir operador
+.op_eq: " EQ "
+.op_ne: " NE "
+.op_lt: " LT "
+.op_gt: " GT "
+.op_le: " LE "
+.op_ge: " GE "
+
+.peq: MUL .is_EQ 4
+.pne: MUL .is_NE 4
+.plt: MUL .is_LT 4
+.pgt: MUL .is_GT 4
+.ple: MUL .is_LE 4
+.pge: MUL .is_GE 4
+
+.p2a: IFZ .is_EQ .zero .peq
+.p2: PRT .op_eq .p2a
+.p3a: IFZ .is_NE .zero .pne
+.p3: PRT .op_ne .p3a
+.p4a: IFZ .is_LT .zero .plt
+.p4: PRT .op_lt .p4a
+.p5a: IFZ .is_GT .zero .pgt
+.p5: PRT .op_gt .p5a
+.p6a: IFZ .is_LE .zero .ple
+.p6: PRT .op_le .p6a
+.p7a: IFZ .is_GE .zero .pge
+.p7: PRT .op_ge .p7a
+
+.its1: ITS .v1 .num
+.p8: PRT .num .its1
+
+.nl: "\n"
+.p9: PRT .nl 1
+
+.msg2: "Output: cmp.exe\n"
+.p10: PRT .msg2 16
+
+.f1: FRE .src
+.f2: FRE .exe
+.f3: FRE .num
+
+!

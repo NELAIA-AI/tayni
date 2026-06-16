@@ -1,0 +1,142 @@
+-- TAYNI Parser v0.17 - AST Builder
+-- Genera AST estructurado desde tokens
+
+.zero: 0
+.one: 1
+
+.num_buf: ALC 32
+.src_buf: ALC 65536
+
+-- Header
+.header: "TAYNI Parser v0.17 - AST\n"
+.p0: PRT .header 25
+
+-- Read source
+.src_path: "input.tyn"
+.src_handle: FOP .src_path .zero
+.src_len: FRD .src_handle .src_buf 65536
+.close_src: FCL .src_handle
+
+.msg_src: "Source: "
+.p1: PRT .msg_src 8
+.n1: ITS .src_len .num_buf
+.p2: PRT .num_buf .n1
+.msg_bytes: " bytes\n"
+.p3: PRT .msg_bytes 7
+
+-- Tokenize
+.tok: FSM .src_buf .src_len
+.tok_count: GET .tok .zero
+
+.msg_tok: "Tokens: "
+.p4: PRT .msg_tok 8
+.n2: ITS .tok_count .num_buf
+.p5: PRT .num_buf .n2
+.nl: "\n"
+.p6: PRT .nl 1
+
+-- Build AST
+.ast_result: AST .tok .tok_count
+.ast_ptr: GE8 .ast_result .zero
+.node_count: GE8 .ast_result 8
+
+.msg_ast: "\nAST: "
+.pa0: PRT .msg_ast 6
+.na: ITS .node_count .num_buf
+.pa1: PRT .num_buf .na
+.msg_nodes: " nodes\n"
+.pa2: PRT .msg_nodes 7
+
+-- Print first 3 nodes (48 bytes each)
+.msg_detail: "\nNodes:\n"
+.pd0: PRT .msg_detail 8
+
+-- Node 0 (offsets: 0, 8, 16, 24, 32, 40)
+.n0_type: GE8 .ast_ptr .zero
+.n0_id_start: GE8 .ast_ptr 8
+.n0_id_len: GE8 .ast_ptr 16
+.n0_val_start: GE8 .ast_ptr 24
+.n0_val_len: GE8 .ast_ptr 32
+.n0_val_type: GE8 .ast_ptr 40
+
+.msg_n0: "[0] t="
+.pn00: PRT .msg_n0 6
+.sn0t: ITS .n0_type .num_buf
+.pn01: PRT .num_buf .sn0t
+.msg_at: " @"
+.pn02: PRT .msg_at 2
+.sn0is: ITS .n0_id_start .num_buf
+.pn03: PRT .num_buf .sn0is
+.msg_c: ":"
+.pn04: PRT .msg_c 1
+.sn0il: ITS .n0_id_len .num_buf
+.pn05: PRT .num_buf .sn0il
+.msg_v: " v@"
+.pn06: PRT .msg_v 3
+.sn0vs: ITS .n0_val_start .num_buf
+.pn07: PRT .num_buf .sn0vs
+.pn08: PRT .msg_c 1
+.sn0vl: ITS .n0_val_len .num_buf
+.pn09: PRT .num_buf .sn0vl
+.pn0c: PRT .nl 1
+
+-- Node 1 (offset 48)
+.n1_type: GE8 .ast_ptr 48
+.n1_id_start: GE8 .ast_ptr 56
+.n1_id_len: GE8 .ast_ptr 64
+.n1_val_start: GE8 .ast_ptr 72
+.n1_val_len: GE8 .ast_ptr 80
+.n1_val_type: GE8 .ast_ptr 88
+
+.msg_n1: "[1] t="
+.pn10: PRT .msg_n1 6
+.sn1t: ITS .n1_type .num_buf
+.pn11: PRT .num_buf .sn1t
+.pn12: PRT .msg_at 2
+.sn1is: ITS .n1_id_start .num_buf
+.pn13: PRT .num_buf .sn1is
+.pn14: PRT .msg_c 1
+.sn1il: ITS .n1_id_len .num_buf
+.pn15: PRT .num_buf .sn1il
+.pn16: PRT .msg_v 3
+.sn1vs: ITS .n1_val_start .num_buf
+.pn17: PRT .num_buf .sn1vs
+.pn18: PRT .msg_c 1
+.sn1vl: ITS .n1_val_len .num_buf
+.pn19: PRT .num_buf .sn1vl
+.pn1c: PRT .nl 1
+
+-- Node 2 (offset 96)
+.n2_type: GE8 .ast_ptr 96
+.n2_id_start: GE8 .ast_ptr 104
+.n2_id_len: GE8 .ast_ptr 112
+.n2_val_start: GE8 .ast_ptr 120
+.n2_val_len: GE8 .ast_ptr 128
+.n2_val_type: GE8 .ast_ptr 136
+
+.msg_n2: "[2] t="
+.pn20: PRT .msg_n2 6
+.sn2t: ITS .n2_type .num_buf
+.pn21: PRT .num_buf .sn2t
+.pn22: PRT .msg_at 2
+.sn2is: ITS .n2_id_start .num_buf
+.pn23: PRT .num_buf .sn2is
+.pn24: PRT .msg_c 1
+.sn2il: ITS .n2_id_len .num_buf
+.pn25: PRT .num_buf .sn2il
+.pn26: PRT .msg_v 3
+.sn2vs: ITS .n2_val_start .num_buf
+.pn27: PRT .num_buf .sn2vs
+.pn28: PRT .msg_c 1
+.sn2vl: ITS .n2_val_len .num_buf
+.pn29: PRT .num_buf .sn2vl
+.pn2c: PRT .nl 1
+
+-- Done
+.msg_done: "\nv0.17 OK\n"
+.pd: PRT .msg_done 10
+
+.free1: FRE .num_buf
+.free2: FRE .src_buf
+
+!

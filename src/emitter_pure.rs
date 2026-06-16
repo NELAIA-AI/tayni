@@ -357,6 +357,11 @@ impl PureEmitter {
             Op::Le => self.emit_cmp(id, "sle", args),
             Op::Ge => self.emit_cmp(id, "sge", args),
             
+            // Logical operations - pure LLVM
+            Op::And => self.emit_logical_and(id, args),
+            Op::Or => self.emit_logical_or(id, args),
+            Op::Not => self.emit_logical_not(id, args),
+            
             // Memory - direct syscall
             Op::Alc => self.emit_alloc(id, args),
             Op::Fre => self.emit_free(id, args),
@@ -364,6 +369,7 @@ impl PureEmitter {
             // Memory byte operations
             Op::Put => self.emit_store_byte(id, args),  // PUT ptr offset byte
             Op::Get => self.emit_load_byte(id, args),   // GET ptr offset -> byte
+            Op::Ge8 => self.emit_load_i64(id, args),    // GE8 ptr offset -> i64
             
             // Raw syscall
             Op::Prt => self.emit_print(id, args),
@@ -403,6 +409,9 @@ impl PureEmitter {
             Op::End => self.emit_end(id, args),
             Op::Trn => self.emit_transform(id, args),
             Op::Fsm => self.emit_fsm(id, args),
+            Op::Psc => self.emit_parse_scan(id, args),
+            Op::Ast => self.emit_ast_build(id, args),
+            Op::Emt => self.emit_code_emit(id, args),
             
             // Threading
             Op::Thr => self.emit_thread_create(id, args),
@@ -472,6 +481,11 @@ impl PureEmitter {
             Op::Scm => self.emit_str_compare(id, args),
             Op::Wrt => self.emit_write_string(id, args),
             Op::Ifz => self.emit_if_zero(id, args),
+            // Graph Transform (AI-native iteration)
+            Op::Trn => self.emit_transform(id, args),
+            Op::Red => self.emit_reduce(id, args),
+            Op::Map => self.emit_map(id, args),
+            Op::Flt => self.emit_filter(id, args),
             
             // === CAPABILITY SYSTEM (SCN) ===
             Op::Req => Ok(format!("  ; REQUIRES declaration (compile-time only)\n")),
@@ -576,6 +590,35 @@ impl PureEmitter {
             id, cmp, a, b, id, id))
     }
     
+    fn emit_logical_and(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        let a = self.emit_arg(&args[0])?;
+        let b = self.emit_arg(&args[1])?;
+        // AND: both non-zero -> 1, else 0
+        Ok(format!(
+            "  %{}_a_bool = icmp ne i64 {}, 0\n  %{}_b_bool = icmp ne i64 {}, 0\n  %{}_and = and i1 %{}_a_bool, %{}_b_bool\n  %{} = zext i1 %{}_and to i64\n",
+            id, a, id, b, id, id, id, id, id
+        ))
+    }
+    
+    fn emit_logical_or(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        let a = self.emit_arg(&args[0])?;
+        let b = self.emit_arg(&args[1])?;
+        // OR: either non-zero -> 1, else 0
+        Ok(format!(
+            "  %{}_a_bool = icmp ne i64 {}, 0\n  %{}_b_bool = icmp ne i64 {}, 0\n  %{}_or = or i1 %{}_a_bool, %{}_b_bool\n  %{} = zext i1 %{}_or to i64\n",
+            id, a, id, b, id, id, id, id, id
+        ))
+    }
+    
+    fn emit_logical_not(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        let a = self.emit_arg(&args[0])?;
+        // NOT: zero -> 1, non-zero -> 0
+        Ok(format!(
+            "  %{}_is_zero = icmp eq i64 {}, 0\n  %{} = zext i1 %{}_is_zero to i64\n",
+            id, a, id, id
+        ))
+    }
+    
     fn emit_alloc(&self, id: &str, args: &[Arg]) -> Result<String, String> {
         let size = self.emit_arg(&args[0])?;
         match self.target {
@@ -624,6 +667,19 @@ impl PureEmitter {
         let offset = self.emit_arg(&args[1])?;
         Ok(format!(
             "  %{}_base = inttoptr i64 {} to i8*\n  %{}_ptr = getelementptr i8, i8* %{}_base, i64 {}\n  %{}_byte = load i8, i8* %{}_ptr\n  %{} = zext i8 %{}_byte to i64\n",
+            id, ptr, id, id, offset, id, id, id, id
+        ))
+    }
+    
+    // Load i64 from ptr+offset: GE8 ptr offset -> i64
+    fn emit_load_i64(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        if args.len() < 2 {
+            return Err("GE8 requires ptr, offset".to_string());
+        }
+        let ptr = self.emit_arg(&args[0])?;
+        let offset = self.emit_arg(&args[1])?;
+        Ok(format!(
+            "  %{}_base = inttoptr i64 {} to i8*\n  %{}_ptr8 = getelementptr i8, i8* %{}_base, i64 {}\n  %{}_ptr64 = bitcast i8* %{}_ptr8 to i64*\n  %{} = load i64, i64* %{}_ptr64\n",
             id, ptr, id, id, offset, id, id, id, id
         ))
     }
@@ -1562,6 +1618,454 @@ impl PureEmitter {
         // Loop end
         code.push_str(&format!("trn_end_{}:\n", id));
         code.push_str(&format!("  %{} = add i64 %{}_outptr, 0\n", id, id));
+        
+        Ok(code)
+    }
+    
+    fn emit_parse_scan(&mut self, id: &str, args: &[Arg]) -> Result<String, String> {
+        // PSC tokens count -> scan for DOT-ID-COLON patterns
+        // Returns pointer to result buffer: [total_nodes, literals, refs, ops]
+        // Token types: 0=OTHER, 1=DOT, 2=COLON, 3=ID, 4=NUM, 5=STR, 6=NL
+        if args.len() < 2 {
+            return Err("PSC requires tokens, count".to_string());
+        }
+        
+        let tokens = self.emit_arg(&args[0])?;
+        let count = self.emit_arg(&args[1])?;
+        
+        let mut code = String::new();
+        
+        // Allocate result buffer (4 i64 values: total, lits, refs, ops)
+        code.push_str(&format!("  %{}_res = call i8* @VirtualAlloc(i8* null, i64 32, i32 12288, i32 4)\n", id));
+        code.push_str(&format!("  %{}_resptr = ptrtoint i8* %{}_res to i64\n", id, id));
+        
+        // Initialize counters to 0
+        code.push_str(&format!("  %{}_p0 = inttoptr i64 %{}_resptr to i64*\n", id, id));
+        code.push_str(&format!("  store i64 0, i64* %{}_p0\n", id));
+        code.push_str(&format!("  %{}_p1off = add i64 %{}_resptr, 8\n", id, id));
+        code.push_str(&format!("  %{}_p1 = inttoptr i64 %{}_p1off to i64*\n", id, id));
+        code.push_str(&format!("  store i64 0, i64* %{}_p1\n", id));
+        code.push_str(&format!("  %{}_p2off = add i64 %{}_resptr, 16\n", id, id));
+        code.push_str(&format!("  %{}_p2 = inttoptr i64 %{}_p2off to i64*\n", id, id));
+        code.push_str(&format!("  store i64 0, i64* %{}_p2\n", id));
+        code.push_str(&format!("  %{}_p3off = add i64 %{}_resptr, 24\n", id, id));
+        code.push_str(&format!("  %{}_p3 = inttoptr i64 %{}_p3off to i64*\n", id, id));
+        code.push_str(&format!("  store i64 0, i64* %{}_p3\n", id));
+        
+        // Calculate max position (count - 3, need at least 4 tokens for pattern)
+        code.push_str(&format!("  %{}_max = sub i64 {}, 3\n", id, count));
+        
+        // Loop setup
+        code.push_str(&format!("  br label %psc_setup_{}\n", id));
+        code.push_str(&format!("psc_setup_{}:\n", id));
+        code.push_str(&format!("  br label %psc_loop_{}\n", id));
+        code.push_str(&format!("psc_loop_{}:\n", id));
+        code.push_str(&format!("  %{}_i = phi i64 [0, %psc_setup_{}], [%{}_next, %psc_cont_{}]\n", id, id, id, id));
+        code.push_str(&format!("  %{}_done = icmp sge i64 %{}_i, %{}_max\n", id, id, id));
+        code.push_str(&format!("  br i1 %{}_done, label %psc_end_{}, label %psc_body_{}\n", id, id, id));
+        
+        // Loop body - check pattern at position i
+        code.push_str(&format!("psc_body_{}:\n", id));
+        
+        // Calculate token offsets (header is 8 bytes, each token is 4 bytes)
+        // Token at position i: offset = 8 + i*4
+        code.push_str(&format!("  %{}_off0 = mul i64 %{}_i, 4\n", id, id));
+        code.push_str(&format!("  %{}_off0b = add i64 %{}_off0, 8\n", id, id));
+        code.push_str(&format!("  %{}_off1 = add i64 %{}_off0b, 4\n", id, id));
+        code.push_str(&format!("  %{}_off2 = add i64 %{}_off0b, 8\n", id, id));
+        code.push_str(&format!("  %{}_off3 = add i64 %{}_off0b, 12\n", id, id));
+        
+        // Read token types
+        code.push_str(&format!("  %{}_addr0 = add i64 {}, %{}_off0b\n", id, tokens, id));
+        code.push_str(&format!("  %{}_ptr0 = inttoptr i64 %{}_addr0 to i8*\n", id, id));
+        code.push_str(&format!("  %{}_t0 = load i8, i8* %{}_ptr0\n", id, id));
+        code.push_str(&format!("  %{}_t0i = zext i8 %{}_t0 to i64\n", id, id));
+        
+        code.push_str(&format!("  %{}_addr1 = add i64 {}, %{}_off1\n", id, tokens, id));
+        code.push_str(&format!("  %{}_ptr1 = inttoptr i64 %{}_addr1 to i8*\n", id, id));
+        code.push_str(&format!("  %{}_t1 = load i8, i8* %{}_ptr1\n", id, id));
+        code.push_str(&format!("  %{}_t1i = zext i8 %{}_t1 to i64\n", id, id));
+        
+        code.push_str(&format!("  %{}_addr2 = add i64 {}, %{}_off2\n", id, tokens, id));
+        code.push_str(&format!("  %{}_ptr2 = inttoptr i64 %{}_addr2 to i8*\n", id, id));
+        code.push_str(&format!("  %{}_t2 = load i8, i8* %{}_ptr2\n", id, id));
+        code.push_str(&format!("  %{}_t2i = zext i8 %{}_t2 to i64\n", id, id));
+        
+        code.push_str(&format!("  %{}_addr3 = add i64 {}, %{}_off3\n", id, tokens, id));
+        code.push_str(&format!("  %{}_ptr3 = inttoptr i64 %{}_addr3 to i8*\n", id, id));
+        code.push_str(&format!("  %{}_t3 = load i8, i8* %{}_ptr3\n", id, id));
+        code.push_str(&format!("  %{}_t3i = zext i8 %{}_t3 to i64\n", id, id));
+        
+        // Check pattern: DOT(1) ID(3) COLON(2)
+        code.push_str(&format!("  %{}_is_dot = icmp eq i64 %{}_t0i, 1\n", id, id));
+        code.push_str(&format!("  %{}_is_id = icmp eq i64 %{}_t1i, 3\n", id, id));
+        code.push_str(&format!("  %{}_is_colon = icmp eq i64 %{}_t2i, 2\n", id, id));
+        code.push_str(&format!("  %{}_pat_a = and i1 %{}_is_dot, %{}_is_id\n", id, id, id));
+        code.push_str(&format!("  %{}_valid = and i1 %{}_pat_a, %{}_is_colon\n", id, id, id));
+        
+        // If valid, check value type and increment counters
+        code.push_str(&format!("  br i1 %{}_valid, label %psc_found_{}, label %psc_cont_{}\n", id, id, id));
+        
+        code.push_str(&format!("psc_found_{}:\n", id));
+        
+        // Increment total counter
+        code.push_str(&format!("  %{}_total_old = load i64, i64* %{}_p0\n", id, id));
+        code.push_str(&format!("  %{}_total_new = add i64 %{}_total_old, 1\n", id, id));
+        code.push_str(&format!("  store i64 %{}_total_new, i64* %{}_p0\n", id, id));
+        
+        // Check value type: NUM(4) or STR(5) = literal, DOT(1) = ref, ID(3) = op
+        code.push_str(&format!("  %{}_is_num = icmp eq i64 %{}_t3i, 4\n", id, id));
+        code.push_str(&format!("  %{}_is_str = icmp eq i64 %{}_t3i, 5\n", id, id));
+        code.push_str(&format!("  %{}_is_lit = or i1 %{}_is_num, %{}_is_str\n", id, id, id));
+        code.push_str(&format!("  %{}_is_ref = icmp eq i64 %{}_t3i, 1\n", id, id));
+        code.push_str(&format!("  %{}_is_op = icmp eq i64 %{}_t3i, 3\n", id, id));
+        
+        // Increment appropriate counter
+        code.push_str(&format!("  br i1 %{}_is_lit, label %psc_lit_{}, label %psc_chk_ref_{}\n", id, id, id));
+        
+        code.push_str(&format!("psc_lit_{}:\n", id));
+        code.push_str(&format!("  %{}_lit_old = load i64, i64* %{}_p1\n", id, id));
+        code.push_str(&format!("  %{}_lit_new = add i64 %{}_lit_old, 1\n", id, id));
+        code.push_str(&format!("  store i64 %{}_lit_new, i64* %{}_p1\n", id, id));
+        code.push_str(&format!("  br label %psc_cont_{}\n", id));
+        
+        code.push_str(&format!("psc_chk_ref_{}:\n", id));
+        code.push_str(&format!("  br i1 %{}_is_ref, label %psc_ref_{}, label %psc_chk_op_{}\n", id, id, id));
+        
+        code.push_str(&format!("psc_ref_{}:\n", id));
+        code.push_str(&format!("  %{}_ref_old = load i64, i64* %{}_p2\n", id, id));
+        code.push_str(&format!("  %{}_ref_new = add i64 %{}_ref_old, 1\n", id, id));
+        code.push_str(&format!("  store i64 %{}_ref_new, i64* %{}_p2\n", id, id));
+        code.push_str(&format!("  br label %psc_cont_{}\n", id));
+        
+        code.push_str(&format!("psc_chk_op_{}:\n", id));
+        code.push_str(&format!("  br i1 %{}_is_op, label %psc_op_{}, label %psc_cont_{}\n", id, id, id));
+        
+        code.push_str(&format!("psc_op_{}:\n", id));
+        code.push_str(&format!("  %{}_op_old = load i64, i64* %{}_p3\n", id, id));
+        code.push_str(&format!("  %{}_op_new = add i64 %{}_op_old, 1\n", id, id));
+        code.push_str(&format!("  store i64 %{}_op_new, i64* %{}_p3\n", id, id));
+        code.push_str(&format!("  br label %psc_cont_{}\n", id));
+        
+        // Continue to next position
+        code.push_str(&format!("psc_cont_{}:\n", id));
+        code.push_str(&format!("  %{}_next = add i64 %{}_i, 1\n", id, id));
+        code.push_str(&format!("  br label %psc_loop_{}\n", id));
+        
+        // End - return result pointer
+        code.push_str(&format!("psc_end_{}:\n", id));
+        code.push_str(&format!("  %{} = add i64 %{}_resptr, 0\n", id, id));
+        
+        Ok(code)
+    }
+    
+    fn emit_ast_build(&mut self, id: &str, args: &[Arg]) -> Result<String, String> {
+        // AST tokens count -> build AST from tokens
+        // Returns pointer to result: [ast_ptr, node_count]
+        // AST node format (48 bytes each, all i64 for easy GET access):
+        //   0-7: type (1=lit, 2=ref, 3=op)
+        //   8-15: id_start (offset in source)
+        //   16-23: id_len
+        //   24-31: val_start
+        //   32-39: val_len
+        //   40-47: val_type (NUM=4, STR=5, DOT=1, ID=3)
+        // Token format (4 bytes each at offset 8+i*4):
+        //   byte 0: type (0=OTHER, 1=DOT, 2=COLON, 3=ID, 4=NUM, 5=STR, 6=NL)
+        //   byte 1: start position in source
+        //   byte 2: length
+        //   byte 3: reserved
+        
+        if args.len() < 2 {
+            return Err("AST requires tokens, count".to_string());
+        }
+        
+        let tokens = self.emit_arg(&args[0])?;
+        let count = self.emit_arg(&args[1])?;
+        
+        let mut code = String::new();
+        
+        // Allocate result buffer (2 i64: ast_ptr, node_count)
+        code.push_str(&format!("  %{}_res = call i8* @VirtualAlloc(i8* null, i64 16, i32 12288, i32 4)\n", id));
+        code.push_str(&format!("  %{}_resptr = ptrtoint i8* %{}_res to i64\n", id, id));
+        
+        // Allocate AST buffer (max 256 nodes * 48 bytes = 12288)
+        code.push_str(&format!("  %{}_ast = call i8* @VirtualAlloc(i8* null, i64 12288, i32 12288, i32 4)\n", id));
+        code.push_str(&format!("  %{}_astptr = ptrtoint i8* %{}_ast to i64\n", id, id));
+        
+        // Store ast_ptr in result[0]
+        code.push_str(&format!("  %{}_r0 = inttoptr i64 %{}_resptr to i64*\n", id, id));
+        code.push_str(&format!("  store i64 %{}_astptr, i64* %{}_r0\n", id, id));
+        
+        // Initialize node count to 0
+        code.push_str(&format!("  %{}_r1off = add i64 %{}_resptr, 8\n", id, id));
+        code.push_str(&format!("  %{}_r1 = inttoptr i64 %{}_r1off to i64*\n", id, id));
+        code.push_str(&format!("  store i64 0, i64* %{}_r1\n", id));
+        
+        // Calculate max position (count - 3)
+        code.push_str(&format!("  %{}_max = sub i64 {}, 3\n", id, count));
+        
+        // Loop setup
+        code.push_str(&format!("  br label %ast_setup_{}\n", id));
+        code.push_str(&format!("ast_setup_{}:\n", id));
+        code.push_str(&format!("  br label %ast_loop_{}\n", id));
+        code.push_str(&format!("ast_loop_{}:\n", id));
+        code.push_str(&format!("  %{}_i = phi i64 [0, %ast_setup_{}], [%{}_next, %ast_cont_{}]\n", id, id, id, id));
+        code.push_str(&format!("  %{}_done = icmp sge i64 %{}_i, %{}_max\n", id, id, id));
+        code.push_str(&format!("  br i1 %{}_done, label %ast_end_{}, label %ast_body_{}\n", id, id, id));
+        
+        // Loop body
+        code.push_str(&format!("ast_body_{}:\n", id));
+        
+        // Calculate token offsets (header is 8 bytes, each token is 4 bytes)
+        code.push_str(&format!("  %{}_toff = mul i64 %{}_i, 4\n", id, id));
+        code.push_str(&format!("  %{}_tbase = add i64 %{}_toff, 8\n", id, id));
+        
+        // Read 4 consecutive tokens (each 4 bytes: type, start, len, reserved)
+        // Token 0 (should be DOT)
+        code.push_str(&format!("  %{}_a0 = add i64 {}, %{}_tbase\n", id, tokens, id));
+        code.push_str(&format!("  %{}_p0 = inttoptr i64 %{}_a0 to i32*\n", id, id));
+        code.push_str(&format!("  %{}_tok0 = load i32, i32* %{}_p0\n", id, id));
+        code.push_str(&format!("  %{}_t0 = and i32 %{}_tok0, 255\n", id, id));  // type
+        
+        // Token 1 (should be ID - the name)
+        code.push_str(&format!("  %{}_a1 = add i64 %{}_a0, 4\n", id, id));
+        code.push_str(&format!("  %{}_p1 = inttoptr i64 %{}_a1 to i32*\n", id, id));
+        code.push_str(&format!("  %{}_tok1 = load i32, i32* %{}_p1\n", id, id));
+        code.push_str(&format!("  %{}_t1 = and i32 %{}_tok1, 255\n", id, id));  // type
+        code.push_str(&format!("  %{}_s1 = lshr i32 %{}_tok1, 8\n", id, id));
+        code.push_str(&format!("  %{}_id_start = and i32 %{}_s1, 255\n", id, id));  // start
+        code.push_str(&format!("  %{}_l1 = lshr i32 %{}_tok1, 16\n", id, id));
+        code.push_str(&format!("  %{}_id_len = and i32 %{}_l1, 255\n", id, id));  // len
+        
+        // Token 2 (should be COLON)
+        code.push_str(&format!("  %{}_a2 = add i64 %{}_a0, 8\n", id, id));
+        code.push_str(&format!("  %{}_p2 = inttoptr i64 %{}_a2 to i32*\n", id, id));
+        code.push_str(&format!("  %{}_tok2 = load i32, i32* %{}_p2\n", id, id));
+        code.push_str(&format!("  %{}_t2 = and i32 %{}_tok2, 255\n", id, id));  // type
+        
+        // Token 3 (value - NUM, STR, DOT, or ID)
+        code.push_str(&format!("  %{}_a3 = add i64 %{}_a0, 12\n", id, id));
+        code.push_str(&format!("  %{}_p3 = inttoptr i64 %{}_a3 to i32*\n", id, id));
+        code.push_str(&format!("  %{}_tok3 = load i32, i32* %{}_p3\n", id, id));
+        code.push_str(&format!("  %{}_t3 = and i32 %{}_tok3, 255\n", id, id));  // type
+        code.push_str(&format!("  %{}_s3 = lshr i32 %{}_tok3, 8\n", id, id));
+        code.push_str(&format!("  %{}_val_start = and i32 %{}_s3, 255\n", id, id));  // start
+        code.push_str(&format!("  %{}_l3 = lshr i32 %{}_tok3, 16\n", id, id));
+        code.push_str(&format!("  %{}_val_len = and i32 %{}_l3, 255\n", id, id));  // len
+        
+        // Check pattern: DOT(1) ID(3) COLON(2)
+        code.push_str(&format!("  %{}_is_dot = icmp eq i32 %{}_t0, 1\n", id, id));
+        code.push_str(&format!("  %{}_is_id = icmp eq i32 %{}_t1, 3\n", id, id));
+        code.push_str(&format!("  %{}_is_colon = icmp eq i32 %{}_t2, 2\n", id, id));
+        code.push_str(&format!("  %{}_pat_a = and i1 %{}_is_dot, %{}_is_id\n", id, id, id));
+        code.push_str(&format!("  %{}_valid = and i1 %{}_pat_a, %{}_is_colon\n", id, id, id));
+        
+        code.push_str(&format!("  br i1 %{}_valid, label %ast_found_{}, label %ast_cont_{}\n", id, id, id));
+        
+        // Found a valid node - write to AST
+        code.push_str(&format!("ast_found_{}:\n", id));
+        
+        // Get current node count
+        code.push_str(&format!("  %{}_nc = load i64, i64* %{}_r1\n", id, id));
+        
+        // Calculate AST node offset (node_count * 48 for i64 fields)
+        code.push_str(&format!("  %{}_noff = mul i64 %{}_nc, 48\n", id, id));
+        code.push_str(&format!("  %{}_naddr = add i64 %{}_astptr, %{}_noff\n", id, id, id));
+        
+        // Determine node type: NUM/STR=1(lit), DOT=2(ref), ID=3(op)
+        code.push_str(&format!("  %{}_is_num = icmp eq i32 %{}_t3, 4\n", id, id));
+        code.push_str(&format!("  %{}_is_str = icmp eq i32 %{}_t3, 5\n", id, id));
+        code.push_str(&format!("  %{}_is_lit = or i1 %{}_is_num, %{}_is_str\n", id, id, id));
+        code.push_str(&format!("  %{}_is_ref = icmp eq i32 %{}_t3, 1\n", id, id));
+        code.push_str(&format!("  %{}_ntype1 = select i1 %{}_is_lit, i64 1, i64 0\n", id, id));
+        code.push_str(&format!("  %{}_ntype2 = select i1 %{}_is_ref, i64 2, i64 %{}_ntype1\n", id, id, id));
+        code.push_str(&format!("  %{}_is_op = icmp eq i32 %{}_t3, 3\n", id, id));
+        code.push_str(&format!("  %{}_ntype = select i1 %{}_is_op, i64 3, i64 %{}_ntype2\n", id, id, id));
+        
+        // Extend i32 values to i64
+        code.push_str(&format!("  %{}_id_start64 = zext i32 %{}_id_start to i64\n", id, id));
+        code.push_str(&format!("  %{}_id_len64 = zext i32 %{}_id_len to i64\n", id, id));
+        code.push_str(&format!("  %{}_val_start64 = zext i32 %{}_val_start to i64\n", id, id));
+        code.push_str(&format!("  %{}_val_len64 = zext i32 %{}_val_len to i64\n", id, id));
+        code.push_str(&format!("  %{}_t3_64 = zext i32 %{}_t3 to i64\n", id, id));
+        
+        // Write AST node fields as i64 (48 bytes per node)
+        // Field 0: type (8 bytes at offset 0)
+        code.push_str(&format!("  %{}_f0 = inttoptr i64 %{}_naddr to i64*\n", id, id));
+        code.push_str(&format!("  store i64 %{}_ntype, i64* %{}_f0\n", id, id));
+        
+        // Field 1: id_start (8 bytes at offset 8)
+        code.push_str(&format!("  %{}_f1a = add i64 %{}_naddr, 8\n", id, id));
+        code.push_str(&format!("  %{}_f1 = inttoptr i64 %{}_f1a to i64*\n", id, id));
+        code.push_str(&format!("  store i64 %{}_id_start64, i64* %{}_f1\n", id, id));
+        
+        // Field 2: id_len (8 bytes at offset 16)
+        code.push_str(&format!("  %{}_f2a = add i64 %{}_naddr, 16\n", id, id));
+        code.push_str(&format!("  %{}_f2 = inttoptr i64 %{}_f2a to i64*\n", id, id));
+        code.push_str(&format!("  store i64 %{}_id_len64, i64* %{}_f2\n", id, id));
+        
+        // Field 3: val_start (8 bytes at offset 24)
+        code.push_str(&format!("  %{}_f3a = add i64 %{}_naddr, 24\n", id, id));
+        code.push_str(&format!("  %{}_f3 = inttoptr i64 %{}_f3a to i64*\n", id, id));
+        code.push_str(&format!("  store i64 %{}_val_start64, i64* %{}_f3\n", id, id));
+        
+        // Field 4: val_len (8 bytes at offset 32)
+        code.push_str(&format!("  %{}_f4a = add i64 %{}_naddr, 32\n", id, id));
+        code.push_str(&format!("  %{}_f4 = inttoptr i64 %{}_f4a to i64*\n", id, id));
+        code.push_str(&format!("  store i64 %{}_val_len64, i64* %{}_f4\n", id, id));
+        
+        // Field 5: val_type (8 bytes at offset 40)
+        code.push_str(&format!("  %{}_f5a = add i64 %{}_naddr, 40\n", id, id));
+        code.push_str(&format!("  %{}_f5 = inttoptr i64 %{}_f5a to i64*\n", id, id));
+        code.push_str(&format!("  store i64 %{}_t3_64, i64* %{}_f5\n", id, id));
+        
+        // Increment node count
+        code.push_str(&format!("  %{}_nc_new = add i64 %{}_nc, 1\n", id, id));
+        code.push_str(&format!("  store i64 %{}_nc_new, i64* %{}_r1\n", id, id));
+        
+        code.push_str(&format!("  br label %ast_cont_{}\n", id));
+        
+        // Continue to next position
+        code.push_str(&format!("ast_cont_{}:\n", id));
+        code.push_str(&format!("  %{}_next = add i64 %{}_i, 1\n", id, id));
+        code.push_str(&format!("  br label %ast_loop_{}\n", id));
+        
+        // End - return result pointer
+        code.push_str(&format!("ast_end_{}:\n", id));
+        code.push_str(&format!("  %{} = add i64 %{}_resptr, 0\n", id, id));
+        
+        Ok(code)
+    }
+    
+    fn emit_code_emit(&mut self, id: &str, args: &[Arg]) -> Result<String, String> {
+        // EMT ast_ptr node_count src_buf out_buf -> emit TAYNI code
+        // Emits ".id: value\n" for each node
+        if args.len() < 4 {
+            return Err("EMT requires ast_ptr, node_count, src_buf, out_buf".to_string());
+        }
+        
+        let ast = self.emit_arg(&args[0])?;
+        let count = self.emit_arg(&args[1])?;
+        let src = self.emit_arg(&args[2])?;
+        let out = self.emit_arg(&args[3])?;
+        
+        let mut code = String::new();
+        
+        // Outer loop over nodes
+        code.push_str(&format!("  br label %emt_setup_{}\n", id));
+        code.push_str(&format!("emt_setup_{}:\n", id));
+        code.push_str(&format!("  br label %emt_loop_{}\n", id));
+        code.push_str(&format!("emt_loop_{}:\n", id));
+        code.push_str(&format!("  %{}_i = phi i64 [0, %emt_setup_{}], [%{}_next_i, %emt_inc_{}]\n", id, id, id, id));
+        code.push_str(&format!("  %{}_pos = phi i64 [0, %emt_setup_{}], [%{}_pos_final, %emt_inc_{}]\n", id, id, id, id));
+        code.push_str(&format!("  %{}_done = icmp sge i64 %{}_i, {}\n", id, id, count));
+        code.push_str(&format!("  br i1 %{}_done, label %emt_end_{}, label %emt_node_{}\n", id, id, id));
+        
+        // Process one node
+        code.push_str(&format!("emt_node_{}:\n", id));
+        
+        // Read AST node fields
+        code.push_str(&format!("  %{}_noff = mul i64 %{}_i, 48\n", id, id));
+        code.push_str(&format!("  %{}_naddr = add i64 {}, %{}_noff\n", id, ast, id));
+        
+        code.push_str(&format!("  %{}_f1 = add i64 %{}_naddr, 8\n", id, id));
+        code.push_str(&format!("  %{}_f1p = inttoptr i64 %{}_f1 to i64*\n", id, id));
+        code.push_str(&format!("  %{}_id_start = load i64, i64* %{}_f1p\n", id, id));
+        
+        code.push_str(&format!("  %{}_f2 = add i64 %{}_naddr, 16\n", id, id));
+        code.push_str(&format!("  %{}_f2p = inttoptr i64 %{}_f2 to i64*\n", id, id));
+        code.push_str(&format!("  %{}_id_len = load i64, i64* %{}_f2p\n", id, id));
+        
+        code.push_str(&format!("  %{}_f3 = add i64 %{}_naddr, 24\n", id, id));
+        code.push_str(&format!("  %{}_f3p = inttoptr i64 %{}_f3 to i64*\n", id, id));
+        code.push_str(&format!("  %{}_val_start = load i64, i64* %{}_f3p\n", id, id));
+        
+        code.push_str(&format!("  %{}_f4 = add i64 %{}_naddr, 32\n", id, id));
+        code.push_str(&format!("  %{}_f4p = inttoptr i64 %{}_f4 to i64*\n", id, id));
+        code.push_str(&format!("  %{}_val_len = load i64, i64* %{}_f4p\n", id, id));
+        
+        // Write "."
+        code.push_str(&format!("  %{}_o0 = add i64 {}, %{}_pos\n", id, out, id));
+        code.push_str(&format!("  %{}_p0 = inttoptr i64 %{}_o0 to i8*\n", id, id));
+        code.push_str(&format!("  store i8 46, i8* %{}_p0\n", id));
+        code.push_str(&format!("  %{}_pos1 = add i64 %{}_pos, 1\n", id, id));
+        
+        // Copy id - inner loop
+        code.push_str(&format!("  %{}_id_src = add i64 {}, %{}_id_start\n", id, src, id));
+        code.push_str(&format!("  %{}_id_dst = add i64 {}, %{}_pos1\n", id, out, id));
+        code.push_str(&format!("  br label %emt_cpid_{}\n", id));
+        
+        code.push_str(&format!("emt_cpid_{}:\n", id));
+        code.push_str(&format!("  %{}_ci = phi i64 [0, %emt_node_{}], [%{}_ci_n, %emt_cpid_b_{}]\n", id, id, id, id));
+        code.push_str(&format!("  %{}_ci_done = icmp sge i64 %{}_ci, %{}_id_len\n", id, id, id));
+        code.push_str(&format!("  br i1 %{}_ci_done, label %emt_id_done_{}, label %emt_cpid_b_{}\n", id, id, id));
+        
+        code.push_str(&format!("emt_cpid_b_{}:\n", id));
+        code.push_str(&format!("  %{}_ci_s = add i64 %{}_id_src, %{}_ci\n", id, id, id));
+        code.push_str(&format!("  %{}_ci_d = add i64 %{}_id_dst, %{}_ci\n", id, id, id));
+        code.push_str(&format!("  %{}_ci_sp = inttoptr i64 %{}_ci_s to i8*\n", id, id));
+        code.push_str(&format!("  %{}_ci_dp = inttoptr i64 %{}_ci_d to i8*\n", id, id));
+        code.push_str(&format!("  %{}_ci_b = load i8, i8* %{}_ci_sp\n", id, id));
+        code.push_str(&format!("  store i8 %{}_ci_b, i8* %{}_ci_dp\n", id, id));
+        code.push_str(&format!("  %{}_ci_n = add i64 %{}_ci, 1\n", id, id));
+        code.push_str(&format!("  br label %emt_cpid_{}\n", id));
+        
+        code.push_str(&format!("emt_id_done_{}:\n", id));
+        // Write ": "
+        code.push_str(&format!("  %{}_pos2 = add i64 %{}_pos1, %{}_id_len\n", id, id, id));
+        code.push_str(&format!("  %{}_o2 = add i64 {}, %{}_pos2\n", id, out, id));
+        code.push_str(&format!("  %{}_p2 = inttoptr i64 %{}_o2 to i8*\n", id, id));
+        code.push_str(&format!("  store i8 58, i8* %{}_p2\n", id));
+        code.push_str(&format!("  %{}_pos3 = add i64 %{}_pos2, 1\n", id, id));
+        code.push_str(&format!("  %{}_o3 = add i64 {}, %{}_pos3\n", id, out, id));
+        code.push_str(&format!("  %{}_p3 = inttoptr i64 %{}_o3 to i8*\n", id, id));
+        code.push_str(&format!("  store i8 32, i8* %{}_p3\n", id));
+        code.push_str(&format!("  %{}_pos4 = add i64 %{}_pos3, 1\n", id, id));
+        
+        // Copy value - inner loop
+        code.push_str(&format!("  %{}_val_src = add i64 {}, %{}_val_start\n", id, src, id));
+        code.push_str(&format!("  %{}_val_dst = add i64 {}, %{}_pos4\n", id, out, id));
+        code.push_str(&format!("  br label %emt_cpval_{}\n", id));
+        
+        code.push_str(&format!("emt_cpval_{}:\n", id));
+        code.push_str(&format!("  %{}_cv = phi i64 [0, %emt_id_done_{}], [%{}_cv_n, %emt_cpval_b_{}]\n", id, id, id, id));
+        code.push_str(&format!("  %{}_cv_done = icmp sge i64 %{}_cv, %{}_val_len\n", id, id, id));
+        code.push_str(&format!("  br i1 %{}_cv_done, label %emt_val_done_{}, label %emt_cpval_b_{}\n", id, id, id));
+        
+        code.push_str(&format!("emt_cpval_b_{}:\n", id));
+        code.push_str(&format!("  %{}_cv_s = add i64 %{}_val_src, %{}_cv\n", id, id, id));
+        code.push_str(&format!("  %{}_cv_d = add i64 %{}_val_dst, %{}_cv\n", id, id, id));
+        code.push_str(&format!("  %{}_cv_sp = inttoptr i64 %{}_cv_s to i8*\n", id, id));
+        code.push_str(&format!("  %{}_cv_dp = inttoptr i64 %{}_cv_d to i8*\n", id, id));
+        code.push_str(&format!("  %{}_cv_b = load i8, i8* %{}_cv_sp\n", id, id));
+        code.push_str(&format!("  store i8 %{}_cv_b, i8* %{}_cv_dp\n", id, id));
+        code.push_str(&format!("  %{}_cv_n = add i64 %{}_cv, 1\n", id, id));
+        code.push_str(&format!("  br label %emt_cpval_{}\n", id));
+        
+        code.push_str(&format!("emt_val_done_{}:\n", id));
+        // Write newline
+        code.push_str(&format!("  %{}_pos5 = add i64 %{}_pos4, %{}_val_len\n", id, id, id));
+        code.push_str(&format!("  %{}_o5 = add i64 {}, %{}_pos5\n", id, out, id));
+        code.push_str(&format!("  %{}_p5 = inttoptr i64 %{}_o5 to i8*\n", id, id));
+        code.push_str(&format!("  store i8 10, i8* %{}_p5\n", id));
+        code.push_str(&format!("  %{}_pos6 = add i64 %{}_pos5, 1\n", id, id));
+        
+        // Increment and loop
+        code.push_str(&format!("  br label %emt_inc_{}\n", id));
+        code.push_str(&format!("emt_inc_{}:\n", id));
+        code.push_str(&format!("  %{}_next_i = add i64 %{}_i, 1\n", id, id));
+        code.push_str(&format!("  %{}_pos_final = add i64 %{}_pos6, 0\n", id, id));
+        code.push_str(&format!("  br label %emt_loop_{}\n", id));
+        
+        // End - write "!\n" terminator
+        code.push_str(&format!("emt_end_{}:\n", id));
+        code.push_str(&format!("  %{}_oterm = add i64 {}, %{}_pos\n", id, out, id));
+        code.push_str(&format!("  %{}_pterm = inttoptr i64 %{}_oterm to i8*\n", id, id));
+        code.push_str(&format!("  store i8 33, i8* %{}_pterm\n", id)); // '!'
+        code.push_str(&format!("  %{}_oterm2 = add i64 %{}_oterm, 1\n", id, id));
+        code.push_str(&format!("  %{}_pterm2 = inttoptr i64 %{}_oterm2 to i8*\n", id, id));
+        code.push_str(&format!("  store i8 10, i8* %{}_pterm2\n", id)); // '\n'
+        code.push_str(&format!("  %{} = add i64 %{}_pos, 2\n", id, id));
         
         Ok(code)
     }
@@ -2754,6 +3258,7 @@ declare dllimport i32 @ReleaseMutex(i8*)
         } else {
             // Memory allocation might still be needed
             ir.push_str(r#"declare dllimport i8* @VirtualAlloc(i8*, i64, i32, i32)
+declare dllimport i32 @VirtualFree(i8*, i64, i32)
 "#);
         }
         
@@ -3602,6 +4107,7 @@ end:
     fn emit_write_string(&self, id: &str, args: &[Arg]) -> Result<String, String> {
         // WRT dst pos src len -> write src to dst at pos, returns pos+len
         // This is the key primitive for building strings efficiently
+        // AI-native: uses manual byte copy loop instead of memcpy for self-hosting
         if args.len() < 4 {
             return Err("WRT requires dst, pos, src, len".to_string());
         }
@@ -3622,11 +4128,29 @@ end:
         
         // Calculate destination offset
         code.push_str(&format!("  %{}_dstoff = add i64 {}, {}\n", id, dst, pos));
-        code.push_str(&format!("  %{}_dstp = inttoptr i64 %{}_dstoff to i8*\n", id, id));
-        code.push_str(&format!("  %{}_srcp = inttoptr i64 %{}_src to i8*\n", id, id));
         
-        // Copy using memcpy
-        code.push_str(&format!("  call void @llvm.memcpy.p0i8.p0i8.i64(i8* %{}_dstp, i8* %{}_srcp, i64 {}, i1 false)\n", id, id, len));
+        // Allocate loop counter on stack (avoids phi node issues)
+        code.push_str(&format!("  %{}_i_ptr = alloca i64\n", id));
+        code.push_str(&format!("  store i64 0, i64* %{}_i_ptr\n", id));
+        code.push_str(&format!("  br label %{}_wrt_loop\n", id));
+        
+        code.push_str(&format!("{}_wrt_loop:\n", id));
+        code.push_str(&format!("  %{}_i = load i64, i64* %{}_i_ptr\n", id, id));
+        code.push_str(&format!("  %{}_done = icmp uge i64 %{}_i, {}\n", id, id, len));
+        code.push_str(&format!("  br i1 %{}_done, label %{}_wrt_end, label %{}_wrt_body\n", id, id, id));
+        
+        code.push_str(&format!("{}_wrt_body:\n", id));
+        code.push_str(&format!("  %{}_src_off = add i64 %{}_src, %{}_i\n", id, id, id));
+        code.push_str(&format!("  %{}_src_ptr = inttoptr i64 %{}_src_off to i8*\n", id, id));
+        code.push_str(&format!("  %{}_byte = load i8, i8* %{}_src_ptr\n", id, id));
+        code.push_str(&format!("  %{}_dst_off = add i64 %{}_dstoff, %{}_i\n", id, id, id));
+        code.push_str(&format!("  %{}_dst_ptr = inttoptr i64 %{}_dst_off to i8*\n", id, id));
+        code.push_str(&format!("  store i8 %{}_byte, i8* %{}_dst_ptr\n", id, id));
+        code.push_str(&format!("  %{}_i_next = add i64 %{}_i, 1\n", id, id));
+        code.push_str(&format!("  store i64 %{}_i_next, i64* %{}_i_ptr\n", id, id));
+        code.push_str(&format!("  br label %{}_wrt_loop\n", id));
+        
+        code.push_str(&format!("{}_wrt_end:\n", id));
         
         // Return new position (pos + len)
         code.push_str(&format!("  %{} = add i64 {}, {}\n", id, pos, len));
@@ -3647,6 +4171,121 @@ end:
         Ok(format!(
             "  %{}_cmp = icmp eq i64 {}, 0\n  %{} = select i1 %{}_cmp, i64 {}, i64 {}\n",
             id, cond, id, id, val_zero, val_nonzero
+        ))
+    }
+    
+    // AI-native graph operations (TRN, RED, MAP, FLT)
+    // These are declarative operations that the AI uses to express transformations
+    // The compiler generates optimized loops that LLVM can vectorize
+    
+    fn emit_reduce(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        // RED buf len op init -> reduce buffer using op, starting with init
+        // Example: RED .buf .len ADD 0 -> sum all bytes in buffer
+        if args.len() < 4 {
+            return Err("RED requires buf, len, op, init".to_string());
+        }
+        let buf = self.emit_arg(&args[0])?;
+        let len = self.emit_arg(&args[1])?;
+        let _op = &args[2]; // Operation to apply (ADD, MUL, etc.)
+        let init = self.emit_arg(&args[3])?;
+        
+        // Generate reduction - for now, sum all bytes
+        Ok(format!(concat!(
+            "  ; RED: reduce buffer (sum)\n",
+            "  %{id}_buf = inttoptr i64 {buf} to i8*\n",
+            "  br label %red_setup_{id}\n",
+            "red_setup_{id}:\n",
+            "  br label %red_loop_{id}\n",
+            "red_loop_{id}:\n",
+            "  %{id}_i = phi i64 [ 0, %red_setup_{id} ], [ %{id}_next_i, %red_loop_{id} ]\n",
+            "  %{id}_acc = phi i64 [ {init}, %red_setup_{id} ], [ %{id}_next_acc, %red_loop_{id} ]\n",
+            "  %{id}_ptr = getelementptr i8, i8* %{id}_buf, i64 %{id}_i\n",
+            "  %{id}_val = load i8, i8* %{id}_ptr\n",
+            "  %{id}_val64 = zext i8 %{id}_val to i64\n",
+            "  %{id}_next_acc = add i64 %{id}_acc, %{id}_val64\n",
+            "  %{id}_next_i = add i64 %{id}_i, 1\n",
+            "  %{id}_done = icmp uge i64 %{id}_next_i, {len}\n",
+            "  br i1 %{id}_done, label %red_end_{id}, label %red_loop_{id}\n",
+            "red_end_{id}:\n",
+            "  %{id} = add i64 0, %{id}_next_acc\n"),
+            id=id, buf=buf, len=len, init=init
+        ))
+    }
+    
+    fn emit_map(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        // MAP src dst len op -> apply op to each element of src, store in dst
+        // For now, just copies (identity map)
+        if args.len() < 3 {
+            return Err("MAP requires src, dst, len".to_string());
+        }
+        let src = self.emit_arg(&args[0])?;
+        let dst = self.emit_arg(&args[1])?;
+        let len = self.emit_arg(&args[2])?;
+        
+        // Generate map loop (identity for now)
+        Ok(format!(concat!(
+            "  ; MAP: apply operation to each element\n",
+            "  %{id}_src = inttoptr i64 {src} to i8*\n",
+            "  %{id}_dst = inttoptr i64 {dst} to i8*\n",
+            "  br label %map_setup_{id}\n",
+            "map_setup_{id}:\n",
+            "  br label %map_loop_{id}\n",
+            "map_loop_{id}:\n",
+            "  %{id}_i = phi i64 [ 0, %map_setup_{id} ], [ %{id}_next_i, %map_loop_{id} ]\n",
+            "  %{id}_src_ptr = getelementptr i8, i8* %{id}_src, i64 %{id}_i\n",
+            "  %{id}_dst_ptr = getelementptr i8, i8* %{id}_dst, i64 %{id}_i\n",
+            "  %{id}_val = load i8, i8* %{id}_src_ptr\n",
+            "  store i8 %{id}_val, i8* %{id}_dst_ptr\n",
+            "  %{id}_next_i = add i64 %{id}_i, 1\n",
+            "  %{id}_done = icmp uge i64 %{id}_next_i, {len}\n",
+            "  br i1 %{id}_done, label %map_end_{id}, label %map_loop_{id}\n",
+            "map_end_{id}:\n",
+            "  %{id} = add i64 0, {len}\n"),
+            id=id, src=src, dst=dst, len=len
+        ))
+    }
+    
+    fn emit_filter(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        // FLT src dst len val -> filter src keeping elements equal to val
+        if args.len() < 4 {
+            return Err("FLT requires src, dst, len, val".to_string());
+        }
+        let src = self.emit_arg(&args[0])?;
+        let dst = self.emit_arg(&args[1])?;
+        let len = self.emit_arg(&args[2])?;
+        let val = self.emit_arg(&args[3])?;
+        
+        // Generate filter loop
+        Ok(format!(concat!(
+            "  ; FLT: filter elements equal to val\n",
+            "  %{id}_src = inttoptr i64 {src} to i8*\n",
+            "  %{id}_dst = inttoptr i64 {dst} to i8*\n",
+            "  %{id}_val8 = trunc i64 {val} to i8\n",
+            "  br label %flt_setup_{id}\n",
+            "flt_setup_{id}:\n",
+            "  br label %flt_loop_{id}\n",
+            "flt_loop_{id}:\n",
+            "  %{id}_i = phi i64 [ 0, %flt_setup_{id} ], [ %{id}_next_i, %flt_cont_{id} ]\n",
+            "  %{id}_j = phi i64 [ 0, %flt_setup_{id} ], [ %{id}_next_j, %flt_cont_{id} ]\n",
+            "  %{id}_src_ptr = getelementptr i8, i8* %{id}_src, i64 %{id}_i\n",
+            "  %{id}_elem = load i8, i8* %{id}_src_ptr\n",
+            "  %{id}_match = icmp eq i8 %{id}_elem, %{id}_val8\n",
+            "  br i1 %{id}_match, label %flt_keep_{id}, label %flt_skip_{id}\n",
+            "flt_keep_{id}:\n",
+            "  %{id}_dst_ptr = getelementptr i8, i8* %{id}_dst, i64 %{id}_j\n",
+            "  store i8 %{id}_elem, i8* %{id}_dst_ptr\n",
+            "  %{id}_j_inc = add i64 %{id}_j, 1\n",
+            "  br label %flt_cont_{id}\n",
+            "flt_skip_{id}:\n",
+            "  br label %flt_cont_{id}\n",
+            "flt_cont_{id}:\n",
+            "  %{id}_next_j = phi i64 [ %{id}_j_inc, %flt_keep_{id} ], [ %{id}_j, %flt_skip_{id} ]\n",
+            "  %{id}_next_i = add i64 %{id}_i, 1\n",
+            "  %{id}_done = icmp uge i64 %{id}_next_i, {len}\n",
+            "  br i1 %{id}_done, label %flt_end_{id}, label %flt_loop_{id}\n",
+            "flt_end_{id}:\n",
+            "  %{id} = add i64 0, %{id}_next_j\n"),
+            id=id, src=src, dst=dst, len=len, val=val
         ))
     }
     

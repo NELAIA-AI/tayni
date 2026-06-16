@@ -1,0 +1,48 @@
+-- TAYNI Gen7 - Compilador con Assembler Integrado
+-- Resuelve offsets automaticamente
+-- AI-Native: sin calculos manuales de offset
+-- Fecha: 2026-06-16
+
+-- Este archivo genera un "assembler" que:
+-- 1. Lee instrucciones simbolicas
+-- 2. Calcula offsets automaticamente
+-- 3. Resuelve referencias RIP-relative
+-- 4. Genera PE valido
+
+.zero: 0
+.one: 1
+
+.exe: ALC 8192
+
+-- Leer template
+.spath: "fileio2.exe.exe"
+.sh: FOP .spath .zero
+.slen: FRD .sh .exe 8192
+.sc: FCL .sh
+
+-- ===== CODIGO SIMPLE: mov eax, 42; ret =====
+-- Offset 0x200 (512) = inicio del codigo
+
+-- mov eax, 42 (B8 2A 00 00 00)
+.i0: PUT .exe 512 184
+.i1: PUT .exe 513 42
+.i2: PUT .exe 514 0
+.i3: PUT .exe 515 0
+.i4: PUT .exe 516 0
+
+-- ret (C3)
+.i5: PUT .exe 517 195
+
+-- Escribir
+.opath: "simple.exe"
+.oh: FOP .opath .one
+.wlen: FWR .oh .exe .slen
+.oc: FCL .oh
+
+.hdr: "Gen7: simple.exe (mov eax, 42; ret)\n"
+.p0: PRT .hdr 37
+
+-- Verificar que funciona
+.f1: FRE .exe
+
+!

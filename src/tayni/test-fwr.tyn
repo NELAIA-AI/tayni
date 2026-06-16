@@ -1,0 +1,11 @@
+-- Test FWR
+.one: 1
+.data: "TEST DATA\n"
+.path: "test-out.txt"
+.h: FOP .path .one
+.len: FWR .h .data 10
+.c: FCL .h
+
+.msg: "Wrote file\n"
+.p: PRT .msg 11
+!

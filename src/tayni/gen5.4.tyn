@@ -1,0 +1,156 @@
+-- TAYNI Gen5.4 - IFZ Condicional
+-- Genera codigo x86-64 con saltos condicionales
+-- IFZ cond then else: si cond==0 retorna then, sino else
+-- AI-Native: branch-free cuando posible
+-- Fecha: 2026-06-16
+
+.zero: 0
+.one: 1
+
+-- ASCII
+.C_0: 48
+.C_I: 73
+.C_F: 70
+.C_Z: 90
+
+-- Buffers
+.src: ALC 128
+.exe: ALC 2048
+
+-- Leer input
+.path: "input.tyn"
+.h: FOP .path .zero
+.len: FRD .h .src 128
+.c: FCL .h
+
+-- Formato: .a: N\n.b: N\n.c: N\n.r: IFZ .a .b .c\n!
+-- a = condicion, b = valor si cond==0, c = valor si cond!=0
+
+-- Parsear valores
+.n0_b4: GET .src 4
+.cond: SUB .n0_b4 .C_0
+
+.n1_b4: GET .src 11
+.then_val: SUB .n1_b4 .C_0
+
+.n2_b4: GET .src 18
+.else_val: SUB .n2_b4 .C_0
+
+-- ===== PE HEADER =====
+.d0: PUT .exe 0 77
+.d1: PUT .exe 1 90
+.d60: PUT .exe 60 64
+.pe0: PUT .exe 64 80
+.pe1: PUT .exe 65 69
+.cf0: PUT .exe 68 100
+.cf1: PUT .exe 69 134
+.cf2: PUT .exe 70 1
+.cf16: PUT .exe 84 240
+.cf18: PUT .exe 86 34
+.oh0: PUT .exe 88 11
+.oh1: PUT .exe 89 2
+.oh5: PUT .exe 93 2
+.oh17: PUT .exe 105 16
+.oh21: PUT .exe 109 16
+.oh27: PUT .exe 115 64
+.oh28: PUT .exe 116 1
+.oh33: PUT .exe 121 16
+.oh37: PUT .exe 125 2
+.oh40: PUT .exe 128 6
+.oh48: PUT .exe 136 6
+.oh57: PUT .exe 145 32
+.oh61: PUT .exe 149 2
+.oh68: PUT .exe 156 3
+.oh70: PUT .exe 158 96
+.oh71: PUT .exe 159 129
+.oh74: PUT .exe 162 16
+.oh81: PUT .exe 169 16
+.oh90: PUT .exe 178 16
+.oh97: PUT .exe 185 16
+.oh108: PUT .exe 196 16
+.sh0: PUT .exe 328 46
+.sh1: PUT .exe 329 116
+.sh2: PUT .exe 330 101
+.sh3: PUT .exe 331 120
+.sh4: PUT .exe 332 116
+.sh9: PUT .exe 337 2
+.sh13: PUT .exe 341 16
+.sh17: PUT .exe 345 2
+.sh21: PUT .exe 349 2
+.sh36: PUT .exe 364 32
+.sh39: PUT .exe 367 96
+
+-- ===== GENERAR CODIGO x86-64 =====
+-- AI-Native: usar CMOV (branch-free) en lugar de saltos
+-- Patron: mov eax, then; mov ecx, else; test edx, edx; cmovne eax, ecx; ret
+
+-- mov edx, cond
+.mc0: PUT .exe 512 186
+.mc1: PUT .exe 513 .cond
+.mc2: PUT .exe 514 0
+.mc3: PUT .exe 515 0
+.mc4: PUT .exe 516 0
+
+-- mov eax, then_val
+.mc5: PUT .exe 517 184
+.mc6: PUT .exe 518 .then_val
+.mc7: PUT .exe 519 0
+.mc8: PUT .exe 520 0
+.mc9: PUT .exe 521 0
+
+-- mov ecx, else_val
+.mc10: PUT .exe 522 185
+.mc11: PUT .exe 523 .else_val
+.mc12: PUT .exe 524 0
+.mc13: PUT .exe 525 0
+.mc14: PUT .exe 526 0
+
+-- test edx, edx (85 D2)
+.mc15: PUT .exe 527 133
+.mc16: PUT .exe 528 210
+
+-- cmovne eax, ecx (0F 45 C1)
+-- Si ZF=0 (edx!=0), eax = ecx
+.mc17: PUT .exe 529 15
+.mc18: PUT .exe 530 69
+.mc19: PUT .exe 531 193
+
+-- ret
+.mc20: PUT .exe 532 195
+
+-- ===== ESCRIBIR PE =====
+.opath: "ifz.exe"
+.oh2: FOP .opath .one
+.size: 1024
+.wlen: FWR .oh2 .exe .size
+.oc: FCL .oh2
+
+-- ===== OUTPUT =====
+.msg: "Gen5.4 IFZ: cond="
+.p0: PRT .msg 17
+
+.num: ALC 8
+.its0: ITS .cond .num
+.p1: PRT .num .its0
+
+.msg2: " then="
+.p2: PRT .msg2 6
+.its1: ITS .then_val .num
+.p3: PRT .num .its1
+
+.msg3: " else="
+.p4: PRT .msg3 6
+.its2: ITS .else_val .num
+.p5: PRT .num .its2
+
+.nl: "\n"
+.p6: PRT .nl 1
+
+.msg4: "Output: ifz.exe\n"
+.p7: PRT .msg4 16
+
+.f1: FRE .src
+.f2: FRE .exe
+.f3: FRE .num
+
+!

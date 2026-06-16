@@ -1,0 +1,226 @@
+-- TAYNI Gen5.2 - Operaciones Logicas
+-- Genera codigo x86-64 para AND, OR, XOR, NOT
+-- AI-Native: sin sesgo humano, optimizado para IA
+-- Fecha: 2026-06-16
+
+.zero: 0
+.one: 1
+
+-- ASCII para detectar operacion
+.C_0: 48
+.C_A: 65
+.C_N: 78
+.C_O: 79
+.C_X: 88
+
+-- Buffers
+.src: ALC 128
+.exe: ALC 2048
+
+-- Leer input
+.path: "input.tyn"
+.h: FOP .path .zero
+.len: FRD .h .src 128
+.c: FCL .h
+
+-- Parsear nodo 0: .a: N (byte 4 = valor)
+.n0_b4: GET .src 4
+.v0: SUB .n0_b4 .C_0
+
+-- Parsear nodo 1: .b: N (offset 7, byte 4 = valor)
+.n1_b4: GET .src 11
+.v1: SUB .n1_b4 .C_0
+
+-- Parsear operacion (offset 14, bytes 4-6)
+-- AND, OR, XOR, NOT
+.op_b4: GET .src 18
+.op_b5: GET .src 19
+.op_b6: GET .src 20
+
+-- Detectar operacion por primer caracter
+-- A = AND (65)
+-- O = OR (79)
+-- X = XOR (88)
+-- N = NOT (78)
+.is_AND: EQ .op_b4 .C_A
+.is_OR: EQ .op_b4 .C_O
+.is_XOR: EQ .op_b4 .C_X
+.is_NOT: EQ .op_b4 .C_N
+
+-- ===== PE HEADER (igual que Gen5.1) =====
+.d0: PUT .exe 0 77
+.d1: PUT .exe 1 90
+.d60: PUT .exe 60 64
+.pe0: PUT .exe 64 80
+.pe1: PUT .exe 65 69
+.cf0: PUT .exe 68 100
+.cf1: PUT .exe 69 134
+.cf2: PUT .exe 70 1
+.cf16: PUT .exe 84 240
+.cf18: PUT .exe 86 34
+.oh0: PUT .exe 88 11
+.oh1: PUT .exe 89 2
+.oh5: PUT .exe 93 2
+.oh17: PUT .exe 105 16
+.oh21: PUT .exe 109 16
+.oh27: PUT .exe 115 64
+.oh28: PUT .exe 116 1
+.oh33: PUT .exe 121 16
+.oh37: PUT .exe 125 2
+.oh40: PUT .exe 128 6
+.oh48: PUT .exe 136 6
+.oh57: PUT .exe 145 32
+.oh61: PUT .exe 149 2
+.oh68: PUT .exe 156 3
+.oh70: PUT .exe 158 96
+.oh71: PUT .exe 159 129
+.oh74: PUT .exe 162 16
+.oh81: PUT .exe 169 16
+.oh90: PUT .exe 178 16
+.oh97: PUT .exe 185 16
+.oh108: PUT .exe 196 16
+.sh0: PUT .exe 328 46
+.sh1: PUT .exe 329 116
+.sh2: PUT .exe 330 101
+.sh3: PUT .exe 331 120
+.sh4: PUT .exe 332 116
+.sh9: PUT .exe 337 2
+.sh13: PUT .exe 341 16
+.sh17: PUT .exe 345 2
+.sh21: PUT .exe 349 2
+.sh36: PUT .exe 364 32
+.sh39: PUT .exe 367 96
+
+-- ===== GENERAR CODIGO x86-64 =====
+
+-- mov eax, v0 (B8 + imm32)
+.mc0: PUT .exe 512 184
+.mc1: PUT .exe 513 .v0
+.mc2: PUT .exe 514 0
+.mc3: PUT .exe 515 0
+.mc4: PUT .exe 516 0
+
+-- mov ecx, v1 (B9 + imm32) - solo si no es NOT
+.mc5: PUT .exe 517 185
+.mc6: PUT .exe 518 .v1
+.mc7: PUT .exe 519 0
+.mc8: PUT .exe 520 0
+.mc9: PUT .exe 521 0
+
+-- Operacion (2 bytes)
+-- AND eax, ecx: 21 C8
+-- OR eax, ecx:  09 C8
+-- XOR eax, ecx: 31 C8
+-- NOT eax:      F7 D0
+
+-- Calcular primer byte de operacion
+.and_b0: MUL .is_AND 33
+.or_b0: MUL .is_OR 9
+.xor_b0: MUL .is_XOR 49
+.not_b0: MUL .is_NOT 247
+
+.op_b0a: ADD .and_b0 .or_b0
+.op_b0b: ADD .op_b0a .xor_b0
+.op_b0: ADD .op_b0b .not_b0
+
+-- Calcular segundo byte
+-- AND/OR/XOR: C8 (200)
+-- NOT: D0 (208)
+.bin_b1: MUL .is_AND 200
+.or_b1: MUL .is_OR 200
+.xor_b1: MUL .is_XOR 200
+.not_b1: MUL .is_NOT 208
+
+.op_b1a: ADD .bin_b1 .or_b1
+.op_b1b: ADD .op_b1a .xor_b1
+.op_b1: ADD .op_b1b .not_b1
+
+-- Escribir operacion
+.mc10: PUT .exe 522 .op_b0
+.mc11: PUT .exe 523 .op_b1
+
+-- ret (C3)
+.mc12: PUT .exe 524 195
+
+-- ===== ESCRIBIR PE =====
+.opath: "logic.exe"
+.oh2: FOP .opath .one
+.size: 1024
+.wlen: FWR .oh2 .exe .size
+.oc: FCL .oh2
+
+-- ===== OUTPUT =====
+.msg: "Gen5.2 Logic: "
+.p0: PRT .msg 14
+
+.num: ALC 8
+.its0: ITS .v0 .num
+.p1: PRT .num .its0
+
+-- Imprimir operador
+.op_and: " AND "
+.op_or: " OR "
+.op_xor: " XOR "
+.op_not: "NOT "
+
+.pa: MUL .is_AND 5
+.po: MUL .is_OR 4
+.px: MUL .is_XOR 5
+.pn: MUL .is_NOT 4
+
+.p2a: IFZ .is_AND .zero .pa
+.p2: PRT .op_and .p2a
+.p3a: IFZ .is_OR .zero .po
+.p3: PRT .op_or .p3a
+.p4a: IFZ .is_XOR .zero .px
+.p4: PRT .op_xor .p4a
+.p5a: IFZ .is_NOT .zero .pn
+.p5: PRT .op_not .p5a
+
+-- Imprimir segundo operando (si no es NOT)
+.not_not: SUB .one .is_NOT
+.show_v1: MUL .not_not 1
+.its1: ITS .v1 .num
+.p6a: IFZ .is_NOT .show_v1 .zero
+.p6: PRT .num .p6a
+
+-- Calcular resultado para mostrar
+.r_and: MUL .v0 .v1
+.r_or_a: ADD .v0 .v1
+.r_or_b: MUL .v0 .v1
+.r_or: SUB .r_or_a .r_or_b
+
+-- XOR: (a OR b) AND NOT (a AND b) = a + b - 2*a*b
+.r_xor_ab: MUL .v0 .v1
+.r_xor_2ab: MUL .r_xor_ab 2
+.r_xor_sum: ADD .v0 .v1
+.r_xor: SUB .r_xor_sum .r_xor_2ab
+
+-- NOT: solo invierte bits (para 1 bit: 1-v0)
+.r_not: SUB .one .v0
+
+.ra: MUL .is_AND .r_and
+.ro: MUL .is_OR .r_or
+.rx: MUL .is_XOR .r_xor
+.rn: MUL .is_NOT .r_not
+
+.res: ADD .ra .ro
+.res2: ADD .res .rx
+.result: ADD .res2 .rn
+
+.eq: " = "
+.p7: PRT .eq 3
+.its2: ITS .result .num
+.p8: PRT .num .its2
+
+.nl: "\n"
+.p9: PRT .nl 1
+
+.msg2: "Output: logic.exe\n"
+.p10: PRT .msg2 18
+
+.f1: FRE .src
+.f2: FRE .exe
+.f3: FRE .num
+
+!

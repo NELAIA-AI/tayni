@@ -1,0 +1,78 @@
+-- TAYNI Parser v0.16 - Dynamic Token Scanner using PSC
+-- Usa el operador PSC para escanear tokens dinámicamente
+
+.zero: 0
+.one: 1
+
+.num_buf: ALC 32
+.src_buf: ALC 65536
+
+-- Header
+.header: "TAYNI Parser v0.16 - Dynamic\n"
+.p0: PRT .header 29
+
+-- Read source
+.src_path: "input.tyn"
+.src_handle: FOP .src_path .zero
+.src_len: FRD .src_handle .src_buf 65536
+.close_src: FCL .src_handle
+
+.msg_src: "Source: "
+.p1: PRT .msg_src 8
+.n1: ITS .src_len .num_buf
+.p2: PRT .num_buf .n1
+.msg_bytes: " bytes\n"
+.p3: PRT .msg_bytes 7
+
+-- Tokenize
+.tok: FSM .src_buf .src_len
+.tok_count: GET .tok .zero
+
+.msg_tok: "Tokens: "
+.p4: PRT .msg_tok 8
+.n2: ITS .tok_count .num_buf
+.p5: PRT .num_buf .n2
+.nl: "\n"
+.p6: PRT .nl 1
+
+-- Parse using PSC (dynamic scan)
+.result: PSC .tok .tok_count
+
+-- Extract results
+.node_count: GET .result .zero
+.lit_count: GET .result 8
+.ref_count: GET .result 16
+.op_count: GET .result 24
+
+-- Output
+.msg_valid: "\nParsed nodes: "
+.pv0: PRT .msg_valid 15
+.nv: ITS .node_count .num_buf
+.pv1: PRT .num_buf .nv
+.pv2: PRT .nl 1
+
+.msg_lit: "  Literals: "
+.pl0: PRT .msg_lit 12
+.nl_: ITS .lit_count .num_buf
+.pl1: PRT .num_buf .nl_
+.pl2: PRT .nl 1
+
+.msg_ref: "  References: "
+.pr0: PRT .msg_ref 14
+.nr: ITS .ref_count .num_buf
+.pr1: PRT .num_buf .nr
+.pr2: PRT .nl 1
+
+.msg_op: "  Operations: "
+.po0: PRT .msg_op 14
+.no: ITS .op_count .num_buf
+.po1: PRT .num_buf .no
+.po2: PRT .nl 1
+
+.msg_done: "\nParser v0.16 complete.\n"
+.pd: PRT .msg_done 24
+
+.free1: FRE .num_buf
+.free2: FRE .src_buf
+
+!

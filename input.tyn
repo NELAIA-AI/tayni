@@ -1,0 +1,3 @@
+.msg: "Bootstrap OK!"
+.p: PRT .msg 13
+!

@@ -1,0 +1,87 @@
+-- TAYNI Gen7.3 - Assembler Completo
+-- Con prologo/epilogo y offsets automaticos
+-- AI-Native: sin errores de offset
+-- Fecha: 2026-06-16
+
+.zero: 0
+.one: 1
+
+.exe: ALC 8192
+
+-- Leer template
+.spath: "fileio2.exe.exe"
+.sh: FOP .spath .zero
+.slen: FRD .sh .exe 8192
+.sc: FCL .sh
+
+-- ===== CONSTANTES =====
+.CODE_BASE: 512
+.RVA_BASE: 4096
+.IAT_ExitProcess: 8208
+
+-- ===== GENERAR CODIGO =====
+-- Programa: sub rsp, 40; mov ecx, 42; call ExitProcess
+
+-- Posicion actual
+.pos: 512
+
+-- sub rsp, 40 (48 83 EC 28) - 4 bytes
+.i0: PUT .exe 512 72
+.i1: PUT .exe 513 131
+.i2: PUT .exe 514 236
+.i3: PUT .exe 515 40
+
+-- mov ecx, 42 (B9 2A 00 00 00) - 5 bytes
+.i4: PUT .exe 516 185
+.i5: PUT .exe 517 42
+.i6: PUT .exe 518 0
+.i7: PUT .exe 519 0
+.i8: PUT .exe 520 0
+
+-- call [ExitProcess] (FF 15 disp32) - 6 bytes
+-- Instruccion en file offset 521
+-- RVA = 0x1000 + (521 - 512) = 0x1009
+-- RIP despues = 0x100F
+-- disp = 0x2010 - 0x100F = 0x1001
+
+.call_off: 521
+.call_rva_off: SUB .call_off .CODE_BASE
+.call_rva: ADD .RVA_BASE .call_rva_off
+.rip_after: ADD .call_rva 6
+.disp: SUB .IAT_ExitProcess .rip_after
+
+.disp_b0: MOD .disp 256
+.disp_t1: DIV .disp 256
+.disp_b1: MOD .disp_t1 256
+.disp_t2: DIV .disp_t1 256
+.disp_b2: MOD .disp_t2 256
+.disp_b3: DIV .disp_t2 256
+
+.i9: PUT .exe 521 255
+.i10: PUT .exe 522 21
+.i11: PUT .exe 523 .disp_b0
+.i12: PUT .exe 524 .disp_b1
+.i13: PUT .exe 525 .disp_b2
+.i14: PUT .exe 526 .disp_b3
+
+-- ===== ESCRIBIR PE =====
+.opath: "exit42.exe"
+.oh: FOP .opath .one
+.wlen: FWR .oh .exe .slen
+.oc: FCL .oh
+
+.hdr: "Gen7.3: exit42.exe\n"
+.p0: PRT .hdr 19
+
+.msg: "disp = "
+.p1: PRT .msg 7
+.num: ALC 16
+.its: ITS .disp .num
+.p2: PRT .num .its
+.nl: "\n"
+.p3: PRT .nl 1
+
+.f1: FRE .exe
+.f2: FRE .num
+
+!

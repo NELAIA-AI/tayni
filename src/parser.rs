@@ -365,12 +365,16 @@ impl Parser {
             "END" => Ok(Op::End),
             "TRN" => Ok(Op::Trn),
             "FSM" => Ok(Op::Fsm),
+            "PSC" => Ok(Op::Psc),
+            "AST" => Ok(Op::Ast),
+            "EMT" => Ok(Op::Emt),
             // LOOP deprecated - use cyclic flow >> instead
             "PRT" => Ok(Op::Prt),
             "INP" => Ok(Op::Inp),
             "OPN" => Ok(Op::Opn),
             "ACC" => Ok(Op::Acc),
             "GET" => Ok(Op::Get),
+            "GE8" => Ok(Op::Ge8),
             "PUT" => Ok(Op::Put),
             "CLS" => Ok(Op::Cls),
             "ERR" => Ok(Op::Err),
@@ -415,6 +419,11 @@ impl Parser {
             "SCM" => Ok(Op::Scm),
             "WRT" => Ok(Op::Wrt),
             "IFZ" => Ok(Op::Ifz),
+            // Graph Transform (AI-native iteration)
+            "TRN" => Ok(Op::Trn),
+            "RED" => Ok(Op::Red),
+            "MAP" => Ok(Op::Map),
+            "FLT" => Ok(Op::Flt),
             // BRK/CNT deprecated - use cyclic flow >> instead
             // Error handling
             "CHK" => Ok(Op::Chk),

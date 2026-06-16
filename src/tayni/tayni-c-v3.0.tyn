@@ -1,0 +1,284 @@
+-- TAYNI Self-Hosted Compiler v3.0
+-- Uses FSM (Finite State Machine) for AI-native tokenization
+-- No imperative loops - pure graph transformations
+
+-- ============================================================
+-- CONSTANTS
+-- ============================================================
+.zero: 0
+.one: 1
+.two: 2
+.bufsize: 8192
+.tokbuf_size: 4096
+
+-- Token types (from FSM)
+-- 1=DOT, 2=COLON, 3=ID, 4=NUM, 5=STR, 6=NL, 7=WS
+
+-- ============================================================
+-- BUFFERS
+-- ============================================================
+.src_buf: ALC .bufsize
+.tok_buf: ALC .tokbuf_size
+.pe_buf: ALC 4096
+.num_buf: ALC 32
+.out_buf: ALC 4096
+
+-- ============================================================
+-- MAIN
+-- ============================================================
+
+-- Print banner
+.banner: "TAYNI Self-Compiler v3.0 (FSM Tokenizer)\n"
+.p1: PRT .banner 41
+
+-- Read source file
+.src_path: "input.tyn"
+.src_handle: FOP .src_path .zero
+.src_len: FRD .src_handle .src_buf .bufsize
+.close_src: FCL .src_handle
+
+-- Print source info
+.msg_src: "Source: "
+.p2: PRT .msg_src 8
+.n1: ITS .src_len .num_buf
+.p3: PRT .num_buf .n1
+.msg_bytes: " bytes\n"
+.p4: PRT .msg_bytes 7
+
+-- ============================================================
+-- TOKENIZATION using FSM (AI-native)
+-- ============================================================
+.msg_tok: "Tokenizing with FSM...\n"
+.p5: PRT .msg_tok 23
+
+-- FSM tokenizes the source buffer
+-- Returns: pointer to token buffer with count at offset 0
+-- Token types: 1=DOT, 2=COLON, 3=ID, 4=NUM, 5=STR, 6=NL, 7=WS
+.tok_result: FSM .src_buf .src_len
+
+-- Token count is stored at start of returned buffer
+.tok_count: GET .tok_result .zero
+
+.msg_tokens: "Tokens found: "
+.p6: PRT .msg_tokens 14
+.n2: ITS .tok_count .num_buf
+.p7: PRT .num_buf .n2
+.msg_nl: "\n"
+.p8: PRT .msg_nl 1
+
+-- ============================================================
+-- PARSE: Build AST from tokens
+-- ============================================================
+.msg_parse: "Parsing tokens...\n"
+.p9: PRT .msg_parse 18
+
+-- Parse state: looking for patterns
+-- Pattern 1: DOT ID COLON -> binding start
+-- Pattern 2: ID args -> operation
+-- Pattern 3: NUM -> literal
+-- Pattern 4: STR -> string literal
+
+-- For now, count binding definitions (DOT followed by ID followed by COLON)
+-- This is done by scanning token types
+
+-- ============================================================
+-- CODE GENERATION: Emit PE
+-- ============================================================
+.msg_gen: "Generating PE executable...\n"
+.p10: PRT .msg_gen 28
+
+-- DOS Header (MZ)
+.mz_m: 77
+.mz_z: 90
+.st1: PUT .pe_buf .zero .mz_m
+.st2: PUT .pe_buf .one .mz_z
+
+-- DOS stub "This program cannot be run in DOS mode"
+-- Minimal: just set PE offset at 0x3C
+.pos_3c: 60
+.pe_off: 128
+.st3: PUT .pe_buf .pos_3c .pe_off
+
+-- Fill DOS stub area with zeros (positions 2-59)
+-- Using functional approach: the compiler handles this
+
+-- PE Signature at offset 128 (0x80)
+.pos_80: 128
+.pos_81: 129
+.pos_82: 130
+.pos_83: 131
+.pe_p: 80
+.pe_e: 69
+.st4: PUT .pe_buf .pos_80 .pe_p
+.st5: PUT .pe_buf .pos_81 .pe_e
+.st6: PUT .pe_buf .pos_82 .zero
+.st7: PUT .pe_buf .pos_83 .zero
+
+-- COFF Header (20 bytes starting at 132)
+.pos_84: 132
+.pos_85: 133
+.mach_lo: 100
+.mach_hi: 134
+.st8: PUT .pe_buf .pos_84 .mach_lo
+.st9: PUT .pe_buf .pos_85 .mach_hi
+
+-- Number of sections: 1
+.pos_86: 134
+.st10: PUT .pe_buf .pos_86 .one
+
+-- Size of optional header: 240 (0xF0)
+.pos_90: 148
+.pos_91: 149
+.opt_size_lo: 240
+.st11: PUT .pe_buf .pos_90 .opt_size_lo
+.st12: PUT .pe_buf .pos_91 .zero
+
+-- Characteristics: 0x22 (executable, large address aware)
+.pos_92: 150
+.pos_93: 151
+.char_lo: 34
+.st13: PUT .pe_buf .pos_92 .char_lo
+.st14: PUT .pe_buf .pos_93 .zero
+
+-- Optional Header (PE32+)
+.pos_94: 152
+.pos_95: 153
+.magic_lo: 11
+.magic_hi: 2
+.st15: PUT .pe_buf .pos_94 .magic_lo
+.st16: PUT .pe_buf .pos_95 .magic_hi
+
+-- Entry point RVA: 0x1000
+.pos_a0: 168
+.pos_a1: 169
+.entry_lo: 0
+.entry_hi: 16
+.st17: PUT .pe_buf .pos_a0 .entry_lo
+.st18: PUT .pe_buf .pos_a1 .entry_hi
+
+-- Image base: 0x140000000 (default for 64-bit)
+.pos_b0: 184
+.pos_b4: 188
+.imgbase_lo: 0
+.imgbase_hi: 64
+.st19: PUT .pe_buf .pos_b0 .imgbase_lo
+.st20: PUT .pe_buf .pos_b4 .imgbase_hi
+
+-- Section alignment: 0x1000
+.pos_b8: 192
+.pos_b9: 193
+.sec_align_lo: 0
+.sec_align_hi: 16
+.st21: PUT .pe_buf .pos_b8 .sec_align_lo
+.st22: PUT .pe_buf .pos_b9 .sec_align_hi
+
+-- File alignment: 0x200
+.pos_bc: 196
+.file_align: 0
+.file_align_hi: 2
+.st23: PUT .pe_buf .pos_bc .file_align
+.st24: PUT .pe_buf 197 .file_align_hi
+
+-- Size of image: 0x3000
+.pos_d0: 216
+.img_size_hi: 48
+.st25: PUT .pe_buf .pos_d0 .zero
+.st26: PUT .pe_buf 217 .img_size_hi
+
+-- Size of headers: 0x200
+.pos_d4: 220
+.st27: PUT .pe_buf .pos_d4 .zero
+.st28: PUT .pe_buf 221 .file_align_hi
+
+-- Subsystem: 3 (console)
+.pos_dc: 228
+.subsys: 3
+.st29: PUT .pe_buf .pos_dc .subsys
+
+-- ============================================================
+-- SECTION HEADER: .text
+-- ============================================================
+.sec_start: 392
+.sec_name: ".text"
+.st30: PUT .pe_buf .sec_start 46
+.st31: PUT .pe_buf 393 116
+.st32: PUT .pe_buf 394 101
+.st33: PUT .pe_buf 395 120
+.st34: PUT .pe_buf 396 116
+
+-- Virtual size: 0x1000
+.st35: PUT .pe_buf 400 .zero
+.st36: PUT .pe_buf 401 .entry_hi
+
+-- Virtual address: 0x1000
+.st37: PUT .pe_buf 404 .zero
+.st38: PUT .pe_buf 405 .entry_hi
+
+-- Size of raw data: 0x200
+.st39: PUT .pe_buf 408 .zero
+.st40: PUT .pe_buf 409 .file_align_hi
+
+-- Pointer to raw data: 0x200
+.st41: PUT .pe_buf 412 .zero
+.st42: PUT .pe_buf 413 .file_align_hi
+
+-- Characteristics: 0x60000020 (code, execute, read)
+.st43: PUT .pe_buf 428 32
+.st44: PUT .pe_buf 431 96
+
+-- ============================================================
+-- CODE SECTION: Minimal exit(0)
+-- ============================================================
+.code_start: 512
+
+-- mov ecx, 0 (exit code)
+.st50: PUT .pe_buf .code_start 49
+.st51: PUT .pe_buf 513 201
+
+-- mov eax, 60 (syscall number for exit on Linux)
+-- For Windows, we need different approach
+-- xor ecx, ecx
+.st52: PUT .pe_buf 514 72
+.st53: PUT .pe_buf 515 49
+.st54: PUT .pe_buf 516 201
+
+-- ret (for now, just return)
+.st55: PUT .pe_buf 517 195
+
+-- ============================================================
+-- WRITE OUTPUT
+-- ============================================================
+.out_path: "output.exe"
+.out_handle: FOP .out_path .one
+.pe_size: 1024
+.written: FWR .out_handle .pe_buf .pe_size
+.close_out: FCL .out_handle
+
+-- ============================================================
+-- SUMMARY
+-- ============================================================
+.msg_done: "Generated: output.exe\n"
+.p11: PRT .msg_done 22
+
+.msg_summary: "Summary:\n"
+.p12: PRT .msg_summary 9
+
+.msg_s1: "  - Source bytes: "
+.p13: PRT .msg_s1 18
+.n3: ITS .src_len .num_buf
+.p14: PRT .num_buf .n3
+.p15: PRT .msg_nl 1
+
+.msg_s2: "  - Tokens: "
+.p16: PRT .msg_s2 12
+.n4: ITS .tok_count .num_buf
+.p17: PRT .num_buf .n4
+.p18: PRT .msg_nl 1
+
+.msg_s3: "  - Output: 1024 bytes\n"
+.p19: PRT .msg_s3 23
+
+.msg_final: "Bootstrap v3.0 complete!\n"
+.p20: PRT .msg_final 25
+
+!

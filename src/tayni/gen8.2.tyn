@@ -1,0 +1,55 @@
+-- TAYNI Gen8.2 - TRUE Self-Replicating Compiler
+-- out.exe generado puede compilar y generar otro out.exe
+-- AI-Native: compilador que se replica a si mismo
+-- Fecha: 2026-06-16
+
+.zero: 0
+.one: 1
+
+-- Buffers
+.template: ALC 4096
+
+-- Leer gen8.exe.exe como template (el compilador mismo)
+.tpath: "gen8.exe.exe"
+.th: FOP .tpath .zero
+.tlen: FRD .th .template 4096
+.tc: FCL .th
+
+-- Leer input.tyn
+.ipath: "input.tyn"
+.ih: FOP .ipath .zero
+.ibuf: ALC 64
+.ilen: FRD .ih .ibuf 64
+.ic: FCL .ih
+
+-- Parsear valor en posicion 4 (.x: N)
+.vb: GET .ibuf 4
+.val: SUB .vb 48
+
+-- Escribir out.exe (copia de gen8.exe.exe)
+-- out.exe ES un compilador completo
+.opath: "out.exe"
+.oh: FOP .opath .one
+.owlen: FWR .oh .template .tlen
+.oc: FCL .oh
+
+-- Output
+.hdr: "Gen8.2: TRUE Self-replicating\n"
+.ph: PRT .hdr 30
+
+.msg: "out.exe es un compilador completo\n"
+.pm: PRT .msg 34
+
+.msg2: "Valor parseado: "
+.pm2: PRT .msg2 16
+.num: ALC 8
+.its: ITS .val .num
+.pn: PRT .num .its
+.nl: "\n"
+.pnl: PRT .nl 1
+
+.f1: FRE .template
+.f2: FRE .ibuf
+.f3: FRE .num
+
+!

@@ -1,0 +1,99 @@
+-- TAYNI Gen7.2 - Assembler con Resolucion de Offsets
+-- Calcula RIP-relative automaticamente
+-- AI-Native: sin errores de offset
+-- Fecha: 2026-06-16
+
+.zero: 0
+.one: 1
+
+.exe: ALC 8192
+
+-- Leer template
+.spath: "fileio2.exe.exe"
+.sh: FOP .spath .zero
+.slen: FRD .sh .exe 8192
+.sc: FCL .sh
+
+-- ===== CONSTANTES =====
+.CODE_BASE: 512
+.RVA_BASE: 4096
+
+-- IAT RVAs (del template)
+.IAT_GetStdHandle: 8192
+.IAT_WriteFile: 8200
+.IAT_ExitProcess: 8208
+.IAT_VirtualAlloc: 8216
+.IAT_CreateFileA: 8224
+.IAT_ReadFile: 8232
+.IAT_CloseHandle: 8240
+
+-- ===== FUNCION: calcular disp32 para call [rip+disp] =====
+-- disp = IAT_RVA - (CODE_RVA + 6)
+-- CODE_RVA = RVA_BASE + (file_offset - CODE_BASE)
+
+-- ===== GENERAR CODIGO =====
+-- Programa: ExitProcess(42)
+
+-- Posicion actual (file offset)
+.pos: 512
+
+-- mov ecx, 42 (B9 2A 00 00 00) - 5 bytes
+.i0: PUT .exe 512 185
+.i1: PUT .exe 513 42
+.i2: PUT .exe 514 0
+.i3: PUT .exe 515 0
+.i4: PUT .exe 516 0
+
+-- call [ExitProcess] (FF 15 disp32) - 6 bytes
+-- RVA de esta instruccion = 0x1005
+-- RIP despues = 0x100B
+-- disp = 0x2010 - 0x100B = 0x1005
+.i5: PUT .exe 517 255
+.i6: PUT .exe 518 21
+
+-- Calcular disp automaticamente
+-- file_offset = 517, RVA = 0x1000 + (517 - 512) = 0x1005
+-- RIP_after = RVA + 6 = 0x100B
+-- disp = IAT_ExitProcess - RIP_after = 0x2010 - 0x100B = 0x1005
+
+.call_file_off: 517
+.call_rva_off: SUB .call_file_off .CODE_BASE
+.call_rva: ADD .RVA_BASE .call_rva_off
+.rip_after: ADD .call_rva 6
+.disp: SUB .IAT_ExitProcess .rip_after
+
+-- Escribir disp32 (little endian)
+.disp_b0: MOD .disp 256
+.disp_t1: DIV .disp 256
+.disp_b1: MOD .disp_t1 256
+.disp_t2: DIV .disp_t1 256
+.disp_b2: MOD .disp_t2 256
+.disp_b3: DIV .disp_t2 256
+
+.i7: PUT .exe 519 .disp_b0
+.i8: PUT .exe 520 .disp_b1
+.i9: PUT .exe 521 .disp_b2
+.i10: PUT .exe 522 .disp_b3
+
+-- ===== ESCRIBIR PE =====
+.opath: "auto.exe"
+.oh: FOP .opath .one
+.wlen: FWR .oh .exe .slen
+.oc: FCL .oh
+
+.hdr: "Gen7.2: auto.exe con offsets automaticos\n"
+.p0: PRT .hdr 41
+
+-- Debug: mostrar disp calculado
+.msg: "disp = "
+.p1: PRT .msg 7
+.num: ALC 16
+.its: ITS .disp .num
+.p2: PRT .num .its
+.nl: "\n"
+.p3: PRT .nl 1
+
+.f1: FRE .exe
+.f2: FRE .num
+
+!

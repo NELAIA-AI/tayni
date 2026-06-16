@@ -1,0 +1,179 @@
+-- TAYNI Gen6 - Compilador con Syscalls
+-- Genera PE que usa syscalls directamente
+-- El PE generado puede leer archivos y escribir output
+-- AI-Native: autonomia total
+-- Fecha: 2026-06-16
+
+.zero: 0
+.one: 1
+
+-- ASCII
+.C_0: 48
+
+-- Buffers
+.src: ALC 256
+.exe: ALC 8192
+
+-- Leer input
+.path: "input.tyn"
+.h: FOP .path .zero
+.len: FRD .h .src 256
+.c: FCL .h
+
+-- Parsear valor simple
+.n0_b4: GET .src 4
+.val: SUB .n0_b4 .C_0
+
+-- ===== GENERAR PE CON IMPORTS =====
+-- Usamos fileio2.exe.exe como template (tiene todos los imports)
+
+.tpath: "fileio2.exe.exe"
+.th: FOP .tpath .zero
+.tlen: FRD .th .exe 8192
+.tc: FCL .th
+
+-- IAT de fileio2.exe.exe:
+--   0x2000: GetStdHandle
+--   0x2008: WriteFile
+--   0x2010: ExitProcess
+--   0x2018: VirtualAlloc
+--   0x2020: CreateFileA
+--   0x2028: ReadFile
+--   0x2030: CloseHandle
+
+-- ===== GENERAR CODIGO QUE USA SYSCALLS =====
+-- El PE generado:
+-- 1. Llama GetStdHandle(-11) para stdout
+-- 2. Llama WriteFile para imprimir "OK\n"
+-- 3. Llama ExitProcess(val)
+
+-- sub rsp, 56
+.mc0: PUT .exe 512 72
+.mc1: PUT .exe 513 131
+.mc2: PUT .exe 514 236
+.mc3: PUT .exe 515 56
+
+-- mov ecx, -11 (STD_OUTPUT_HANDLE)
+.mc4: PUT .exe 516 185
+.mc5: PUT .exe 517 245
+.mc6: PUT .exe 518 255
+.mc7: PUT .exe 519 255
+.mc8: PUT .exe 520 255
+
+-- call [GetStdHandle] at IAT 0x2000
+-- RVA 0x1009, RIP after = 0x100F
+-- disp = 0x2000 - 0x100F = 0x0FF1
+.mc9: PUT .exe 521 255
+.mc10: PUT .exe 522 21
+.mc11: PUT .exe 523 241
+.mc12: PUT .exe 524 15
+.mc13: PUT .exe 525 0
+.mc14: PUT .exe 526 0
+
+-- mov [rsp+48], rax (save handle)
+.mc15: PUT .exe 527 72
+.mc16: PUT .exe 528 137
+.mc17: PUT .exe 529 68
+.mc18: PUT .exe 530 36
+.mc19: PUT .exe 531 48
+
+-- mov rcx, rax (handle)
+.mc20: PUT .exe 532 72
+.mc21: PUT .exe 533 137
+.mc22: PUT .exe 534 193
+
+-- lea rdx, [rip+msg] at RVA 0x1060
+-- RVA 0x1017, RIP after = 0x101E
+-- disp = 0x1060 - 0x101E = 0x42
+.mc23: PUT .exe 535 72
+.mc24: PUT .exe 536 141
+.mc25: PUT .exe 537 21
+.mc26: PUT .exe 538 66
+.mc27: PUT .exe 539 0
+.mc28: PUT .exe 540 0
+.mc29: PUT .exe 541 0
+
+-- mov r8d, 3 (length)
+.mc30: PUT .exe 542 65
+.mc31: PUT .exe 543 184
+.mc32: PUT .exe 544 3
+.mc33: PUT .exe 545 0
+.mc34: PUT .exe 546 0
+.mc35: PUT .exe 547 0
+
+-- lea r9, [rsp+40]
+.mc36: PUT .exe 548 76
+.mc37: PUT .exe 549 141
+.mc38: PUT .exe 550 76
+.mc39: PUT .exe 551 36
+.mc40: PUT .exe 552 40
+
+-- mov qword [rsp+32], 0
+.mc41: PUT .exe 553 72
+.mc42: PUT .exe 554 199
+.mc43: PUT .exe 555 68
+.mc44: PUT .exe 556 36
+.mc45: PUT .exe 557 32
+.mc46: PUT .exe 558 0
+.mc47: PUT .exe 559 0
+.mc48: PUT .exe 560 0
+.mc49: PUT .exe 561 0
+
+-- call [WriteFile] at IAT 0x2008
+-- RVA 0x1032, RIP after = 0x1038
+-- disp = 0x2008 - 0x1038 = 0x0FD0
+.mc50: PUT .exe 562 255
+.mc51: PUT .exe 563 21
+.mc52: PUT .exe 564 208
+.mc53: PUT .exe 565 15
+.mc54: PUT .exe 566 0
+.mc55: PUT .exe 567 0
+
+-- mov ecx, val (exit code dinamico)
+.mc56: PUT .exe 568 185
+.mc57: PUT .exe 569 .val
+.mc58: PUT .exe 570 0
+.mc59: PUT .exe 571 0
+.mc60: PUT .exe 572 0
+
+-- call [ExitProcess] at IAT 0x2010
+-- RVA 0x103D, RIP after = 0x1043
+-- disp = 0x2010 - 0x1043 = 0x0FCD
+.mc61: PUT .exe 573 255
+.mc62: PUT .exe 574 21
+.mc63: PUT .exe 575 205
+.mc64: PUT .exe 576 15
+.mc65: PUT .exe 577 0
+.mc66: PUT .exe 578 0
+
+-- Message "OK\n" at RVA 0x1060 (file 0x260)
+.msg0: PUT .exe 608 79
+.msg1: PUT .exe 609 75
+.msg2: PUT .exe 610 10
+
+-- ===== ESCRIBIR PE =====
+.opath: "syscall.exe"
+.oh: FOP .opath .one
+.wlen: FWR .oh .exe .tlen
+.oc: FCL .oh
+
+-- ===== OUTPUT =====
+.hdr: "Gen6: PE con syscalls\n"
+.p0: PRT .hdr 22
+
+.hdr2: "Valor: "
+.p1: PRT .hdr2 7
+.num: ALC 8
+.its: ITS .val .num
+.p2: PRT .num .its
+.nl: "\n"
+.p3: PRT .nl 1
+
+.hdr3: "Output: syscall.exe (usa GetStdHandle+WriteFile+ExitProcess)\n"
+.p4: PRT .hdr3 62
+
+.f1: FRE .src
+.f2: FRE .exe
+.f3: FRE .num
+
+!

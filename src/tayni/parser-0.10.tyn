@@ -1,0 +1,118 @@
+-- TAYNI Parser v0.10 - Ultra Simplified
+-- Solo cuenta tokens y muestra tipos
+
+.zero: 0
+.one: 1
+.sixteen: 16
+
+.num_buf: ALC 32
+.src_buf: ALC 65536
+
+-- Header
+.header: "TAYNI Parser v0.10\n"
+.p0: PRT .header 19
+
+-- Read source
+.src_path: "input.tyn"
+.src_handle: FOP .src_path .zero
+.src_len: FRD .src_handle .src_buf 65536
+.close_src: FCL .src_handle
+
+-- Show source size
+.msg_src: "Source bytes: "
+.p1: PRT .msg_src 14
+.n1: ITS .src_len .num_buf
+.p2: PRT .num_buf .n1
+.nl: "\n"
+.p3: PRT .nl 1
+
+-- Tokenize
+.tok: FSM .src_buf .src_len
+.tok_count: GET .tok .zero
+
+-- Show token count
+.msg_tok: "Token count: "
+.p4: PRT .msg_tok 13
+.n2: ITS .tok_count .num_buf
+.p5: PRT .num_buf .n2
+.p6: PRT .nl 1
+
+-- Get first 4 token types
+-- FSM format: [count:8][tokens: type:1 start:1 len:1 reserved:1 ...]
+-- Each token is 4 bytes
+.off0: 8
+.t0: GET .tok .off0
+.off1: 12
+.t1: GET .tok .off1
+.off2: 16
+.t2: GET .tok .off2
+.off3: 20
+.t3: GET .tok .off3
+
+-- Show token types
+.msg_types: "First 4 types: "
+.p7: PRT .msg_types 15
+
+.sp: " "
+.n_t0: ITS .t0 .num_buf
+.p8: PRT .num_buf .n_t0
+.p9: PRT .sp 1
+
+.n_t1: ITS .t1 .num_buf
+.p10: PRT .num_buf .n_t1
+.p11: PRT .sp 1
+
+.n_t2: ITS .t2 .num_buf
+.p12: PRT .num_buf .n_t2
+.p13: PRT .sp 1
+
+.n_t3: ITS .t3 .num_buf
+.p14: PRT .num_buf .n_t3
+.p15: PRT .nl 1
+
+-- Check if first pattern is DOT ID COLON
+-- FSM v3: 0=OTHER, 1=DOT, 2=COLON, 3=ID, 4=NUM, 5=STR, 6=NL
+.TT_DOT: 1
+.TT_COLON: 2
+.TT_ID: 3
+
+.is_dot: EQ .t0 .TT_DOT
+.is_id: EQ .t1 .TT_ID
+.is_colon: EQ .t2 .TT_COLON
+
+.msg_dot: "Is DOT: "
+.p16: PRT .msg_dot 8
+.n_dot: ITS .is_dot .num_buf
+.p17: PRT .num_buf .n_dot
+.p18: PRT .nl 1
+
+.msg_id: "Is ID: "
+.p19: PRT .msg_id 7
+.n_id: ITS .is_id .num_buf
+.p20: PRT .num_buf .n_id
+.p21: PRT .nl 1
+
+.msg_colon: "Is COLON: "
+.p22: PRT .msg_colon 10
+.n_colon: ITS .is_colon .num_buf
+.p23: PRT .num_buf .n_colon
+.p24: PRT .nl 1
+
+-- Check pattern
+.pat_a: AND .is_dot .is_id
+.pat: AND .pat_a .is_colon
+
+.msg_pat: "Node pattern found: "
+.p25: PRT .msg_pat 20
+.n_pat: ITS .pat .num_buf
+.p26: PRT .num_buf .n_pat
+.p27: PRT .nl 1
+
+-- Done
+.msg_done: "Parser complete.\n"
+.p28: PRT .msg_done 17
+
+.free1: FRE .num_buf
+.free2: FRE .src_buf
+
+!

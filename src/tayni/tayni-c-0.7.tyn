@@ -1,0 +1,124 @@
+.zero: 0
+.one: 1
+.buf: ALC 4096
+.num: ALC 32
+.pe: ALC 8192
+.msg: "TAYNI Compiler 0.7\n"
+.p1: PRT .msg 19
+.src: "input.tyn"
+.h: FOP .src .zero
+.len: FRD .h .buf 4096
+.c: FCL .h
+.m2: "Source: "
+.p2: PRT .m2 8
+.n: ITS .len .num
+.p3: PRT .num .n
+.m3: " bytes\n"
+.p4: PRT .m3 7
+.tok: FSM .buf .len
+.tc: GET .tok .zero
+.m4: "Tokens: "
+.p5: PRT .m4 8
+.n2: ITS .tc .num
+.p6: PRT .num .n2
+.nl: "\n"
+.p7: PRT .nl 1
+.m6: "Generating...\n"
+.p11: PRT .m6 14
+.tpl: "pe_template.bin"
+.th: FOP .tpl .zero
+.tl: FRD .th .pe 8192
+.tc2: FCL .th
+.str_off: 1536
+.outmsg: "Compiled by TAYNI 0.7"
+.si0: 0
+.sc0: CHR .outmsg .si0
+.so0: ADD .str_off .si0
+.ss0: PUT .pe .so0 .sc0
+.si1: 1
+.sc1: CHR .outmsg .si1
+.so1: ADD .str_off .si1
+.ss1: PUT .pe .so1 .sc1
+.si2: 2
+.sc2: CHR .outmsg .si2
+.so2: ADD .str_off .si2
+.ss2: PUT .pe .so2 .sc2
+.si3: 3
+.sc3: CHR .outmsg .si3
+.so3: ADD .str_off .si3
+.ss3: PUT .pe .so3 .sc3
+.si4: 4
+.sc4: CHR .outmsg .si4
+.so4: ADD .str_off .si4
+.ss4: PUT .pe .so4 .sc4
+.si5: 5
+.sc5: CHR .outmsg .si5
+.so5: ADD .str_off .si5
+.ss5: PUT .pe .so5 .sc5
+.si6: 6
+.sc6: CHR .outmsg .si6
+.so6: ADD .str_off .si6
+.ss6: PUT .pe .so6 .sc6
+.si7: 7
+.sc7: CHR .outmsg .si7
+.so7: ADD .str_off .si7
+.ss7: PUT .pe .so7 .sc7
+.si8: 8
+.sc8: CHR .outmsg .si8
+.so8: ADD .str_off .si8
+.ss8: PUT .pe .so8 .sc8
+.si9: 9
+.sc9: CHR .outmsg .si9
+.so9: ADD .str_off .si9
+.ss9: PUT .pe .so9 .sc9
+.si10: 10
+.sc10: CHR .outmsg .si10
+.so10: ADD .str_off .si10
+.ss10: PUT .pe .so10 .sc10
+.si11: 11
+.sc11: CHR .outmsg .si11
+.so11: ADD .str_off .si11
+.ss11: PUT .pe .so11 .sc11
+.si12: 12
+.sc12: CHR .outmsg .si12
+.so12: ADD .str_off .si12
+.ss12: PUT .pe .so12 .sc12
+.si13: 13
+.sc13: CHR .outmsg .si13
+.so13: ADD .str_off .si13
+.ss13: PUT .pe .so13 .sc13
+.si14: 14
+.sc14: CHR .outmsg .si14
+.so14: ADD .str_off .si14
+.ss14: PUT .pe .so14 .sc14
+.si15: 15
+.sc15: CHR .outmsg .si15
+.so15: ADD .str_off .si15
+.ss15: PUT .pe .so15 .sc15
+.si16: 16
+.sc16: CHR .outmsg .si16
+.so16: ADD .str_off .si16
+.ss16: PUT .pe .so16 .sc16
+.si17: 17
+.sc17: CHR .outmsg .si17
+.so17: ADD .str_off .si17
+.ss17: PUT .pe .so17 .sc17
+.si18: 18
+.sc18: CHR .outmsg .si18
+.so18: ADD .str_off .si18
+.ss18: PUT .pe .so18 .sc18
+.si19: 19
+.sc19: CHR .outmsg .si19
+.so19: ADD .str_off .si19
+.ss19: PUT .pe .so19 .sc19
+.si20: 20
+.sc20: CHR .outmsg .si20
+.so20: ADD .str_off .si20
+.ss20: PUT .pe .so20 .sc20
+.out: "output.exe"
+.oh: FOP .out .one
+.w: FWR .oh .pe .tl
+.oc: FCL .oh
+.m9: "Output: output.exe\n"
+.p15: PRT .m9 18
+!
