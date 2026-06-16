@@ -6,7 +6,7 @@
 [![Rust](https://img.shields.io/badge/Rust-1.96+-orange.svg)](https://www.rust-lang.org/)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20|%20Linux%20|%20macOS-blue.svg)](https://github.com/NELAIA-AI/tayni/releases)
 
-TAYNI Compiler v0.23 - A graph-based language optimized for AI code generation.
+TAYNI Compiler v0.24 - A graph-based language optimized for AI code generation.
 
 > **Minimal syntax. Direct native compilation. Zero dependencies.**
 
@@ -34,7 +34,7 @@ chmod +x tayni-c-macos-x64
 
 ```bash
 ./tayni-c-linux-x64 --version
-# Output: tayni-c 0.23.0
+# Output: tayni-c 0.24.0
 ```
 
 ### 3. Create a Program
