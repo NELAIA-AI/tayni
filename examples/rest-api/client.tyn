@@ -1,0 +1,130 @@
+-- TAYNI REST API Client Example
+-- Demonstrates: http, json modules
+-- Usage: tayni-c client.tyn -o client && ./client
+
+USE http
+USE json
+
+-- ============================================================
+-- CONFIGURATION
+-- ============================================================
+
+.base_url: "http://localhost:8080"
+.api_path: "/api"
+
+-- ============================================================
+-- API CLIENT FUNCTIONS
+-- ============================================================
+
+-- GET request helper
+.api_get: FUN .endpoint .endpoint_len
+  .url: ALC 256
+  -- Build full URL: base_url + endpoint
+  .url_len: 0
+  
+  .resp: HTTP.GET .url .url_len
+  .status: HTTP.STATUS .resp
+  .body: HTTP.BODY .resp
+  .body_len: HTTP.BODY_LEN .resp
+  
+  .result: .body
+!FUN
+
+-- POST request helper
+.api_post: FUN .endpoint .endpoint_len .data .data_len
+  .url: ALC 256
+  .headers: "Content-Type: application/json"
+  
+  .resp: HTTP.POST .url 0 .data .data_len .headers 30
+  .status: HTTP.STATUS .resp
+  .body: HTTP.BODY .resp
+  
+  .result: .body
+!FUN
+
+-- ============================================================
+-- MAIN CLIENT
+-- ============================================================
+
+-- 1. Health check
+.health_url: "http://localhost:8080/api/health"
+.health_resp: HTTP.GET .health_url 35
+.health_status: HTTP.STATUS .health_resp
+.health_body: HTTP.BODY .health_resp
+.health_len: HTTP.BODY_LEN .health_resp
+
+.log1: PRT "Health Check: " 14
+.log1b: PRT .health_body .health_len
+.log1c: PRT "\n" 1
+
+-- 2. List all users
+.users_url: "http://localhost:8080/api/users"
+.users_resp: HTTP.GET .users_url 34
+.users_status: HTTP.STATUS .users_resp
+.users_body: HTTP.BODY .users_resp
+.users_len: HTTP.BODY_LEN .users_resp
+
+.log2: PRT "Users List: " 12
+.log2b: PRT .users_body .users_len
+.log2c: PRT "\n" 1
+
+-- 3. Get specific user
+.user1_url: "http://localhost:8080/api/users/1"
+.user1_resp: HTTP.GET .user1_url 36
+.user1_status: HTTP.STATUS .user1_resp
+.user1_body: HTTP.BODY .user1_resp
+.user1_len: HTTP.BODY_LEN .user1_resp
+
+.log3: PRT "User 1: " 8
+.log3b: PRT .user1_body .user1_len
+.log3c: PRT "\n" 1
+
+-- 4. Get user 2
+.user2_url: "http://localhost:8080/api/users/2"
+.user2_resp: HTTP.GET .user2_url 36
+.user2_status: HTTP.STATUS .user2_resp
+.user2_body: HTTP.BODY .user2_resp
+.user2_len: HTTP.BODY_LEN .user2_resp
+
+.log4: PRT "User 2: " 8
+.log4b: PRT .user2_body .user2_len
+.log4c: PRT "\n" 1
+
+-- 5. Get non-existent user (404)
+.user99_url: "http://localhost:8080/api/users/99"
+.user99_resp: HTTP.GET .user99_url 37
+.user99_status: HTTP.STATUS .user99_resp
+.user99_body: HTTP.BODY .user99_resp
+.user99_len: HTTP.BODY_LEN .user99_resp
+
+.log5: PRT "User 99 (404): " 15
+.log5b: PRT .user99_body .user99_len
+.log5c: PRT "\n" 1
+
+-- 6. Create new user
+.new_user: "{\"name\":\"Diana\",\"email\":\"diana@example.com\"}"
+.create_url: "http://localhost:8080/api/users"
+.create_headers: "Content-Type: application/json"
+.create_resp: HTTP.POST .create_url 34 .new_user 45 .create_headers 30
+.create_status: HTTP.STATUS .create_resp
+.create_body: HTTP.BODY .create_resp
+.create_len: HTTP.BODY_LEN .create_resp
+
+.log6: PRT "Create User: " 13
+.log6b: PRT .create_body .create_len
+.log6c: PRT "\n" 1
+
+-- 7. Parse JSON response
+.parsed: JSON.PARSE .user1_body .user1_len
+.user_name: JSON.GET_STRING .parsed "name" 4
+.user_email: JSON.GET_STRING .parsed "email" 5
+
+.log7: PRT "Parsed name: " 13
+.log7b: PRT .user_name 5
+.log7c: PRT "\n" 1
+
+-- Done
+.log_done: PRT "Client finished.\n" 17
+
+.exit: 0
+!
