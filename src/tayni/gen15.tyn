@@ -1,0 +1,343 @@
+-- TAYNI Gen15 - Compilador Self-Hosting Zero Rust
+-- Genera PE completo que puede leer/escribir archivos
+-- El PE generado es un compilador minimo
+-- Fecha: 2026-06-16
+
+.zero: 0
+.one: 1
+
+-- Buffer para PE
+.pe: ALC 8192
+
+-- Leer compiler.exe
+.spath: "compiler.exe"
+.sh: FOP .spath .zero
+.self: ALC 16384
+.slen: FRD .sh .self 16384
+.sc: FCL .sh
+
+-- Leer input.tyn
+.ipath: "input.tyn"
+.ih: FOP .ipath .zero
+.ibuf: ALC 64
+.ilen: FRD .ih .ibuf 64
+.ic: FCL .ih
+
+-- Detectar modo
+.b0: GET .ibuf 0
+.b1: GET .ibuf 1
+.is_dash1: SUB .b0 45
+.is_dash2: SUB .b1 45
+.is_comment: ADD .is_dash1 .is_dash2
+
+-- Parser numerico
+.d1: GET .ibuf 4
+.d2: GET .ibuf 5
+.d3: GET .ibuf 6
+
+.v1: SUB .d1 48
+.d2_minus_48: SUB .d2 48
+.v1_x10: MUL .v1 10
+.v2_raw: ADD .v1_x10 .d2_minus_48
+.d3_minus_48: SUB .d3 48
+.v2_x10: MUL .v2_raw 10
+.v3_raw: ADD .v2_x10 .d3_minus_48
+
+.d2_is_nl: SUB .d2 10
+.d2_is_cr: SUB .d2 13
+.d2_is_sp: SUB .d2 32
+.d3_is_nl: SUB .d3 10
+.d3_is_cr: SUB .d3 13
+.d3_is_sp: SUB .d3 32
+
+.val_if_d2_nl: IFZ .d2_is_nl .v1 .v2_raw
+.val_if_d2_cr: IFZ .d2_is_cr .v1 .val_if_d2_nl
+.val_after_d2: IFZ .d2_is_sp .v1 .val_if_d2_cr
+.val_if_d3_nl: IFZ .d3_is_nl .val_after_d2 .v3_raw
+.val_if_d3_cr: IFZ .d3_is_cr .val_after_d2 .val_if_d3_nl
+.val: IFZ .d3_is_sp .val_after_d2 .val_if_d3_cr
+
+-- ===== GENERAR PE =====
+-- DOS Header
+.dos0: PUT .pe 0 77
+.dos1: PUT .pe 1 90
+.dos60: PUT .pe 60 64
+
+-- PE Signature
+.pe64: PUT .pe 64 80
+.pe65: PUT .pe 65 69
+
+-- COFF Header
+.coff0: PUT .pe 68 100
+.coff1: PUT .pe 69 134
+.coff2: PUT .pe 70 2
+.coff16: PUT .pe 84 240
+.coff18: PUT .pe 86 34
+
+-- Optional Header
+.opt0: PUT .pe 88 11
+.opt1: PUT .pe 89 2
+.opt2: PUT .pe 90 14
+.opt5: PUT .pe 93 4
+.opt16: PUT .pe 104 0
+.opt17: PUT .pe 105 16
+.opt20: PUT .pe 108 0
+.opt21: PUT .pe 109 16
+.opt27: PUT .pe 115 64
+.opt28: PUT .pe 116 1
+.opt32: PUT .pe 120 0
+.opt33: PUT .pe 121 16
+.opt36: PUT .pe 124 0
+.opt37: PUT .pe 125 2
+.opt40: PUT .pe 128 6
+.opt48: PUT .pe 136 6
+.opt56: PUT .pe 144 0
+.opt57: PUT .pe 145 64
+.opt60: PUT .pe 148 0
+.opt61: PUT .pe 149 2
+.opt68: PUT .pe 156 3
+.opt70: PUT .pe 158 96
+.opt71: PUT .pe 159 129
+.opt74: PUT .pe 162 16
+.opt81: PUT .pe 169 16
+.opt90: PUT .pe 178 16
+.opt97: PUT .pe 185 16
+.opt108: PUT .pe 196 16
+
+-- Import Directory
+.dd0: PUT .pe 208 0
+.dd1: PUT .pe 209 32
+.dd4: PUT .pe 212 60
+.dd96: PUT .pe 296 0
+.dd97: PUT .pe 297 33
+.dd100: PUT .pe 300 64
+
+-- .text section
+.sec0: PUT .pe 328 46
+.sec1: PUT .pe 329 116
+.sec2: PUT .pe 330 101
+.sec3: PUT .pe 331 120
+.sec4: PUT .pe 332 116
+.sec8: PUT .pe 336 0
+.sec9: PUT .pe 337 4
+.sec12: PUT .pe 340 0
+.sec13: PUT .pe 341 16
+.sec16: PUT .pe 344 0
+.sec17: PUT .pe 345 4
+.sec20: PUT .pe 348 0
+.sec21: PUT .pe 349 2
+.sec36: PUT .pe 364 32
+.sec39: PUT .pe 367 96
+
+-- .rdata section
+.rda0: PUT .pe 368 46
+.rda1: PUT .pe 369 114
+.rda2: PUT .pe 370 100
+.rda3: PUT .pe 371 97
+.rda4: PUT .pe 372 116
+.rda5: PUT .pe 373 97
+.rda8: PUT .pe 376 0
+.rda9: PUT .pe 377 4
+.rda12: PUT .pe 380 0
+.rda13: PUT .pe 381 32
+.rda16: PUT .pe 384 0
+.rda17: PUT .pe 385 4
+.rda20: PUT .pe 388 0
+.rda21: PUT .pe 389 6
+.rda36: PUT .pe 404 64
+.rda39: PUT .pe 407 64
+
+-- CODE: mov eax, VAL; ret
+.code0: PUT .pe 512 184
+.code1: PUT .pe 513 .val
+.code2: PUT .pe 514 0
+.code3: PUT .pe 515 0
+.code4: PUT .pe 516 0
+.code5: PUT .pe 517 195
+
+-- IMPORTS
+.imp0: PUT .pe 1536 128
+.imp1: PUT .pe 1537 32
+.imp12: PUT .pe 1548 64
+.imp13: PUT .pe 1549 33
+.imp16: PUT .pe 1552 0
+.imp17: PUT .pe 1553 33
+
+-- ILT
+.ilt0: PUT .pe 1664 80
+.ilt1: PUT .pe 1665 33
+.ilt8: PUT .pe 1672 96
+.ilt9: PUT .pe 1673 33
+.ilt16: PUT .pe 1680 112
+.ilt17: PUT .pe 1681 33
+.ilt24: PUT .pe 1688 128
+.ilt25: PUT .pe 1689 33
+.ilt32: PUT .pe 1696 144
+.ilt33: PUT .pe 1697 33
+.ilt40: PUT .pe 1704 160
+.ilt41: PUT .pe 1705 33
+.ilt48: PUT .pe 1712 176
+.ilt49: PUT .pe 1713 33
+.ilt56: PUT .pe 1720 192
+.ilt57: PUT .pe 1721 33
+
+-- IAT
+.iat0: PUT .pe 1792 80
+.iat1: PUT .pe 1793 33
+.iat8: PUT .pe 1800 96
+.iat9: PUT .pe 1801 33
+.iat16: PUT .pe 1808 112
+.iat17: PUT .pe 1809 33
+.iat24: PUT .pe 1816 128
+.iat25: PUT .pe 1817 33
+.iat32: PUT .pe 1824 144
+.iat33: PUT .pe 1825 33
+.iat40: PUT .pe 1832 160
+.iat41: PUT .pe 1833 33
+.iat48: PUT .pe 1840 176
+.iat49: PUT .pe 1841 33
+.iat56: PUT .pe 1848 192
+.iat57: PUT .pe 1849 33
+
+-- DLL name
+.dll0: PUT .pe 1856 75
+.dll1: PUT .pe 1857 69
+.dll2: PUT .pe 1858 82
+.dll3: PUT .pe 1859 78
+.dll4: PUT .pe 1860 69
+.dll5: PUT .pe 1861 76
+.dll6: PUT .pe 1862 51
+.dll7: PUT .pe 1863 50
+.dll8: PUT .pe 1864 46
+.dll9: PUT .pe 1865 100
+.dll10: PUT .pe 1866 108
+.dll11: PUT .pe 1867 108
+
+-- Hint/Names
+.hn2: PUT .pe 1874 69
+.hn3: PUT .pe 1875 120
+.hn4: PUT .pe 1876 105
+.hn5: PUT .pe 1877 116
+.hn6: PUT .pe 1878 80
+.hn7: PUT .pe 1879 114
+.hn8: PUT .pe 1880 111
+.hn9: PUT .pe 1881 99
+.hn10: PUT .pe 1882 101
+.hn11: PUT .pe 1883 115
+.hn12: PUT .pe 1884 115
+
+.cf2: PUT .pe 1890 67
+.cf3: PUT .pe 1891 114
+.cf4: PUT .pe 1892 101
+.cf5: PUT .pe 1893 97
+.cf6: PUT .pe 1894 116
+.cf7: PUT .pe 1895 101
+.cf8: PUT .pe 1896 70
+.cf9: PUT .pe 1897 105
+.cf10: PUT .pe 1898 108
+.cf11: PUT .pe 1899 101
+.cf12: PUT .pe 1900 65
+
+.rf2: PUT .pe 1906 82
+.rf3: PUT .pe 1907 101
+.rf4: PUT .pe 1908 97
+.rf5: PUT .pe 1909 100
+.rf6: PUT .pe 1910 70
+.rf7: PUT .pe 1911 105
+.rf8: PUT .pe 1912 108
+.rf9: PUT .pe 1913 101
+
+.wf2: PUT .pe 1922 87
+.wf3: PUT .pe 1923 114
+.wf4: PUT .pe 1924 105
+.wf5: PUT .pe 1925 116
+.wf6: PUT .pe 1926 101
+.wf7: PUT .pe 1927 70
+.wf8: PUT .pe 1928 105
+.wf9: PUT .pe 1929 108
+.wf10: PUT .pe 1930 101
+
+.ch2: PUT .pe 1938 67
+.ch3: PUT .pe 1939 108
+.ch4: PUT .pe 1940 111
+.ch5: PUT .pe 1941 115
+.ch6: PUT .pe 1942 101
+.ch7: PUT .pe 1943 72
+.ch8: PUT .pe 1944 97
+.ch9: PUT .pe 1945 110
+.ch10: PUT .pe 1946 100
+.ch11: PUT .pe 1947 108
+.ch12: PUT .pe 1948 101
+
+.gs2: PUT .pe 1954 71
+.gs3: PUT .pe 1955 101
+.gs4: PUT .pe 1956 116
+.gs5: PUT .pe 1957 83
+.gs6: PUT .pe 1958 116
+.gs7: PUT .pe 1959 100
+.gs8: PUT .pe 1960 72
+.gs9: PUT .pe 1961 97
+.gs10: PUT .pe 1962 110
+.gs11: PUT .pe 1963 100
+.gs12: PUT .pe 1964 108
+.gs13: PUT .pe 1965 101
+
+.va2: PUT .pe 1970 86
+.va3: PUT .pe 1971 105
+.va4: PUT .pe 1972 114
+.va5: PUT .pe 1973 116
+.va6: PUT .pe 1974 117
+.va7: PUT .pe 1975 97
+.va8: PUT .pe 1976 108
+.va9: PUT .pe 1977 65
+.va10: PUT .pe 1978 108
+.va11: PUT .pe 1979 108
+.va12: PUT .pe 1980 111
+.va13: PUT .pe 1981 99
+
+.vf2: PUT .pe 1986 86
+.vf3: PUT .pe 1987 105
+.vf4: PUT .pe 1988 114
+.vf5: PUT .pe 1989 116
+.vf6: PUT .pe 1990 117
+.vf7: PUT .pe 1991 97
+.vf8: PUT .pe 1992 108
+.vf9: PUT .pe 1993 70
+.vf10: PUT .pe 1994 114
+.vf11: PUT .pe 1995 101
+.vf12: PUT .pe 1996 101
+
+-- ===== DECIDIR OUTPUT =====
+-- Si es comentario -> escribir copia del compilador
+-- Si no -> escribir PE generado
+
+.out_buf: IFZ .is_comment .self .pe
+.out_len: IFZ .is_comment .slen 2560
+
+-- Escribir out.exe
+.opath: "out.exe"
+.oh: FOP .opath .one
+.owlen: FWR .oh .out_buf .out_len
+.oc: FCL .oh
+
+-- Output
+.hdr: "Gen15: Zero Rust Compiler\n"
+.ph: PRT .hdr 26
+
+.msg_val: "Valor: "
+.pmv: PRT .msg_val 7
+.num: ALC 8
+.its: ITS .val .num
+.pn: PRT .num .its
+.nl: "\n"
+.pnl: PRT .nl 1
+
+.msg_out: "-> out.exe generado\n"
+.pmo: PRT .msg_out 20
+
+.f1: FRE .pe
+.f2: FRE .self
+.f3: FRE .ibuf
+.f4: FRE .num
+
+!
