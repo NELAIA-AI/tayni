@@ -1,48 +1,159 @@
--- TAYNI stdlib: string v0.1
--- Provides: STRING.LEN, STRING.CONCAT, STRING.SPLIT, STRING.TRIM
+-- TAYNI stdlib: string v1.0 (AI-Native Pure)
+-- Provides: STRING operations via inline expansion
 -- Usage: USE string
+--
+-- AI-Native Design:
+-- - No loops: operations desenrolladas para N conocido
+-- - No FUN: templates que se expanden inline
+-- - Operaciones byte-level con GET/PUT
 
--- STRING.LEN: Get string length (count until null byte)
-.string_len: FUN .str
-  .i: 0
-  .c: CHR .str .i
-  -- Loop until null byte (simplified - needs proper loop)
-  .len: .i
-!FUN
+-- ============================================================
+-- STRING CONSTANTS
+-- ============================================================
+.CHAR_NULL: 0
+.CHAR_SPACE: 32
+.CHAR_NEWLINE: 10
+.CHAR_TAB: 9
+.CHAR_A: 65
+.CHAR_Z: 90
+.CHAR_a: 97
+.CHAR_z: 122
 
--- STRING.CONCAT: Concatenate two strings
--- Returns: new buffer with concatenated string
-.string_concat: FUN .str1 .len1 .str2 .len2
-  .total: ADD .len1 .len2
-  .buf: ALC .total
-  .c1: CPY .buf .str1 .len1
-  .dst2: ADD .buf .len1
-  .c2: CPY .dst2 .str2 .len2
-!FUN
+-- ============================================================
+-- STRING.LEN Template (para strings hasta 16 bytes)
+-- Cuenta bytes hasta encontrar null
+-- ============================================================
+-- .str: "hello"
+-- .c0: GET .str 0
+-- .c1: GET .str 1
+-- .c2: GET .str 2
+-- .c3: GET .str 3
+-- .c4: GET .str 4
+-- .c5: GET .str 5
+-- .n0: EQ .c0 0
+-- .n1: EQ .c1 0
+-- .n2: EQ .c2 0
+-- .n3: EQ .c3 0
+-- .n4: EQ .c4 0
+-- .n5: EQ .c5 0
+-- .len: BRN .n0 0 (BRN .n1 1 (BRN .n2 2 (BRN .n3 3 (BRN .n4 4 (BRN .n5 5 6)))))
 
--- STRING.EQUALS: Compare two strings
--- Returns: 1 if equal, 0 if not
-.string_equals: FUN .str1 .str2 .len
-  .result: SCM .str1 .str2 .len
-!FUN
+-- ============================================================
+-- STRING.EQUALS Template (comparar 2 strings de N bytes)
+-- ============================================================
+-- .s1: "abc"
+-- .s2: "abc"
+-- .e0: GET .s1 0
+-- .e1: GET .s2 0
+-- .eq0: EQ .e0 .e1
+-- .f0: GET .s1 1
+-- .f1: GET .s2 1
+-- .eq1: EQ .f0 .f1
+-- .g0: GET .s1 2
+-- .g1: GET .s2 2
+-- .eq2: EQ .g0 .g1
+-- .equal: AND .eq0 .eq1
+-- .equal: AND .equal .eq2
 
--- STRING.CONTAINS: Check if string contains substring
--- Returns: position if found, -1 if not
-.string_contains: FUN .haystack .hlen .needle .nlen
-  -- Simplified: needs proper implementation
-  .result: -1
-!FUN
+-- ============================================================
+-- STRING.COPY Template (copiar N bytes)
+-- ============================================================
+-- .src: "hello"
+-- .dst: ALC 8
+-- .b0: GET .src 0
+-- .b1: GET .src 1
+-- .b2: GET .src 2
+-- .b3: GET .src 3
+-- .b4: GET .src 4
+-- .p0: PUT .dst 0 .b0
+-- .p1: PUT .dst 1 .b1
+-- .p2: PUT .dst 2 .b2
+-- .p3: PUT .dst 3 .b3
+-- .p4: PUT .dst 4 .b4
 
--- STRING.UPPER: Convert to uppercase (ASCII only)
-.string_upper: FUN .str .len
-  .buf: ALC .len
-  .c: CPY .buf .str .len
-  -- Would need loop to convert each char
-!FUN
+-- ============================================================
+-- STRING.UPPER_CHAR: Convertir un char a mayúscula
+-- Si c >= 'a' && c <= 'z' entonces c - 32
+-- ============================================================
+-- .c: GET .str .i
+-- .is_lower_a: GE .c .CHAR_a
+-- .is_lower_z: LE .c .CHAR_z
+-- .is_lower: AND .is_lower_a .is_lower_z
+-- .upper_c: SUB .c 32
+-- .result: BRN .is_lower .upper_c .c
 
--- STRING.LOWER: Convert to lowercase (ASCII only)
-.string_lower: FUN .str .len
-  .buf: ALC .len
-  .c: CPY .buf .str .len
-  -- Would need loop to convert each char
-!FUN
+-- ============================================================
+-- STRING.LOWER_CHAR: Convertir un char a minúscula
+-- Si c >= 'A' && c <= 'Z' entonces c + 32
+-- ============================================================
+-- .c: GET .str .i
+-- .is_upper_a: GE .c .CHAR_A
+-- .is_upper_z: LE .c .CHAR_Z
+-- .is_upper: AND .is_upper_a .is_upper_z
+-- .lower_c: ADD .c 32
+-- .result: BRN .is_upper .lower_c .c
+
+-- ============================================================
+-- STRING.CONCAT Template (concatenar 2 strings)
+-- ============================================================
+-- .s1: "hello"
+-- .s1_len: 5
+-- .s2: " world"
+-- .s2_len: 6
+-- .total: ADD .s1_len .s2_len
+-- .buf: ALC .total
+-- -- Copiar s1 (desenrollado)
+-- .a0: GET .s1 0
+-- .a1: GET .s1 1
+-- .a2: GET .s1 2
+-- .a3: GET .s1 3
+-- .a4: GET .s1 4
+-- .w0: PUT .buf 0 .a0
+-- .w1: PUT .buf 1 .a1
+-- .w2: PUT .buf 2 .a2
+-- .w3: PUT .buf 3 .a3
+-- .w4: PUT .buf 4 .a4
+-- -- Copiar s2 (desenrollado, offset = s1_len)
+-- .b0: GET .s2 0
+-- .b1: GET .s2 1
+-- .b2: GET .s2 2
+-- .b3: GET .s2 3
+-- .b4: GET .s2 4
+-- .b5: GET .s2 5
+-- .x0: PUT .buf 5 .b0
+-- .x1: PUT .buf 6 .b1
+-- .x2: PUT .buf 7 .b2
+-- .x3: PUT .buf 8 .b3
+-- .x4: PUT .buf 9 .b4
+-- .x5: PUT .buf 10 .b5
+
+-- ============================================================
+-- Example: Comparar dos strings
+-- ============================================================
+-- USE string
+--
+-- .str1: "hello"
+-- .str2: "hello"
+-- -- Comparar byte por byte (5 bytes)
+-- .c0: GET .str1 0
+-- .d0: GET .str2 0
+-- .eq0: EQ .c0 .d0
+-- .c1: GET .str1 1
+-- .d1: GET .str2 1
+-- .eq1: EQ .c1 .d1
+-- .c2: GET .str1 2
+-- .d2: GET .str2 2
+-- .eq2: EQ .c2 .d2
+-- .c3: GET .str1 3
+-- .d3: GET .str2 3
+-- .eq3: EQ .c3 .d3
+-- .c4: GET .str1 4
+-- .d4: GET .str2 4
+-- .eq4: EQ .c4 .d4
+-- .all_eq: AND .eq0 .eq1
+-- .all_eq: AND .all_eq .eq2
+-- .all_eq: AND .all_eq .eq3
+-- .all_eq: AND .all_eq .eq4
+-- -- .all_eq es 1 si son iguales, 0 si no
+
+!

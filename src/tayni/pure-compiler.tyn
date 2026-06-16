@@ -1,0 +1,429 @@
+-- TAYNI Pure Compiler v1.0
+-- Compilador AI-native puro: sin loops, sin saltos, sin templates
+-- Self-hosting ready
+-- Fecha: 2026-06-16
+
+-- ============================================================
+-- PRINCIPIOS AI-NATIVE
+-- ============================================================
+-- 1. Sin loops: código desenrollado para N conocido
+-- 2. Sin saltos: BRN es operador ternario, no salto
+-- 3. Sin templates: genera PE byte por byte
+-- 4. Declarativo: cada línea es una transformación
+
+-- ============================================================
+-- CONSTANTES
+-- ============================================================
+.zero: 0
+.one: 1
+
+-- ============================================================
+-- FASE 1: LEER ARCHIVO FUENTE
+-- ============================================================
+.src: ALC 4096
+.srcpath: "input.tyn"
+.srch: FOP .srcpath .zero
+.srclen: FRD .srch .src 4096
+.srcc: FCL .srch
+
+-- ============================================================
+-- FASE 2: LEXER DESENROLLADO
+-- Formato input.tyn: ".x: N" donde N es un dígito
+-- Bytes: [0]='.', [1]='x', [2]=':', [3]=' ', [4]=dígito
+-- ============================================================
+
+-- Verificar formato (desenrollado, sin loops)
+.b0: GET .src 0
+.b1: GET .src 1
+.b2: GET .src 2
+.b3: GET .src 3
+.b4: GET .src 4
+
+-- Validar: b0=46('.'), b2=58(':'), b3=32(' ')
+.v0: EQ .b0 46
+.v2: EQ .b2 58
+.v3: EQ .b3 32
+.valid1: AND .v0 .v2
+.valid: AND .valid1 .v3
+
+-- Extraer valor (b4 - 48)
+.val: SUB .b4 48
+
+-- ============================================================
+-- FASE 3: PARSER
+-- AST para ".x: N" es simplemente: {name: "x", value: N}
+-- En TAYNI puro, usamos directamente .val
+-- ============================================================
+
+-- ============================================================
+-- FASE 4: EMITTER - Generar código x86-64
+-- Programa: mov eax, N; ret
+-- ============================================================
+.code: ALC 16
+
+-- mov eax, imm32 (B8 + imm32)
+.c0: PUT .code 0 184
+.c1: PUT .code 1 .val
+.c2: PUT .code 2 0
+.c3: PUT .code 3 0
+.c4: PUT .code 4 0
+
+-- ret (C3)
+.c5: PUT .code 5 195
+
+.code_size: 6
+
+-- ============================================================
+-- FASE 5: GENERAR PE COMPLETO (sin template)
+-- ============================================================
+.pe: ALC 4096
+.pe_pos: 0
+
+-- ----- DOS HEADER (64 bytes) -----
+-- e_magic: "MZ"
+.d0: PUT .pe 0 77
+.d1: PUT .pe 1 90
+
+-- e_cblp a e_lfarlc: zeros
+.d2: PUT .pe 2 0
+.d3: PUT .pe 3 0
+-- ... (bytes 4-59 son 0)
+
+-- e_lfanew: offset to PE header (0x80 = 128)
+.d60: PUT .pe 60 128
+.d61: PUT .pe 61 0
+.d62: PUT .pe 62 0
+.d63: PUT .pe 63 0
+
+-- Padding hasta 128
+-- (bytes 64-127 son 0)
+
+-- ----- PE SIGNATURE (4 bytes @ 0x80) -----
+.p80: PUT .pe 128 80
+.p81: PUT .pe 129 69
+.p82: PUT .pe 130 0
+.p83: PUT .pe 131 0
+
+-- ----- COFF HEADER (20 bytes @ 0x84) -----
+-- Machine: AMD64 (0x8664)
+.p84: PUT .pe 132 100
+.p85: PUT .pe 133 134
+
+-- NumberOfSections: 1
+.p86: PUT .pe 134 1
+.p87: PUT .pe 135 0
+
+-- TimeDateStamp: 0
+.p88: PUT .pe 136 0
+.p89: PUT .pe 137 0
+.p90: PUT .pe 138 0
+.p91: PUT .pe 139 0
+
+-- PointerToSymbolTable: 0
+.p92: PUT .pe 140 0
+.p93: PUT .pe 141 0
+.p94: PUT .pe 142 0
+.p95: PUT .pe 143 0
+
+-- NumberOfSymbols: 0
+.p96: PUT .pe 144 0
+.p97: PUT .pe 145 0
+.p98: PUT .pe 146 0
+.p99: PUT .pe 147 0
+
+-- SizeOfOptionalHeader: 240 (0xF0)
+.p100: PUT .pe 148 240
+.p101: PUT .pe 149 0
+
+-- Characteristics: 0x22 (executable, no relocs)
+.p102: PUT .pe 150 34
+.p103: PUT .pe 151 0
+
+-- ----- OPTIONAL HEADER (240 bytes @ 0x98) -----
+-- Magic: PE32+ (0x20B)
+.p104: PUT .pe 152 11
+.p105: PUT .pe 153 2
+
+-- MajorLinkerVersion, MinorLinkerVersion
+.p106: PUT .pe 154 14
+.p107: PUT .pe 155 0
+
+-- SizeOfCode: 512 (0x200)
+.p108: PUT .pe 156 0
+.p109: PUT .pe 157 2
+.p110: PUT .pe 158 0
+.p111: PUT .pe 159 0
+
+-- SizeOfInitializedData: 0
+.p112: PUT .pe 160 0
+.p113: PUT .pe 161 0
+.p114: PUT .pe 162 0
+.p115: PUT .pe 163 0
+
+-- SizeOfUninitializedData: 0
+.p116: PUT .pe 164 0
+.p117: PUT .pe 165 0
+.p118: PUT .pe 166 0
+.p119: PUT .pe 167 0
+
+-- AddressOfEntryPoint: 0x1000
+.p120: PUT .pe 168 0
+.p121: PUT .pe 169 16
+.p122: PUT .pe 170 0
+.p123: PUT .pe 171 0
+
+-- BaseOfCode: 0x1000
+.p124: PUT .pe 172 0
+.p125: PUT .pe 173 16
+.p126: PUT .pe 174 0
+.p127: PUT .pe 175 0
+
+-- ImageBase: 0x140000000
+.p128: PUT .pe 176 0
+.p129: PUT .pe 177 0
+.p130: PUT .pe 178 0
+.p131: PUT .pe 179 64
+.p132: PUT .pe 180 1
+.p133: PUT .pe 181 0
+.p134: PUT .pe 182 0
+.p135: PUT .pe 183 0
+
+-- SectionAlignment: 0x1000
+.p136: PUT .pe 184 0
+.p137: PUT .pe 185 16
+.p138: PUT .pe 186 0
+.p139: PUT .pe 187 0
+
+-- FileAlignment: 0x200
+.p140: PUT .pe 188 0
+.p141: PUT .pe 189 2
+.p142: PUT .pe 190 0
+.p143: PUT .pe 191 0
+
+-- OS Version: 6.0
+.p144: PUT .pe 192 6
+.p145: PUT .pe 193 0
+.p146: PUT .pe 194 0
+.p147: PUT .pe 195 0
+
+-- Image Version: 0.0
+.p148: PUT .pe 196 0
+.p149: PUT .pe 197 0
+.p150: PUT .pe 198 0
+.p151: PUT .pe 199 0
+
+-- Subsystem Version: 6.0
+.p152: PUT .pe 200 6
+.p153: PUT .pe 201 0
+.p154: PUT .pe 202 0
+.p155: PUT .pe 203 0
+
+-- Win32VersionValue: 0
+.p156: PUT .pe 204 0
+.p157: PUT .pe 205 0
+.p158: PUT .pe 206 0
+.p159: PUT .pe 207 0
+
+-- SizeOfImage: 0x2000
+.p160: PUT .pe 208 0
+.p161: PUT .pe 209 32
+.p162: PUT .pe 210 0
+.p163: PUT .pe 211 0
+
+-- SizeOfHeaders: 0x200
+.p164: PUT .pe 212 0
+.p165: PUT .pe 213 2
+.p166: PUT .pe 214 0
+.p167: PUT .pe 215 0
+
+-- CheckSum: 0
+.p168: PUT .pe 216 0
+.p169: PUT .pe 217 0
+.p170: PUT .pe 218 0
+.p171: PUT .pe 219 0
+
+-- Subsystem: 3 (CONSOLE)
+.p172: PUT .pe 220 3
+.p173: PUT .pe 221 0
+
+-- DllCharacteristics: 0x8160 (NX, ASLR, etc)
+.p174: PUT .pe 222 96
+.p175: PUT .pe 223 129
+
+-- SizeOfStackReserve: 0x100000
+.p176: PUT .pe 224 0
+.p177: PUT .pe 225 0
+.p178: PUT .pe 226 16
+.p179: PUT .pe 227 0
+.p180: PUT .pe 228 0
+.p181: PUT .pe 229 0
+.p182: PUT .pe 230 0
+.p183: PUT .pe 231 0
+
+-- SizeOfStackCommit: 0x1000
+.p184: PUT .pe 232 0
+.p185: PUT .pe 233 16
+.p186: PUT .pe 234 0
+.p187: PUT .pe 235 0
+.p188: PUT .pe 236 0
+.p189: PUT .pe 237 0
+.p190: PUT .pe 238 0
+.p191: PUT .pe 239 0
+
+-- SizeOfHeapReserve: 0x100000
+.p192: PUT .pe 240 0
+.p193: PUT .pe 241 0
+.p194: PUT .pe 242 16
+.p195: PUT .pe 243 0
+.p196: PUT .pe 244 0
+.p197: PUT .pe 245 0
+.p198: PUT .pe 246 0
+.p199: PUT .pe 247 0
+
+-- SizeOfHeapCommit: 0x1000
+.p200: PUT .pe 248 0
+.p201: PUT .pe 249 16
+.p202: PUT .pe 250 0
+.p203: PUT .pe 251 0
+.p204: PUT .pe 252 0
+.p205: PUT .pe 253 0
+.p206: PUT .pe 254 0
+.p207: PUT .pe 255 0
+
+-- LoaderFlags: 0
+.p208: PUT .pe 256 0
+.p209: PUT .pe 257 0
+.p210: PUT .pe 258 0
+.p211: PUT .pe 259 0
+
+-- NumberOfRvaAndSizes: 16
+.p212: PUT .pe 260 16
+.p213: PUT .pe 261 0
+.p214: PUT .pe 262 0
+.p215: PUT .pe 263 0
+
+-- Data Directories (16 * 8 = 128 bytes, all zeros)
+-- bytes 264-391 = 0
+
+-- ----- SECTION HEADER (.text) @ 0x188 (392) -----
+-- Name: ".text\0\0\0"
+.s0: PUT .pe 392 46
+.s1: PUT .pe 393 116
+.s2: PUT .pe 394 101
+.s3: PUT .pe 395 120
+.s4: PUT .pe 396 116
+.s5: PUT .pe 397 0
+.s6: PUT .pe 398 0
+.s7: PUT .pe 399 0
+
+-- VirtualSize: 6 (code size)
+.s8: PUT .pe 400 6
+.s9: PUT .pe 401 0
+.s10: PUT .pe 402 0
+.s11: PUT .pe 403 0
+
+-- VirtualAddress: 0x1000
+.s12: PUT .pe 404 0
+.s13: PUT .pe 405 16
+.s14: PUT .pe 406 0
+.s15: PUT .pe 407 0
+
+-- SizeOfRawData: 0x200
+.s16: PUT .pe 408 0
+.s17: PUT .pe 409 2
+.s18: PUT .pe 410 0
+.s19: PUT .pe 411 0
+
+-- PointerToRawData: 0x200
+.s20: PUT .pe 412 0
+.s21: PUT .pe 413 2
+.s22: PUT .pe 414 0
+.s23: PUT .pe 415 0
+
+-- PointerToRelocations: 0
+.s24: PUT .pe 416 0
+.s25: PUT .pe 417 0
+.s26: PUT .pe 418 0
+.s27: PUT .pe 419 0
+
+-- PointerToLinenumbers: 0
+.s28: PUT .pe 420 0
+.s29: PUT .pe 421 0
+.s30: PUT .pe 422 0
+.s31: PUT .pe 423 0
+
+-- NumberOfRelocations: 0
+.s32: PUT .pe 424 0
+.s33: PUT .pe 425 0
+
+-- NumberOfLinenumbers: 0
+.s34: PUT .pe 426 0
+.s35: PUT .pe 427 0
+
+-- Characteristics: 0x60000020 (code, exec, read)
+.s36: PUT .pe 428 32
+.s37: PUT .pe 429 0
+.s38: PUT .pe 430 0
+.s39: PUT .pe 431 96
+
+-- ----- CODE SECTION @ 0x200 (512) -----
+-- Copiar código generado
+.x0: GET .code 0
+.x1: GET .code 1
+.x2: GET .code 2
+.x3: GET .code 3
+.x4: GET .code 4
+.x5: GET .code 5
+
+.y0: PUT .pe 512 .x0
+.y1: PUT .pe 513 .x1
+.y2: PUT .pe 514 .x2
+.y3: PUT .pe 515 .x3
+.y4: PUT .pe 516 .x4
+.y5: PUT .pe 517 .x5
+
+-- ============================================================
+-- FASE 6: ESCRIBIR PE A ARCHIVO
+-- ============================================================
+.pe_size: 1024
+.outpath: "pure.exe"
+.outh: FOP .outpath .one
+.outlen: FWR .outh .pe .pe_size
+.outc: FCL .outh
+
+-- ============================================================
+-- OUTPUT
+-- ============================================================
+.msg1: "TAYNI Pure Compiler v1.0\n"
+.o1: PRT .msg1 25
+
+.msg2: "Input: "
+.o2: PRT .msg2 7
+.o3: PRT .srcpath 9
+.nl: "\n"
+.o4: PRT .nl 1
+
+.msg3: "Value: "
+.o5: PRT .msg3 7
+.num: ALC 16
+.its: ITS .val .num
+.o6: PRT .num .its
+.o7: PRT .nl 1
+
+.msg4: "Output: pure.exe\n"
+.o8: PRT .msg4 17
+
+.msg5: "PE size: "
+.o9: PRT .msg5 9
+.its2: ITS .pe_size .num
+.o10: PRT .num .its2
+.msg6: " bytes\n"
+.o11: PRT .msg6 7
+
+-- Cleanup
+.f1: FRE .src
+.f2: FRE .code
+.f3: FRE .pe
+.f4: FRE .num
+
+!

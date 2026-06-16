@@ -1,18 +1,53 @@
--- TAYNI stdlib: args v0.1
--- Provides: ARGS.COUNT, ARGS.GET
+-- TAYNI stdlib: args v1.0 (AI-Native Pure)
+-- Provides: CLI argument handling via inline expansion
 -- Usage: USE args
--- Note: Uses argc/argv from program entry
+--
+-- AI-Native Design:
+-- - Argumentos pasados como variables predefinidas
+-- - Sin parsing dinámico: estructura conocida en compile-time
 
--- Get argument count (placeholder - needs runtime support)
-.args_count: FUN
-  -- Returns number of command line arguments
-  -- Implementation depends on platform entry point
-  .result: 0
-!FUN
+-- ============================================================
+-- ARGS CONSTANTS
+-- ============================================================
+.ARG_MAX: 16
 
--- Get argument by index (placeholder - needs runtime support)
-.args_get: FUN .index
-  -- Returns argument at index as string pointer
-  -- Implementation depends on platform entry point
-  .result: 0
-!FUN
+-- ============================================================
+-- ARGS Template
+-- Los argumentos se pasan como .arg0, .arg1, etc.
+-- El compilador los inyecta automáticamente
+-- ============================================================
+-- .argc: 3
+-- .arg0: "program.exe"
+-- .arg1: "input.tyn"
+-- .arg2: "-o"
+
+-- ============================================================
+-- ARGS.GET Template
+-- Obtener argumento por índice
+-- ============================================================
+-- .idx: 1
+-- .arg: BRN (EQ .idx 0) .arg0 (BRN (EQ .idx 1) .arg1 (BRN (EQ .idx 2) .arg2 ""))
+
+-- ============================================================
+-- ARGS.HAS Template
+-- Verificar si existe un flag
+-- ============================================================
+-- .flag: "-v"
+-- .flag_len: 2
+-- -- Comparar con cada argumento (desenrollado)
+-- .eq0: SCM .arg0 .flag .flag_len
+-- .eq1: SCM .arg1 .flag .flag_len
+-- .eq2: SCM .arg2 .flag .flag_len
+-- .has: OR .eq0 .eq1
+-- .has: OR .has .eq2
+
+-- ============================================================
+-- Example: Procesar argumentos
+-- ============================================================
+-- USE args
+--
+-- .input: .arg1
+-- .output: .arg2
+-- .verbose: SCM .arg3 "-v" 2
+
+!

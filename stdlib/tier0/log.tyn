@@ -1,44 +1,100 @@
--- TAYNI stdlib: log v0.1
--- Provides: LOG.INFO, LOG.WARN, LOG.ERROR, LOG.DEBUG
+-- TAYNI stdlib: log v1.0 (AI-Native Pure)
+-- Provides: Logging via inline expansion
 -- Usage: USE log
+--
+-- AI-Native Design:
+-- - Output directo con PRT
+-- - Niveles como prefijos constantes
+-- - Sin buffering ni formateo complejo
 
--- Log levels
-.log_level_debug: 0
-.log_level_info: 1
-.log_level_warn: 2
-.log_level_error: 3
+-- ============================================================
+-- LOG CONSTANTS
+-- ============================================================
+.LOG_DEBUG: 0
+.LOG_INFO: 1
+.LOG_WARN: 2
+.LOG_ERROR: 3
 
--- Prefixes
-.log_prefix_debug: "[DEBUG] "
-.log_prefix_info: "[INFO] "
-.log_prefix_warn: "[WARN] "
-.log_prefix_error: "[ERROR] "
-.log_newline: "\n"
+-- ============================================================
+-- LOG Prefixes
+-- ============================================================
+.LOG_PREFIX_DEBUG: "[DEBUG] "
+.LOG_PREFIX_INFO: "[INFO] "
+.LOG_PREFIX_WARN: "[WARN] "
+.LOG_PREFIX_ERROR: "[ERROR] "
 
--- LOG.DEBUG: Print debug message
-.log_debug: FUN .msg .len
-  .d1: PRT .log_prefix_debug 8
-  .d2: PRT .msg .len
-  .d3: PRT .log_newline 1
-!FUN
+-- ============================================================
+-- LOG.INFO Template
+-- ============================================================
+-- .msg: "Server started"
+-- .msg_len: 14
+-- .p1: PRT .LOG_PREFIX_INFO 7
+-- .p2: PRT .msg .msg_len
+-- .nl: "\n"
+-- .p3: PRT .nl 1
 
--- LOG.INFO: Print info message
-.log_info: FUN .msg .len
-  .i1: PRT .log_prefix_info 7
-  .i2: PRT .msg .len
-  .i3: PRT .log_newline 1
-!FUN
+-- ============================================================
+-- LOG.ERROR Template
+-- ============================================================
+-- .msg: "Connection failed"
+-- .msg_len: 17
+-- .p1: PRT .LOG_PREFIX_ERROR 8
+-- .p2: PRT .msg .msg_len
+-- .nl: "\n"
+-- .p3: PRT .nl 1
 
--- LOG.WARN: Print warning message
-.log_warn: FUN .msg .len
-  .w1: PRT .log_prefix_warn 7
-  .w2: PRT .msg .len
-  .w3: PRT .log_newline 1
-!FUN
+-- ============================================================
+-- LOG.DEBUG Template
+-- ============================================================
+-- .msg: "Processing request"
+-- .msg_len: 18
+-- .p1: PRT .LOG_PREFIX_DEBUG 8
+-- .p2: PRT .msg .msg_len
+-- .nl: "\n"
+-- .p3: PRT .nl 1
 
--- LOG.ERROR: Print error message
-.log_error: FUN .msg .len
-  .e1: PRT .log_prefix_error 8
-  .e2: PRT .msg .len
-  .e3: PRT .log_newline 1
-!FUN
+-- ============================================================
+-- LOG.WARN Template
+-- ============================================================
+-- .msg: "Deprecated API"
+-- .msg_len: 14
+-- .p1: PRT .LOG_PREFIX_WARN 7
+-- .p2: PRT .msg .msg_len
+-- .nl: "\n"
+-- .p3: PRT .nl 1
+
+-- ============================================================
+-- LOG.VALUE Template (log con valor numérico)
+-- ============================================================
+-- .msg: "Count: "
+-- .msg_len: 7
+-- .val: 42
+-- .p1: PRT .LOG_PREFIX_INFO 7
+-- .p2: PRT .msg .msg_len
+-- .num: ALC 16
+-- .its: ITS .val .num
+-- .p3: PRT .num .its
+-- .nl: "\n"
+-- .p4: PRT .nl 1
+
+-- ============================================================
+-- Example: Logging en una aplicación
+-- ============================================================
+-- USE log
+--
+-- .m1: "Application starting"
+-- .p1: PRT .LOG_PREFIX_INFO 7
+-- .p2: PRT .m1 20
+-- .nl: "\n"
+-- .p3: PRT .nl 1
+--
+-- .m2: "Listening on port "
+-- .port: 8080
+-- .p4: PRT .LOG_PREFIX_INFO 7
+-- .p5: PRT .m2 18
+-- .num: ALC 16
+-- .its: ITS .port .num
+-- .p6: PRT .num .its
+-- .p7: PRT .nl 1
+
+!

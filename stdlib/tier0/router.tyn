@@ -1,53 +1,101 @@
--- TAYNI stdlib: router v0.1
--- Provides: ROUTER.NEW, ROUTER.ADD, ROUTER.MATCH
+-- TAYNI stdlib: router v1.0 (AI-Native Pure)
+-- Provides: URL routing via inline expansion
 -- Usage: USE router
+--
+-- AI-Native Design:
+-- - Rutas definidas como constantes
+-- - Matching desenrollado para rutas conocidas
+-- - Sin regex: comparación directa de paths
 
--- Route entry structure
-.route_method_off: 0
-.route_path_off: 8
-.route_handler_off: 16
-.route_size: 24
+-- ============================================================
+-- ROUTER CONSTANTS
+-- ============================================================
+.ROUTE_NOT_FOUND: -1
+.METHOD_GET: 0
+.METHOD_POST: 1
+.METHOD_PUT: 2
+.METHOD_DELETE: 3
 
--- HTTP methods
-.method_get: 0
-.method_post: 1
-.method_put: 2
-.method_delete: 3
-.method_patch: 4
+-- ============================================================
+-- ROUTER.MATCH Template
+-- Compara path con ruta conocida
+-- ============================================================
+-- .path: "/api/users"
+-- .route: "/api/users"
+-- .route_len: 10
+-- -- Comparar byte por byte (desenrollado)
+-- .c0: GET .path 0
+-- .r0: GET .route 0
+-- .eq0: EQ .c0 .r0
+-- .c1: GET .path 1
+-- .r1: GET .route 1
+-- .eq1: EQ .c1 .r1
+-- -- ... continuar
+-- .match: AND .eq0 .eq1
+-- .match: AND .match .eq2
+-- -- etc.
 
--- ROUTER.NEW: Create new router
--- Returns: router pointer
-.router_new: FUN
-  .max_routes: 64
-  .size: MUL .max_routes .route_size
-  .router: ALC .size
-  .count_off: 0
-  .init: PUT .router .count_off 0
-!FUN
+-- ============================================================
+-- ROUTER.DEFINE Template
+-- Define rutas como constantes
+-- ============================================================
+-- .ROUTE_HOME: "/"
+-- .ROUTE_HOME_LEN: 1
+-- .ROUTE_USERS: "/api/users"
+-- .ROUTE_USERS_LEN: 10
+-- .ROUTE_USER_ID: "/api/users/"
+-- .ROUTE_USER_ID_LEN: 11
 
--- ROUTER.ADD: Add route to router
--- router, method, path, handler
-.router_add: FUN .router .method .path .handler
-  -- Get current count
-  .count: GET .router 0
-  -- Calculate offset for new route
-  .offset: MUL .count .route_size
-  .offset2: ADD .offset 8
-  -- Store route
-  .m: PUT .router .offset2 .method
-  .p_off: ADD .offset2 8
-  .p: PUT .router .p_off .path
-  .h_off: ADD .p_off 8
-  .h: PUT .router .h_off .handler
-  -- Increment count
-  .new_count: ADD .count 1
-  .upd: PUT .router 0 .new_count
-!FUN
+-- ============================================================
+-- ROUTER.DISPATCH Template
+-- Despacha request a handler basado en path
+-- ============================================================
+-- .path: request_path
+-- .path_len: request_path_len
+-- -- Comparar con cada ruta
+-- .is_home: SCM .path .ROUTE_HOME .ROUTE_HOME_LEN
+-- .is_users: SCM .path .ROUTE_USERS .ROUTE_USERS_LEN
+-- .handler: BRN .is_home 0 (BRN .is_users 1 .ROUTE_NOT_FOUND)
 
--- ROUTER.MATCH: Find matching route
--- Returns: handler pointer or 0 if not found
-.router_match: FUN .router .method .path .path_len
-  .count: GET .router 0
-  -- Would need loop to check each route
-  .result: 0
-!FUN
+-- ============================================================
+-- ROUTER.PARAM Template
+-- Extrae parámetro de path dinámico
+-- Path: /api/users/123 → param = "123"
+-- ============================================================
+-- .path: "/api/users/123"
+-- .prefix: "/api/users/"
+-- .prefix_len: 11
+-- -- Verificar que empieza con prefix
+-- .match: SCM .path .prefix .prefix_len
+-- -- Extraer resto como parámetro
+-- .param_start: ADD .path .prefix_len
+-- -- Buscar fin (/ o null)
+
+-- ============================================================
+-- Example: Router simple
+-- ============================================================
+-- USE router
+--
+-- .ROUTE_HOME: "/"
+-- .ROUTE_API: "/api"
+-- .ROUTE_HEALTH: "/health"
+--
+-- .path: "/api"
+-- .path_len: 4
+--
+-- -- Match home
+-- .m0: GET .path 0
+-- .is_home: AND (EQ .m0 47) (EQ .path_len 1)
+--
+-- -- Match api
+-- .a0: GET .path 0
+-- .a1: GET .path 1
+-- .a2: GET .path 2
+-- .a3: GET .path 3
+-- .is_api: AND (EQ .a0 47) (EQ .a1 97)
+-- .is_api: AND .is_api (EQ .a2 112)
+-- .is_api: AND .is_api (EQ .a3 105)
+--
+-- .handler: BRN .is_home 0 (BRN .is_api 1 -1)
+
+!

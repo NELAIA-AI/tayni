@@ -1,0 +1,72 @@
+-- TAYNI Assembler v4b - Compilador Simplificado
+-- Lee input.tyn, genera out.exe con el valor
+-- AI-Native: offsets automaticos
+-- Fecha: 2026-06-16
+
+.zero: 0
+.one: 1
+
+-- ===== CONSTANTES =====
+.CODE_BASE: 512
+.RVA_CODE: 4096
+.RVA_IAT: 8192
+.RVA_DATA: 12288
+
+-- IAT offsets
+.IAT_ExitProcess: 16
+.IAT_CreateFileA: 32
+.IAT_ReadFile: 40
+.IAT_WriteFile: 8
+.IAT_CloseHandle: 48
+
+-- ===== BUFFERS =====
+.exe: ALC 8192
+
+-- Leer template
+.spath: "fileio2.exe.exe"
+.sh: FOP .spath .zero
+.slen: FRD .sh .exe 8192
+.sc: FCL .sh
+
+-- ===== LEER INPUT.TYN =====
+.ipath: "input.tyn"
+.ih: FOP .ipath .zero
+.ibuf: ALC 64
+.ilen: FRD .ih .ibuf 64
+.ic: FCL .ih
+
+-- Parsear byte 4 (el digito)
+.vb: GET .ibuf 4
+.val: SUB .vb 48
+
+-- ===== LEER MINI.EXE =====
+.mpath: "mini.exe"
+.mh: FOP .mpath .zero
+.mbuf: ALC 4096
+.mlen: FRD .mh .mbuf 4096
+.mc: FCL .mh
+
+-- Modificar byte 513 (valor en mov eax, N)
+.mv: PUT .mbuf 513 .val
+
+-- ===== ESCRIBIR OUT.EXE =====
+.opath: "out.exe"
+.oh: FOP .opath .one
+.wlen: FWR .oh .mbuf .mlen
+.oc: FCL .oh
+
+-- ===== OUTPUT =====
+.hdr: "ASM v4b: out.exe generado con valor "
+.p0: PRT .hdr 36
+.num: ALC 16
+.its: ITS .val .num
+.p1: PRT .num .its
+.nl: "\n"
+.p2: PRT .nl 1
+
+.f1: FRE .exe
+.f2: FRE .ibuf
+.f3: FRE .mbuf
+.f4: FRE .num
+
+!

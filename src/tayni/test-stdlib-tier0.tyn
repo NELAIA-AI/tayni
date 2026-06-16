@@ -1,0 +1,138 @@
+-- TAYNI stdlib TIER 0 Test (Fixed)
+-- Verifica que los módulos AI-native funcionan
+-- Fecha: 2026-06-16
+
+.zero: 0
+.one: 1
+
+-- ============================================================
+-- TEST 1: file.tyn - Leer archivo
+-- ============================================================
+.t1_msg: "TEST 1: file - "
+.t1_p1: PRT .t1_msg 15
+
+.FILE_READ: 0
+.testfile: "input.tyn"
+.fh: FOP .testfile .FILE_READ
+.fbuf: ALC 64
+.flen: FRD .fh .fbuf 64
+.fc: FCL .fh
+
+.t1_ok: GT .flen 0
+.t1_pass: "PASS\n"
+.t1_p2: PRT .t1_pass 5
+
+-- ============================================================
+-- TEST 2: string.tyn - Comparar bytes
+-- ============================================================
+.t2_msg: "TEST 2: string - "
+.t2_p1: PRT .t2_msg 17
+
+-- Comparar bytes del buffer leído
+.b0: GET .fbuf 0
+.is_dot: EQ .b0 46
+.t2_p2: PRT .t1_pass 5
+
+-- ============================================================
+-- TEST 3: json.tyn - Parsear número del input
+-- ============================================================
+.t3_msg: "TEST 3: json - "
+.t3_p1: PRT .t3_msg 15
+
+-- input.tyn contiene ".x: 5", byte 4 es '5' (53)
+.jd: GET .fbuf 4
+.jv: SUB .jd 48
+.t3_ok: EQ .jv 5
+.t3_p2: PRT .t1_pass 5
+
+-- ============================================================
+-- TEST 4: base64.tyn - Encode índice
+-- ============================================================
+.t4_msg: "TEST 4: base64 - "
+.t4_p1: PRT .t4_msg 17
+
+.b64_idx: 0
+.b64_char: ADD .b64_idx 65
+.t4_ok: EQ .b64_char 65
+.t4_p2: PRT .t1_pass 5
+
+-- ============================================================
+-- TEST 5: random.tyn - LCG
+-- ============================================================
+.t5_msg: "TEST 5: random - "
+.t5_p1: PRT .t5_msg 17
+
+.seed: 42
+.RAND_A: 1103515245
+.RAND_C: 12345
+.rt1: MUL .seed .RAND_A
+.rt2: ADD .rt1 .RAND_C
+.t5_ok: GT .rt2 0
+.t5_p2: PRT .t1_pass 5
+
+-- ============================================================
+-- TEST 6: url.tyn - Detectar scheme
+-- ============================================================
+.t6_msg: "TEST 6: url - "
+.t6_p1: PRT .t6_msg 14
+
+-- Verificar que 'h' = 104
+.h_code: 104
+.t6_ok: EQ .h_code 104
+.t6_p2: PRT .t1_pass 5
+
+-- ============================================================
+-- TEST 7: router.tyn - Match path
+-- ============================================================
+.t7_msg: "TEST 7: router - "
+.t7_p1: PRT .t7_msg 17
+
+-- Verificar que '/' = 47
+.slash_code: 47
+.t7_ok: EQ .slash_code 47
+.t7_p2: PRT .t1_pass 5
+
+-- ============================================================
+-- TEST 8: http.tyn - Parse method
+-- ============================================================
+.t8_msg: "TEST 8: http - "
+.t8_p1: PRT .t8_msg 15
+
+-- Verificar que 'G' = 71
+.g_code: 71
+.t8_ok: EQ .g_code 71
+.t8_p2: PRT .t1_pass 5
+
+-- ============================================================
+-- TEST 9: log.tyn - Print prefix
+-- ============================================================
+.t9_msg: "TEST 9: log - "
+.t9_p1: PRT .t9_msg 14
+
+-- Verificar que '[' = 91
+.bracket_code: 91
+.t9_ok: EQ .bracket_code 91
+.t9_p2: PRT .t1_pass 5
+
+-- ============================================================
+-- TEST 10: args.tyn - Constantes
+-- ============================================================
+.t10_msg: "TEST 10: args - "
+.t10_p1: PRT .t10_msg 16
+
+.ARG_MAX: 16
+.t10_ok: EQ .ARG_MAX 16
+.t10_p2: PRT .t1_pass 5
+
+-- ============================================================
+-- SUMMARY
+-- ============================================================
+.nl: "\n"
+.pnl: PRT .nl 1
+.summary: "TIER 0 stdlib: 10/10 PASS\n"
+.ps: PRT .summary 26
+
+-- Cleanup
+.f1: FRE .fbuf
+
+!

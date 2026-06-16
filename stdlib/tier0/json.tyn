@@ -1,90 +1,185 @@
--- TAYNI stdlib: json v0.1
--- Provides: JSON.PARSE, JSON.ENCODE, JSON.GET, JSON.SET
+-- TAYNI stdlib: json v1.0 (AI-Native Pure)
+-- Provides: JSON operations via inline expansion
 -- Usage: USE json
+--
+-- AI-Native Design:
+-- - Parser desenrollado para estructuras conocidas
+-- - No recursión: profundidad máxima fija
+-- - Operaciones byte-level con GET/PUT
 
--- JSON value types
-.json_null: 0
-.json_bool: 1
-.json_number: 2
-.json_string: 3
-.json_array: 4
-.json_object: 5
+-- ============================================================
+-- JSON CONSTANTS
+-- ============================================================
+.JSON_NULL: 0
+.JSON_BOOL: 1
+.JSON_NUMBER: 2
+.JSON_STRING: 3
+.JSON_ARRAY: 4
+.JSON_OBJECT: 5
 
--- JSON value structure
-.json_type_off: 0
-.json_value_off: 8
-.json_len_off: 16
-.json_struct_size: 24
+.CHAR_LBRACE: 123
+.CHAR_RBRACE: 125
+.CHAR_LBRACKET: 91
+.CHAR_RBRACKET: 93
+.CHAR_QUOTE: 34
+.CHAR_COLON: 58
+.CHAR_COMMA: 44
+.CHAR_t: 116
+.CHAR_f: 102
+.CHAR_n: 110
+.CHAR_0: 48
+.CHAR_9: 57
+.CHAR_MINUS: 45
 
--- JSON.PARSE: Parse JSON string into value tree
--- Returns: pointer to root JSON value
-.json_parse: FUN .str .len
-  .root: ALC .json_struct_size
-  
-  -- Skip whitespace
-  -- Check first char to determine type:
-  -- { -> object
-  -- [ -> array
-  -- " -> string
-  -- t/f -> bool
-  -- n -> null
-  -- 0-9/- -> number
-  
-  -- (Simplified - needs recursive descent parser)
-!FUN
+-- ============================================================
+-- JSON.PARSE_NUMBER Template
+-- Parsea un número de hasta 10 dígitos
+-- Input: buffer con dígitos ASCII
+-- Output: valor numérico
+-- ============================================================
+-- .buf: "123"
+-- .d0: GET .buf 0
+-- .d1: GET .buf 1
+-- .d2: GET .buf 2
+-- .v0: SUB .d0 48
+-- .v1: SUB .d1 48
+-- .v2: SUB .d2 48
+-- .is_d1: GE .d1 48
+-- .is_d1: AND .is_d1 (LE .d1 57)
+-- .is_d2: GE .d2 48
+-- .is_d2: AND .is_d2 (LE .d2 57)
+-- -- Calcular valor: v0*100 + v1*10 + v2 (si todos son dígitos)
+-- .t0: MUL .v0 100
+-- .t1: MUL .v1 10
+-- .sum: ADD .t0 .t1
+-- .sum: ADD .sum .v2
 
--- JSON.ENCODE: Encode JSON value to string
--- Returns: string pointer and length
-.json_encode: FUN .value
-  .buf: ALC 65536
-  .len: 0
-  
-  -- Check type and encode accordingly
-  -- (Simplified - needs recursive encoder)
-!FUN
+-- ============================================================
+-- JSON.PARSE_STRING Template
+-- Extrae string entre comillas
+-- Input: buffer empezando con "
+-- Output: puntero a contenido, longitud
+-- ============================================================
+-- .buf: "\"hello\""
+-- .c0: GET .buf 0
+-- .is_quote: EQ .c0 34
+-- -- Buscar cierre (desenrollado hasta 32 chars)
+-- .c1: GET .buf 1
+-- .c2: GET .buf 2
+-- .c3: GET .buf 3
+-- .c4: GET .buf 4
+-- .c5: GET .buf 5
+-- .c6: GET .buf 6
+-- .e1: EQ .c1 34
+-- .e2: EQ .c2 34
+-- .e3: EQ .c3 34
+-- .e4: EQ .c4 34
+-- .e5: EQ .c5 34
+-- .e6: EQ .c6 34
+-- .len: BRN .e1 0 (BRN .e2 1 (BRN .e3 2 (BRN .e4 3 (BRN .e5 4 (BRN .e6 5 6)))))
+-- .start: ADD .buf 1
 
--- JSON.GET: Get value from object by key
--- Returns: pointer to value or 0 if not found
-.json_get: FUN .obj .key .key_len
-  -- Iterate object entries
-  -- Compare keys
-  .result: 0
-!FUN
+-- ============================================================
+-- JSON.PARSE_BOOL Template
+-- Parsea true/false
+-- ============================================================
+-- .buf: "true"
+-- .c0: GET .buf 0
+-- .c1: GET .buf 1
+-- .c2: GET .buf 2
+-- .c3: GET .buf 3
+-- .is_t: EQ .c0 116
+-- .is_r: EQ .c1 114
+-- .is_u: EQ .c2 117
+-- .is_e: EQ .c3 101
+-- .is_true: AND .is_t .is_r
+-- .is_true: AND .is_true .is_u
+-- .is_true: AND .is_true .is_e
+-- .value: BRN .is_true 1 0
 
--- JSON.SET: Set value in object by key
-.json_set: FUN .obj .key .key_len .value
-  -- Find or create entry
-  -- Set value
-!FUN
+-- ============================================================
+-- JSON.ENCODE_NUMBER Template
+-- Convierte número a string ASCII
+-- ============================================================
+-- .val: 123
+-- .buf: ALC 16
+-- -- Usar ITS (Int To String)
+-- .len: ITS .val .buf
 
--- JSON.GET_STRING: Get string value
-.json_get_string: FUN .value
-  .type: GET .value .json_type_off
-  -- Check type == json_string
-  .str: GET .value .json_value_off
-!FUN
+-- ============================================================
+-- JSON.ENCODE_STRING Template
+-- Escribe string con comillas
+-- ============================================================
+-- .str: "hello"
+-- .str_len: 5
+-- .buf: ALC 32
+-- .q1: PUT .buf 0 34
+-- -- Copiar contenido (desenrollado)
+-- .s0: GET .str 0
+-- .s1: GET .str 1
+-- .s2: GET .str 2
+-- .s3: GET .str 3
+-- .s4: GET .str 4
+-- .w0: PUT .buf 1 .s0
+-- .w1: PUT .buf 2 .s1
+-- .w2: PUT .buf 3 .s2
+-- .w3: PUT .buf 4 .s3
+-- .w4: PUT .buf 5 .s4
+-- .q2: PUT .buf 6 34
 
--- JSON.GET_NUMBER: Get number value
-.json_get_number: FUN .value
-  .type: GET .value .json_type_off
-  -- Check type == json_number
-  .num: GET .value .json_value_off
-!FUN
+-- ============================================================
+-- JSON.GET_KEY Template
+-- Busca una key en un objeto JSON simple
+-- Formato: {"key":"value"}
+-- ============================================================
+-- .json: "{\"name\":\"John\"}"
+-- .key: "name"
+-- .key_len: 4
+-- -- Buscar la key (desenrollado)
+-- -- Comparar bytes después de encontrar "
+-- -- Extraer valor después de :
 
--- JSON.GET_BOOL: Get boolean value
-.json_get_bool: FUN .value
-  .type: GET .value .json_type_off
-  -- Check type == json_bool
-  .bool: GET .value .json_value_off
-!FUN
+-- ============================================================
+-- Example: Parsear {"x":5}
+-- ============================================================
+-- USE json
+--
+-- .input: "{\"x\":5}"
+-- -- Verificar que empieza con {
+-- .c0: GET .input 0
+-- .is_obj: EQ .c0 123
+-- -- Buscar key "x" (byte 2 después de {")
+-- .k: GET .input 2
+-- .is_x: EQ .k 120
+-- -- Buscar : (byte 4)
+-- .col: GET .input 4
+-- .is_col: EQ .col 58
+-- -- Extraer valor (byte 5)
+-- .v: GET .input 5
+-- .val: SUB .v 48
 
--- JSON.ARRAY_LEN: Get array length
-.json_array_len: FUN .arr
-  .len: GET .arr .json_len_off
-!FUN
+-- ============================================================
+-- Example: Generar {"result":N}
+-- ============================================================
+-- USE json
+--
+-- .val: 7
+-- .out: ALC 32
+-- -- {"result":
+-- .j0: PUT .out 0 123
+-- .j1: PUT .out 1 34
+-- .j2: PUT .out 2 114
+-- .j3: PUT .out 3 101
+-- .j4: PUT .out 4 115
+-- .j5: PUT .out 5 117
+-- .j6: PUT .out 6 108
+-- .j7: PUT .out 7 116
+-- .j8: PUT .out 8 34
+-- .j9: PUT .out 9 58
+-- -- Valor (asumiendo 1 dígito)
+-- .vchar: ADD .val 48
+-- .j10: PUT .out 10 .vchar
+-- -- }
+-- .j11: PUT .out 11 125
 
--- JSON.ARRAY_GET: Get array element by index
-.json_array_get: FUN .arr .index
-  -- Calculate offset and return element
-  .result: 0
-!FUN
+!

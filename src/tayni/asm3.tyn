@@ -1,0 +1,274 @@
+-- TAYNI Assembler v3 - Compilador Completo
+-- Genera PE que lee input.tyn y retorna el valor
+-- AI-Native: todos los offsets calculados automaticamente
+-- Fecha: 2026-06-16
+
+.zero: 0
+.one: 1
+
+-- ===== CONSTANTES =====
+.CODE_BASE: 512
+.RVA_CODE: 4096
+.RVA_IAT: 8192
+.RVA_DATA: 12288
+
+-- IAT offsets
+.IAT_GetStdHandle: 0
+.IAT_WriteFile: 8
+.IAT_ExitProcess: 16
+.IAT_CreateFileA: 32
+.IAT_ReadFile: 40
+.IAT_CloseHandle: 48
+
+-- ===== BUFFERS =====
+.exe: ALC 8192
+
+-- Leer template
+.spath: "fileio2.exe.exe"
+.sh: FOP .spath .zero
+.slen: FRD .sh .exe 8192
+.sc: FCL .sh
+
+-- ===== PROGRAMA: Leer input.tyn y retornar valor =====
+-- Tracking de posicion para calcular offsets
+
+-- pos 0: sub rsp, 88 (48 83 EC 58) - 4 bytes
+.i0: PUT .exe 512 72
+.i1: PUT .exe 513 131
+.i2: PUT .exe 514 236
+.i3: PUT .exe 515 88
+
+-- pos 4: lea rcx, [rip+path] - 7 bytes
+-- path at RVA 0x3000 (file 0xC00)
+-- rva=0x1004, rip=0x100B, disp=0x3000-0x100B=0x1FF5
+.i4: PUT .exe 516 72
+.i5: PUT .exe 517 141
+.i6: PUT .exe 518 13
+.lea1_pos: 4
+.lea1_rva: ADD .RVA_CODE .lea1_pos
+.lea1_rip: ADD .lea1_rva 7
+.lea1_target: 12288
+.lea1_disp: SUB .lea1_target .lea1_rip
+.lea1_d0: MOD .lea1_disp 256
+.lea1_t1: DIV .lea1_disp 256
+.lea1_d1: MOD .lea1_t1 256
+.i7: PUT .exe 519 .lea1_d0
+.i8: PUT .exe 520 .lea1_d1
+.i9: PUT .exe 521 0
+.i10: PUT .exe 522 0
+
+-- pos 11: mov edx, 0x80000000 - 5 bytes
+.i11: PUT .exe 523 186
+.i12: PUT .exe 524 0
+.i13: PUT .exe 525 0
+.i14: PUT .exe 526 0
+.i15: PUT .exe 527 128
+
+-- pos 16: xor r8d, r8d - 3 bytes
+.i16: PUT .exe 528 69
+.i17: PUT .exe 529 49
+.i18: PUT .exe 530 192
+
+-- pos 19: xor r9d, r9d - 3 bytes
+.i19: PUT .exe 531 69
+.i20: PUT .exe 532 49
+.i21: PUT .exe 533 201
+
+-- pos 22: mov qword [rsp+32], 3 - 9 bytes
+.i22: PUT .exe 534 72
+.i23: PUT .exe 535 199
+.i24: PUT .exe 536 68
+.i25: PUT .exe 537 36
+.i26: PUT .exe 538 32
+.i27: PUT .exe 539 3
+.i28: PUT .exe 540 0
+.i29: PUT .exe 541 0
+.i30: PUT .exe 542 0
+
+-- pos 31: mov qword [rsp+40], 0 - 9 bytes
+.i31: PUT .exe 543 72
+.i32: PUT .exe 544 199
+.i33: PUT .exe 545 68
+.i34: PUT .exe 546 36
+.i35: PUT .exe 547 40
+.i36: PUT .exe 548 0
+.i37: PUT .exe 549 0
+.i38: PUT .exe 550 0
+.i39: PUT .exe 551 0
+
+-- pos 40: mov qword [rsp+48], 0 - 9 bytes
+.i40: PUT .exe 552 72
+.i41: PUT .exe 553 199
+.i42: PUT .exe 554 68
+.i43: PUT .exe 555 36
+.i44: PUT .exe 556 48
+.i45: PUT .exe 557 0
+.i46: PUT .exe 558 0
+.i47: PUT .exe 559 0
+.i48: PUT .exe 560 0
+
+-- pos 49: call [CreateFileA] - 6 bytes
+.c1_pos: 49
+.c1_rva: ADD .RVA_CODE .c1_pos
+.c1_rip: ADD .c1_rva 6
+.c1_iat: ADD .RVA_IAT .IAT_CreateFileA
+.c1_disp: SUB .c1_iat .c1_rip
+.c1_d0: MOD .c1_disp 256
+.c1_t1: DIV .c1_disp 256
+.c1_d1: MOD .c1_t1 256
+.i49: PUT .exe 561 255
+.i50: PUT .exe 562 21
+.i51: PUT .exe 563 .c1_d0
+.i52: PUT .exe 564 .c1_d1
+.i53: PUT .exe 565 0
+.i54: PUT .exe 566 0
+
+-- pos 55: mov [rsp+80], rax - 5 bytes
+.i55: PUT .exe 567 72
+.i56: PUT .exe 568 137
+.i57: PUT .exe 569 68
+.i58: PUT .exe 570 36
+.i59: PUT .exe 571 80
+
+-- pos 60: mov rcx, rax - 3 bytes
+.i60: PUT .exe 572 72
+.i61: PUT .exe 573 137
+.i62: PUT .exe 574 193
+
+-- pos 63: lea rdx, [rsp+56] - 5 bytes
+.i63: PUT .exe 575 72
+.i64: PUT .exe 576 141
+.i65: PUT .exe 577 84
+.i66: PUT .exe 578 36
+.i67: PUT .exe 579 56
+
+-- pos 68: mov r8d, 24 - 6 bytes
+.i68: PUT .exe 580 65
+.i69: PUT .exe 581 184
+.i70: PUT .exe 582 24
+.i71: PUT .exe 583 0
+.i72: PUT .exe 584 0
+.i73: PUT .exe 585 0
+
+-- pos 74: lea r9, [rsp+72] - 5 bytes
+.i74: PUT .exe 586 76
+.i75: PUT .exe 587 141
+.i76: PUT .exe 588 76
+.i77: PUT .exe 589 36
+.i78: PUT .exe 590 72
+
+-- pos 79: mov qword [rsp+32], 0 - 9 bytes
+.i79: PUT .exe 591 72
+.i80: PUT .exe 592 199
+.i81: PUT .exe 593 68
+.i82: PUT .exe 594 36
+.i83: PUT .exe 595 32
+.i84: PUT .exe 596 0
+.i85: PUT .exe 597 0
+.i86: PUT .exe 598 0
+.i87: PUT .exe 599 0
+
+-- pos 88: call [ReadFile] - 6 bytes
+.c2_pos: 88
+.c2_rva: ADD .RVA_CODE .c2_pos
+.c2_rip: ADD .c2_rva 6
+.c2_iat: ADD .RVA_IAT .IAT_ReadFile
+.c2_disp: SUB .c2_iat .c2_rip
+.c2_d0: MOD .c2_disp 256
+.c2_t1: DIV .c2_disp 256
+.c2_d1: MOD .c2_t1 256
+.i88: PUT .exe 600 255
+.i89: PUT .exe 601 21
+.i90: PUT .exe 602 .c2_d0
+.i91: PUT .exe 603 .c2_d1
+.i92: PUT .exe 604 0
+.i93: PUT .exe 605 0
+
+-- pos 94: movzx eax, byte [rsp+60] - 5 bytes
+.i94: PUT .exe 606 15
+.i95: PUT .exe 607 182
+.i96: PUT .exe 608 68
+.i97: PUT .exe 609 36
+.i98: PUT .exe 610 60
+
+-- pos 99: sub eax, 48 - 3 bytes
+.i99: PUT .exe 611 131
+.i100: PUT .exe 612 232
+.i101: PUT .exe 613 48
+
+-- pos 102: mov [rsp+76], eax - 4 bytes
+.i102: PUT .exe 614 137
+.i103: PUT .exe 615 68
+.i104: PUT .exe 616 36
+.i105: PUT .exe 617 76
+
+-- pos 106: mov rcx, [rsp+80] - 5 bytes
+.i106: PUT .exe 618 72
+.i107: PUT .exe 619 139
+.i108: PUT .exe 620 76
+.i109: PUT .exe 621 36
+.i110: PUT .exe 622 80
+
+-- pos 111: call [CloseHandle] - 6 bytes
+.c3_pos: 111
+.c3_rva: ADD .RVA_CODE .c3_pos
+.c3_rip: ADD .c3_rva 6
+.c3_iat: ADD .RVA_IAT .IAT_CloseHandle
+.c3_disp: SUB .c3_iat .c3_rip
+.c3_d0: MOD .c3_disp 256
+.c3_t1: DIV .c3_disp 256
+.c3_d1: MOD .c3_t1 256
+.i111: PUT .exe 623 255
+.i112: PUT .exe 624 21
+.i113: PUT .exe 625 .c3_d0
+.i114: PUT .exe 626 .c3_d1
+.i115: PUT .exe 627 0
+.i116: PUT .exe 628 0
+
+-- pos 117: mov ecx, [rsp+76] - 4 bytes
+.i117: PUT .exe 629 139
+.i118: PUT .exe 630 76
+.i119: PUT .exe 631 36
+.i120: PUT .exe 632 76
+
+-- pos 121: call [ExitProcess] - 6 bytes
+.c4_pos: 121
+.c4_rva: ADD .RVA_CODE .c4_pos
+.c4_rip: ADD .c4_rva 6
+.c4_iat: ADD .RVA_IAT .IAT_ExitProcess
+.c4_disp: SUB .c4_iat .c4_rip
+.c4_d0: MOD .c4_disp 256
+.c4_t1: DIV .c4_disp 256
+.c4_d1: MOD .c4_t1 256
+.i121: PUT .exe 633 255
+.i122: PUT .exe 634 21
+.i123: PUT .exe 635 .c4_d0
+.i124: PUT .exe 636 .c4_d1
+.i125: PUT .exe 637 0
+.i126: PUT .exe 638 0
+
+-- ===== DATA: "input.tyn" at 0xC00 (RVA 0x3000) =====
+.d0: PUT .exe 3072 105
+.d1: PUT .exe 3073 110
+.d2: PUT .exe 3074 112
+.d3: PUT .exe 3075 117
+.d4: PUT .exe 3076 116
+.d5: PUT .exe 3077 46
+.d6: PUT .exe 3078 116
+.d7: PUT .exe 3079 121
+.d8: PUT .exe 3080 110
+.d9: PUT .exe 3081 0
+
+-- ===== ESCRIBIR PE =====
+.opath: "compiler3.exe"
+.oh: FOP .opath .one
+.wlen: FWR .oh .exe .slen
+.oc: FCL .oh
+
+-- ===== OUTPUT =====
+.hdr: "ASM v3: compiler3.exe (lee input.tyn)\n"
+.p0: PRT .hdr 38
+
+.f1: FRE .exe
+
+!

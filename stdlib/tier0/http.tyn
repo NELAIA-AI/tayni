@@ -1,77 +1,147 @@
--- TAYNI stdlib: http v0.1
--- Provides: HTTP.SERVER, HTTP.CLIENT, HTTP.GET, HTTP.POST, HTTP.RESPOND
+-- TAYNI stdlib: http v1.0 (AI-Native Pure)
+-- Provides: HTTP operations via inline expansion
 -- Usage: USE http
--- Requires: REQUIRES http capability
+--
+-- AI-Native Design:
+-- - Requests/responses como buffers de bytes
+-- - Headers parseados desenrollados
+-- - Sin sockets reales: templates para cuando existan primitivas NET
 
-.http_req: REQUIRES http
+-- ============================================================
+-- HTTP CONSTANTS
+-- ============================================================
+.HTTP_OK: 200
+.HTTP_CREATED: 201
+.HTTP_BAD_REQUEST: 400
+.HTTP_NOT_FOUND: 404
+.HTTP_INTERNAL_ERROR: 500
 
--- HTTP status codes
-.http_ok: 200
-.http_created: 201
-.http_bad_request: 400
-.http_not_found: 404
-.http_internal_error: 500
+.HTTP_GET: 0
+.HTTP_POST: 1
+.HTTP_PUT: 2
+.HTTP_DELETE: 3
 
--- HTTP.SERVER: Create HTTP server on port
--- Returns: server handle
--- Note: Requires TCP primitives (NET.LISTEN, NET.ACCEPT, etc.)
-.http_server: FUN .port
-  -- Bind to port using TCP
-  -- .server: NET.LISTEN .port
-  .server: 0
-!FUN
+-- ============================================================
+-- HTTP Request Line Format
+-- "GET /path HTTP/1.1\r\n"
+-- ============================================================
+.HTTP_VERSION: "HTTP/1.1"
+.HTTP_CRLF: "\r\n"
 
--- HTTP.ACCEPT: Accept incoming connection
--- Returns: client handle
-.http_accept: FUN .server
-  -- .client: NET.ACCEPT .server
-  .client: 0
-!FUN
+-- ============================================================
+-- HTTP.PARSE_METHOD Template
+-- Extrae método de request line
+-- ============================================================
+-- .req: "GET /api HTTP/1.1\r\n..."
+-- .c0: GET .req 0
+-- .c1: GET .req 1
+-- .c2: GET .req 2
+-- .is_G: EQ .c0 71
+-- .is_E: EQ .c1 69
+-- .is_T: EQ .c2 84
+-- .is_GET: AND .is_G .is_E
+-- .is_GET: AND .is_GET .is_T
+-- .is_P: EQ .c0 80
+-- .is_O: EQ .c1 79
+-- .is_S: EQ .c2 83
+-- .is_POST: AND .is_P .is_O
+-- .is_POST: AND .is_POST .is_S
+-- .method: BRN .is_GET .HTTP_GET (BRN .is_POST .HTTP_POST -1)
 
--- HTTP.READ_REQUEST: Read HTTP request from client
--- Returns: request struct pointer
-.http_read_request: FUN .client
-  .buf: ALC 8192
-  -- .len: NET.RECV .client .buf 8192
-  .len: 0
-  -- Parse HTTP request line and headers
-  -- (Simplified - needs proper HTTP parsing)
-!FUN
+-- ============================================================
+-- HTTP.PARSE_PATH Template
+-- Extrae path de request line (después del método)
+-- ============================================================
+-- .req: "GET /api HTTP/1.1\r\n"
+-- -- Buscar primer espacio (después del método)
+-- .c3: GET .req 3
+-- .is_space: EQ .c3 32
+-- .path_start: 4
+-- -- Buscar segundo espacio (fin del path)
+-- .c4: GET .req 4
+-- .c5: GET .req 5
+-- .c6: GET .req 6
+-- .c7: GET .req 7
+-- .e4: EQ .c4 32
+-- .e5: EQ .c5 32
+-- .e6: EQ .c6 32
+-- .e7: EQ .c7 32
+-- .path_end: BRN .e4 4 (BRN .e5 5 (BRN .e6 6 (BRN .e7 7 8)))
+-- .path_len: SUB .path_end .path_start
 
--- HTTP.RESPOND: Send HTTP response
--- client, status, content_type, body, body_len
-.http_respond: FUN .client .status .content_type .body .body_len
-  -- Build response: HTTP/1.1 {status} OK\r\n
-  -- Content-Type: {content_type}\r\n
-  -- Content-Length: {body_len}\r\n
-  -- \r\n
-  -- {body}
-  .header: ALC 256
-  .h1: WRT .header "HTTP/1.1 " 9
-  -- Would need to format status code
-  -- .sent: NET.SEND .client .header 256
-  -- .sent2: NET.SEND .client .body .body_len
-  .sent: 0
-!FUN
+-- ============================================================
+-- HTTP.BUILD_RESPONSE Template
+-- Construye response HTTP
+-- ============================================================
+-- .status: 200
+-- .body: "Hello"
+-- .body_len: 5
+-- .buf: ALC 512
+-- -- "HTTP/1.1 200 OK\r\n"
+-- .r0: PUT .buf 0 72
+-- .r1: PUT .buf 1 84
+-- .r2: PUT .buf 2 84
+-- .r3: PUT .buf 3 80
+-- .r4: PUT .buf 4 47
+-- .r5: PUT .buf 5 49
+-- .r6: PUT .buf 6 46
+-- .r7: PUT .buf 7 49
+-- .r8: PUT .buf 8 32
+-- .r9: PUT .buf 9 50
+-- .r10: PUT .buf 10 48
+-- .r11: PUT .buf 11 48
+-- .r12: PUT .buf 12 32
+-- .r13: PUT .buf 13 79
+-- .r14: PUT .buf 14 75
+-- .r15: PUT .buf 15 13
+-- .r16: PUT .buf 16 10
+-- -- "Content-Length: 5\r\n\r\n"
+-- -- ... headers
+-- -- Body
 
--- HTTP.GET: Make HTTP GET request
--- Returns: response body pointer
-.http_get: FUN .url .url_len
-  -- Parse URL to get host and path
-  -- Connect to host
-  -- Send GET request
-  -- Read response
-  .buf: ALC 65536
-!FUN
+-- ============================================================
+-- HTTP.HEADER Template
+-- Busca header por nombre
+-- ============================================================
+-- .req: "GET / HTTP/1.1\r\nHost: example.com\r\n..."
+-- .header_name: "Host"
+-- .header_len: 4
+-- -- Buscar header_name seguido de ": "
+-- -- Extraer valor hasta \r\n
 
--- HTTP.POST: Make HTTP POST request
-.http_post: FUN .url .url_len .body .body_len
-  -- Similar to GET but with body
-  .buf: ALC 65536
-!FUN
+-- ============================================================
+-- Example: Parsear request simple
+-- ============================================================
+-- USE http
+--
+-- .req: "GET /api/users HTTP/1.1\r\nHost: localhost\r\n\r\n"
+-- -- Extraer método
+-- .m0: GET .req 0
+-- .m1: GET .req 1
+-- .m2: GET .req 2
+-- .is_get: AND (EQ .m0 71) (EQ .m1 69)
+-- .is_get: AND .is_get (EQ .m2 84)
+-- -- Extraer path (bytes 4-13)
+-- .path: ALC 16
+-- .p0: GET .req 4
+-- .p1: GET .req 5
+-- .p2: GET .req 6
+-- .p3: GET .req 7
+-- .p4: GET .req 8
+-- .p5: GET .req 9
+-- .p6: GET .req 10
+-- .p7: GET .req 11
+-- .p8: GET .req 12
+-- .p9: GET .req 13
+-- .w0: PUT .path 0 .p0
+-- .w1: PUT .path 1 .p1
+-- .w2: PUT .path 2 .p2
+-- .w3: PUT .path 3 .p3
+-- .w4: PUT .path 4 .p4
+-- .w5: PUT .path 5 .p5
+-- .w6: PUT .path 6 .p6
+-- .w7: PUT .path 7 .p7
+-- .w8: PUT .path 8 .p8
+-- .w9: PUT .path 9 .p9
 
--- HTTP.CLOSE: Close connection
-.http_close: FUN .handle
-  -- .closed: NET.CLOSE .handle
-  .closed: 0
-!FUN
+!

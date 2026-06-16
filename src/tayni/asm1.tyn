@@ -1,0 +1,144 @@
+-- TAYNI Assembler v1 - Definicion Declarativa
+-- Las instrucciones se definen como datos
+-- Los offsets se calculan automaticamente
+-- AI-Native: sin errores de offset
+-- Fecha: 2026-06-16
+
+-- ===== FORMATO DE INSTRUCCION =====
+-- Cada instruccion es un bloque de bytes con metadata:
+-- [tipo, len, bytes..., ref_type, ref_target]
+-- tipo: 0=raw, 1=call_iat, 2=lea_rip
+-- ref_type: 0=none, 1=iat, 2=data
+-- ref_target: offset en IAT o DATA
+
+.zero: 0
+.one: 1
+
+-- ===== CONSTANTES =====
+.CODE_BASE: 512
+.RVA_CODE: 4096
+.RVA_IAT: 8192
+.RVA_DATA: 12288
+
+-- IAT offsets (dentro de IAT)
+.IAT_GetStdHandle: 0
+.IAT_WriteFile: 8
+.IAT_ExitProcess: 16
+.IAT_CreateFileA: 32
+.IAT_ReadFile: 40
+.IAT_CloseHandle: 48
+
+-- ===== BUFFERS =====
+.exe: ALC 8192
+.code: ALC 1024
+
+-- Leer template
+.spath: "fileio2.exe.exe"
+.sh: FOP .spath .zero
+.slen: FRD .sh .exe 8192
+.sc: FCL .sh
+
+-- ===== PROGRAMA: ExitProcess(42) =====
+-- Instrucciones en formato declarativo
+
+-- Posicion actual en code buffer
+.pos: 0
+
+-- 1. sub rsp, 40 (48 83 EC 28) - 4 bytes, tipo raw
+.i0_0: PUT .code 0 72
+.i0_1: PUT .code 1 131
+.i0_2: PUT .code 2 236
+.i0_3: PUT .code 3 40
+.pos1: 4
+
+-- 2. mov ecx, 42 (B9 2A 00 00 00) - 5 bytes, tipo raw
+.i1_0: PUT .code 4 185
+.i1_1: PUT .code 5 42
+.i1_2: PUT .code 6 0
+.i1_3: PUT .code 7 0
+.i1_4: PUT .code 8 0
+.pos2: 9
+
+-- 3. call [ExitProcess] - 6 bytes, tipo call_iat
+-- FF 15 + disp32
+-- disp = (RVA_IAT + IAT_ExitProcess) - (RVA_CODE + pos + 6)
+.i2_0: PUT .code 9 255
+.i2_1: PUT .code 10 21
+
+-- Calcular disp automaticamente
+.call_rva: ADD .RVA_CODE 9
+.call_rip: ADD .call_rva 6
+.iat_addr: ADD .RVA_IAT .IAT_ExitProcess
+.disp: SUB .iat_addr .call_rip
+
+-- Descomponer disp en bytes (little endian)
+.d0: MOD .disp 256
+.dt1: DIV .disp 256
+.d1: MOD .dt1 256
+.dt2: DIV .dt1 256
+.d2: MOD .dt2 256
+.d3: DIV .dt2 256
+
+.i2_2: PUT .code 11 .d0
+.i2_3: PUT .code 12 .d1
+.i2_4: PUT .code 13 .d2
+.i2_5: PUT .code 14 .d3
+
+.code_len: 15
+
+-- ===== COPIAR CODE A EXE =====
+-- Copiar byte por byte (desenrollado)
+.c0: GET .code 0
+.e0: PUT .exe 512 .c0
+.c1: GET .code 1
+.e1: PUT .exe 513 .c1
+.c2: GET .code 2
+.e2: PUT .exe 514 .c2
+.c3: GET .code 3
+.e3: PUT .exe 515 .c3
+.c4: GET .code 4
+.e4: PUT .exe 516 .c4
+.c5: GET .code 5
+.e5: PUT .exe 517 .c5
+.c6: GET .code 6
+.e6: PUT .exe 518 .c6
+.c7: GET .code 7
+.e7: PUT .exe 519 .c7
+.c8: GET .code 8
+.e8: PUT .exe 520 .c8
+.c9: GET .code 9
+.e9: PUT .exe 521 .c9
+.c10: GET .code 10
+.e10: PUT .exe 522 .c10
+.c11: GET .code 11
+.e11: PUT .exe 523 .c11
+.c12: GET .code 12
+.e12: PUT .exe 524 .c12
+.c13: GET .code 13
+.e13: PUT .exe 525 .c13
+.c14: GET .code 14
+.e14: PUT .exe 526 .c14
+
+-- ===== ESCRIBIR PE =====
+.opath: "asm1.exe"
+.oh: FOP .opath .one
+.wlen: FWR .oh .exe .slen
+.oc: FCL .oh
+
+-- ===== OUTPUT =====
+.hdr: "ASM v1: asm1.exe (ExitProcess(42))\n"
+.p0: PRT .hdr 35
+
+.msg: "disp calculado = "
+.p1: PRT .msg 17
+.num: ALC 16
+.its: ITS .disp .num
+.p2: PRT .num .its
+.nl: "\n"
+.p3: PRT .nl 1
+
+.f1: FRE .exe
+.f2: FRE .code
+.f3: FRE .num
+
+!

@@ -1,42 +1,93 @@
--- TAYNI stdlib: base64 v0.1
--- Provides: BASE64.ENCODE, BASE64.DECODE
+-- TAYNI stdlib: base64 v1.0 (AI-Native Pure)
+-- Provides: Base64 encoding/decoding via inline expansion
 -- Usage: USE base64
+--
+-- AI-Native Design:
+-- - Tabla de lookup desenrollada
+-- - Operaciones bit-level con AND, OR, DIV, MOD
+-- - Sin loops: procesa bloques de 3 bytes → 4 chars
 
--- Base64 alphabet
-.b64_alphabet: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
-.b64_pad: 61  -- '=' character
+-- ============================================================
+-- BASE64 ALPHABET
+-- ============================================================
+.B64_A: 65
+.B64_Z: 90
+.B64_a: 97
+.B64_z: 122
+.B64_0: 48
+.B64_9: 57
+.B64_PLUS: 43
+.B64_SLASH: 47
+.B64_PAD: 61
 
--- BASE64.ENCODE: Encode binary data to base64 string
--- Input: data pointer, length
--- Output: base64 string pointer, output length
-.base64_encode: FUN .data .len
-  -- Output size: ceil(len/3) * 4
-  .groups: DIV .len 3
-  .rem: MOD .len 3
-  .extra: IFZ .rem 0 1
-  .total_groups: ADD .groups .extra
-  .out_len: MUL .total_groups 4
-  .out: ALC .out_len
-  
-  -- Encoding would need loop over input
-  -- Each 3 bytes -> 4 base64 chars
-!FUN
+-- ============================================================
+-- BASE64.ENCODE_BYTE Template
+-- Convierte índice 0-63 a char base64
+-- ============================================================
+-- .idx: 0-63
+-- .is_upper: LT .idx 26
+-- .is_lower: AND (GE .idx 26) (LT .idx 52)
+-- .is_digit: AND (GE .idx 52) (LT .idx 62)
+-- .is_plus: EQ .idx 62
+-- .is_slash: EQ .idx 63
+-- .upper_char: ADD .idx 65
+-- .lower_char: ADD (SUB .idx 26) 97
+-- .digit_char: ADD (SUB .idx 52) 48
+-- .char: BRN .is_upper .upper_char (BRN .is_lower .lower_char (BRN .is_digit .digit_char (BRN .is_plus 43 47)))
 
--- BASE64.DECODE: Decode base64 string to binary
--- Input: base64 string pointer, length
--- Output: binary data pointer, output length
-.base64_decode: FUN .b64 .len
-  -- Output size: (len/4) * 3 (minus padding)
-  .groups: DIV .len 4
-  .out_len: MUL .groups 3
-  .out: ALC .out_len
-  
-  -- Decoding would need loop over input
-  -- Each 4 base64 chars -> 3 bytes
-!FUN
+-- ============================================================
+-- BASE64.ENCODE_TRIPLET Template
+-- Codifica 3 bytes en 4 caracteres base64
+-- ============================================================
+-- .b0: GET .input 0
+-- .b1: GET .input 1
+-- .b2: GET .input 2
+-- -- Extraer 6-bit groups
+-- .i0: DIV .b0 4
+-- .t1: MOD .b0 4
+-- .t2: MUL .t1 16
+-- .t3: DIV .b1 16
+-- .i1: ADD .t2 .t3
+-- .t4: MOD .b1 16
+-- .t5: MUL .t4 4
+-- .t6: DIV .b2 64
+-- .i2: ADD .t5 .t6
+-- .i3: MOD .b2 64
+-- -- Convertir a chars (usar lookup)
 
--- BASE64.ENCODE_URL: URL-safe base64 (+ -> -, / -> _)
-.base64_encode_url: FUN .data .len
-  -- Would call base64_encode and replace chars
-  .out: ALC 256
-!FUN
+-- ============================================================
+-- BASE64.DECODE_CHAR Template
+-- Convierte char base64 a índice 0-63
+-- ============================================================
+-- .c: char
+-- .is_upper: AND (GE .c 65) (LE .c 90)
+-- .is_lower: AND (GE .c 97) (LE .c 122)
+-- .is_digit: AND (GE .c 48) (LE .c 57)
+-- .is_plus: EQ .c 43
+-- .is_slash: EQ .c 47
+-- .upper_idx: SUB .c 65
+-- .lower_idx: ADD (SUB .c 97) 26
+-- .digit_idx: ADD (SUB .c 48) 52
+-- .idx: BRN .is_upper .upper_idx (BRN .is_lower .lower_idx (BRN .is_digit .digit_idx (BRN .is_plus 62 63)))
+
+-- ============================================================
+-- Example: Encode "Hi" → "SGk="
+-- ============================================================
+-- USE base64
+--
+-- .input: "Hi"
+-- .b0: GET .input 0
+-- .b1: GET .input 1
+-- .b2: 0
+-- -- b0=72 ('H'), b1=105 ('i'), b2=0
+-- -- i0 = 72/4 = 18 → 'S'
+-- -- i1 = (72%4)*16 + 105/16 = 0*16 + 6 = 6 → 'G'
+-- -- i2 = (105%16)*4 + 0/64 = 9*4 + 0 = 36 → 'k'
+-- -- i3 = padding → '='
+-- .out: ALC 8
+-- .o0: PUT .out 0 83
+-- .o1: PUT .out 1 71
+-- .o2: PUT .out 2 107
+-- .o3: PUT .out 3 61
+
+!

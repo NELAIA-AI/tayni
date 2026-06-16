@@ -1,42 +1,68 @@
--- TAYNI stdlib: file v0.1
--- Provides: FILE.READ, FILE.WRITE, FILE.EXISTS
+-- TAYNI stdlib: file v1.0 (AI-Native Pure)
+-- Provides: FILE operations via inline expansion
 -- Usage: USE file
+-- 
+-- AI-Native Design:
+-- - No FUN (functions require runtime stack)
+-- - Operations expand inline at compile time
+-- - Each operation is a template that gets instantiated
 
--- File modes
-.file_mode_read: 0
-.file_mode_write: 1
-.file_mode_append: 2
+-- ============================================================
+-- FILE CONSTANTS
+-- ============================================================
+.FILE_READ: 0
+.FILE_WRITE: 1
 
--- FILE.READ: Read entire file into buffer
--- Returns: buffer pointer, or 0 on error
-.file_read: FUN .path
-  .handle: FOP .path .file_mode_read
-  .buf: ALC 65536
-  .len: FRD .handle .buf 65536
-  .closed: FCL .handle
-!FUN
+-- ============================================================
+-- FILE.READ Template
+-- Usage: Copy and customize with your paths/buffers
+-- ============================================================
+-- .myfile: "path/to/file.txt"
+-- .myhandle: FOP .myfile .FILE_READ
+-- .mybuf: ALC 4096
+-- .mylen: FRD .myhandle .mybuf 4096
+-- .myclose: FCL .myhandle
 
--- FILE.WRITE: Write buffer to file
--- Returns: bytes written, or 0 on error
-.file_write: FUN .path .data .len
-  .handle: FOP .path .file_mode_write
-  .written: FWR .handle .data .len
-  .closed: FCL .handle
-!FUN
+-- ============================================================
+-- FILE.WRITE Template
+-- Usage: Copy and customize with your paths/data
+-- ============================================================
+-- .outfile: "path/to/output.txt"
+-- .outhandle: FOP .outfile .FILE_WRITE
+-- .outlen: FWR .outhandle .data .datalen
+-- .outclose: FCL .outhandle
 
--- FILE.EXISTS: Check if file exists
--- Returns: 1 if exists, 0 if not
-.file_exists: FUN .path
-  .handle: FOP .path .file_mode_read
-  .exists: IFZ .handle 0 1
-  .closed: FCL .handle
-!FUN
+-- ============================================================
+-- FILE.COPY Template
+-- Usage: Copy file from src to dst
+-- ============================================================
+-- .srcpath: "source.txt"
+-- .srch: FOP .srcpath .FILE_READ
+-- .buf: ALC 65536
+-- .len: FRD .srch .buf 65536
+-- .srcc: FCL .srch
+-- .dstpath: "dest.txt"
+-- .dsth: FOP .dstpath .FILE_WRITE
+-- .wlen: FWR .dsth .buf .len
+-- .dstc: FCL .dsth
 
--- FILE.SIZE: Get file size
--- Returns: size in bytes
-.file_size: FUN .path
-  .handle: FOP .path .file_mode_read
-  .buf: ALC 65536
-  .size: FRD .handle .buf 65536
-  .closed: FCL .handle
-!FUN
+-- ============================================================
+-- Example: Read file and print length
+-- ============================================================
+-- USE file
+-- 
+-- .path: "test.txt"
+-- .h: FOP .path .FILE_READ
+-- .buf: ALC 4096
+-- .len: FRD .h .buf 4096
+-- .c: FCL .h
+-- 
+-- .msg: "File length: "
+-- .p1: PRT .msg 13
+-- .num: ALC 16
+-- .its: ITS .len .num
+-- .p2: PRT .num .its
+-- .nl: "\n"
+-- .p3: PRT .nl 1
+
+!

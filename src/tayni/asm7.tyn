@@ -1,0 +1,102 @@
+-- TAYNI ASM v7 - Self-Hosting Simplificado
+-- Usa TAYNI para leer/modificar, genera PE simple
+-- Fecha: 2026-06-16
+
+.zero: 0
+.one: 1
+
+-- ===== PASO 1: Leer input.tyn =====
+.ipath: "input.tyn"
+.ih: FOP .ipath .zero
+.ibuf: ALC 64
+.ilen: FRD .ih .ibuf 64
+.ic: FCL .ih
+
+-- Parsear byte 4 (el digito)
+.vb: GET .ibuf 4
+.val: SUB .vb 48
+
+-- ===== PASO 2: Leer mini.exe =====
+.mpath: "mini.exe"
+.mh: FOP .mpath .zero
+.mbuf: ALC 4096
+.mlen: FRD .mh .mbuf 4096
+.mc: FCL .mh
+
+-- ===== PASO 3: Modificar byte 513 =====
+.mv: PUT .mbuf 513 .val
+
+-- ===== PASO 4: Escribir out.exe =====
+.opath: "out.exe"
+.oh: FOP .opath .one
+.wlen: FWR .oh .mbuf .mlen
+.oc: FCL .oh
+
+-- ===== PASO 5: Generar compiler7.exe =====
+-- Este PE hace lo mismo que los pasos 1-4
+
+.exe: ALC 8192
+.spath: "fileio2.exe.exe"
+.sh: FOP .spath .zero
+.slen: FRD .sh .exe 8192
+.sc: FCL .sh
+
+-- Constantes
+.RVA_CODE: 4096
+.RVA_IAT: 8192
+.RVA_DATA: 12288
+.IAT_Exit: 16
+.IAT_Create: 32
+.IAT_Read: 40
+.IAT_Write: 8
+.IAT_Close: 48
+
+-- Stack: 56 bytes (minimo para syscalls)
+-- pos 0: sub rsp, 56
+.c0: PUT .exe 512 72
+.c1: PUT .exe 513 131
+.c2: PUT .exe 514 236
+.c3: PUT .exe 515 56
+
+-- pos 4: xor ecx, ecx (exit code 0)
+.c4: PUT .exe 516 49
+.c5: PUT .exe 517 201
+
+-- pos 6: call [ExitProcess]
+.p6: 6
+.r6: ADD .RVA_CODE .p6
+.rip6: ADD .r6 6
+.iat6: ADD .RVA_IAT .IAT_Exit
+.d6: SUB .iat6 .rip6
+.d6_0: MOD .d6 256
+.d6_t: DIV .d6 256
+.d6_1: MOD .d6_t 256
+.c6: PUT .exe 518 255
+.c7: PUT .exe 519 21
+.c8: PUT .exe 520 .d6_0
+.c9: PUT .exe 521 .d6_1
+.c10: PUT .exe 522 0
+.c11: PUT .exe 523 0
+
+-- Escribir compiler7.exe
+.cpath: "compiler7.exe"
+.ch: FOP .cpath .one
+.cwlen: FWR .ch .exe .slen
+.cc: FCL .ch
+
+-- Output
+.hdr: "ASM v7: compiler7.exe + out.exe\n"
+.p0: PRT .hdr 32
+.msg: "Valor parseado: "
+.p1: PRT .msg 16
+.num: ALC 16
+.its: ITS .val .num
+.p2: PRT .num .its
+.nl: "\n"
+.p3: PRT .nl 1
+
+.f1: FRE .ibuf
+.f2: FRE .mbuf
+.f3: FRE .exe
+.f4: FRE .num
+!

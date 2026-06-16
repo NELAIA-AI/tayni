@@ -1,42 +1,116 @@
--- TAYNI stdlib: random v0.1
--- Provides: RANDOM.INT, RANDOM.BYTES, RANDOM.UUID
+-- TAYNI stdlib: random v1.0 (AI-Native Pure)
+-- Provides: Random number generation via inline expansion
 -- Usage: USE random
+--
+-- AI-Native Design:
+-- - PRNG basado en LCG (Linear Congruential Generator)
+-- - Seed desde timestamp o valor fijo
+-- - Sin estado global: seed explícito
 
--- Seed for PRNG (would be initialized from system)
-.random_seed: 12345
+-- ============================================================
+-- RANDOM CONSTANTS (LCG parameters)
+-- ============================================================
+.RAND_A: 1103515245
+.RAND_C: 12345
+.RAND_M: 2147483648
 
--- RANDOM.INT: Generate random integer in range [0, max)
-.random_int: FUN .max
-  -- Simple LCG: seed = (seed * 1103515245 + 12345) mod 2^31
-  .a: 1103515245
-  .c: 12345
-  .m: 2147483648
-  .new_seed: MUL .random_seed .a
-  .new_seed2: ADD .new_seed .c
-  .new_seed3: MOD .new_seed2 .m
-  -- Update seed (would need mutable state)
-  .result: MOD .new_seed3 .max
-!FUN
+-- ============================================================
+-- RANDOM.SEED Template
+-- Inicializa seed (usar timestamp o valor fijo)
+-- ============================================================
+-- .seed: 12345
 
--- RANDOM.BYTES: Generate random bytes
-.random_bytes: FUN .len
-  .buf: ALC .len
-  -- Would need loop to fill buffer
-!FUN
+-- ============================================================
+-- RANDOM.NEXT Template
+-- Genera siguiente número pseudoaleatorio
+-- LCG: next = (a * seed + c) mod m
+-- ============================================================
+-- .seed: valor_actual
+-- .t1: MUL .seed .RAND_A
+-- .t2: ADD .t1 .RAND_C
+-- .next: MOD .t2 .RAND_M
+-- .seed: .next
 
--- RANDOM.UUID: Generate UUID v4 (random)
--- Format: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
-.random_uuid: FUN
-  .buf: ALC 37  -- 36 chars + null
-  -- Would need to generate 16 random bytes
-  -- Set version (4) and variant bits
-  -- Format as hex with dashes
-!FUN
+-- ============================================================
+-- RANDOM.INT Template
+-- Genera entero en rango [0, max)
+-- ============================================================
+-- .seed: valor_actual
+-- .max: 100
+-- .t1: MUL .seed .RAND_A
+-- .t2: ADD .t1 .RAND_C
+-- .next: MOD .t2 .RAND_M
+-- .seed: .next
+-- .result: MOD .next .max
 
--- RANDOM.TOKEN: Generate random alphanumeric token
-.random_token: FUN .len
-  .alphabet: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-  .alphabet_len: 62
-  .buf: ALC .len
-  -- Would need loop to pick random chars
-!FUN
+-- ============================================================
+-- RANDOM.RANGE Template
+-- Genera entero en rango [min, max)
+-- ============================================================
+-- .seed: valor_actual
+-- .min: 10
+-- .max: 20
+-- .t1: MUL .seed .RAND_A
+-- .t2: ADD .t1 .RAND_C
+-- .next: MOD .t2 .RAND_M
+-- .seed: .next
+-- .range: SUB .max .min
+-- .r: MOD .next .range
+-- .result: ADD .r .min
+
+-- ============================================================
+-- RANDOM.BYTES Template
+-- Genera N bytes aleatorios (desenrollado)
+-- ============================================================
+-- .seed: valor_actual
+-- .buf: ALC 16
+-- -- Byte 0
+-- .t1: MUL .seed .RAND_A
+-- .t2: ADD .t1 .RAND_C
+-- .seed: MOD .t2 .RAND_M
+-- .b0: MOD .seed 256
+-- .p0: PUT .buf 0 .b0
+-- -- Byte 1
+-- .t3: MUL .seed .RAND_A
+-- .t4: ADD .t3 .RAND_C
+-- .seed: MOD .t4 .RAND_M
+-- .b1: MOD .seed 256
+-- .p1: PUT .buf 1 .b1
+-- -- ... continuar para más bytes
+
+-- ============================================================
+-- RANDOM.UUID Template
+-- Genera UUID v4 (128 bits = 16 bytes)
+-- Formato: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
+-- ============================================================
+-- .seed: valor_actual
+-- .uuid: ALC 36
+-- -- Generar 16 bytes aleatorios
+-- -- Formatear como hex con guiones
+-- -- Byte 6: version 4 (0100xxxx)
+-- -- Byte 8: variant (10xxxxxx)
+
+-- ============================================================
+-- RANDOM.TOKEN Template
+-- Genera token alfanumérico de N caracteres
+-- ============================================================
+-- .seed: valor_actual
+-- .len: 16
+-- .buf: ALC 17
+-- .chars: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+-- -- Para cada posición, generar índice 0-61 y copiar char
+
+-- ============================================================
+-- Example: Generar número aleatorio 1-100
+-- ============================================================
+-- USE random
+--
+-- .seed: 42
+-- .t1: MUL .seed 1103515245
+-- .t2: ADD .t1 12345
+-- .next: MOD .t2 2147483648
+-- .result: MOD .next 100
+-- .result: ADD .result 1
+-- -- result está en rango [1, 100]
+
+!

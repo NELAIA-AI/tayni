@@ -1,0 +1,272 @@
+-- TAYNI Assembler v5 - Self-Hosting Simplificado
+-- Genera PE que hace lo mismo que asm4b
+-- AI-Native: offsets automaticos
+-- Fecha: 2026-06-16
+
+.zero: 0
+.one: 1
+
+-- ===== CONSTANTES =====
+.RVA_CODE: 4096
+.RVA_IAT: 8192
+
+-- IAT offsets
+.IAT_ExitProcess: 16
+.IAT_CreateFileA: 32
+.IAT_ReadFile: 40
+.IAT_WriteFile: 8
+.IAT_CloseHandle: 48
+
+-- ===== BUFFERS =====
+.exe: ALC 8192
+
+-- Leer template
+.spath: "fileio2.exe.exe"
+.sh: FOP .spath .zero
+.slen: FRD .sh .exe 8192
+.sc: FCL .sh
+
+-- ===== PROGRAMA: Lee input.tyn, retorna valor =====
+-- Stack: 88 bytes
+-- [rsp+0-31]: shadow space
+-- [rsp+32-39]: arg5
+-- [rsp+40-47]: arg6  
+-- [rsp+48-55]: bytes read
+-- [rsp+56-79]: input buffer (24 bytes)
+-- [rsp+80-87]: file handle
+
+-- pos 0: sub rsp, 88
+.i0: PUT .exe 512 72
+.i1: PUT .exe 513 131
+.i2: PUT .exe 514 236
+.i3: PUT .exe 515 88
+
+-- pos 4: lea rcx, [rip+path] (path at 0x3000)
+.p4: 4
+.r4: ADD .RVA_CODE .p4
+.rip4: ADD .r4 7
+.d4: SUB 12288 .rip4
+.d4_0: MOD .d4 256
+.d4_t: DIV .d4 256
+.d4_1: MOD .d4_t 256
+.i4: PUT .exe 516 72
+.i5: PUT .exe 517 141
+.i6: PUT .exe 518 13
+.i7: PUT .exe 519 .d4_0
+.i8: PUT .exe 520 .d4_1
+.i9: PUT .exe 521 0
+.i10: PUT .exe 522 0
+
+-- pos 11: mov edx, 0x80000000
+.i11: PUT .exe 523 186
+.i12: PUT .exe 524 0
+.i13: PUT .exe 525 0
+.i14: PUT .exe 526 0
+.i15: PUT .exe 527 128
+
+-- pos 16: xor r8d, r8d
+.i16: PUT .exe 528 69
+.i17: PUT .exe 529 49
+.i18: PUT .exe 530 192
+
+-- pos 19: xor r9d, r9d
+.i19: PUT .exe 531 69
+.i20: PUT .exe 532 49
+.i21: PUT .exe 533 201
+
+-- pos 22: mov qword [rsp+32], 3
+.i22: PUT .exe 534 72
+.i23: PUT .exe 535 199
+.i24: PUT .exe 536 68
+.i25: PUT .exe 537 36
+.i26: PUT .exe 538 32
+.i27: PUT .exe 539 3
+.i28: PUT .exe 540 0
+.i29: PUT .exe 541 0
+.i30: PUT .exe 542 0
+
+-- pos 31: mov qword [rsp+40], 0
+.i31: PUT .exe 543 72
+.i32: PUT .exe 544 199
+.i33: PUT .exe 545 68
+.i34: PUT .exe 546 36
+.i35: PUT .exe 547 40
+.i36: PUT .exe 548 0
+.i37: PUT .exe 549 0
+.i38: PUT .exe 550 0
+.i39: PUT .exe 551 0
+
+-- pos 40: mov qword [rsp+48], 0
+.i40: PUT .exe 552 72
+.i41: PUT .exe 553 199
+.i42: PUT .exe 554 68
+.i43: PUT .exe 555 36
+.i44: PUT .exe 556 48
+.i45: PUT .exe 557 0
+.i46: PUT .exe 558 0
+.i47: PUT .exe 559 0
+.i48: PUT .exe 560 0
+
+-- pos 49: call [CreateFileA]
+.p49: 49
+.r49: ADD .RVA_CODE .p49
+.rip49: ADD .r49 6
+.iat49: ADD .RVA_IAT .IAT_CreateFileA
+.d49: SUB .iat49 .rip49
+.d49_0: MOD .d49 256
+.d49_t: DIV .d49 256
+.d49_1: MOD .d49_t 256
+.i49: PUT .exe 561 255
+.i50: PUT .exe 562 21
+.i51: PUT .exe 563 .d49_0
+.i52: PUT .exe 564 .d49_1
+.i53: PUT .exe 565 0
+.i54: PUT .exe 566 0
+
+-- pos 55: mov [rsp+80], rax
+.i55: PUT .exe 567 72
+.i56: PUT .exe 568 137
+.i57: PUT .exe 569 68
+.i58: PUT .exe 570 36
+.i59: PUT .exe 571 80
+
+-- pos 60: mov rcx, rax
+.i60: PUT .exe 572 72
+.i61: PUT .exe 573 137
+.i62: PUT .exe 574 193
+
+-- pos 63: lea rdx, [rsp+56]
+.i63: PUT .exe 575 72
+.i64: PUT .exe 576 141
+.i65: PUT .exe 577 84
+.i66: PUT .exe 578 36
+.i67: PUT .exe 579 56
+
+-- pos 68: mov r8d, 24
+.i68: PUT .exe 580 65
+.i69: PUT .exe 581 184
+.i70: PUT .exe 582 24
+.i71: PUT .exe 583 0
+.i72: PUT .exe 584 0
+.i73: PUT .exe 585 0
+
+-- pos 74: lea r9, [rsp+48]
+.i74: PUT .exe 586 76
+.i75: PUT .exe 587 141
+.i76: PUT .exe 588 76
+.i77: PUT .exe 589 36
+.i78: PUT .exe 590 48
+
+-- pos 79: mov qword [rsp+32], 0
+.i79: PUT .exe 591 72
+.i80: PUT .exe 592 199
+.i81: PUT .exe 593 68
+.i82: PUT .exe 594 36
+.i83: PUT .exe 595 32
+.i84: PUT .exe 596 0
+.i85: PUT .exe 597 0
+.i86: PUT .exe 598 0
+.i87: PUT .exe 599 0
+
+-- pos 88: call [ReadFile]
+.p88: 88
+.r88: ADD .RVA_CODE .p88
+.rip88: ADD .r88 6
+.iat88: ADD .RVA_IAT .IAT_ReadFile
+.d88: SUB .iat88 .rip88
+.d88_0: MOD .d88 256
+.d88_t: DIV .d88 256
+.d88_1: MOD .d88_t 256
+.i88: PUT .exe 600 255
+.i89: PUT .exe 601 21
+.i90: PUT .exe 602 .d88_0
+.i91: PUT .exe 603 .d88_1
+.i92: PUT .exe 604 0
+.i93: PUT .exe 605 0
+
+-- pos 94: movzx eax, byte [rsp+60]
+.i94: PUT .exe 606 15
+.i95: PUT .exe 607 182
+.i96: PUT .exe 608 68
+.i97: PUT .exe 609 36
+.i98: PUT .exe 610 60
+
+-- pos 99: sub eax, 48
+.i99: PUT .exe 611 131
+.i100: PUT .exe 612 232
+.i101: PUT .exe 613 48
+
+-- pos 102: mov [rsp+52], eax
+.i102: PUT .exe 614 137
+.i103: PUT .exe 615 68
+.i104: PUT .exe 616 36
+.i105: PUT .exe 617 52
+
+-- pos 106: mov rcx, [rsp+80]
+.i106: PUT .exe 618 72
+.i107: PUT .exe 619 139
+.i108: PUT .exe 620 76
+.i109: PUT .exe 621 36
+.i110: PUT .exe 622 80
+
+-- pos 111: call [CloseHandle]
+.p111: 111
+.r111: ADD .RVA_CODE .p111
+.rip111: ADD .r111 6
+.iat111: ADD .RVA_IAT .IAT_CloseHandle
+.d111: SUB .iat111 .rip111
+.d111_0: MOD .d111 256
+.d111_t: DIV .d111 256
+.d111_1: MOD .d111_t 256
+.i111: PUT .exe 623 255
+.i112: PUT .exe 624 21
+.i113: PUT .exe 625 .d111_0
+.i114: PUT .exe 626 .d111_1
+.i115: PUT .exe 627 0
+.i116: PUT .exe 628 0
+
+-- pos 117: mov ecx, [rsp+52]
+.i117: PUT .exe 629 139
+.i118: PUT .exe 630 76
+.i119: PUT .exe 631 36
+.i120: PUT .exe 632 52
+
+-- pos 121: call [ExitProcess]
+.p121: 121
+.r121: ADD .RVA_CODE .p121
+.rip121: ADD .r121 6
+.iat121: ADD .RVA_IAT .IAT_ExitProcess
+.d121: SUB .iat121 .rip121
+.d121_0: MOD .d121 256
+.d121_t: DIV .d121 256
+.d121_1: MOD .d121_t 256
+.i121: PUT .exe 633 255
+.i122: PUT .exe 634 21
+.i123: PUT .exe 635 .d121_0
+.i124: PUT .exe 636 .d121_1
+.i125: PUT .exe 637 0
+.i126: PUT .exe 638 0
+
+-- ===== DATA: "input.tyn" at 0xC00 =====
+.s0: PUT .exe 3072 105
+.s1: PUT .exe 3073 110
+.s2: PUT .exe 3074 112
+.s3: PUT .exe 3075 117
+.s4: PUT .exe 3076 116
+.s5: PUT .exe 3077 46
+.s6: PUT .exe 3078 116
+.s7: PUT .exe 3079 121
+.s8: PUT .exe 3080 110
+.s9: PUT .exe 3081 0
+
+-- ===== ESCRIBIR PE =====
+.opath: "reader.exe"
+.oh: FOP .opath .one
+.wlen: FWR .oh .exe .slen
+.oc: FCL .oh
+
+.hdr: "ASM v5: reader.exe\n"
+.p0: PRT .hdr 19
+
+.f1: FRE .exe
+!

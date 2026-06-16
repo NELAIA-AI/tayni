@@ -1,0 +1,194 @@
+-- TAYNI Assembler v2 - Multiples Llamadas
+-- Calcula offsets automaticamente para cada call
+-- AI-Native: declarativo y sin errores
+-- Fecha: 2026-06-16
+
+.zero: 0
+.one: 1
+
+-- ===== CONSTANTES =====
+.CODE_BASE: 512
+.RVA_CODE: 4096
+.RVA_IAT: 8192
+.RVA_DATA: 12288
+
+-- IAT offsets
+.IAT_GetStdHandle: 0
+.IAT_WriteFile: 8
+.IAT_ExitProcess: 16
+.IAT_CreateFileA: 32
+.IAT_ReadFile: 40
+.IAT_CloseHandle: 48
+
+-- ===== BUFFERS =====
+.exe: ALC 8192
+
+-- Leer template
+.spath: "fileio2.exe.exe"
+.sh: FOP .spath .zero
+.slen: FRD .sh .exe 8192
+.sc: FCL .sh
+
+-- ===== MACRO: EMIT_CALL_IAT(pos, iat_offset) =====
+-- Emite FF 15 + disp32 calculado automaticamente
+-- pos = offset en code (desde CODE_BASE)
+-- iat_offset = offset en IAT
+
+-- ===== PROGRAMA: Print "OK" y ExitProcess(0) =====
+
+-- Posicion base
+.p: 512
+
+-- 1. sub rsp, 56 (48 83 EC 38) - 4 bytes
+.i0: PUT .exe 512 72
+.i1: PUT .exe 513 131
+.i2: PUT .exe 514 236
+.i3: PUT .exe 515 56
+
+-- 2. mov ecx, -11 (B9 F5 FF FF FF) - 5 bytes
+.i4: PUT .exe 516 185
+.i5: PUT .exe 517 245
+.i6: PUT .exe 518 255
+.i7: PUT .exe 519 255
+.i8: PUT .exe 520 255
+
+-- 3. call [GetStdHandle] - 6 bytes @ offset 9
+-- pos=521, rva=0x1009, rip=0x100F, iat=0x2000
+.c1_pos: 9
+.c1_rva: ADD .RVA_CODE .c1_pos
+.c1_rip: ADD .c1_rva 6
+.c1_iat: ADD .RVA_IAT .IAT_GetStdHandle
+.c1_disp: SUB .c1_iat .c1_rip
+.c1_d0: MOD .c1_disp 256
+.c1_t1: DIV .c1_disp 256
+.c1_d1: MOD .c1_t1 256
+
+.i9: PUT .exe 521 255
+.i10: PUT .exe 522 21
+.i11: PUT .exe 523 .c1_d0
+.i12: PUT .exe 524 .c1_d1
+.i13: PUT .exe 525 0
+.i14: PUT .exe 526 0
+
+-- 4. mov rcx, rax (48 89 C1) - 3 bytes
+.i15: PUT .exe 527 72
+.i16: PUT .exe 528 137
+.i17: PUT .exe 529 193
+
+-- 5. lea rdx, [rip+msg] - 7 bytes @ offset 18
+-- msg at RVA 0x1080 (file 0x280)
+-- pos=530, rva=0x1012, rip=0x1019, target=0x1080
+-- disp = 0x1080 - 0x1019 = 0x67
+.i18: PUT .exe 530 72
+.i19: PUT .exe 531 141
+.i20: PUT .exe 532 21
+.i21: PUT .exe 533 103
+.i22: PUT .exe 534 0
+.i23: PUT .exe 535 0
+.i24: PUT .exe 536 0
+
+-- 6. mov r8d, 3 (41 B8 03 00 00 00) - 6 bytes
+.i25: PUT .exe 537 65
+.i26: PUT .exe 538 184
+.i27: PUT .exe 539 3
+.i28: PUT .exe 540 0
+.i29: PUT .exe 541 0
+.i30: PUT .exe 542 0
+
+-- 7. lea r9, [rsp+48] (4C 8D 4C 24 30) - 5 bytes
+.i31: PUT .exe 543 76
+.i32: PUT .exe 544 141
+.i33: PUT .exe 545 76
+.i34: PUT .exe 546 36
+.i35: PUT .exe 547 48
+
+-- 8. mov qword [rsp+32], 0 - 9 bytes
+.i36: PUT .exe 548 72
+.i37: PUT .exe 549 199
+.i38: PUT .exe 550 68
+.i39: PUT .exe 551 36
+.i40: PUT .exe 552 32
+.i41: PUT .exe 553 0
+.i42: PUT .exe 554 0
+.i43: PUT .exe 555 0
+.i44: PUT .exe 556 0
+
+-- 9. call [WriteFile] - 6 bytes @ offset 45
+-- pos=557, rva=0x102D, rip=0x1033, iat=0x2008
+.c2_pos: 45
+.c2_rva: ADD .RVA_CODE .c2_pos
+.c2_rip: ADD .c2_rva 6
+.c2_iat: ADD .RVA_IAT .IAT_WriteFile
+.c2_disp: SUB .c2_iat .c2_rip
+.c2_d0: MOD .c2_disp 256
+.c2_t1: DIV .c2_disp 256
+.c2_d1: MOD .c2_t1 256
+
+.i45: PUT .exe 557 255
+.i46: PUT .exe 558 21
+.i47: PUT .exe 559 .c2_d0
+.i48: PUT .exe 560 .c2_d1
+.i49: PUT .exe 561 0
+.i50: PUT .exe 562 0
+
+-- 10. xor ecx, ecx (31 C9) - 2 bytes
+.i51: PUT .exe 563 49
+.i52: PUT .exe 564 201
+
+-- 11. call [ExitProcess] - 6 bytes @ offset 53
+-- pos=565, rva=0x1035, rip=0x103B, iat=0x2010
+.c3_pos: 53
+.c3_rva: ADD .RVA_CODE .c3_pos
+.c3_rip: ADD .c3_rva 6
+.c3_iat: ADD .RVA_IAT .IAT_ExitProcess
+.c3_disp: SUB .c3_iat .c3_rip
+.c3_d0: MOD .c3_disp 256
+.c3_t1: DIV .c3_disp 256
+.c3_d1: MOD .c3_t1 256
+
+.i53: PUT .exe 565 255
+.i54: PUT .exe 566 21
+.i55: PUT .exe 567 .c3_d0
+.i56: PUT .exe 568 .c3_d1
+.i57: PUT .exe 569 0
+.i58: PUT .exe 570 0
+
+-- ===== DATA: "OK\n" at offset 0x280 (RVA 0x1080) =====
+.d0: PUT .exe 640 79
+.d1: PUT .exe 641 75
+.d2: PUT .exe 642 10
+
+-- ===== ESCRIBIR PE =====
+.opath: "asm2.exe"
+.oh: FOP .opath .one
+.wlen: FWR .oh .exe .slen
+.oc: FCL .oh
+
+-- ===== OUTPUT =====
+.hdr: "ASM v2: asm2.exe (Print OK)\n"
+.p0: PRT .hdr 28
+
+.msg1: "GetStdHandle disp = "
+.p1: PRT .msg1 20
+.num: ALC 16
+.its1: ITS .c1_disp .num
+.p2: PRT .num .its1
+.nl: "\n"
+.p3: PRT .nl 1
+
+.msg2: "WriteFile disp = "
+.p4: PRT .msg2 17
+.its2: ITS .c2_disp .num
+.p5: PRT .num .its2
+.p6: PRT .nl 1
+
+.msg3: "ExitProcess disp = "
+.p7: PRT .msg3 19
+.its3: ITS .c3_disp .num
+.p8: PRT .num .its3
+.p9: PRT .nl 1
+
+.f1: FRE .exe
+.f2: FRE .num
+
+!

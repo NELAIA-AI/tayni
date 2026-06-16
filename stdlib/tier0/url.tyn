@@ -1,49 +1,115 @@
--- TAYNI stdlib: url v0.1
--- Provides: URL.PARSE, URL.ENCODE, URL.DECODE
+-- TAYNI stdlib: url v1.0 (AI-Native Pure)
+-- Provides: URL parsing/encoding via inline expansion
 -- Usage: USE url
+--
+-- AI-Native Design:
+-- - Parser desenrollado para URLs conocidas
+-- - Encoding/decoding byte por byte
+-- - Sin loops: longitud máxima fija
 
--- URL components structure offsets
-.url_scheme_off: 0
-.url_host_off: 8
-.url_port_off: 16
-.url_path_off: 24
-.url_query_off: 32
-.url_fragment_off: 40
-.url_struct_size: 48
+-- ============================================================
+-- URL CONSTANTS
+-- ============================================================
+.URL_SCHEME_HTTP: 0
+.URL_SCHEME_HTTPS: 1
+.URL_PORT_HTTP: 80
+.URL_PORT_HTTPS: 443
 
--- URL.PARSE: Parse URL string into components
--- Returns: pointer to URL struct
-.url_parse: FUN .url_str .len
-  .result: ALC .url_struct_size
-  
-  -- Find :// for scheme
-  -- Find / for path start
-  -- Find ? for query start
-  -- Find # for fragment start
-  -- (Simplified - needs proper parsing)
-!FUN
+.CHAR_COLON: 58
+.CHAR_SLASH: 47
+.CHAR_QUESTION: 63
+.CHAR_AMPERSAND: 38
+.CHAR_EQUALS: 61
+.CHAR_PERCENT: 37
 
--- URL.ENCODE: Percent-encode a string for URL
--- Encodes special characters as %XX
-.url_encode: FUN .str .len
-  -- Worst case: every char becomes %XX (3x size)
-  .max_len: MUL .len 3
-  .out: ALC .max_len
-  
-  -- Would need loop to check each char
-  -- Safe chars: A-Z a-z 0-9 - _ . ~
-!FUN
+-- ============================================================
+-- URL.PARSE Template
+-- Parsea URL: scheme://host:port/path?query
+-- ============================================================
+-- .url: "http://example.com:8080/api?x=1"
+-- -- Buscar :// (bytes 4,5,6 para http)
+-- .c0: GET .url 0
+-- .c1: GET .url 1
+-- .c2: GET .url 2
+-- .c3: GET .url 3
+-- .c4: GET .url 4
+-- .is_h: EQ .c0 104
+-- .is_t1: EQ .c1 116
+-- .is_t2: EQ .c2 116
+-- .is_p: EQ .c3 112
+-- .is_http: AND .is_h .is_t1
+-- .is_http: AND .is_http .is_t2
+-- .is_http: AND .is_http .is_p
+-- .scheme: BRN .is_http .URL_SCHEME_HTTP .URL_SCHEME_HTTPS
+-- -- Host empieza después de ://
+-- .host_start: 7
 
--- URL.DECODE: Decode percent-encoded string
-.url_decode: FUN .str .len
-  .out: ALC .len
-  
-  -- Would need loop to find %XX sequences
-!FUN
+-- ============================================================
+-- URL.ENCODE_CHAR Template
+-- Codifica char especial como %XX
+-- ============================================================
+-- .c: char
+-- .needs_encode: OR (LT .c 33) (GT .c 126)
+-- .needs_encode: OR .needs_encode (EQ .c 32)
+-- .needs_encode: OR .needs_encode (EQ .c 37)
+-- -- Si needs_encode, convertir a %HH
+-- .hi: DIV .c 16
+-- .lo: MOD .c 16
+-- .hi_char: BRN (LT .hi 10) (ADD .hi 48) (ADD .hi 55)
+-- .lo_char: BRN (LT .lo 10) (ADD .lo 48) (ADD .lo 55)
 
--- URL.BUILD: Build URL from components
-.url_build: FUN .scheme .host .port .path
-  -- Calculate total length
-  -- Concatenate: scheme://host:port/path
-  .buf: ALC 256
-!FUN
+-- ============================================================
+-- URL.DECODE_PERCENT Template
+-- Decodifica %XX a byte
+-- ============================================================
+-- .buf: "%20"
+-- .h: GET .buf 1
+-- .l: GET .buf 2
+-- .hi: BRN (GE .h 65) (SUB .h 55) (SUB .h 48)
+-- .lo: BRN (GE .l 65) (SUB .l 55) (SUB .l 48)
+-- .val: ADD (MUL .hi 16) .lo
+
+-- ============================================================
+-- URL.BUILD Template
+-- Construye URL desde componentes
+-- ============================================================
+-- .scheme: "https"
+-- .host: "api.example.com"
+-- .port: 443
+-- .path: "/v1/users"
+-- .buf: ALC 256
+-- -- Copiar scheme
+-- .s0: PUT .buf 0 104
+-- .s1: PUT .buf 1 116
+-- .s2: PUT .buf 2 116
+-- .s3: PUT .buf 3 112
+-- .s4: PUT .buf 4 115
+-- .s5: PUT .buf 5 58
+-- .s6: PUT .buf 6 47
+-- .s7: PUT .buf 7 47
+-- -- Copiar host...
+
+-- ============================================================
+-- Example: Parsear query string "x=1&y=2"
+-- ============================================================
+-- USE url
+--
+-- .query: "x=1&y=2"
+-- -- Buscar primer =
+-- .c0: GET .query 0
+-- .c1: GET .query 1
+-- .c2: GET .query 2
+-- .is_eq1: EQ .c1 61
+-- .key1: .c0
+-- .val1: .c2
+-- -- Buscar &
+-- .c3: GET .query 3
+-- .is_amp: EQ .c3 38
+-- -- Segundo par
+-- .c4: GET .query 4
+-- .c5: GET .query 5
+-- .c6: GET .query 6
+-- .key2: .c4
+-- .val2: .c6
+
+!
