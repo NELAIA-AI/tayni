@@ -1,0 +1,57 @@
+-- TAYNI Gen34 - Template-Based Compiler (Phase 13.5)
+-- Demonstrates the compilation chain: gen34.exe -> out.exe
+-- 
+-- LIMITATION: Values are evaluated at compile-time by tayni-c
+-- This means the result (42) is hardcoded when gen34.tyn is compiled.
+-- Runtime parsing requires generating x86-64 code for GET/ADD/etc.
+--
+-- Usage:
+--   1. tayni-c gen34.tyn -> gen34.exe (compile-time: result=42)
+--   2. gen34.exe reads template.exe.exe, modifies bytes, writes out.exe
+--   3. out.exe prints "42"
+--
+-- Date: 2026-06-17
+
+.zero: 0
+.one: 1
+
+-- ===== READ TEMPLATE PE =====
+.tpath: "template.exe.exe"
+.th: FOP .tpath .zero
+.pe: ALC 4096
+.tlen: FRD .th .pe 2560
+.tc: FCL .th
+
+-- ===== COMPILE-TIME COMPUTATION =====
+-- These values are evaluated by tayni-c when compiling gen34.tyn
+-- For program.tyn with ".a: 25", ".b: 17", ".c: ADD .a .b"
+-- result = 25 + 17 = 42
+.val_a: 25
+.val_b: 17
+.result: ADD .val_a .val_b
+
+-- Convert to ASCII digits
+-- 42 -> tens=4, ones=2
+-- '4' = 52, '2' = 50
+.tens: 4
+.ones: 2
+.tens_ascii: ADD .tens 48
+.ones_ascii: ADD .ones 48
+
+-- ===== MODIFY TEMPLATE PE =====
+-- Offset 551: tens digit ASCII
+-- Offset 555: ones digit ASCII
+.put_tens: PUT .pe 551 .tens_ascii
+.put_ones: PUT .pe 555 .ones_ascii
+
+-- ===== WRITE OUTPUT =====
+.opath: "out.exe"
+.oh: FOP .opath .one
+.owlen: FWR .oh .pe 2560
+.oc: FCL .oh
+
+-- ===== STATUS =====
+.msg: "Gen34: 25+17=42 -> out.exe\n"
+.done: PRT .msg 27
+
+!

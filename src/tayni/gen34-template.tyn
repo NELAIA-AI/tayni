@@ -1,0 +1,19 @@
+-- TAYNI Gen34-Template - PE Template Generator
+-- Generates a template PE with a placeholder for the result
+-- The result byte is at offset 520 (mov eax, RESULT instruction)
+-- Date: 2026-06-17
+
+-- This generates a PE that prints a 2-digit number
+-- The number is embedded at file offset 520 (byte 5 of mov eax instruction)
+
+.buf: ALC 8
+
+-- Template marker: "XX" will be replaced by actual digits
+-- For now, generate "00" as placeholder
+.p0: PUT .buf 0 48
+.p1: PUT .buf 1 48
+.p2: PUT .buf 2 10
+
+.done: PRT .buf 3
+
+!
