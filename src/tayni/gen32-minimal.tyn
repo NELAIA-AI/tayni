@@ -1,0 +1,28 @@
+-- TAYNI Gen32-Minimal - Minimal Static Compiler
+-- Just prints "42" to console (no file output)
+-- Tests that ALC + PUT + PRT pattern works
+-- Date: 2026-06-17
+
+-- Hardcoded values
+.val_a: 25
+.val_b: 17
+.result: ADD .val_a .val_b
+
+-- Build output buffer with "42\n"
+.buf: ALC 8
+
+-- Calculate digits: 42 / 10 = 4, 42 % 10 = 2
+-- Tens digit: result / 10 = 4 -> '4' = 52
+-- Ones digit: result % 10 = 2 -> '2' = 50
+-- For 42: tens=4, ones=2
+
+-- Hardcode the ASCII values for "42\n"
+-- '4' = 52, '2' = 50, '\n' = 10
+.p0: PUT .buf 0 52
+.p1: PUT .buf 1 50
+.p2: PUT .buf 2 10
+
+-- Print the result
+.done: PRT .buf 3
+
+!

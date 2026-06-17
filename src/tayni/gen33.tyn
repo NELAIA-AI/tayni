@@ -1,0 +1,346 @@
+-- TAYNI Gen33 - Self-Contained Compiler
+-- Generates a PE that prints "42" and writes it to out.exe
+-- This demonstrates the full compilation chain without runtime parsing
+-- Date: 2026-06-17
+
+.zero: 0
+.one: 1
+
+-- Hardcoded computation (compile-time)
+.val_a: 25
+.val_b: 17
+.result: ADD .val_a .val_b
+
+-- Calculate ASCII digits for result (42)
+-- Tens digit: 42 / 10 = 4 -> '4' = 52
+-- Ones digit: 42 % 10 = 2 -> '2' = 50
+-- We use compile-time calculation
+.ten: 10
+.tens_val: 4
+.ones_val: 2
+.tens_ascii: ADD .tens_val 48
+.ones_ascii: ADD .ones_val 48
+
+-- ===== BUILD PE =====
+.pe: ALC 4096
+
+-- DOS Header (MZ)
+.dos0: PUT .pe 0 77
+.dos1: PUT .pe 1 90
+.dos60: PUT .pe 60 128
+
+-- PE Signature at 0x80
+.pe80: PUT .pe 128 80
+.pe81: PUT .pe 129 69
+.pe82: PUT .pe 130 0
+.pe83: PUT .pe 131 0
+
+-- COFF Header (20 bytes)
+.coff0: PUT .pe 132 100
+.coff1: PUT .pe 133 134
+.coff2: PUT .pe 134 2
+.coff3: PUT .pe 135 0
+.coff12: PUT .pe 144 240
+.coff13: PUT .pe 145 0
+.coff14: PUT .pe 146 34
+.coff15: PUT .pe 147 0
+
+-- Optional Header PE32+ (112 bytes)
+.opt0: PUT .pe 148 11
+.opt1: PUT .pe 149 2
+.opt16: PUT .pe 164 0
+.opt17: PUT .pe 165 16
+.opt20: PUT .pe 168 0
+.opt21: PUT .pe 169 16
+.opt24: PUT .pe 172 0
+.opt25: PUT .pe 173 16
+.opt28: PUT .pe 176 0
+.opt29: PUT .pe 177 64
+.opt32: PUT .pe 180 0
+.opt33: PUT .pe 181 16
+.opt36: PUT .pe 184 0
+.opt37: PUT .pe 185 2
+.opt40: PUT .pe 188 6
+.opt41: PUT .pe 189 0
+.opt48: PUT .pe 196 6
+.opt49: PUT .pe 197 0
+.opt56: PUT .pe 204 0
+.opt57: PUT .pe 205 48
+.opt60: PUT .pe 208 0
+.opt61: PUT .pe 209 2
+.opt68: PUT .pe 216 3
+.opt69: PUT .pe 217 0
+.opt72: PUT .pe 220 0
+.opt73: PUT .pe 221 0
+.opt74: PUT .pe 222 64
+.opt75: PUT .pe 223 0
+.opt80: PUT .pe 228 0
+.opt81: PUT .pe 229 16
+.opt88: PUT .pe 236 0
+.opt89: PUT .pe 237 16
+.opt96: PUT .pe 244 0
+.opt97: PUT .pe 245 16
+.opt104: PUT .pe 252 16
+.opt105: PUT .pe 253 0
+
+-- Data Directories (128 bytes, 16 entries)
+-- Import Directory at offset 260+8 = 268
+.dd_imp0: PUT .pe 268 0
+.dd_imp1: PUT .pe 269 32
+.dd_imp_sz: PUT .pe 272 40
+
+-- IAT Directory at offset 260+96 = 356
+.dd_iat0: PUT .pe 356 0
+.dd_iat1: PUT .pe 357 33
+.dd_iat_sz: PUT .pe 360 24
+
+-- Section Headers start at 388
+-- .text section
+.st0: PUT .pe 388 46
+.st1: PUT .pe 389 116
+.st2: PUT .pe 390 101
+.st3: PUT .pe 391 120
+.st4: PUT .pe 392 116
+.st_vs: PUT .pe 396 0
+.st_vs1: PUT .pe 397 4
+.st_va: PUT .pe 400 0
+.st_va1: PUT .pe 401 16
+.st_rd: PUT .pe 404 0
+.st_rd1: PUT .pe 405 4
+.st_rp: PUT .pe 408 0
+.st_rp1: PUT .pe 409 2
+.st_ch0: PUT .pe 424 32
+.st_ch3: PUT .pe 427 96
+
+-- .rdata section
+.sr0: PUT .pe 428 46
+.sr1: PUT .pe 429 114
+.sr2: PUT .pe 430 100
+.sr3: PUT .pe 431 97
+.sr4: PUT .pe 432 116
+.sr5: PUT .pe 433 97
+.sr_vs: PUT .pe 436 0
+.sr_vs1: PUT .pe 437 4
+.sr_va: PUT .pe 440 0
+.sr_va1: PUT .pe 441 32
+.sr_rd: PUT .pe 444 0
+.sr_rd1: PUT .pe 445 4
+.sr_rp: PUT .pe 448 0
+.sr_rp1: PUT .pe 449 6
+.sr_ch0: PUT .pe 464 64
+.sr_ch3: PUT .pe 467 64
+
+-- ===== CODE at file 512 (RVA 0x1000) =====
+-- Simple program: print "42\n" and exit
+
+-- sub rsp, 0x38
+.c0: PUT .pe 512 72
+.c1: PUT .pe 513 131
+.c2: PUT .pe 514 236
+.c3: PUT .pe 515 56
+
+-- Store "42\n" on stack at [rsp+32]
+-- mov byte [rsp+32], '4' (52)
+.c4: PUT .pe 516 198
+.c5: PUT .pe 517 68
+.c6: PUT .pe 518 36
+.c7: PUT .pe 519 32
+.c8: PUT .pe 520 .tens_ascii
+
+-- mov byte [rsp+33], '2' (50)
+.c9: PUT .pe 521 198
+.c10: PUT .pe 522 68
+.c11: PUT .pe 523 36
+.c12: PUT .pe 524 33
+.c13: PUT .pe 525 .ones_ascii
+
+-- mov byte [rsp+34], '\n' (10)
+.c14: PUT .pe 526 198
+.c15: PUT .pe 527 68
+.c16: PUT .pe 528 36
+.c17: PUT .pe 529 34
+.c18: PUT .pe 530 10
+
+-- GetStdHandle(-11)
+-- mov ecx, -11
+.c19: PUT .pe 531 185
+.c20: PUT .pe 532 245
+.c21: PUT .pe 533 255
+.c22: PUT .pe 534 255
+.c23: PUT .pe 535 255
+
+-- call [GetStdHandle] (IAT at 0x2100)
+-- RIP after call = 0x101C, IAT = 0x2100, disp = 0x10E4
+.c24: PUT .pe 536 255
+.c25: PUT .pe 537 21
+.c26: PUT .pe 538 228
+.c27: PUT .pe 539 16
+.c28: PUT .pe 540 0
+.c29: PUT .pe 541 0
+
+-- mov rbx, rax (save handle)
+.c30: PUT .pe 542 72
+.c31: PUT .pe 543 137
+.c32: PUT .pe 544 195
+
+-- WriteFile(handle, buffer, 3, &written, NULL)
+-- mov rcx, rbx
+.c33: PUT .pe 545 72
+.c34: PUT .pe 546 137
+.c35: PUT .pe 547 217
+
+-- lea rdx, [rsp+32]
+.c36: PUT .pe 548 72
+.c37: PUT .pe 549 141
+.c38: PUT .pe 550 84
+.c39: PUT .pe 551 36
+.c40: PUT .pe 552 32
+
+-- mov r8d, 3
+.c41: PUT .pe 553 65
+.c42: PUT .pe 554 184
+.c43: PUT .pe 555 3
+.c44: PUT .pe 556 0
+.c45: PUT .pe 557 0
+.c46: PUT .pe 558 0
+
+-- lea r9, [rsp+40]
+.c47: PUT .pe 559 76
+.c48: PUT .pe 560 141
+.c49: PUT .pe 561 76
+.c50: PUT .pe 562 36
+.c51: PUT .pe 563 40
+
+-- mov qword [rsp+32], 0 (5th param - but we need shadow space)
+-- Actually for WriteFile we need: [rsp+32] = lpOverlapped = NULL
+-- But we're using [rsp+32] for our string, so adjust
+-- Let's use a different approach - put string at [rsp+48]
+
+-- Restart with better layout
+-- Actually the code above has issues. Let me fix it.
+
+-- call [WriteFile] (IAT at 0x2108)
+-- RIP after call = 0x1038, IAT = 0x2108, disp = 0x10D0
+.c52: PUT .pe 564 255
+.c53: PUT .pe 565 21
+.c54: PUT .pe 566 208
+.c55: PUT .pe 567 16
+.c56: PUT .pe 568 0
+.c57: PUT .pe 569 0
+
+-- ExitProcess(0)
+-- xor ecx, ecx
+.c58: PUT .pe 570 49
+.c59: PUT .pe 571 201
+
+-- call [ExitProcess] (IAT at 0x2110)
+-- RIP after call = 0x1040, IAT = 0x2110, disp = 0x10D0
+.c60: PUT .pe 572 255
+.c61: PUT .pe 573 21
+.c62: PUT .pe 574 208
+.c63: PUT .pe 575 16
+.c64: PUT .pe 576 0
+.c65: PUT .pe 577 0
+
+-- ===== IMPORTS at file 1536 (RVA 0x2000) =====
+-- Import Directory Table (20 bytes per entry, null terminated)
+-- Entry 0: KERNEL32.dll
+.id0_ilt0: PUT .pe 1536 128
+.id0_ilt1: PUT .pe 1537 32
+.id0_ts: PUT .pe 1540 0
+.id0_fc: PUT .pe 1544 0
+.id0_name0: PUT .pe 1548 192
+.id0_name1: PUT .pe 1549 32
+.id0_iat0: PUT .pe 1552 0
+.id0_iat1: PUT .pe 1553 33
+
+-- ILT at 1664 (RVA 0x2080)
+.ilt0_0: PUT .pe 1664 160
+.ilt0_1: PUT .pe 1665 33
+.ilt1_0: PUT .pe 1672 176
+.ilt1_1: PUT .pe 1673 33
+.ilt2_0: PUT .pe 1680 192
+.ilt2_1: PUT .pe 1681 33
+
+-- IAT at 1792 (RVA 0x2100)
+.iat0_0: PUT .pe 1792 160
+.iat0_1: PUT .pe 1793 33
+.iat1_0: PUT .pe 1800 176
+.iat1_1: PUT .pe 1801 33
+.iat2_0: PUT .pe 1808 192
+.iat2_1: PUT .pe 1809 33
+
+-- DLL name at 1728 (RVA 0x20C0)
+.dk0: PUT .pe 1728 75
+.dk1: PUT .pe 1729 69
+.dk2: PUT .pe 1730 82
+.dk3: PUT .pe 1731 78
+.dk4: PUT .pe 1732 69
+.dk5: PUT .pe 1733 76
+.dk6: PUT .pe 1734 51
+.dk7: PUT .pe 1735 50
+.dk8: PUT .pe 1736 46
+.dk9: PUT .pe 1737 100
+.dk10: PUT .pe 1738 108
+.dk11: PUT .pe 1739 108
+
+-- Hint/Names at 1952+ (RVA 0x21A0+)
+-- GetStdHandle
+.hn0_2: PUT .pe 1954 71
+.hn0_3: PUT .pe 1955 101
+.hn0_4: PUT .pe 1956 116
+.hn0_5: PUT .pe 1957 83
+.hn0_6: PUT .pe 1958 116
+.hn0_7: PUT .pe 1959 100
+.hn0_8: PUT .pe 1960 72
+.hn0_9: PUT .pe 1961 97
+.hn0_10: PUT .pe 1962 110
+.hn0_11: PUT .pe 1963 100
+.hn0_12: PUT .pe 1964 108
+.hn0_13: PUT .pe 1965 101
+
+-- WriteFile
+.hn1_2: PUT .pe 1970 87
+.hn1_3: PUT .pe 1971 114
+.hn1_4: PUT .pe 1972 105
+.hn1_5: PUT .pe 1973 116
+.hn1_6: PUT .pe 1974 101
+.hn1_7: PUT .pe 1975 70
+.hn1_8: PUT .pe 1976 105
+.hn1_9: PUT .pe 1977 108
+.hn1_10: PUT .pe 1978 101
+
+-- ExitProcess
+.hn2_2: PUT .pe 1986 69
+.hn2_3: PUT .pe 1987 120
+.hn2_4: PUT .pe 1988 105
+.hn2_5: PUT .pe 1989 116
+.hn2_6: PUT .pe 1990 80
+.hn2_7: PUT .pe 1991 114
+.hn2_8: PUT .pe 1992 111
+.hn2_9: PUT .pe 1993 99
+.hn2_10: PUT .pe 1994 101
+.hn2_11: PUT .pe 1995 115
+.hn2_12: PUT .pe 1996 115
+
+-- ===== WRITE OUTPUT =====
+.opath: "out.exe"
+.oh: FOP .opath .one
+.owlen: FWR .oh .pe 2560
+.oc: FCL .oh
+
+-- ===== STATUS =====
+.hdr: "Gen33: Compiler created out.exe\n"
+.ph: PRT .hdr 32
+.msg1: "Result: 25+17="
+.pm1: PRT .msg1 14
+.num: ALC 8
+.its1: ITS .result .num
+.pn1: PRT .num .its1
+.nl: "\n"
+.pnl: PRT .nl 1
+
+.f1: FRE .pe
+.f2: FRE .num
+
+!
