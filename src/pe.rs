@@ -715,10 +715,46 @@ pub fn generate_pe_from_graph(graph: &Graph) -> Vec<u8> {
     // Check for File I/O pattern: FOP + FRD + FCL + PRT
     let has_fop = graph.nodes.iter().any(|n| matches!(n, Node::Operation { op: Op::Fop, .. }));
     let has_frd = graph.nodes.iter().any(|n| matches!(n, Node::Operation { op: Op::Frd, .. }));
-    let _has_fwr = graph.nodes.iter().any(|n| matches!(n, Node::Operation { op: Op::Fwr, .. }));
+    let has_fwr = graph.nodes.iter().any(|n| matches!(n, Node::Operation { op: Op::Fwr, .. }));
     
-    // TODO: Compiler pattern (FOP + FRD + FWR) needs more work
-    // For now, fall through to other patterns
+    // Compiler pattern: FOP + FRD + FWR (read input, process, write output)
+    if has_fop && has_frd && has_fwr {
+        let mut input_path: Option<String> = None;
+        let mut output_path: Option<String> = None;
+        let mut read_size: i64 = 512;
+        let mut write_size: i64 = 4096;
+        
+        // Find paths from FOP operations
+        let mut fop_count = 0;
+        for node in &graph.nodes {
+            if let Node::Operation { op: Op::Fop, args, .. } = node {
+                if let Some(Arg::Ref(path_ref)) = args.get(0) {
+                    if let Some(path) = strings.get(path_ref) {
+                        if fop_count == 0 {
+                            input_path = Some(path.clone());
+                        } else {
+                            output_path = Some(path.clone());
+                        }
+                        fop_count += 1;
+                    }
+                }
+            }
+            if let Node::Operation { op: Op::Frd, args, .. } = node {
+                if let Some(size) = get_val(&args, 2, &values) {
+                    read_size = size;
+                }
+            }
+            if let Node::Operation { op: Op::Fwr, args, .. } = node {
+                if let Some(size) = get_val(&args, 2, &values) {
+                    write_size = size;
+                }
+            }
+        }
+        
+        if let (Some(inp), Some(outp)) = (input_path, output_path) {
+            return generate_pe_compiler(&inp, &outp, read_size, write_size, &put_ops);
+        }
+    }
     
     if has_fop && has_frd && has_prt {
         // Extract file path and buffer info
@@ -1012,33 +1048,36 @@ fn generate_pe_with_fileio(file_path: &str, buf_size: i64, print_len: i64) -> Ve
     pe
 }
 
-/// Generate PE compiler (FOP + FRD + FWR + FCL)
-/// Reads input file, processes with PUT operations, writes output file
-fn generate_pe_compiler(input_path: &str, output_path: &str, buf_size: i64, write_size: i64, put_ops: &[(i64, i64)]) -> Vec<u8> {
+/// Generate PE compiler (FOP + FRD + PUT + FWR)
+/// Reads input file, applies PUT operations, writes output file
+fn generate_pe_compiler(input_path: &str, output_path: &str, read_size: i64, write_size: i64, put_ops: &[(i64, i64)]) -> Vec<u8> {
     let pe_offset: u32 = 0x80;
     let num_sections: u16 = 3;
     let headers_size: u32 = 0x200;
     
+    // Calculate code size based on PUT operations
+    // Base code ~400 bytes + ~7 bytes per PUT (worst case)
+    let put_code_size = (put_ops.len() * 7) as u32;
+    let text_size: u32 = ((0x600 + put_code_size + 0x1FF) / 0x200) * 0x200; // Round up to 512
     let text_rva: u32 = 0x1000;
-    let text_size: u32 = 0x800;
     let text_file_offset: u32 = 0x200;
     
-    let rdata_rva: u32 = 0x2000;
+    let rdata_rva: u32 = text_rva + ((text_size + 0xFFF) / 0x1000) * 0x1000;
     let rdata_size: u32 = 0x400;
-    let rdata_file_offset: u32 = 0xA00;
+    let rdata_file_offset: u32 = text_file_offset + text_size;
     
-    let data_rva: u32 = 0x3000;
+    let data_rva: u32 = rdata_rva + 0x1000;
     let data_size: u32 = 0x400;
-    let data_file_offset: u32 = 0xE00;
+    let data_file_offset: u32 = rdata_file_offset + rdata_size;
     
-    let image_size: u32 = 0x5000;
+    let image_size: u32 = data_rva + 0x1000;
     
-    // IAT: GetStdHandle, WriteFile, ExitProcess, VirtualAlloc, CreateFileA, ReadFile, CloseHandle
+    // IAT: GetStdHandle[0], WriteFile[8], ExitProcess[16], VirtualAlloc[24], CreateFileA[32], ReadFile[40], CloseHandle[48]
     let iat_rva = rdata_rva;
     let import_dir_rva = rdata_rva + 0x60;
-    let ilt_rva = rdata_rva + 0xA0;
-    let hint_name_rva = rdata_rva + 0x100;
-    let dll_name_rva = rdata_rva + 0x180;
+    let ilt_rva = rdata_rva + 0xC0;
+    let hint_name_rva = rdata_rva + 0x140;
+    let dll_name_rva = rdata_rva + 0x200;
     
     let mut pe = Vec::new();
     
@@ -1064,207 +1103,191 @@ fn generate_pe_compiler(input_path: &str, output_path: &str, buf_size: i64, writ
     
     pe.resize(text_file_offset as usize, 0);
     
+    // Generate code
     let mut code = Vec::new();
     let code_start = text_rva;
     
-    // Prologue
+    // sub rsp, 0x68
     code.extend(x64::sub_rsp_imm8(0x68));
     
-    // VirtualAlloc for buffer
-    code.extend(&[0x31, 0xC9]); // xor ecx, ecx
-    code.extend(&[0x48, 0xC7, 0xC2]); // mov rdx, size
+    // === VirtualAlloc for buffer ===
+    code.extend(&[0x31, 0xC9]); // xor ecx, ecx (NULL)
+    code.extend(&[0x48, 0xC7, 0xC2]); // mov rdx, write_size
     code.extend(&(write_size as u32).to_le_bytes());
     code.extend(&[0x41, 0xB8]); // mov r8d, MEM_COMMIT|MEM_RESERVE
     code.extend(&0x3000u32.to_le_bytes());
     code.extend(&[0x41, 0xB9]); // mov r9d, PAGE_READWRITE
     code.extend(&0x04u32.to_le_bytes());
     
-    let call_pos = code_start as i64 + code.len() as i64 + 6;
-    let va_offset = (iat_rva + 24) as i64 - call_pos;
+    let call_va = code_start as i64 + code.len() as i64 + 6;
     code.extend(&[0xFF, 0x15]);
-    code.extend(&(va_offset as i32).to_le_bytes());
+    code.extend(&(((iat_rva + 24) as i64 - call_va) as i32).to_le_bytes());
     
     // Save buffer to [rsp+80]
     code.extend(&[0x48, 0x89, 0x44, 0x24, 0x50]);
     
-    // CreateFileA for input (GENERIC_READ, OPEN_EXISTING)
-    let input_path_rva = data_rva;
-    let lea_pos = code_start as i64 + code.len() as i64 + 7;
-    let path_offset = input_path_rva as i64 - lea_pos;
-    code.extend(&[0x48, 0x8D, 0x0D]);
-    code.extend(&(path_offset as i32).to_le_bytes());
+    // === CreateFileA for input (GENERIC_READ, OPEN_EXISTING) ===
+    let input_rva = data_rva;
+    let lea_inp = code_start as i64 + code.len() as i64 + 7;
+    code.extend(&[0x48, 0x8D, 0x0D]); // lea rcx, [rip+input_path]
+    code.extend(&((input_rva as i64 - lea_inp) as i32).to_le_bytes());
     
     code.extend(&[0x48, 0xC7, 0xC2]); // mov rdx, GENERIC_READ
     code.extend(&0x80000000u32.to_le_bytes());
     code.extend(&[0x41, 0xB8, 0x01, 0x00, 0x00, 0x00]); // mov r8d, FILE_SHARE_READ
     code.extend(&[0x45, 0x31, 0xC9]); // xor r9d, r9d
-    code.extend(&[0x48, 0xC7, 0x44, 0x24, 0x20]); // mov qword [rsp+32], OPEN_EXISTING
-    code.extend(&3u32.to_le_bytes());
-    code.extend(&[0x48, 0xC7, 0x44, 0x24, 0x28, 0x00, 0x00, 0x00, 0x00]);
-    code.extend(&[0x48, 0xC7, 0x44, 0x24, 0x30, 0x00, 0x00, 0x00, 0x00]);
+    code.extend(&[0x48, 0xC7, 0x44, 0x24, 0x20, 0x03, 0x00, 0x00, 0x00]); // [rsp+32] = OPEN_EXISTING
+    code.extend(&[0x48, 0xC7, 0x44, 0x24, 0x28, 0x00, 0x00, 0x00, 0x00]); // [rsp+40] = 0
+    code.extend(&[0x48, 0xC7, 0x44, 0x24, 0x30, 0x00, 0x00, 0x00, 0x00]); // [rsp+48] = NULL
     
-    let call_pos2 = code_start as i64 + code.len() as i64 + 6;
-    let cf_offset = (iat_rva + 32) as i64 - call_pos2;
+    let call_cf1 = code_start as i64 + code.len() as i64 + 6;
     code.extend(&[0xFF, 0x15]);
-    code.extend(&(cf_offset as i32).to_le_bytes());
+    code.extend(&(((iat_rva + 32) as i64 - call_cf1) as i32).to_le_bytes());
     
     // Save input handle to [rsp+72]
     code.extend(&[0x48, 0x89, 0x44, 0x24, 0x48]);
     
-    // ReadFile(handle, buffer, size, &bytesRead, NULL)
-    code.extend(&[0x48, 0x8B, 0x4C, 0x24, 0x48]); // mov rcx, [rsp+72]
-    code.extend(&[0x48, 0x8B, 0x54, 0x24, 0x50]); // mov rdx, [rsp+80]
-    code.extend(&[0x41, 0xB8]); // mov r8d, size
-    code.extend(&(buf_size as u32).to_le_bytes());
-    code.extend(&[0x4C, 0x8D, 0x4C, 0x24, 0x40]); // lea r9, [rsp+64]
-    code.extend(&[0x48, 0xC7, 0x44, 0x24, 0x20, 0x00, 0x00, 0x00, 0x00]);
+    // === ReadFile ===
+    code.extend(&[0x48, 0x8B, 0x4C, 0x24, 0x48]); // mov rcx, [rsp+72] (handle)
+    code.extend(&[0x48, 0x8B, 0x54, 0x24, 0x50]); // mov rdx, [rsp+80] (buffer)
+    code.extend(&[0x41, 0xB8]); // mov r8d, read_size
+    code.extend(&(read_size as u32).to_le_bytes());
+    code.extend(&[0x4C, 0x8D, 0x4C, 0x24, 0x40]); // lea r9, [rsp+64] (bytesRead)
+    code.extend(&[0x48, 0xC7, 0x44, 0x24, 0x20, 0x00, 0x00, 0x00, 0x00]); // [rsp+32] = NULL
     
-    let call_pos3 = code_start as i64 + code.len() as i64 + 6;
-    let rf_offset = (iat_rva + 40) as i64 - call_pos3;
+    let call_rf = code_start as i64 + code.len() as i64 + 6;
     code.extend(&[0xFF, 0x15]);
-    code.extend(&(rf_offset as i32).to_le_bytes());
+    code.extend(&(((iat_rva + 40) as i64 - call_rf) as i32).to_le_bytes());
     
-    // CloseHandle(input)
+    // === CloseHandle(input) ===
     code.extend(&[0x48, 0x8B, 0x4C, 0x24, 0x48]); // mov rcx, [rsp+72]
-    let call_pos4 = code_start as i64 + code.len() as i64 + 6;
-    let ch_offset = (iat_rva + 48) as i64 - call_pos4;
+    let call_ch1 = code_start as i64 + code.len() as i64 + 6;
     code.extend(&[0xFF, 0x15]);
-    code.extend(&(ch_offset as i32).to_le_bytes());
+    code.extend(&(((iat_rva + 48) as i64 - call_ch1) as i32).to_le_bytes());
     
-    // Apply PUT operations to buffer
+    // === Apply PUT operations ===
     // mov rdi, [rsp+80] (buffer)
     code.extend(&[0x48, 0x8B, 0x7C, 0x24, 0x50]);
+    
     for (idx, val) in put_ops {
-        // mov byte [rdi+idx], val
         if *idx < 128 {
+            // mov byte [rdi+idx], val
             code.extend(&[0xC6, 0x47, *idx as u8, *val as u8]);
         } else {
+            // mov byte [rdi+idx], val (32-bit offset)
             code.extend(&[0xC6, 0x87]);
             code.extend(&(*idx as u32).to_le_bytes());
             code.push(*val as u8);
         }
     }
     
-    // CreateFileA for output (GENERIC_WRITE, CREATE_ALWAYS)
-    let output_path_rva = data_rva + 0x100;
-    let lea_pos2 = code_start as i64 + code.len() as i64 + 7;
-    let path_offset2 = output_path_rva as i64 - lea_pos2;
-    code.extend(&[0x48, 0x8D, 0x0D]);
-    code.extend(&(path_offset2 as i32).to_le_bytes());
+    // === CreateFileA for output (GENERIC_WRITE, CREATE_ALWAYS) ===
+    let output_rva = data_rva + 0x100;
+    let lea_out = code_start as i64 + code.len() as i64 + 7;
+    code.extend(&[0x48, 0x8D, 0x0D]); // lea rcx, [rip+output_path]
+    code.extend(&((output_rva as i64 - lea_out) as i32).to_le_bytes());
     
     code.extend(&[0x48, 0xC7, 0xC2]); // mov rdx, GENERIC_WRITE
     code.extend(&0x40000000u32.to_le_bytes());
     code.extend(&[0x45, 0x31, 0xC0]); // xor r8d, r8d
     code.extend(&[0x45, 0x31, 0xC9]); // xor r9d, r9d
-    code.extend(&[0x48, 0xC7, 0x44, 0x24, 0x20]); // mov qword [rsp+32], CREATE_ALWAYS
-    code.extend(&2u32.to_le_bytes());
-    code.extend(&[0x48, 0xC7, 0x44, 0x24, 0x28]); // mov qword [rsp+40], FILE_ATTRIBUTE_NORMAL
-    code.extend(&0x80u32.to_le_bytes());
-    code.extend(&[0x48, 0xC7, 0x44, 0x24, 0x30, 0x00, 0x00, 0x00, 0x00]);
+    code.extend(&[0x48, 0xC7, 0x44, 0x24, 0x20, 0x02, 0x00, 0x00, 0x00]); // [rsp+32] = CREATE_ALWAYS
+    code.extend(&[0x48, 0xC7, 0x44, 0x24, 0x28, 0x80, 0x00, 0x00, 0x00]); // [rsp+40] = FILE_ATTRIBUTE_NORMAL
+    code.extend(&[0x48, 0xC7, 0x44, 0x24, 0x30, 0x00, 0x00, 0x00, 0x00]); // [rsp+48] = NULL
     
-    let call_pos5 = code_start as i64 + code.len() as i64 + 6;
-    let cf_offset2 = (iat_rva + 32) as i64 - call_pos5;
+    let call_cf2 = code_start as i64 + code.len() as i64 + 6;
     code.extend(&[0xFF, 0x15]);
-    code.extend(&(cf_offset2 as i32).to_le_bytes());
+    code.extend(&(((iat_rva + 32) as i64 - call_cf2) as i32).to_le_bytes());
     
     // Save output handle to [rsp+72]
     code.extend(&[0x48, 0x89, 0x44, 0x24, 0x48]);
     
-    // WriteFile(handle, buffer, size, &bytesWritten, NULL)
-    code.extend(&[0x48, 0x8B, 0x4C, 0x24, 0x48]); // mov rcx, [rsp+72]
-    code.extend(&[0x48, 0x8B, 0x54, 0x24, 0x50]); // mov rdx, [rsp+80]
-    code.extend(&[0x41, 0xB8]); // mov r8d, size
+    // === WriteFile ===
+    code.extend(&[0x48, 0x8B, 0x4C, 0x24, 0x48]); // mov rcx, [rsp+72] (handle)
+    code.extend(&[0x48, 0x8B, 0x54, 0x24, 0x50]); // mov rdx, [rsp+80] (buffer)
+    code.extend(&[0x41, 0xB8]); // mov r8d, write_size
     code.extend(&(write_size as u32).to_le_bytes());
-    code.extend(&[0x4C, 0x8D, 0x4C, 0x24, 0x40]); // lea r9, [rsp+64]
-    code.extend(&[0x48, 0xC7, 0x44, 0x24, 0x20, 0x00, 0x00, 0x00, 0x00]);
+    code.extend(&[0x4C, 0x8D, 0x4C, 0x24, 0x40]); // lea r9, [rsp+64] (bytesWritten)
+    code.extend(&[0x48, 0xC7, 0x44, 0x24, 0x20, 0x00, 0x00, 0x00, 0x00]); // [rsp+32] = NULL
     
-    let call_pos6 = code_start as i64 + code.len() as i64 + 6;
-    let wf_offset = (iat_rva + 8) as i64 - call_pos6;
+    let call_wf = code_start as i64 + code.len() as i64 + 6;
     code.extend(&[0xFF, 0x15]);
-    code.extend(&(wf_offset as i32).to_le_bytes());
+    code.extend(&(((iat_rva + 8) as i64 - call_wf) as i32).to_le_bytes());
     
-    // CloseHandle(output)
+    // === CloseHandle(output) ===
     code.extend(&[0x48, 0x8B, 0x4C, 0x24, 0x48]); // mov rcx, [rsp+72]
-    let call_pos7 = code_start as i64 + code.len() as i64 + 6;
-    let ch_offset2 = (iat_rva + 48) as i64 - call_pos7;
+    let call_ch2 = code_start as i64 + code.len() as i64 + 6;
     code.extend(&[0xFF, 0x15]);
-    code.extend(&(ch_offset2 as i32).to_le_bytes());
+    code.extend(&(((iat_rva + 48) as i64 - call_ch2) as i32).to_le_bytes());
     
-    // ExitProcess(0)
+    // === ExitProcess(0) ===
     code.extend(&[0x31, 0xC9]); // xor ecx, ecx
-    let call_pos8 = code_start as i64 + code.len() as i64 + 6;
-    let ep_offset = (iat_rva + 16) as i64 - call_pos8;
+    let call_ep = code_start as i64 + code.len() as i64 + 6;
     code.extend(&[0xFF, 0x15]);
-    code.extend(&(ep_offset as i32).to_le_bytes());
+    code.extend(&(((iat_rva + 16) as i64 - call_ep) as i32).to_le_bytes());
     
     code.resize(text_size as usize, 0xCC);
     pe.extend(&code);
     
-    // .rdata section
+    // === .rdata section ===
     let mut rdata = vec![0u8; rdata_size as usize];
     
-    let hint_getstdhandle = hint_name_rva;
-    let hint_writefile = hint_name_rva + 16;
-    let hint_exitprocess = hint_name_rva + 32;
-    let hint_virtualalloc = hint_name_rva + 48;
-    let hint_createfilea = hint_name_rva + 64;
-    let hint_readfile = hint_name_rva + 80;
-    let hint_closehandle = hint_name_rva + 96;
+    // IAT entries point to hint/name
+    let hints = [
+        hint_name_rva,        // GetStdHandle
+        hint_name_rva + 16,   // WriteFile
+        hint_name_rva + 32,   // ExitProcess
+        hint_name_rva + 48,   // VirtualAlloc
+        hint_name_rva + 64,   // CreateFileA
+        hint_name_rva + 80,   // ReadFile
+        hint_name_rva + 96,   // CloseHandle
+    ];
     
-    // IAT
-    rdata[0..8].copy_from_slice(&(hint_getstdhandle as u64).to_le_bytes());
-    rdata[8..16].copy_from_slice(&(hint_writefile as u64).to_le_bytes());
-    rdata[16..24].copy_from_slice(&(hint_exitprocess as u64).to_le_bytes());
-    rdata[24..32].copy_from_slice(&(hint_virtualalloc as u64).to_le_bytes());
-    rdata[32..40].copy_from_slice(&(hint_createfilea as u64).to_le_bytes());
-    rdata[40..48].copy_from_slice(&(hint_readfile as u64).to_le_bytes());
-    rdata[48..56].copy_from_slice(&(hint_closehandle as u64).to_le_bytes());
+    for (i, hint) in hints.iter().enumerate() {
+        rdata[i*8..i*8+8].copy_from_slice(&(*hint as u64).to_le_bytes());
+    }
     
     // IDT
-    let idt_offset = 0x60usize;
-    rdata[idt_offset..idt_offset+4].copy_from_slice(&ilt_rva.to_le_bytes());
-    rdata[idt_offset+12..idt_offset+16].copy_from_slice(&dll_name_rva.to_le_bytes());
-    rdata[idt_offset+16..idt_offset+20].copy_from_slice(&iat_rva.to_le_bytes());
+    let idt_off = 0x60usize;
+    rdata[idt_off..idt_off+4].copy_from_slice(&ilt_rva.to_le_bytes());
+    rdata[idt_off+12..idt_off+16].copy_from_slice(&dll_name_rva.to_le_bytes());
+    rdata[idt_off+16..idt_off+20].copy_from_slice(&iat_rva.to_le_bytes());
     
-    // ILT
-    let ilt_offset = 0xA0usize;
-    rdata[ilt_offset..ilt_offset+8].copy_from_slice(&(hint_getstdhandle as u64).to_le_bytes());
-    rdata[ilt_offset+8..ilt_offset+16].copy_from_slice(&(hint_writefile as u64).to_le_bytes());
-    rdata[ilt_offset+16..ilt_offset+24].copy_from_slice(&(hint_exitprocess as u64).to_le_bytes());
-    rdata[ilt_offset+24..ilt_offset+32].copy_from_slice(&(hint_virtualalloc as u64).to_le_bytes());
-    rdata[ilt_offset+32..ilt_offset+40].copy_from_slice(&(hint_createfilea as u64).to_le_bytes());
-    rdata[ilt_offset+40..ilt_offset+48].copy_from_slice(&(hint_readfile as u64).to_le_bytes());
-    rdata[ilt_offset+48..ilt_offset+56].copy_from_slice(&(hint_closehandle as u64).to_le_bytes());
+    // ILT (same as IAT)
+    let ilt_off = 0xC0usize;
+    for (i, hint) in hints.iter().enumerate() {
+        rdata[ilt_off+i*8..ilt_off+i*8+8].copy_from_slice(&(*hint as u64).to_le_bytes());
+    }
     
     // Hint/Name entries
-    let hnt_offset = 0x100usize;
-    rdata[hnt_offset] = 0; rdata[hnt_offset+1] = 0;
-    rdata[hnt_offset+2..hnt_offset+15].copy_from_slice(b"GetStdHandle\0");
-    rdata[hnt_offset+16] = 0; rdata[hnt_offset+17] = 0;
-    rdata[hnt_offset+18..hnt_offset+28].copy_from_slice(b"WriteFile\0");
-    rdata[hnt_offset+32] = 0; rdata[hnt_offset+33] = 0;
-    rdata[hnt_offset+34..hnt_offset+46].copy_from_slice(b"ExitProcess\0");
-    rdata[hnt_offset+48] = 0; rdata[hnt_offset+49] = 0;
-    rdata[hnt_offset+50..hnt_offset+63].copy_from_slice(b"VirtualAlloc\0");
-    rdata[hnt_offset+64] = 0; rdata[hnt_offset+65] = 0;
-    rdata[hnt_offset+66..hnt_offset+78].copy_from_slice(b"CreateFileA\0");
-    rdata[hnt_offset+80] = 0; rdata[hnt_offset+81] = 0;
-    rdata[hnt_offset+82..hnt_offset+91].copy_from_slice(b"ReadFile\0");
-    rdata[hnt_offset+96] = 0; rdata[hnt_offset+97] = 0;
-    rdata[hnt_offset+98..hnt_offset+110].copy_from_slice(b"CloseHandle\0");
+    let hnt_off = 0x140usize;
+    let names = [
+        (0, b"GetStdHandle\0" as &[u8]),
+        (16, b"WriteFile\0"),
+        (32, b"ExitProcess\0"),
+        (48, b"VirtualAlloc\0"),
+        (64, b"CreateFileA\0"),
+        (80, b"ReadFile\0"),
+        (96, b"CloseHandle\0"),
+    ];
+    for (off, name) in names {
+        rdata[hnt_off+off] = 0;
+        rdata[hnt_off+off+1] = 0;
+        rdata[hnt_off+off+2..hnt_off+off+2+name.len()].copy_from_slice(name);
+    }
     
     // DLL name
-    let dll_offset = 0x180usize;
-    rdata[dll_offset..dll_offset+13].copy_from_slice(b"kernel32.dll\0");
+    let dll_off = 0x200usize;
+    rdata[dll_off..dll_off+13].copy_from_slice(b"kernel32.dll\0");
     
     pe.extend(&rdata);
     
-    // .data section
+    // === .data section ===
     let mut data = vec![0u8; data_size as usize];
-    let input_bytes = input_path.as_bytes();
-    data[..input_bytes.len().min(0xFF)].copy_from_slice(&input_bytes[..input_bytes.len().min(0xFF)]);
-    let output_bytes = output_path.as_bytes();
-    data[0x100..0x100+output_bytes.len().min(0xFF)].copy_from_slice(&output_bytes[..output_bytes.len().min(0xFF)]);
+    let inp_bytes = input_path.as_bytes();
+    data[..inp_bytes.len().min(0xFF)].copy_from_slice(&inp_bytes[..inp_bytes.len().min(0xFF)]);
+    let out_bytes = output_path.as_bytes();
+    data[0x100..0x100+out_bytes.len().min(0xFF)].copy_from_slice(&out_bytes[..out_bytes.len().min(0xFF)]);
     
     pe.extend(&data);
     
