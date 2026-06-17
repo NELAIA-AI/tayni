@@ -715,6 +715,10 @@ pub fn generate_pe_from_graph(graph: &Graph) -> Vec<u8> {
     // Check for File I/O pattern: FOP + FRD + FCL + PRT
     let has_fop = graph.nodes.iter().any(|n| matches!(n, Node::Operation { op: Op::Fop, .. }));
     let has_frd = graph.nodes.iter().any(|n| matches!(n, Node::Operation { op: Op::Frd, .. }));
+    let _has_fwr = graph.nodes.iter().any(|n| matches!(n, Node::Operation { op: Op::Fwr, .. }));
+    
+    // TODO: Compiler pattern (FOP + FRD + FWR) needs more work
+    // For now, fall through to other patterns
     
     if has_fop && has_frd && has_prt {
         // Extract file path and buffer info
@@ -748,6 +752,32 @@ pub fn generate_pe_from_graph(graph: &Graph) -> Vec<u8> {
     // ALC + PUT + PRT case (with computed values)
     if alc_id.is_some() && has_prt {
         return generate_pe_with_buffer(alc_size, &put_ops, prt_len);
+    }
+    
+    // Check for TCP server pattern: TCP + BND + LST + ACC
+    let has_tcp = graph.nodes.iter().any(|n| matches!(n, Node::Operation { op: Op::Tcp, .. }));
+    let has_bnd = graph.nodes.iter().any(|n| matches!(n, Node::Operation { op: Op::Bnd, .. }));
+    let has_lst = graph.nodes.iter().any(|n| matches!(n, Node::Operation { op: Op::Lst, .. }));
+    let has_acc = graph.nodes.iter().any(|n| matches!(n, Node::Operation { op: Op::Acc, .. }));
+    
+    if has_tcp && has_bnd && has_lst && has_acc {
+        // Extract port from BND operation
+        let mut port: u16 = 8080;
+        for node in &graph.nodes {
+            if let Node::Operation { op: Op::Bnd, args, .. } = node {
+                if let Some(p) = get_val(&args, 1, &values) {
+                    port = p as u16;
+                }
+            }
+        }
+        
+        // Find response string (first string that looks like HTTP response or JSON)
+        let response = strings.values()
+            .find(|s| s.contains("HTTP") || s.contains("{") || s.contains("200"))
+            .cloned()
+            .unwrap_or_else(|| "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\nHello from TAYNI!".to_string());
+        
+        return generate_tcp_server_pe(port, &response);
     }
     
     // Default
@@ -976,6 +1006,265 @@ fn generate_pe_with_fileio(file_path: &str, buf_size: i64, print_len: i64) -> Ve
     let path_bytes = file_path.as_bytes();
     let copy_len = path_bytes.len().min(data_size as usize - 1);
     data[..copy_len].copy_from_slice(&path_bytes[..copy_len]);
+    
+    pe.extend(&data);
+    
+    pe
+}
+
+/// Generate PE compiler (FOP + FRD + FWR + FCL)
+/// Reads input file, processes with PUT operations, writes output file
+fn generate_pe_compiler(input_path: &str, output_path: &str, buf_size: i64, write_size: i64, put_ops: &[(i64, i64)]) -> Vec<u8> {
+    let pe_offset: u32 = 0x80;
+    let num_sections: u16 = 3;
+    let headers_size: u32 = 0x200;
+    
+    let text_rva: u32 = 0x1000;
+    let text_size: u32 = 0x800;
+    let text_file_offset: u32 = 0x200;
+    
+    let rdata_rva: u32 = 0x2000;
+    let rdata_size: u32 = 0x400;
+    let rdata_file_offset: u32 = 0xA00;
+    
+    let data_rva: u32 = 0x3000;
+    let data_size: u32 = 0x400;
+    let data_file_offset: u32 = 0xE00;
+    
+    let image_size: u32 = 0x5000;
+    
+    // IAT: GetStdHandle, WriteFile, ExitProcess, VirtualAlloc, CreateFileA, ReadFile, CloseHandle
+    let iat_rva = rdata_rva;
+    let import_dir_rva = rdata_rva + 0x60;
+    let ilt_rva = rdata_rva + 0xA0;
+    let hint_name_rva = rdata_rva + 0x100;
+    let dll_name_rva = rdata_rva + 0x180;
+    
+    let mut pe = Vec::new();
+    
+    pe.extend(create_dos_header(pe_offset));
+    pe.resize(pe_offset as usize, 0);
+    pe.extend_from_slice(PE_SIGNATURE);
+    pe.extend(create_coff_header(num_sections, 0));
+    
+    let mut opt_header = create_optional_header(
+        text_size, rdata_size + data_size, text_rva, text_rva, image_size, headers_size,
+    );
+    let import_dir_offset = 112 + 8;
+    opt_header[import_dir_offset..import_dir_offset+4].copy_from_slice(&import_dir_rva.to_le_bytes());
+    opt_header[import_dir_offset+4..import_dir_offset+8].copy_from_slice(&40u32.to_le_bytes());
+    pe.extend(opt_header);
+    
+    pe.extend(create_section_header(b".text\0\0\0", text_size, text_rva, text_size, text_file_offset,
+        IMAGE_SCN_CNT_CODE | IMAGE_SCN_MEM_EXECUTE | IMAGE_SCN_MEM_READ));
+    pe.extend(create_section_header(b".rdata\0\0", rdata_size, rdata_rva, rdata_size, rdata_file_offset,
+        IMAGE_SCN_CNT_INITIALIZED_DATA | IMAGE_SCN_MEM_READ));
+    pe.extend(create_section_header(b".data\0\0\0", data_size, data_rva, data_size, data_file_offset,
+        IMAGE_SCN_CNT_INITIALIZED_DATA | IMAGE_SCN_MEM_READ | IMAGE_SCN_MEM_WRITE));
+    
+    pe.resize(text_file_offset as usize, 0);
+    
+    let mut code = Vec::new();
+    let code_start = text_rva;
+    
+    // Prologue
+    code.extend(x64::sub_rsp_imm8(0x68));
+    
+    // VirtualAlloc for buffer
+    code.extend(&[0x31, 0xC9]); // xor ecx, ecx
+    code.extend(&[0x48, 0xC7, 0xC2]); // mov rdx, size
+    code.extend(&(write_size as u32).to_le_bytes());
+    code.extend(&[0x41, 0xB8]); // mov r8d, MEM_COMMIT|MEM_RESERVE
+    code.extend(&0x3000u32.to_le_bytes());
+    code.extend(&[0x41, 0xB9]); // mov r9d, PAGE_READWRITE
+    code.extend(&0x04u32.to_le_bytes());
+    
+    let call_pos = code_start as i64 + code.len() as i64 + 6;
+    let va_offset = (iat_rva + 24) as i64 - call_pos;
+    code.extend(&[0xFF, 0x15]);
+    code.extend(&(va_offset as i32).to_le_bytes());
+    
+    // Save buffer to [rsp+80]
+    code.extend(&[0x48, 0x89, 0x44, 0x24, 0x50]);
+    
+    // CreateFileA for input (GENERIC_READ, OPEN_EXISTING)
+    let input_path_rva = data_rva;
+    let lea_pos = code_start as i64 + code.len() as i64 + 7;
+    let path_offset = input_path_rva as i64 - lea_pos;
+    code.extend(&[0x48, 0x8D, 0x0D]);
+    code.extend(&(path_offset as i32).to_le_bytes());
+    
+    code.extend(&[0x48, 0xC7, 0xC2]); // mov rdx, GENERIC_READ
+    code.extend(&0x80000000u32.to_le_bytes());
+    code.extend(&[0x41, 0xB8, 0x01, 0x00, 0x00, 0x00]); // mov r8d, FILE_SHARE_READ
+    code.extend(&[0x45, 0x31, 0xC9]); // xor r9d, r9d
+    code.extend(&[0x48, 0xC7, 0x44, 0x24, 0x20]); // mov qword [rsp+32], OPEN_EXISTING
+    code.extend(&3u32.to_le_bytes());
+    code.extend(&[0x48, 0xC7, 0x44, 0x24, 0x28, 0x00, 0x00, 0x00, 0x00]);
+    code.extend(&[0x48, 0xC7, 0x44, 0x24, 0x30, 0x00, 0x00, 0x00, 0x00]);
+    
+    let call_pos2 = code_start as i64 + code.len() as i64 + 6;
+    let cf_offset = (iat_rva + 32) as i64 - call_pos2;
+    code.extend(&[0xFF, 0x15]);
+    code.extend(&(cf_offset as i32).to_le_bytes());
+    
+    // Save input handle to [rsp+72]
+    code.extend(&[0x48, 0x89, 0x44, 0x24, 0x48]);
+    
+    // ReadFile(handle, buffer, size, &bytesRead, NULL)
+    code.extend(&[0x48, 0x8B, 0x4C, 0x24, 0x48]); // mov rcx, [rsp+72]
+    code.extend(&[0x48, 0x8B, 0x54, 0x24, 0x50]); // mov rdx, [rsp+80]
+    code.extend(&[0x41, 0xB8]); // mov r8d, size
+    code.extend(&(buf_size as u32).to_le_bytes());
+    code.extend(&[0x4C, 0x8D, 0x4C, 0x24, 0x40]); // lea r9, [rsp+64]
+    code.extend(&[0x48, 0xC7, 0x44, 0x24, 0x20, 0x00, 0x00, 0x00, 0x00]);
+    
+    let call_pos3 = code_start as i64 + code.len() as i64 + 6;
+    let rf_offset = (iat_rva + 40) as i64 - call_pos3;
+    code.extend(&[0xFF, 0x15]);
+    code.extend(&(rf_offset as i32).to_le_bytes());
+    
+    // CloseHandle(input)
+    code.extend(&[0x48, 0x8B, 0x4C, 0x24, 0x48]); // mov rcx, [rsp+72]
+    let call_pos4 = code_start as i64 + code.len() as i64 + 6;
+    let ch_offset = (iat_rva + 48) as i64 - call_pos4;
+    code.extend(&[0xFF, 0x15]);
+    code.extend(&(ch_offset as i32).to_le_bytes());
+    
+    // Apply PUT operations to buffer
+    // mov rdi, [rsp+80] (buffer)
+    code.extend(&[0x48, 0x8B, 0x7C, 0x24, 0x50]);
+    for (idx, val) in put_ops {
+        // mov byte [rdi+idx], val
+        if *idx < 128 {
+            code.extend(&[0xC6, 0x47, *idx as u8, *val as u8]);
+        } else {
+            code.extend(&[0xC6, 0x87]);
+            code.extend(&(*idx as u32).to_le_bytes());
+            code.push(*val as u8);
+        }
+    }
+    
+    // CreateFileA for output (GENERIC_WRITE, CREATE_ALWAYS)
+    let output_path_rva = data_rva + 0x100;
+    let lea_pos2 = code_start as i64 + code.len() as i64 + 7;
+    let path_offset2 = output_path_rva as i64 - lea_pos2;
+    code.extend(&[0x48, 0x8D, 0x0D]);
+    code.extend(&(path_offset2 as i32).to_le_bytes());
+    
+    code.extend(&[0x48, 0xC7, 0xC2]); // mov rdx, GENERIC_WRITE
+    code.extend(&0x40000000u32.to_le_bytes());
+    code.extend(&[0x45, 0x31, 0xC0]); // xor r8d, r8d
+    code.extend(&[0x45, 0x31, 0xC9]); // xor r9d, r9d
+    code.extend(&[0x48, 0xC7, 0x44, 0x24, 0x20]); // mov qword [rsp+32], CREATE_ALWAYS
+    code.extend(&2u32.to_le_bytes());
+    code.extend(&[0x48, 0xC7, 0x44, 0x24, 0x28]); // mov qword [rsp+40], FILE_ATTRIBUTE_NORMAL
+    code.extend(&0x80u32.to_le_bytes());
+    code.extend(&[0x48, 0xC7, 0x44, 0x24, 0x30, 0x00, 0x00, 0x00, 0x00]);
+    
+    let call_pos5 = code_start as i64 + code.len() as i64 + 6;
+    let cf_offset2 = (iat_rva + 32) as i64 - call_pos5;
+    code.extend(&[0xFF, 0x15]);
+    code.extend(&(cf_offset2 as i32).to_le_bytes());
+    
+    // Save output handle to [rsp+72]
+    code.extend(&[0x48, 0x89, 0x44, 0x24, 0x48]);
+    
+    // WriteFile(handle, buffer, size, &bytesWritten, NULL)
+    code.extend(&[0x48, 0x8B, 0x4C, 0x24, 0x48]); // mov rcx, [rsp+72]
+    code.extend(&[0x48, 0x8B, 0x54, 0x24, 0x50]); // mov rdx, [rsp+80]
+    code.extend(&[0x41, 0xB8]); // mov r8d, size
+    code.extend(&(write_size as u32).to_le_bytes());
+    code.extend(&[0x4C, 0x8D, 0x4C, 0x24, 0x40]); // lea r9, [rsp+64]
+    code.extend(&[0x48, 0xC7, 0x44, 0x24, 0x20, 0x00, 0x00, 0x00, 0x00]);
+    
+    let call_pos6 = code_start as i64 + code.len() as i64 + 6;
+    let wf_offset = (iat_rva + 8) as i64 - call_pos6;
+    code.extend(&[0xFF, 0x15]);
+    code.extend(&(wf_offset as i32).to_le_bytes());
+    
+    // CloseHandle(output)
+    code.extend(&[0x48, 0x8B, 0x4C, 0x24, 0x48]); // mov rcx, [rsp+72]
+    let call_pos7 = code_start as i64 + code.len() as i64 + 6;
+    let ch_offset2 = (iat_rva + 48) as i64 - call_pos7;
+    code.extend(&[0xFF, 0x15]);
+    code.extend(&(ch_offset2 as i32).to_le_bytes());
+    
+    // ExitProcess(0)
+    code.extend(&[0x31, 0xC9]); // xor ecx, ecx
+    let call_pos8 = code_start as i64 + code.len() as i64 + 6;
+    let ep_offset = (iat_rva + 16) as i64 - call_pos8;
+    code.extend(&[0xFF, 0x15]);
+    code.extend(&(ep_offset as i32).to_le_bytes());
+    
+    code.resize(text_size as usize, 0xCC);
+    pe.extend(&code);
+    
+    // .rdata section
+    let mut rdata = vec![0u8; rdata_size as usize];
+    
+    let hint_getstdhandle = hint_name_rva;
+    let hint_writefile = hint_name_rva + 16;
+    let hint_exitprocess = hint_name_rva + 32;
+    let hint_virtualalloc = hint_name_rva + 48;
+    let hint_createfilea = hint_name_rva + 64;
+    let hint_readfile = hint_name_rva + 80;
+    let hint_closehandle = hint_name_rva + 96;
+    
+    // IAT
+    rdata[0..8].copy_from_slice(&(hint_getstdhandle as u64).to_le_bytes());
+    rdata[8..16].copy_from_slice(&(hint_writefile as u64).to_le_bytes());
+    rdata[16..24].copy_from_slice(&(hint_exitprocess as u64).to_le_bytes());
+    rdata[24..32].copy_from_slice(&(hint_virtualalloc as u64).to_le_bytes());
+    rdata[32..40].copy_from_slice(&(hint_createfilea as u64).to_le_bytes());
+    rdata[40..48].copy_from_slice(&(hint_readfile as u64).to_le_bytes());
+    rdata[48..56].copy_from_slice(&(hint_closehandle as u64).to_le_bytes());
+    
+    // IDT
+    let idt_offset = 0x60usize;
+    rdata[idt_offset..idt_offset+4].copy_from_slice(&ilt_rva.to_le_bytes());
+    rdata[idt_offset+12..idt_offset+16].copy_from_slice(&dll_name_rva.to_le_bytes());
+    rdata[idt_offset+16..idt_offset+20].copy_from_slice(&iat_rva.to_le_bytes());
+    
+    // ILT
+    let ilt_offset = 0xA0usize;
+    rdata[ilt_offset..ilt_offset+8].copy_from_slice(&(hint_getstdhandle as u64).to_le_bytes());
+    rdata[ilt_offset+8..ilt_offset+16].copy_from_slice(&(hint_writefile as u64).to_le_bytes());
+    rdata[ilt_offset+16..ilt_offset+24].copy_from_slice(&(hint_exitprocess as u64).to_le_bytes());
+    rdata[ilt_offset+24..ilt_offset+32].copy_from_slice(&(hint_virtualalloc as u64).to_le_bytes());
+    rdata[ilt_offset+32..ilt_offset+40].copy_from_slice(&(hint_createfilea as u64).to_le_bytes());
+    rdata[ilt_offset+40..ilt_offset+48].copy_from_slice(&(hint_readfile as u64).to_le_bytes());
+    rdata[ilt_offset+48..ilt_offset+56].copy_from_slice(&(hint_closehandle as u64).to_le_bytes());
+    
+    // Hint/Name entries
+    let hnt_offset = 0x100usize;
+    rdata[hnt_offset] = 0; rdata[hnt_offset+1] = 0;
+    rdata[hnt_offset+2..hnt_offset+15].copy_from_slice(b"GetStdHandle\0");
+    rdata[hnt_offset+16] = 0; rdata[hnt_offset+17] = 0;
+    rdata[hnt_offset+18..hnt_offset+28].copy_from_slice(b"WriteFile\0");
+    rdata[hnt_offset+32] = 0; rdata[hnt_offset+33] = 0;
+    rdata[hnt_offset+34..hnt_offset+46].copy_from_slice(b"ExitProcess\0");
+    rdata[hnt_offset+48] = 0; rdata[hnt_offset+49] = 0;
+    rdata[hnt_offset+50..hnt_offset+63].copy_from_slice(b"VirtualAlloc\0");
+    rdata[hnt_offset+64] = 0; rdata[hnt_offset+65] = 0;
+    rdata[hnt_offset+66..hnt_offset+78].copy_from_slice(b"CreateFileA\0");
+    rdata[hnt_offset+80] = 0; rdata[hnt_offset+81] = 0;
+    rdata[hnt_offset+82..hnt_offset+91].copy_from_slice(b"ReadFile\0");
+    rdata[hnt_offset+96] = 0; rdata[hnt_offset+97] = 0;
+    rdata[hnt_offset+98..hnt_offset+110].copy_from_slice(b"CloseHandle\0");
+    
+    // DLL name
+    let dll_offset = 0x180usize;
+    rdata[dll_offset..dll_offset+13].copy_from_slice(b"kernel32.dll\0");
+    
+    pe.extend(&rdata);
+    
+    // .data section
+    let mut data = vec![0u8; data_size as usize];
+    let input_bytes = input_path.as_bytes();
+    data[..input_bytes.len().min(0xFF)].copy_from_slice(&input_bytes[..input_bytes.len().min(0xFF)]);
+    let output_bytes = output_path.as_bytes();
+    data[0x100..0x100+output_bytes.len().min(0xFF)].copy_from_slice(&output_bytes[..output_bytes.len().min(0xFF)]);
     
     pe.extend(&data);
     

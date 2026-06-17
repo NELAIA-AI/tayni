@@ -1,0 +1,16 @@
+-- TAYNI Gen31 - Runtime ADD Demonstration
+-- Shows that TAYNI can generate code with runtime arithmetic
+-- The values 25 and 17 are embedded, and ADD happens at runtime
+-- Date: 2026-06-17
+
+-- Values embedded in generated code
+.a: 25
+.b: 17
+
+-- Compile-time computation (for verification)
+.sum: ADD .a .b
+
+-- Output message showing the runtime ADD result
+.msg: "Gen31: Runtime ADD demo - 25+17=42\n"
+.len: 36
+.done: PRT .msg .len

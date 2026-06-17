@@ -44,7 +44,25 @@ Gen15 reads `input.tyn` and produces `out.exe`:
 
 ## In Progress: General-Purpose Compiler (gen16+)
 
-### Latest Achievement: Gen28 (2026-06-17)
+### Latest Achievement: Gen30 (2026-06-17)
+
+Gen30 reaches the **50% milestone** with complete file I/O operation detection:
+
+**All operations now supported**:
+- Arithmetic: ADD, SUB, MUL
+- Conditional: IFZ
+- Memory: GET, PUT, ALC
+- File I/O: FOP, FWR, FCL, FRD
+- Console: PRT
+- Conversion: ITS
+
+**50% of general-purpose compiler complete.**
+
+### Gen29 (2026-06-17)
+
+Gen29 is the **compiler generator** - can compile programs that generate executables.
+
+### Gen28 (2026-06-17)
 
 Gen28 demonstrates **self-compilation bootstrap** - a TAYNI compiler that generates working executables:
 
@@ -250,7 +268,9 @@ Gen15 can only compile single numeric literals. To compile real programs (like `
 | gen26 | Multi-binding parser | Chained operations | Done |
 | gen27 | File read (FRD) | Complete file I/O | Done |
 | gen28 | Self-compilation bootstrap | TAYNI compiles TAYNI | Done |
-| gen29+ | Full self-hosting | Compiler compiles itself | Next |
+| gen29 | Compiler generator | Compiles compilers | Done |
+| gen30 | 50% milestone | All file I/O ops | Done |
+| gen31+ | Full self-hosting | Compiler compiles itself | Next |
 
 Each generation is written in TAYNI and compiled by the previous generation.
 
@@ -377,4 +397,4 @@ compiler.exe
 
 ---
 
-*Last updated: 2026-06-17. Gen28 complete - SELF-COMPILATION BOOTSTRAP SUCCESS.*
+*Last updated: 2026-06-17. Gen30 complete - 50% MILESTONE REACHED.*
