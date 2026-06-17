@@ -1,0 +1,338 @@
+-- TAYNI Gen16 - Arithmetic Compiler (v1 minimal)
+-- Reads program.tyn, parses 2 numeric bindings + 1 operation
+-- Generates PE that returns computed value as exit code
+-- Date: 2026-06-16
+
+.zero: 0
+.one: 1
+
+-- ===== READ PROGRAM =====
+.ipath: "program.tyn"
+.ih: FOP .ipath .zero
+.ibuf: ALC 512
+.ilen: FRD .ih .ibuf 512
+.ic: FCL .ih
+
+-- ===== PARSE LINE 0 =====
+-- Expected: ".a: N\n" where N is 1-3 digits
+-- Bytes: .=46, a=97, :=58, space=32, then digits
+-- Value starts at byte 4
+.l0_d1: GET .ibuf 4
+.l0_d2: GET .ibuf 5
+.l0_d3: GET .ibuf 6
+
+-- Convert first digit
+.l0_v1: SUB .l0_d1 48
+
+-- Check if d2 is terminator (newline=10, cr=13)
+.l0_d2_nl: SUB .l0_d2 10
+.l0_d2_cr: SUB .l0_d2 13
+
+-- 2-digit value
+.l0_v2_d: SUB .l0_d2 48
+.l0_v1x10: MUL .l0_v1 10
+.l0_2d: ADD .l0_v1x10 .l0_v2_d
+
+-- 3-digit value
+.l0_v3_d: SUB .l0_d3 48
+.l0_2dx10: MUL .l0_2d 10
+.l0_3d: ADD .l0_2dx10 .l0_v3_d
+
+-- Select: 1-digit if d2 is newline/cr, 2-digit if d3 is newline/cr
+.l0_d3_nl: SUB .l0_d3 10
+.l0_d3_cr: SUB .l0_d3 13
+
+.l0_if_d2nl: IFZ .l0_d2_nl .l0_v1 .l0_2d
+.l0_if_d2cr: IFZ .l0_d2_cr .l0_v1 .l0_if_d2nl
+.l0_if_d3nl: IFZ .l0_d3_nl .l0_if_d2cr .l0_3d
+.val0: IFZ .l0_d3_cr .l0_if_d2cr .l0_if_d3nl
+
+-- ===== FIND LINE 1 START =====
+-- Scan bytes 4-15 for newline to find end of line 0
+.s4: GET .ibuf 4
+.s5: GET .ibuf 5
+.s6: GET .ibuf 6
+.s7: GET .ibuf 7
+.s8: GET .ibuf 8
+.s9: GET .ibuf 9
+.s10: GET .ibuf 10
+.s11: GET .ibuf 11
+
+.sn4: SUB .s4 10
+.sn5: SUB .s5 10
+.sn6: SUB .s6 10
+.sn7: SUB .s7 10
+.sn8: SUB .s8 10
+.sn9: SUB .s9 10
+.sn10: SUB .s10 10
+.sn11: SUB .s11 10
+
+-- First newline position (searching from byte 4)
+.p11: IFZ .sn11 12 13
+.p10: IFZ .sn10 11 .p11
+.p9: IFZ .sn9 10 .p10
+.p8: IFZ .sn8 9 .p9
+.p7: IFZ .sn7 8 .p8
+.p6: IFZ .sn6 7 .p7
+.p5: IFZ .sn5 6 .p6
+.l1_start: IFZ .sn4 5 .p5
+
+-- ===== PARSE LINE 1 =====
+-- Could be ".b: N\n" or ".c: ADD .a .b\n" or "!\n"
+-- Value position = l1_start + 4
+.l1_vpos: ADD .l1_start 4
+.l1_c0: GET .ibuf .l1_vpos
+
+-- Check if line1 starts with "!" (terminator)
+.l1_first: GET .ibuf .l1_start
+.l1_is_bang: SUB .l1_first 33
+
+-- Parse as numeric (same logic)
+.l1_vp1: ADD .l1_vpos 1
+.l1_vp2: ADD .l1_vpos 2
+.l1_c1: GET .ibuf .l1_vp1
+.l1_c2: GET .ibuf .l1_vp2
+
+.l1_v1: SUB .l1_c0 48
+.l1_v2_d: SUB .l1_c1 48
+.l1_v1x10: MUL .l1_v1 10
+.l1_2d: ADD .l1_v1x10 .l1_v2_d
+
+.l1_c1_nl: SUB .l1_c1 10
+.l1_c1_cr: SUB .l1_c1 13
+
+.l1_if_c1nl: IFZ .l1_c1_nl .l1_v1 .l1_2d
+.val1: IFZ .l1_c1_cr .l1_v1 .l1_if_c1nl
+
+-- ===== FIND LINE 2 START =====
+-- Scan from l1_start for next newline
+.l2_s0: ADD .l1_start 4
+.l2_s1: ADD .l1_start 5
+.l2_s2: ADD .l1_start 6
+.l2_s3: ADD .l1_start 7
+.l2_s4: ADD .l1_start 8
+.l2_s5: ADD .l1_start 9
+
+.l2_c0: GET .ibuf .l2_s0
+.l2_c1: GET .ibuf .l2_s1
+.l2_c2: GET .ibuf .l2_s2
+.l2_c3: GET .ibuf .l2_s3
+.l2_c4: GET .ibuf .l2_s4
+.l2_c5: GET .ibuf .l2_s5
+
+.l2_n0: SUB .l2_c0 10
+.l2_n1: SUB .l2_c1 10
+.l2_n2: SUB .l2_c2 10
+.l2_n3: SUB .l2_c3 10
+.l2_n4: SUB .l2_c4 10
+.l2_n5: SUB .l2_c5 10
+
+.l2_p5: IFZ .l2_n5 .l2_s5 .l2_s5
+.l2_p4: IFZ .l2_n4 .l2_s4 .l2_p5
+.l2_p3: IFZ .l2_n3 .l2_s3 .l2_p4
+.l2_p2: IFZ .l2_n2 .l2_s2 .l2_p3
+.l2_p1: IFZ .l2_n1 .l2_s1 .l2_p2
+.l2_nl_pos: IFZ .l2_n0 .l2_s0 .l2_p1
+
+.l2_start: ADD .l2_nl_pos 1
+
+-- ===== PARSE LINE 2 (operation or terminator) =====
+.l2_first: GET .ibuf .l2_start
+.l2_is_bang: SUB .l2_first 33
+
+-- If line 2 starts with ".", it's ".c: OP .a .b"
+-- Value at l2_start+4: first letter of operation
+.l2_vpos: ADD .l2_start 4
+.l2_op: GET .ibuf .l2_vpos
+
+-- A=65 (ADD), S=83 (SUB), M=77 (MUL)
+.l2_is_add: SUB .l2_op 65
+.l2_is_sub: SUB .l2_op 83
+.l2_is_mul: SUB .l2_op 77
+
+-- Compute all three
+.op_add: ADD .val0 .val1
+.op_sub: SUB .val0 .val1
+.op_mul: MUL .val0 .val1
+
+-- Select by operation
+.res_sub: IFZ .l2_is_sub .op_sub .op_mul
+.res_op: IFZ .l2_is_add .op_add .res_sub
+
+-- ===== DETERMINE FINAL VALUE =====
+-- If line1 is "!", result is val0
+-- If line2 is "!", result is val1
+-- Otherwise result is the operation
+.res_if_l1_term: IFZ .l1_is_bang .val0 .val1
+.res_if_l2_term: IFZ .l2_is_bang .res_if_l1_term .res_op
+.last_val: IFZ .l1_is_bang .val0 .res_if_l2_term
+
+-- ===== GENERATE PE =====
+.pe: ALC 4096
+
+-- DOS Header
+.dos0: PUT .pe 0 77
+.dos1: PUT .pe 1 90
+.dos60: PUT .pe 60 64
+
+-- PE Signature
+.pe64: PUT .pe 64 80
+.pe65: PUT .pe 65 69
+
+-- COFF Header
+.coff0: PUT .pe 68 100
+.coff1: PUT .pe 69 134
+.coff2: PUT .pe 70 2
+.coff16: PUT .pe 84 240
+.coff18: PUT .pe 86 34
+
+-- Optional Header
+.opt0: PUT .pe 88 11
+.opt1: PUT .pe 89 2
+.opt2: PUT .pe 90 14
+.opt5: PUT .pe 93 4
+.opt16: PUT .pe 104 0
+.opt17: PUT .pe 105 16
+.opt20: PUT .pe 108 0
+.opt21: PUT .pe 109 16
+.opt27: PUT .pe 115 64
+.opt28: PUT .pe 116 1
+.opt32: PUT .pe 120 0
+.opt33: PUT .pe 121 16
+.opt36: PUT .pe 124 0
+.opt37: PUT .pe 125 2
+.opt40: PUT .pe 128 6
+.opt48: PUT .pe 136 6
+.opt56: PUT .pe 144 0
+.opt57: PUT .pe 145 64
+.opt60: PUT .pe 148 0
+.opt61: PUT .pe 149 2
+.opt68: PUT .pe 156 3
+.opt70: PUT .pe 158 96
+.opt71: PUT .pe 159 129
+.opt74: PUT .pe 162 16
+.opt81: PUT .pe 169 16
+.opt90: PUT .pe 178 16
+.opt97: PUT .pe 185 16
+.opt108: PUT .pe 196 16
+
+-- Import Directory
+.dd0: PUT .pe 208 0
+.dd1: PUT .pe 209 32
+.dd4: PUT .pe 212 60
+.dd96: PUT .pe 296 0
+.dd97: PUT .pe 297 33
+.dd100: PUT .pe 300 64
+
+-- .text section
+.sec0: PUT .pe 328 46
+.sec1: PUT .pe 329 116
+.sec2: PUT .pe 330 101
+.sec3: PUT .pe 331 120
+.sec4: PUT .pe 332 116
+.sec8: PUT .pe 336 0
+.sec9: PUT .pe 337 4
+.sec12: PUT .pe 340 0
+.sec13: PUT .pe 341 16
+.sec16: PUT .pe 344 0
+.sec17: PUT .pe 345 4
+.sec20: PUT .pe 348 0
+.sec21: PUT .pe 349 2
+.sec36: PUT .pe 364 32
+.sec39: PUT .pe 367 96
+
+-- .rdata section
+.rda0: PUT .pe 368 46
+.rda1: PUT .pe 369 114
+.rda2: PUT .pe 370 100
+.rda3: PUT .pe 371 97
+.rda4: PUT .pe 372 116
+.rda5: PUT .pe 373 97
+.rda8: PUT .pe 376 0
+.rda9: PUT .pe 377 4
+.rda12: PUT .pe 380 0
+.rda13: PUT .pe 381 32
+.rda16: PUT .pe 384 0
+.rda17: PUT .pe 385 4
+.rda20: PUT .pe 388 0
+.rda21: PUT .pe 389 6
+.rda36: PUT .pe 404 64
+.rda39: PUT .pe 407 64
+
+-- CODE: mov eax, last_val; ret
+.code0: PUT .pe 512 184
+.code1: PUT .pe 513 .last_val
+.code2: PUT .pe 514 0
+.code3: PUT .pe 515 0
+.code4: PUT .pe 516 0
+.code5: PUT .pe 517 195
+
+-- IMPORTS
+.imp0: PUT .pe 1536 128
+.imp1: PUT .pe 1537 32
+.imp12: PUT .pe 1548 64
+.imp13: PUT .pe 1549 33
+.imp16: PUT .pe 1552 0
+.imp17: PUT .pe 1553 33
+
+-- ILT
+.ilt0: PUT .pe 1664 80
+.ilt1: PUT .pe 1665 33
+
+-- IAT
+.iat0: PUT .pe 1792 80
+.iat1: PUT .pe 1793 33
+
+-- DLL name "KERNEL32.dll"
+.dll0: PUT .pe 1856 75
+.dll1: PUT .pe 1857 69
+.dll2: PUT .pe 1858 82
+.dll3: PUT .pe 1859 78
+.dll4: PUT .pe 1860 69
+.dll5: PUT .pe 1861 76
+.dll6: PUT .pe 1862 51
+.dll7: PUT .pe 1863 50
+.dll8: PUT .pe 1864 46
+.dll9: PUT .pe 1865 100
+.dll10: PUT .pe 1866 108
+.dll11: PUT .pe 1867 108
+
+-- Hint/Name "ExitProcess"
+.hn2: PUT .pe 1874 69
+.hn3: PUT .pe 1875 120
+.hn4: PUT .pe 1876 105
+.hn5: PUT .pe 1877 116
+.hn6: PUT .pe 1878 80
+.hn7: PUT .pe 1879 114
+.hn8: PUT .pe 1880 111
+.hn9: PUT .pe 1881 99
+.hn10: PUT .pe 1882 101
+.hn11: PUT .pe 1883 115
+.hn12: PUT .pe 1884 115
+
+-- ===== WRITE OUTPUT =====
+.opath: "out.exe"
+.oh: FOP .opath .one
+.owlen: FWR .oh .pe 2560
+.oc: FCL .oh
+
+-- ===== DISPLAY =====
+.hdr: "Gen16: Arithmetic Compiler\n"
+.ph: PRT .hdr 28
+
+.msg_val: "Result: "
+.pmv: PRT .msg_val 8
+.num: ALC 8
+.its: ITS .last_val .num
+.pn: PRT .num .its
+.nl: "\n"
+.pnl: PRT .nl 1
+
+.msg_out: "-> out.exe generated\n"
+.pmo: PRT .msg_out 21
+
+.f1: FRE .pe
+.f2: FRE .ibuf
+.f3: FRE .num
+
+!

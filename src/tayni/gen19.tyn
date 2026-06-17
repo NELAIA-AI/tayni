@@ -1,0 +1,661 @@
+-- TAYNI Gen19 - TCP Server Compiler
+-- Compiles programs that serve TCP connections
+-- Input: .msg: "response string" then !
+-- Output: PE that listens on port 8080, accepts 1 connection,
+--         sends the response, then exits
+-- Imports: WS2_32.dll (WSAStartup,socket,bind,listen,accept,send,closesocket,WSACleanup)
+--          KERNEL32.dll (ExitProcess)
+-- Date: 2026-06-16
+
+.zero: 0
+.one: 1
+
+-- ===== READ PROGRAM =====
+.ipath: "program.tyn"
+.ih: FOP .ipath .zero
+.ibuf: ALC 512
+.ilen: FRD .ih .ibuf 512
+.ic: FCL .ih
+
+-- ===== PARSE STRING =====
+-- Format: .msg: "..."
+-- Find first quote
+.b4: GET .ibuf 4
+.b5: GET .ibuf 5
+.b6: GET .ibuf 6
+.b7: GET .ibuf 7
+
+.q4: SUB .b4 34
+.q5: SUB .b5 34
+.q6: SUB .b6 34
+.q7: SUB .b7 34
+
+.fq7: IFZ .q7 7 8
+.fq6: IFZ .q6 6 .fq7
+.fq5: IFZ .q5 5 .fq6
+.first_q: IFZ .q4 4 .fq5
+
+.msg_start: ADD .first_q 1
+
+-- Extract up to 48 bytes of message
+.m0: GET .ibuf .msg_start
+.ma1: ADD .msg_start 1
+.m1: GET .ibuf .ma1
+.ma2: ADD .msg_start 2
+.m2: GET .ibuf .ma2
+.ma3: ADD .msg_start 3
+.m3: GET .ibuf .ma3
+.ma4: ADD .msg_start 4
+.m4: GET .ibuf .ma4
+.ma5: ADD .msg_start 5
+.m5: GET .ibuf .ma5
+.ma6: ADD .msg_start 6
+.m6: GET .ibuf .ma6
+.ma7: ADD .msg_start 7
+.m7: GET .ibuf .ma7
+.ma8: ADD .msg_start 8
+.m8: GET .ibuf .ma8
+.ma9: ADD .msg_start 9
+.m9: GET .ibuf .ma9
+.ma10: ADD .msg_start 10
+.m10: GET .ibuf .ma10
+.ma11: ADD .msg_start 11
+.m11: GET .ibuf .ma11
+.ma12: ADD .msg_start 12
+.m12: GET .ibuf .ma12
+.ma13: ADD .msg_start 13
+.m13: GET .ibuf .ma13
+.ma14: ADD .msg_start 14
+.m14: GET .ibuf .ma14
+.ma15: ADD .msg_start 15
+.m15: GET .ibuf .ma15
+.ma16: ADD .msg_start 16
+.m16: GET .ibuf .ma16
+.ma17: ADD .msg_start 17
+.m17: GET .ibuf .ma17
+.ma18: ADD .msg_start 18
+.m18: GET .ibuf .ma18
+.ma19: ADD .msg_start 19
+.m19: GET .ibuf .ma19
+.ma20: ADD .msg_start 20
+.m20: GET .ibuf .ma20
+.ma21: ADD .msg_start 21
+.m21: GET .ibuf .ma21
+.ma22: ADD .msg_start 22
+.m22: GET .ibuf .ma22
+.ma23: ADD .msg_start 23
+.m23: GET .ibuf .ma23
+.ma24: ADD .msg_start 24
+.m24: GET .ibuf .ma24
+.ma25: ADD .msg_start 25
+.m25: GET .ibuf .ma25
+.ma26: ADD .msg_start 26
+.m26: GET .ibuf .ma26
+.ma27: ADD .msg_start 27
+.m27: GET .ibuf .ma27
+.ma28: ADD .msg_start 28
+.m28: GET .ibuf .ma28
+.ma29: ADD .msg_start 29
+.m29: GET .ibuf .ma29
+.ma30: ADD .msg_start 30
+.m30: GET .ibuf .ma30
+.ma31: ADD .msg_start 31
+.m31: GET .ibuf .ma31
+
+-- Find closing quote (message length)
+.me0: SUB .m0 34
+.me1: SUB .m1 34
+.me2: SUB .m2 34
+.me3: SUB .m3 34
+.me4: SUB .m4 34
+.me5: SUB .m5 34
+.me6: SUB .m6 34
+.me7: SUB .m7 34
+.me8: SUB .m8 34
+.me9: SUB .m9 34
+.me10: SUB .m10 34
+.me11: SUB .m11 34
+.me12: SUB .m12 34
+.me13: SUB .m13 34
+.me14: SUB .m14 34
+.me15: SUB .m15 34
+.me16: SUB .m16 34
+.me17: SUB .m17 34
+.me18: SUB .m18 34
+.me19: SUB .m19 34
+.me20: SUB .m20 34
+.me21: SUB .m21 34
+.me22: SUB .m22 34
+.me23: SUB .m23 34
+.me24: SUB .m24 34
+.me25: SUB .m25 34
+.me26: SUB .m26 34
+.me27: SUB .m27 34
+.me28: SUB .m28 34
+.me29: SUB .m29 34
+.me30: SUB .m30 34
+.me31: SUB .m31 34
+
+.mp31: IFZ .me31 31 32
+.mp30: IFZ .me30 30 .mp31
+.mp29: IFZ .me29 29 .mp30
+.mp28: IFZ .me28 28 .mp29
+.mp27: IFZ .me27 27 .mp28
+.mp26: IFZ .me26 26 .mp27
+.mp25: IFZ .me25 25 .mp26
+.mp24: IFZ .me24 24 .mp25
+.mp23: IFZ .me23 23 .mp24
+.mp22: IFZ .me22 22 .mp23
+.mp21: IFZ .me21 21 .mp22
+.mp20: IFZ .me20 20 .mp21
+.mp19: IFZ .me19 19 .mp20
+.mp18: IFZ .me18 18 .mp19
+.mp17: IFZ .me17 17 .mp18
+.mp16: IFZ .me16 16 .mp17
+.mp15: IFZ .me15 15 .mp16
+.mp14: IFZ .me14 14 .mp15
+.mp13: IFZ .me13 13 .mp14
+.mp12: IFZ .me12 12 .mp13
+.mp11: IFZ .me11 11 .mp12
+.mp10: IFZ .me10 10 .mp11
+.mp9: IFZ .me9 9 .mp10
+.mp8: IFZ .me8 8 .mp9
+.mp7: IFZ .me7 7 .mp8
+.mp6: IFZ .me6 6 .mp7
+.mp5: IFZ .me5 5 .mp6
+.mp4: IFZ .me4 4 .mp5
+.mp3: IFZ .me3 3 .mp4
+.mp2: IFZ .me2 2 .mp3
+.mp1: IFZ .me1 1 .mp2
+.msg_len: IFZ .me0 0 .mp1
+
+-- ===== BUILD PE (3072 bytes: headers + .text + .rdata) =====
+.pe: ALC 4096
+
+-- DOS Header (MZ)
+.dos0: PUT .pe 0 77
+.dos1: PUT .pe 1 90
+.dos60: PUT .pe 60 64
+
+-- PE Signature at offset 64
+.pe64: PUT .pe 64 80
+.pe65: PUT .pe 65 69
+
+-- COFF Header (offset 68)
+.coff0: PUT .pe 68 100
+.coff1: PUT .pe 69 134
+.coff2: PUT .pe 70 2
+.coff84: PUT .pe 84 240
+.coff86: PUT .pe 86 34
+
+-- Optional Header PE32+ (offset 88)
+.opt0: PUT .pe 88 11
+.opt1: PUT .pe 89 2
+.opt16: PUT .pe 104 0
+.opt17: PUT .pe 105 16
+.opt20: PUT .pe 108 0
+.opt21: PUT .pe 109 16
+.opt27: PUT .pe 115 64
+.opt28: PUT .pe 116 1
+.opt32: PUT .pe 120 0
+.opt33: PUT .pe 121 16
+.opt36: PUT .pe 124 0
+.opt37: PUT .pe 125 2
+.opt40: PUT .pe 128 6
+.opt48: PUT .pe 136 6
+.opt56: PUT .pe 144 0
+.opt57: PUT .pe 145 48
+.opt60: PUT .pe 148 0
+.opt61: PUT .pe 149 2
+.opt68: PUT .pe 156 3
+.opt70: PUT .pe 158 96
+.opt71: PUT .pe 159 129
+.opt74: PUT .pe 162 16
+.opt81: PUT .pe 169 16
+.opt90: PUT .pe 178 16
+.opt97: PUT .pe 185 16
+.opt108: PUT .pe 196 16
+
+-- Data Directories: Import RVA=0x2000 Size=40
+.dd_imp0: PUT .pe 208 0
+.dd_imp1: PUT .pe 209 32
+.dd_imp_sz: PUT .pe 212 40
+-- IAT RVA=0x2100 Size=64 (7 entries + null = 8*8)
+.dd_iat0: PUT .pe 296 0
+.dd_iat1: PUT .pe 297 33
+.dd_iat_sz: PUT .pe 300 64
+
+-- Section .text (offset 328)
+.st0: PUT .pe 328 46
+.st1: PUT .pe 329 116
+.st2: PUT .pe 330 101
+.st3: PUT .pe 331 120
+.st4: PUT .pe 332 116
+.st_vs: PUT .pe 337 4
+.st_va1: PUT .pe 341 16
+.st_rd: PUT .pe 345 4
+.st_rp1: PUT .pe 349 2
+.st_ch0: PUT .pe 364 32
+.st_ch3: PUT .pe 367 96
+
+-- Section .rdata (offset 368)
+.sr0: PUT .pe 368 46
+.sr1: PUT .pe 369 114
+.sr2: PUT .pe 370 100
+.sr3: PUT .pe 371 97
+.sr4: PUT .pe 372 116
+.sr5: PUT .pe 373 97
+.sr_vs1: PUT .pe 377 4
+.sr_va1: PUT .pe 381 32
+.sr_rd1: PUT .pe 385 4
+.sr_rp1: PUT .pe 389 6
+.sr_ch0: PUT .pe 404 64
+.sr_ch3: PUT .pe 407 64
+
+-- ===== CODE at file 512 (RVA 0x1000) =====
+-- sub rsp, 0x208 (stack alignment: entry RSP is 8 mod 16, need 0 mod 16)
+.c0: PUT .pe 512 72
+.c1: PUT .pe 513 129
+.c2: PUT .pe 514 236
+.c3: PUT .pe 515 8
+.c4: PUT .pe 516 2
+.c5: PUT .pe 517 0
+.c6: PUT .pe 518 0
+-- mov ecx, 0x0202 (wVersionRequested)
+.c7: PUT .pe 519 185
+.c8: PUT .pe 520 2
+.c9: PUT .pe 521 2
+.c10: PUT .pe 522 0
+.c11: PUT .pe 523 0
+-- lea rdx, [rsp+64] (lpWSAData)
+.c12: PUT .pe 524 72
+.c13: PUT .pe 525 141
+.c14: PUT .pe 526 84
+.c15: PUT .pe 527 36
+.c16: PUT .pe 528 64
+-- call [rip+disp_WSAStartup] RIP=0x1017, IAT[0]=0x2100, disp=0x10E9
+.c17: PUT .pe 529 255
+.c18: PUT .pe 530 21
+.c19: PUT .pe 531 233
+.c20: PUT .pe 532 16
+.c21: PUT .pe 533 0
+.c22: PUT .pe 534 0
+-- mov ecx, 2 (AF_INET)
+.c23: PUT .pe 535 185
+.c24: PUT .pe 536 2
+.c25: PUT .pe 537 0
+.c26: PUT .pe 538 0
+.c27: PUT .pe 539 0
+-- mov edx, 1 (SOCK_STREAM)
+.c28: PUT .pe 540 186
+.c29: PUT .pe 541 1
+.c30: PUT .pe 542 0
+.c31: PUT .pe 543 0
+.c32: PUT .pe 544 0
+-- mov r8d, 6 (IPPROTO_TCP)
+.c33: PUT .pe 545 65
+.c34: PUT .pe 546 184
+.c35: PUT .pe 547 6
+.c36: PUT .pe 548 0
+.c37: PUT .pe 549 0
+.c38: PUT .pe 550 0
+-- call [rip+disp_socket] RIP=0x102D, IAT[1]=0x2108, disp=0x10DB
+.c39: PUT .pe 551 255
+.c40: PUT .pe 552 21
+.c41: PUT .pe 553 219
+.c42: PUT .pe 554 16
+.c43: PUT .pe 555 0
+.c44: PUT .pe 556 0
+-- mov rbx, rax (save server socket)
+.c45: PUT .pe 557 72
+.c46: PUT .pe 558 137
+.c47: PUT .pe 559 195
+-- mov word [rsp+32], 2 (sin_family=AF_INET)
+.c48: PUT .pe 560 102
+.c49: PUT .pe 561 199
+.c50: PUT .pe 562 68
+.c51: PUT .pe 563 36
+.c52: PUT .pe 564 32
+.c53: PUT .pe 565 2
+.c54: PUT .pe 566 0
+-- mov word [rsp+34], 0x901F (port 8080 big-endian)
+.c55: PUT .pe 567 102
+.c56: PUT .pe 568 199
+.c57: PUT .pe 569 68
+.c58: PUT .pe 570 36
+.c59: PUT .pe 571 34
+.c60: PUT .pe 572 31
+.c61: PUT .pe 573 144
+-- mov dword [rsp+36], 0 (INADDR_ANY)
+.c62: PUT .pe 574 199
+.c63: PUT .pe 575 68
+.c64: PUT .pe 576 36
+.c65: PUT .pe 577 36
+.c66: PUT .pe 578 0
+.c67: PUT .pe 579 0
+.c68: PUT .pe 580 0
+.c69: PUT .pe 581 0
+-- mov rcx, rbx (socket handle)
+.c70: PUT .pe 582 72
+.c71: PUT .pe 583 137
+.c72: PUT .pe 584 217
+-- lea rdx, [rsp+32] (sockaddr)
+.c73: PUT .pe 585 72
+.c74: PUT .pe 586 141
+.c75: PUT .pe 587 84
+.c76: PUT .pe 588 36
+.c77: PUT .pe 589 32
+-- mov r8d, 16 (sizeof sockaddr_in)
+.c78: PUT .pe 590 65
+.c79: PUT .pe 591 184
+.c80: PUT .pe 592 16
+.c81: PUT .pe 593 0
+.c82: PUT .pe 594 0
+.c83: PUT .pe 595 0
+-- call [rip+disp_bind] RIP=0x105A, IAT[2]=0x2110, disp=0x10B6
+.c84: PUT .pe 596 255
+.c85: PUT .pe 597 21
+.c86: PUT .pe 598 182
+.c87: PUT .pe 599 16
+.c88: PUT .pe 600 0
+.c89: PUT .pe 601 0
+-- mov rcx, rbx
+.c90: PUT .pe 602 72
+.c91: PUT .pe 603 137
+.c92: PUT .pe 604 217
+-- mov edx, 1 (backlog)
+.c93: PUT .pe 605 186
+.c94: PUT .pe 606 1
+.c95: PUT .pe 607 0
+.c96: PUT .pe 608 0
+.c97: PUT .pe 609 0
+-- call [rip+disp_listen] RIP=0x1068, IAT[3]=0x2118, disp=0x10B0
+.c98: PUT .pe 610 255
+.c99: PUT .pe 611 21
+.c100: PUT .pe 612 176
+.c101: PUT .pe 613 16
+.c102: PUT .pe 614 0
+.c103: PUT .pe 615 0
+-- mov rcx, rbx
+.c104: PUT .pe 616 72
+.c105: PUT .pe 617 137
+.c106: PUT .pe 618 217
+-- xor edx, edx (addr=NULL)
+.c107: PUT .pe 619 49
+.c108: PUT .pe 620 210
+-- xor r8d, r8d (addrlen=NULL)
+.c109: PUT .pe 621 69
+.c110: PUT .pe 622 49
+.c111: PUT .pe 623 192
+-- call [rip+disp_accept] RIP=0x1076, IAT[4]=0x2120, disp=0x10AA
+.c112: PUT .pe 624 255
+.c113: PUT .pe 625 21
+.c114: PUT .pe 626 170
+.c115: PUT .pe 627 16
+.c116: PUT .pe 628 0
+.c117: PUT .pe 629 0
+-- mov rdi, rax (save client socket)
+.c118: PUT .pe 630 72
+.c119: PUT .pe 631 137
+.c120: PUT .pe 632 199
+-- mov rcx, rdi (client socket)
+.c121: PUT .pe 633 72
+.c122: PUT .pe 634 137
+.c123: PUT .pe 635 249
+-- lea rdx, [rip+disp_msg] RIP=0x1083, msg at 0x10C0, disp=0x3D
+.c124: PUT .pe 636 72
+.c125: PUT .pe 637 141
+.c126: PUT .pe 638 21
+.c127: PUT .pe 639 61
+.c128: PUT .pe 640 0
+.c129: PUT .pe 641 0
+.c130: PUT .pe 642 0
+-- mov r8d, msg_len
+.c131: PUT .pe 643 65
+.c132: PUT .pe 644 184
+.c133: PUT .pe 645 .msg_len
+.c134: PUT .pe 646 0
+.c135: PUT .pe 647 0
+.c136: PUT .pe 648 0
+-- xor r9d, r9d (flags=0)
+.c137: PUT .pe 649 69
+.c138: PUT .pe 650 49
+.c139: PUT .pe 651 201
+-- call [rip+disp_send] RIP=0x1092, IAT[5]=0x2128, disp=0x1096
+.c140: PUT .pe 652 255
+.c141: PUT .pe 653 21
+.c142: PUT .pe 654 150
+.c143: PUT .pe 655 16
+.c144: PUT .pe 656 0
+.c145: PUT .pe 657 0
+-- mov rcx, rdi (close client)
+.c146: PUT .pe 658 72
+.c147: PUT .pe 659 137
+.c148: PUT .pe 660 249
+-- call [rip+disp_closesocket] RIP=0x109B, IAT[6]=0x2130, disp=0x1095
+.c149: PUT .pe 661 255
+.c150: PUT .pe 662 21
+.c151: PUT .pe 663 149
+.c152: PUT .pe 664 16
+.c153: PUT .pe 665 0
+.c154: PUT .pe 666 0
+-- mov rcx, rbx (close server)
+.c155: PUT .pe 667 72
+.c156: PUT .pe 668 137
+.c157: PUT .pe 669 217
+-- call [rip+disp_closesocket] RIP=0x10A4, IAT[6]=0x2130, disp=0x108C
+.c158: PUT .pe 670 255
+.c159: PUT .pe 671 21
+.c160: PUT .pe 672 140
+.c161: PUT .pe 673 16
+.c162: PUT .pe 674 0
+.c163: PUT .pe 675 0
+-- add rsp, 0x208 (restore stack)
+.c164: PUT .pe 676 72
+.c165: PUT .pe 677 129
+.c166: PUT .pe 678 196
+.c167: PUT .pe 679 8
+.c168: PUT .pe 680 2
+.c169: PUT .pe 681 0
+.c170: PUT .pe 682 0
+-- xor eax, eax (return 0)
+.c171: PUT .pe 683 49
+.c172: PUT .pe 684 192
+-- ret
+.c173: PUT .pe 685 195
+
+-- ===== STRING DATA at file 704 (code offset 192, RVA 0x10C0) =====
+.sm0: PUT .pe 704 .m0
+.sm1: PUT .pe 705 .m1
+.sm2: PUT .pe 706 .m2
+.sm3: PUT .pe 707 .m3
+.sm4: PUT .pe 708 .m4
+.sm5: PUT .pe 709 .m5
+.sm6: PUT .pe 710 .m6
+.sm7: PUT .pe 711 .m7
+.sm8: PUT .pe 712 .m8
+.sm9: PUT .pe 713 .m9
+.sm10: PUT .pe 714 .m10
+.sm11: PUT .pe 715 .m11
+.sm12: PUT .pe 716 .m12
+.sm13: PUT .pe 717 .m13
+.sm14: PUT .pe 718 .m14
+.sm15: PUT .pe 719 .m15
+.sm16: PUT .pe 720 .m16
+.sm17: PUT .pe 721 .m17
+.sm18: PUT .pe 722 .m18
+.sm19: PUT .pe 723 .m19
+.sm20: PUT .pe 724 .m20
+.sm21: PUT .pe 725 .m21
+.sm22: PUT .pe 726 .m22
+.sm23: PUT .pe 727 .m23
+.sm24: PUT .pe 728 .m24
+.sm25: PUT .pe 729 .m25
+.sm26: PUT .pe 730 .m26
+.sm27: PUT .pe 731 .m27
+.sm28: PUT .pe 732 .m28
+.sm29: PUT .pe 733 .m29
+.sm30: PUT .pe 734 .m30
+.sm31: PUT .pe 735 .m31
+-- Null terminator at msg_len position
+.sm_null_pos: ADD 704 .msg_len
+.sm_null: PUT .pe .sm_null_pos 0
+
+-- ===== IMPORTS at file 1536 (RVA 0x2000) =====
+-- Import Directory Entry 0: WS2_32.dll
+-- OriginalFirstThunk=0x2080 TimeDateStamp=0 Forwarder=0 Name=0x2180 FirstThunk=0x2100
+.id0_ilt0: PUT .pe 1536 128
+.id0_ilt1: PUT .pe 1537 32
+.id0_name0: PUT .pe 1548 128
+.id0_name1: PUT .pe 1549 33
+.id0_iat0: PUT .pe 1552 0
+.id0_iat1: PUT .pe 1553 33
+
+-- Import Directory Entry 1: KERNEL32.dll (ghost from tayni-c compiler)
+-- tayni-c auto-emits: OFT=0x20C8 Name=0x2190 FT=0x2148
+-- We leverage this: put KERNEL32.dll at 0x2190 (handled below in imports section)
+
+-- ILT WS2_32 at file 1664 (RVA 0x2080): 8 entries + null
+-- [0] WSAStartup -> HN at 0x21A0
+.ilt0_0: PUT .pe 1664 160
+.ilt0_1: PUT .pe 1665 33
+-- [1] socket -> HN at 0x21B0
+.ilt1_0: PUT .pe 1672 176
+.ilt1_1: PUT .pe 1673 33
+-- [2] bind -> HN at 0x21C0
+.ilt2_0: PUT .pe 1680 192
+.ilt2_1: PUT .pe 1681 33
+-- [3] listen -> HN at 0x21D0
+.ilt3_0: PUT .pe 1688 208
+.ilt3_1: PUT .pe 1689 33
+-- [4] accept -> HN at 0x21E0
+.ilt4_0: PUT .pe 1696 224
+.ilt4_1: PUT .pe 1697 33
+-- [5] send -> HN at 0x21F0
+.ilt5_0: PUT .pe 1704 240
+.ilt5_1: PUT .pe 1705 33
+-- [6] closesocket -> HN at 0x2200
+.ilt6_0: PUT .pe 1712 0
+.ilt6_1: PUT .pe 1713 34
+
+-- NO ILT[7] for WSACleanup - not needed, ExitProcess cleans up
+-- ILT null terminator at file 1720 (zeros from ALC)
+-- ILT KERNEL32 ghost at file 1736 will point to whatever the ghost generates
+
+-- IAT WS2_32 at file 1792 (RVA 0x2100): same as ILT WS2
+.iat0_0: PUT .pe 1792 160
+.iat0_1: PUT .pe 1793 33
+.iat1_0: PUT .pe 1800 176
+.iat1_1: PUT .pe 1801 33
+.iat2_0: PUT .pe 1808 192
+.iat2_1: PUT .pe 1809 33
+.iat3_0: PUT .pe 1816 208
+.iat3_1: PUT .pe 1817 33
+.iat4_0: PUT .pe 1824 224
+.iat4_1: PUT .pe 1825 33
+.iat5_0: PUT .pe 1832 240
+.iat5_1: PUT .pe 1833 33
+.iat6_0: PUT .pe 1840 0
+.iat6_1: PUT .pe 1841 34
+-- IAT null terminator at 1848 (zeros from ALC)
+-- IAT KERNEL32 at file 1864 (RVA 0x2148): ghost auto-populated by tayni-c
+
+-- DLL name: "WS2_32.dll" at file 1920 (RVA 0x2180)
+.dn0: PUT .pe 1920 87
+.dn1: PUT .pe 1921 83
+.dn2: PUT .pe 1922 50
+.dn3: PUT .pe 1923 95
+.dn4: PUT .pe 1924 51
+.dn5: PUT .pe 1925 50
+.dn6: PUT .pe 1926 46
+.dn7: PUT .pe 1927 100
+.dn8: PUT .pe 1928 108
+.dn9: PUT .pe 1929 108
+
+-- (KERNEL32 not needed - using ret instead of ExitProcess)
+
+-- Hint/Name: WSAStartup at file 1952 (RVA 0x21A0)
+.hn0_2: PUT .pe 1954 87
+.hn0_3: PUT .pe 1955 83
+.hn0_4: PUT .pe 1956 65
+.hn0_5: PUT .pe 1957 83
+.hn0_6: PUT .pe 1958 116
+.hn0_7: PUT .pe 1959 97
+.hn0_8: PUT .pe 1960 114
+.hn0_9: PUT .pe 1961 116
+.hn0_10: PUT .pe 1962 117
+.hn0_11: PUT .pe 1963 112
+
+-- Hint/Name: socket at file 1968 (RVA 0x21B0)
+.hn1_2: PUT .pe 1970 115
+.hn1_3: PUT .pe 1971 111
+.hn1_4: PUT .pe 1972 99
+.hn1_5: PUT .pe 1973 107
+.hn1_6: PUT .pe 1974 101
+.hn1_7: PUT .pe 1975 116
+
+-- Hint/Name: bind at file 1984 (RVA 0x21C0)
+.hn2_2: PUT .pe 1986 98
+.hn2_3: PUT .pe 1987 105
+.hn2_4: PUT .pe 1988 110
+.hn2_5: PUT .pe 1989 100
+
+-- Hint/Name: listen at file 2000 (RVA 0x21D0)
+.hn3_2: PUT .pe 2002 108
+.hn3_3: PUT .pe 2003 105
+.hn3_4: PUT .pe 2004 115
+.hn3_5: PUT .pe 2005 116
+.hn3_6: PUT .pe 2006 101
+.hn3_7: PUT .pe 2007 110
+
+-- Hint/Name: accept at file 2016 (RVA 0x21E0)
+.hn4_2: PUT .pe 2018 97
+.hn4_3: PUT .pe 2019 99
+.hn4_4: PUT .pe 2020 99
+.hn4_5: PUT .pe 2021 101
+.hn4_6: PUT .pe 2022 112
+.hn4_7: PUT .pe 2023 116
+
+-- Hint/Name: send at file 2032 (RVA 0x21F0)
+.hn5_2: PUT .pe 2034 115
+.hn5_3: PUT .pe 2035 101
+.hn5_4: PUT .pe 2036 110
+.hn5_5: PUT .pe 2037 100
+
+-- Hint/Name: closesocket at file 2048 (RVA 0x2200)
+.hn6_2: PUT .pe 2050 99
+.hn6_3: PUT .pe 2051 108
+.hn6_4: PUT .pe 2052 111
+.hn6_5: PUT .pe 2053 115
+.hn6_6: PUT .pe 2054 101
+.hn6_7: PUT .pe 2055 115
+.hn6_8: PUT .pe 2056 111
+.hn6_9: PUT .pe 2057 99
+.hn6_10: PUT .pe 2058 107
+.hn6_11: PUT .pe 2059 101
+.hn6_12: PUT .pe 2060 116
+
+-- (WSACleanup and ExitProcess removed - using ret for exit)
+
+-- ===== WRITE OUTPUT =====
+.opath: "out.exe"
+.oh: FOP .opath .one
+.owlen: FWR .oh .pe 3072
+.oc: FCL .oh
+
+-- ===== STATUS OUTPUT =====
+.hdr: "Gen19: TCP Server Compiler\n"
+.ph: PRT .hdr 27
+.msg1: "Response length: "
+.pm1: PRT .msg1 17
+.num: ALC 8
+.its1: ITS .msg_len .num
+.pn1: PRT .num .its1
+.nl: "\n-> out.exe (port 8080)\n"
+.pnl: PRT .nl 24
+
+.f1: FRE .pe
+.f2: FRE .ibuf
+.f3: FRE .num
+
+!

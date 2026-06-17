@@ -1,0 +1,633 @@
+-- TAYNI Gen18 - File I/O Compiler
+-- Compiles programs that write files
+-- Input format:
+--   .path: "filename.txt"
+--   .msg: "content to write"
+--   .h: FOP .path 1
+--   .w: FWR .h .msg LEN
+--   .c: FCL .h
+--   !
+-- Imports: CreateFileA, WriteFile, CloseHandle, ExitProcess
+-- Date: 2026-06-16
+
+.zero: 0
+.one: 1
+
+-- ===== READ PROGRAM =====
+.ipath: "program.tyn"
+.ih: FOP .ipath .zero
+.ibuf: ALC 512
+.ilen: FRD .ih .ibuf 512
+.ic: FCL .ih
+
+-- ===== PARSE FIRST STRING (filename) =====
+-- Find first quote at byte 7 (format: .path: "...)
+-- Actually scan for first quote
+.b4: GET .ibuf 4
+.b5: GET .ibuf 5
+.b6: GET .ibuf 6
+.b7: GET .ibuf 7
+.b8: GET .ibuf 8
+
+.q4: SUB .b4 34
+.q5: SUB .b5 34
+.q6: SUB .b6 34
+.q7: SUB .b7 34
+.q8: SUB .b8 34
+
+-- First quote position
+.fq8: IFZ .q8 8 9
+.fq7: IFZ .q7 7 .fq8
+.fq6: IFZ .q6 6 .fq7
+.fq5: IFZ .q5 5 .fq6
+.first_q: IFZ .q4 4 .fq5
+
+-- Filename starts at first_q + 1
+.fn_start: ADD .first_q 1
+
+-- Scan for closing quote of filename (bytes fn_start to fn_start+15)
+.fn0: GET .ibuf .fn_start
+.fs1: ADD .fn_start 1
+.fn1: GET .ibuf .fs1
+.fs2: ADD .fn_start 2
+.fn2: GET .ibuf .fs2
+.fs3: ADD .fn_start 3
+.fn3: GET .ibuf .fs3
+.fs4: ADD .fn_start 4
+.fn4: GET .ibuf .fs4
+.fs5: ADD .fn_start 5
+.fn5: GET .ibuf .fs5
+.fs6: ADD .fn_start 6
+.fn6: GET .ibuf .fs6
+.fs7: ADD .fn_start 7
+.fn7: GET .ibuf .fs7
+.fs8: ADD .fn_start 8
+.fn8: GET .ibuf .fs8
+.fs9: ADD .fn_start 9
+.fn9: GET .ibuf .fs9
+.fs10: ADD .fn_start 10
+.fn10: GET .ibuf .fs10
+.fs11: ADD .fn_start 11
+.fn11: GET .ibuf .fs11
+
+.fne11: SUB .fn11 34
+.fne10: SUB .fn10 34
+.fne9: SUB .fn9 34
+.fne8: SUB .fn8 34
+.fne7: SUB .fn7 34
+.fne6: SUB .fn6 34
+.fne5: SUB .fn5 34
+.fne4: SUB .fn4 34
+.fne3: SUB .fn3 34
+.fne2: SUB .fn2 34
+.fne1: SUB .fn1 34
+.fne0: SUB .fn0 34
+
+.fnp11: IFZ .fne11 11 12
+.fnp10: IFZ .fne10 10 .fnp11
+.fnp9: IFZ .fne9 9 .fnp10
+.fnp8: IFZ .fne8 8 .fnp9
+.fnp7: IFZ .fne7 7 .fnp8
+.fnp6: IFZ .fne6 6 .fnp7
+.fnp5: IFZ .fne5 5 .fnp6
+.fnp4: IFZ .fne4 4 .fnp5
+.fnp3: IFZ .fne3 3 .fnp4
+.fnp2: IFZ .fne2 2 .fnp3
+.fnp1: IFZ .fne1 1 .fnp2
+.fn_len: IFZ .fne0 0 .fnp1
+
+-- ===== FIND SECOND STRING (content) =====
+-- Second line starts after first \n
+-- Scan for \n after the first quote section
+.fn_end_abs: ADD .fn_start .fn_len
+.fn_end_1: ADD .fn_end_abs 1
+-- Next newline is at fn_end_1 + some bytes
+.nl_s0: GET .ibuf .fn_end_1
+.nl_a1: ADD .fn_end_1 1
+.nl_s1: GET .ibuf .nl_a1
+.nl_a2: ADD .fn_end_1 2
+.nl_s2: GET .ibuf .nl_a2
+
+.nl_n0: SUB .nl_s0 10
+.nl_n1: SUB .nl_s1 10
+.nl_n2: SUB .nl_s2 10
+
+.nl_p2: IFZ .nl_n2 .nl_a2 .nl_a2
+.nl_p1: IFZ .nl_n1 .nl_a1 .nl_p2
+.nl_pos: IFZ .nl_n0 .fn_end_1 .nl_p1
+
+-- Line 2 starts after newline
+.l2_start: ADD .nl_pos 1
+
+-- Find quote in line 2
+.l2_q0: ADD .l2_start 4
+.l2_q1: ADD .l2_start 5
+.l2_q2: ADD .l2_start 6
+.l2_q3: ADD .l2_start 7
+.l2_q4: ADD .l2_start 8
+
+.l2_c0: GET .ibuf .l2_q0
+.l2_c1: GET .ibuf .l2_q1
+.l2_c2: GET .ibuf .l2_q2
+.l2_c3: GET .ibuf .l2_q3
+.l2_c4: GET .ibuf .l2_q4
+
+.l2_e0: SUB .l2_c0 34
+.l2_e1: SUB .l2_c1 34
+.l2_e2: SUB .l2_c2 34
+.l2_e3: SUB .l2_c3 34
+.l2_e4: SUB .l2_c4 34
+
+.l2_p4: IFZ .l2_e4 .l2_q4 .l2_q4
+.l2_p3: IFZ .l2_e3 .l2_q3 .l2_p4
+.l2_p2: IFZ .l2_e2 .l2_q2 .l2_p3
+.l2_p1: IFZ .l2_e1 .l2_q1 .l2_p2
+.l2_qpos: IFZ .l2_e0 .l2_q0 .l2_p1
+
+-- Content starts after this quote
+.ct_start: ADD .l2_qpos 1
+
+-- Scan for closing quote of content (up to 20 chars)
+.ct0: GET .ibuf .ct_start
+.ca1: ADD .ct_start 1
+.ct1: GET .ibuf .ca1
+.ca2: ADD .ct_start 2
+.ct2: GET .ibuf .ca2
+.ca3: ADD .ct_start 3
+.ct3: GET .ibuf .ca3
+.ca4: ADD .ct_start 4
+.ct4: GET .ibuf .ca4
+.ca5: ADD .ct_start 5
+.ct5: GET .ibuf .ca5
+.ca6: ADD .ct_start 6
+.ct6: GET .ibuf .ca6
+.ca7: ADD .ct_start 7
+.ct7: GET .ibuf .ca7
+.ca8: ADD .ct_start 8
+.ct8: GET .ibuf .ca8
+.ca9: ADD .ct_start 9
+.ct9: GET .ibuf .ca9
+.ca10: ADD .ct_start 10
+.ct10: GET .ibuf .ca10
+.ca11: ADD .ct_start 11
+.ct11: GET .ibuf .ca11
+.ca12: ADD .ct_start 12
+.ct12: GET .ibuf .ca12
+.ca13: ADD .ct_start 13
+.ct13: GET .ibuf .ca13
+.ca14: ADD .ct_start 14
+.ct14: GET .ibuf .ca14
+.ca15: ADD .ct_start 15
+.ct15: GET .ibuf .ca15
+
+.cte15: SUB .ct15 34
+.cte14: SUB .ct14 34
+.cte13: SUB .ct13 34
+.cte12: SUB .ct12 34
+.cte11: SUB .ct11 34
+.cte10: SUB .ct10 34
+.cte9: SUB .ct9 34
+.cte8: SUB .ct8 34
+.cte7: SUB .ct7 34
+.cte6: SUB .ct6 34
+.cte5: SUB .ct5 34
+.cte4: SUB .ct4 34
+.cte3: SUB .ct3 34
+.cte2: SUB .ct2 34
+.cte1: SUB .ct1 34
+.cte0: SUB .ct0 34
+
+.ctp15: IFZ .cte15 15 16
+.ctp14: IFZ .cte14 14 .ctp15
+.ctp13: IFZ .cte13 13 .ctp14
+.ctp12: IFZ .cte12 12 .ctp13
+.ctp11: IFZ .cte11 11 .ctp12
+.ctp10: IFZ .cte10 10 .ctp11
+.ctp9: IFZ .cte9 9 .ctp10
+.ctp8: IFZ .cte8 8 .ctp9
+.ctp7: IFZ .cte7 7 .ctp8
+.ctp6: IFZ .cte6 6 .ctp7
+.ctp5: IFZ .cte5 5 .ctp6
+.ctp4: IFZ .cte4 4 .ctp5
+.ctp3: IFZ .cte3 3 .ctp4
+.ctp2: IFZ .cte2 2 .ctp3
+.ctp1: IFZ .cte1 1 .ctp2
+.ct_len: IFZ .cte0 0 .ctp1
+
+-- ===== BUILD PE =====
+.pe: ALC 4096
+
+-- DOS Header
+.dos0: PUT .pe 0 77
+.dos1: PUT .pe 1 90
+.dos60: PUT .pe 60 64
+
+-- PE Signature
+.pe64: PUT .pe 64 80
+.pe65: PUT .pe 65 69
+
+-- COFF Header
+.coff0: PUT .pe 68 100
+.coff1: PUT .pe 69 134
+.coff2: PUT .pe 70 2
+.coff16: PUT .pe 84 240
+.coff18: PUT .pe 86 34
+
+-- Optional Header (same as gen17)
+.opt0: PUT .pe 88 11
+.opt1: PUT .pe 89 2
+.opt2: PUT .pe 90 0
+.opt3: PUT .pe 91 4
+.opt16: PUT .pe 104 0
+.opt17: PUT .pe 105 16
+.opt20: PUT .pe 108 0
+.opt21: PUT .pe 109 16
+.opt27: PUT .pe 115 64
+.opt28: PUT .pe 116 1
+.opt32: PUT .pe 120 0
+.opt33: PUT .pe 121 16
+.opt36: PUT .pe 124 0
+.opt37: PUT .pe 125 2
+.opt40: PUT .pe 128 6
+.opt48: PUT .pe 136 6
+.opt56: PUT .pe 144 0
+.opt57: PUT .pe 145 64
+.opt60: PUT .pe 148 0
+.opt61: PUT .pe 149 2
+.opt68: PUT .pe 156 3
+.opt70: PUT .pe 158 96
+.opt71: PUT .pe 159 129
+.opt74: PUT .pe 162 16
+.opt81: PUT .pe 169 16
+.opt90: PUT .pe 178 16
+.opt97: PUT .pe 185 16
+.opt108: PUT .pe 196 16
+
+-- Data Directories: Import at RVA 0x2000
+.dd0: PUT .pe 208 0
+.dd1: PUT .pe 209 32
+.dd4: PUT .pe 212 40
+-- IAT at RVA 0x2100
+.dd96: PUT .pe 296 0
+.dd97: PUT .pe 297 33
+.dd100: PUT .pe 300 40
+
+-- Section headers (same layout as gen17)
+-- .text
+.st0: PUT .pe 328 46
+.st1: PUT .pe 329 116
+.st2: PUT .pe 330 101
+.st3: PUT .pe 331 120
+.st4: PUT .pe 332 116
+.st_vs: PUT .pe 337 4
+.st_va: PUT .pe 341 16
+.st_rd: PUT .pe 345 4
+.st_pr: PUT .pe 349 2
+.st_ch0: PUT .pe 364 32
+.st_ch3: PUT .pe 367 96
+-- .rdata
+.sr0: PUT .pe 368 46
+.sr1: PUT .pe 369 114
+.sr2: PUT .pe 370 100
+.sr3: PUT .pe 371 97
+.sr4: PUT .pe 372 116
+.sr5: PUT .pe 373 97
+.sr_vs: PUT .pe 377 4
+.sr_va: PUT .pe 381 32
+.sr_rd: PUT .pe 385 4
+.sr_pr: PUT .pe 389 6
+.sr_ch0: PUT .pe 404 64
+.sr_ch3: PUT .pe 407 64
+
+-- ===== CODE at file offset 512 (RVA 0x1000) =====
+-- sub rsp, 72
+.x0: PUT .pe 512 72
+.x1: PUT .pe 513 131
+.x2: PUT .pe 514 236
+.x3: PUT .pe 515 72
+
+-- lea rcx, [rip+0x75] (filename at RVA 0x1080, RIP=0x100B)
+.x4: PUT .pe 516 72
+.x5: PUT .pe 517 141
+.x6: PUT .pe 518 13
+.x7: PUT .pe 519 117
+.x8: PUT .pe 520 0
+.x9: PUT .pe 521 0
+.x10: PUT .pe 522 0
+
+-- mov edx, 0x40000000 (GENERIC_WRITE)
+.x11: PUT .pe 523 186
+.x12: PUT .pe 524 0
+.x13: PUT .pe 525 0
+.x14: PUT .pe 526 0
+.x15: PUT .pe 527 64
+
+-- xor r8d, r8d (dwShareMode=0)
+.x16: PUT .pe 528 69
+.x17: PUT .pe 529 49
+.x18: PUT .pe 530 192
+
+-- xor r9d, r9d (lpSecurityAttributes=NULL)
+.x19: PUT .pe 531 69
+.x20: PUT .pe 532 49
+.x21: PUT .pe 533 201
+
+-- mov dword [rsp+32], 2 (CREATE_ALWAYS)
+.x22: PUT .pe 534 199
+.x23: PUT .pe 535 68
+.x24: PUT .pe 536 36
+.x25: PUT .pe 537 32
+.x26: PUT .pe 538 2
+.x27: PUT .pe 539 0
+.x28: PUT .pe 540 0
+.x29: PUT .pe 541 0
+
+-- mov dword [rsp+40], 0x80 (FILE_ATTRIBUTE_NORMAL)
+.x30: PUT .pe 542 199
+.x31: PUT .pe 543 68
+.x32: PUT .pe 544 36
+.x33: PUT .pe 545 40
+.x34: PUT .pe 546 128
+.x35: PUT .pe 547 0
+.x36: PUT .pe 548 0
+.x37: PUT .pe 549 0
+
+-- mov qword [rsp+48], 0 (hTemplateFile=NULL)
+.x38: PUT .pe 550 72
+.x39: PUT .pe 551 199
+.x40: PUT .pe 552 68
+.x41: PUT .pe 553 36
+.x42: PUT .pe 554 48
+.x43: PUT .pe 555 0
+.x44: PUT .pe 556 0
+.x45: PUT .pe 557 0
+.x46: PUT .pe 558 0
+
+-- call [rip+disp_CreateFileA] (RIP=0x1035, IAT[0]=0x2100, disp=0x10CB)
+.x47: PUT .pe 559 255
+.x48: PUT .pe 560 21
+.x49: PUT .pe 561 203
+.x50: PUT .pe 562 16
+.x51: PUT .pe 563 0
+.x52: PUT .pe 564 0
+
+-- mov rbx, rax (save handle)
+.x53: PUT .pe 565 72
+.x54: PUT .pe 566 137
+.x55: PUT .pe 567 195
+
+-- mov rcx, rbx (handle)
+.x56: PUT .pe 568 72
+.x57: PUT .pe 569 137
+.x58: PUT .pe 570 217
+
+-- lea rdx, [rip+0x1F] (content at RVA 0x1090, RIP=0x1042... let me calc)
+-- Offset 59 starts at pe[571]. RIP after = 0x1000+59+7 = 0x1042
+-- Content at 0x1090. disp = 0x1090 - 0x1042 = 0x4E = 78
+.x59: PUT .pe 571 72
+.x60: PUT .pe 572 141
+.x61: PUT .pe 573 21
+.x62: PUT .pe 574 78
+.x63: PUT .pe 575 0
+.x64: PUT .pe 576 0
+.x65: PUT .pe 577 0
+
+-- mov r8d, ct_len (content length)
+.x66: PUT .pe 578 65
+.x67: PUT .pe 579 184
+.x68: PUT .pe 580 .ct_len
+.x69: PUT .pe 581 0
+.x70: PUT .pe 582 0
+.x71: PUT .pe 583 0
+
+-- lea r9, [rsp+64] (lpBytesWritten)
+.x72: PUT .pe 584 76
+.x73: PUT .pe 585 141
+.x74: PUT .pe 586 76
+.x75: PUT .pe 587 36
+.x76: PUT .pe 588 64
+
+-- mov qword [rsp+32], 0 (lpOverlapped=NULL)
+.x77: PUT .pe 589 72
+.x78: PUT .pe 590 199
+.x79: PUT .pe 591 68
+.x80: PUT .pe 592 36
+.x81: PUT .pe 593 32
+.x82: PUT .pe 594 0
+.x83: PUT .pe 595 0
+.x84: PUT .pe 596 0
+.x85: PUT .pe 597 0
+
+-- call [rip+disp_WriteFile] (RIP=0x105C, IAT[1]=0x2108, disp=0x10AC)
+.x86: PUT .pe 598 255
+.x87: PUT .pe 599 21
+.x88: PUT .pe 600 172
+.x89: PUT .pe 601 16
+.x90: PUT .pe 602 0
+.x91: PUT .pe 603 0
+
+-- mov rcx, rbx (handle for close)
+.x92: PUT .pe 604 72
+.x93: PUT .pe 605 137
+.x94: PUT .pe 606 217
+
+-- call [rip+disp_CloseHandle] (RIP=0x1065, IAT[2]=0x2110, disp=0x10AB)
+.x95: PUT .pe 607 255
+.x96: PUT .pe 608 21
+.x97: PUT .pe 609 171
+.x98: PUT .pe 610 16
+.x99: PUT .pe 611 0
+.x100: PUT .pe 612 0
+
+-- xor ecx, ecx (exit 0)
+.x101: PUT .pe 613 49
+.x102: PUT .pe 614 201
+
+-- call [rip+disp_ExitProcess] (RIP=0x106D, IAT[3]=0x2118, disp=0x10AB)
+.x103: PUT .pe 615 255
+.x104: PUT .pe 616 21
+.x105: PUT .pe 617 171
+.x106: PUT .pe 618 16
+.x107: PUT .pe 619 0
+.x108: PUT .pe 620 0
+
+-- ===== STRING DATA =====
+-- Filename at file offset 640 (code offset 128, RVA 0x1080)
+.pf0: PUT .pe 640 .fn0
+.pf1: PUT .pe 641 .fn1
+.pf2: PUT .pe 642 .fn2
+.pf3: PUT .pe 643 .fn3
+.pf4: PUT .pe 644 .fn4
+.pf5: PUT .pe 645 .fn5
+.pf6: PUT .pe 646 .fn6
+.pf7: PUT .pe 647 .fn7
+.pf8: PUT .pe 648 .fn8
+.pf9: PUT .pe 649 .fn9
+.pf10: PUT .pe 650 .fn10
+.pf11: PUT .pe 651 .fn11
+-- Null terminator at correct position
+.fn_null_pos: ADD 640 .fn_len
+.pfn: PUT .pe .fn_null_pos 0
+
+-- Content at file offset 656 (code offset 144, RVA 0x1090)
+.pc0: PUT .pe 656 .ct0
+.pc1: PUT .pe 657 .ct1
+.pc2: PUT .pe 658 .ct2
+.pc3: PUT .pe 659 .ct3
+.pc4: PUT .pe 660 .ct4
+.pc5: PUT .pe 661 .ct5
+.pc6: PUT .pe 662 .ct6
+.pc7: PUT .pe 663 .ct7
+.pc8: PUT .pe 664 .ct8
+.pc9: PUT .pe 665 .ct9
+.pc10: PUT .pe 666 .ct10
+.pc11: PUT .pe 667 .ct11
+.pc12: PUT .pe 668 .ct12
+.pc13: PUT .pe 669 .ct13
+.pc14: PUT .pe 670 .ct14
+.pc15: PUT .pe 671 .ct15
+
+-- Null terminator at correct position for content
+.ct_null_pos: ADD 656 .ct_len
+.pcn: PUT .pe .ct_null_pos 0
+
+-- ===== IMPORTS at file offset 1536 (RVA 0x2000) =====
+-- Import Directory: KERNEL32.dll
+-- OriginalFirstThunk (ILT) RVA 0x2080
+.id0: PUT .pe 1536 128
+.id1: PUT .pe 1537 32
+-- Name RVA 0x20C0
+.id_n0: PUT .pe 1548 192
+.id_n1: PUT .pe 1549 32
+-- FirstThunk (IAT) RVA 0x2100
+.id_i0: PUT .pe 1552 0
+.id_i1: PUT .pe 1553 33
+
+-- ILT at file 1664 (RVA 0x2080): 4 entries
+.il0: PUT .pe 1664 224
+.il1: PUT .pe 1665 32
+.il8: PUT .pe 1672 240
+.il9: PUT .pe 1673 32
+.il16: PUT .pe 1680 0
+.il17: PUT .pe 1681 33
+.il24: PUT .pe 1688 16
+.il25: PUT .pe 1689 33
+
+-- IAT at file 1792 (RVA 0x2100): same as ILT
+.ia0: PUT .pe 1792 224
+.ia1: PUT .pe 1793 32
+.ia8: PUT .pe 1800 240
+.ia9: PUT .pe 1801 32
+.ia16: PUT .pe 1808 0
+.ia17: PUT .pe 1809 33
+.ia24: PUT .pe 1816 16
+.ia25: PUT .pe 1817 33
+
+-- DLL name at file 1728 (RVA 0x20C0): "KERNEL32.dll"
+.d0: PUT .pe 1728 75
+.d1: PUT .pe 1729 69
+.d2: PUT .pe 1730 82
+.d3: PUT .pe 1731 78
+.d4: PUT .pe 1732 69
+.d5: PUT .pe 1733 76
+.d6: PUT .pe 1734 51
+.d7: PUT .pe 1735 50
+.d8: PUT .pe 1736 46
+.d9: PUT .pe 1737 100
+.d10: PUT .pe 1738 108
+.d11: PUT .pe 1739 108
+
+-- Hint/Name: CreateFileA at file 1760 (RVA 0x20E0)
+.hc0: PUT .pe 1762 67
+.hc1: PUT .pe 1763 114
+.hc2: PUT .pe 1764 101
+.hc3: PUT .pe 1765 97
+.hc4: PUT .pe 1766 116
+.hc5: PUT .pe 1767 101
+.hc6: PUT .pe 1768 70
+.hc7: PUT .pe 1769 105
+.hc8: PUT .pe 1770 108
+.hc9: PUT .pe 1771 101
+.hc10: PUT .pe 1772 65
+
+-- Hint/Name: WriteFile at file 1776 (RVA 0x20F0)
+.hw0: PUT .pe 1778 87
+.hw1: PUT .pe 1779 114
+.hw2: PUT .pe 1780 105
+.hw3: PUT .pe 1781 116
+.hw4: PUT .pe 1782 101
+.hw5: PUT .pe 1783 70
+.hw6: PUT .pe 1784 105
+.hw7: PUT .pe 1785 108
+.hw8: PUT .pe 1786 101
+
+-- Hint/Name: CloseHandle at file 1792... wait that conflicts with IAT!
+-- Move to file 1856 (RVA 0x2140)
+-- Fix ILT[2] and IAT[2]:
+.il16f: PUT .pe 1680 64
+.il17f: PUT .pe 1681 33
+.ia16f: PUT .pe 1808 64
+.ia17f: PUT .pe 1809 33
+
+-- CloseHandle at file 1856 (RVA 0x2140)
+.hcl0: PUT .pe 1858 67
+.hcl1: PUT .pe 1859 108
+.hcl2: PUT .pe 1860 111
+.hcl3: PUT .pe 1861 115
+.hcl4: PUT .pe 1862 101
+.hcl5: PUT .pe 1863 72
+.hcl6: PUT .pe 1864 97
+.hcl7: PUT .pe 1865 110
+.hcl8: PUT .pe 1866 100
+.hcl9: PUT .pe 1867 108
+.hcl10: PUT .pe 1868 101
+
+-- Hint/Name: ExitProcess at file 1872 (RVA 0x2150)
+-- Fix ILT[3] and IAT[3]:
+.il24f: PUT .pe 1688 80
+.il25f: PUT .pe 1689 33
+.ia24f: PUT .pe 1816 80
+.ia25f: PUT .pe 1817 33
+
+-- ExitProcess at file 1872 (RVA 0x2150)
+.he0: PUT .pe 1874 69
+.he1: PUT .pe 1875 120
+.he2: PUT .pe 1876 105
+.he3: PUT .pe 1877 116
+.he4: PUT .pe 1878 80
+.he5: PUT .pe 1879 114
+.he6: PUT .pe 1880 111
+.he7: PUT .pe 1881 99
+.he8: PUT .pe 1882 101
+.he9: PUT .pe 1883 115
+.he10: PUT .pe 1884 115
+
+-- ===== WRITE OUTPUT =====
+.opath: "out.exe"
+.oh: FOP .opath .one
+.owlen: FWR .oh .pe 2560
+.oc: FCL .oh
+
+-- ===== DISPLAY =====
+.hdr: "Gen18: File I/O Compiler\n"
+.ph: PRT .hdr 25
+
+.msg1: "Filename length: "
+.pm1: PRT .msg1 17
+.num: ALC 8
+.its1: ITS .fn_len .num
+.pn1: PRT .num .its1
+
+.msg2: "\nContent length: "
+.pm2: PRT .msg2 17
+.its2: ITS .ct_len .num
+.pn2: PRT .num .its2
+
+.nl: "\n-> out.exe generated\n"
+.pnl: PRT .nl 22
+
+.f1: FRE .pe
+.f2: FRE .ibuf
+.f3: FRE .num
+
+!

@@ -1,0 +1,150 @@
+-- TAYNI Gen16 - Requirements & Design
+-- Next-generation compiler: multi-line parser + arithmetic code generation
+-- Written in TAYNI, compilable by gen15's bootstrap
+-- Date: 2026-06-16
+
+-- ============================================================
+-- OBJECTIVE
+-- ============================================================
+-- Gen16 must be able to compile programs with:
+--   1. Multiple bindings (not just one .x: N)
+--   2. Numeric literals (0-999)
+--   3. Arithmetic operations: ADD, SUB, MUL
+--   4. IFZ (conditional select)
+--   5. Result returned via exit code
+--
+-- Example input gen16 can compile:
+--   .a: 10
+--   .b: 20
+--   .c: ADD .a .b
+--   .d: MUL .c 3
+--   !
+--   -> exit code 90
+
+-- ============================================================
+-- ARCHITECTURE
+-- ============================================================
+-- Gen16 is itself a TAYNI program that uses only gen15-level ops:
+--   ALC, FRE, FOP, FRD, FWR, FCL, GET, PUT, SUB, ADD, MUL, IFZ, PRT, ITS
+--
+-- It reads input.tyn, parses it, and generates a PE with x86-64 code.
+--
+-- Memory layout:
+--   .ibuf: ALC 4096   -- input source (up to 4KB)
+--   .pe:   ALC 8192   -- output PE buffer
+--   .vars: ALC 1024   -- variable table (name hash -> value offset)
+
+-- ============================================================
+-- PARSER REQUIREMENTS
+-- ============================================================
+-- Input format (each line):
+--   .NAME: VALUE_OR_OP
+--
+-- Parser must:
+--   1. Scan for newlines (byte 10) to find line boundaries
+--   2. For each line:
+--      a. Skip if starts with "--" (comment)
+--      b. Skip if starts with "!" (terminator)
+--      c. Find "." to start of name
+--      d. Find ":" to end of name / start of value
+--      e. Determine if value is:
+--         - Numeric literal (digit after space)
+--         - Operation (letter after space: A-Z)
+--         - Reference (.name after space: starts with ".")
+--   3. Store bindings in order (index 0..N)
+--
+-- Since TAYNI has no loops, the parser is UNWOUND for a fixed max
+-- number of lines (e.g., 32 lines max for gen16).
+
+-- ============================================================
+-- CODE GENERATION REQUIREMENTS
+-- ============================================================
+-- For each binding, gen16 emits x86-64 into the .text section.
+-- Variables are stored in registers or stack slots.
+--
+-- Register allocation (simple linear):
+--   Binding 0 -> [rsp+0]
+--   Binding 1 -> [rsp+8]
+--   Binding N -> [rsp+N*8]
+--
+-- Code patterns:
+--
+-- Numeric literal (.x: 42):
+--   mov qword [rsp+OFFSET], 42
+--   Bytes: 48 C7 44 24 OFF IMM32
+--
+-- ADD (.c: ADD .a .b):
+--   mov rax, [rsp+OFFSET_A]
+--   add rax, [rsp+OFFSET_B]
+--   mov [rsp+OFFSET_C], rax
+--   Bytes: 48 8B 44 24 OA, 48 03 44 24 OB, 48 89 44 24 OC
+--
+-- SUB (.c: SUB .a .b):
+--   mov rax, [rsp+OFFSET_A]
+--   sub rax, [rsp+OFFSET_B]
+--   mov [rsp+OFFSET_C], rax
+--   Bytes: 48 8B 44 24 OA, 48 2B 44 24 OB, 48 89 44 24 OC
+--
+-- MUL (.c: MUL .a .b):
+--   mov rax, [rsp+OFFSET_A]
+--   imul rax, [rsp+OFFSET_B]
+--   mov [rsp+OFFSET_C], rax
+--   Bytes: 48 8B 44 24 OA, 48 0F AF 44 24 OB, 48 89 44 24 OC
+--
+-- IFZ (.r: IFZ .cond .then .else):
+--   mov rax, [rsp+OFFSET_COND]
+--   test rax, rax
+--   cmovz rcx, [rsp+OFFSET_THEN]   -- if zero
+--   cmovnz rcx, [rsp+OFFSET_ELSE]  -- if nonzero
+--   mov [rsp+OFFSET_R], rcx
+--
+-- Final (return last value as exit code):
+--   mov rax, [rsp+OFFSET_LAST]
+--   -- stack cleanup
+--   ret (or call ExitProcess)
+
+-- ============================================================
+-- PE STRUCTURE (same as gen15 but with real code)
+-- ============================================================
+-- Gen16 reuses gen15's PE layout:
+--   Offset 0x000: DOS Header
+--   Offset 0x040: PE Signature
+--   Offset 0x044: COFF Header
+--   Offset 0x058: Optional Header
+--   Offset 0x148: Section Headers (.text, .rdata)
+--   Offset 0x200: .text (code section)
+--   Offset 0x600: .rdata (imports)
+--
+-- The only difference from gen15 is that .text contains
+-- multiple instructions instead of just "mov eax, N; ret"
+
+-- ============================================================
+-- CONSTRAINTS
+-- ============================================================
+-- gen16 is written in TAYNI and compiled by tayni-bootstrap.exe
+-- The bootstrap can execute gen15.tyn (343 lines, uses ALC/GET/PUT/etc.)
+-- gen16 must use ONLY the same ops that gen15 uses.
+--
+-- Size estimate: gen16 will be ~1000-2000 lines of TAYNI
+-- (unwound parser for 32 lines + code emitter for 4 op types)
+--
+-- Max program size gen16 handles: 32 bindings
+-- Max operations: ADD, SUB, MUL, IFZ + numeric literals
+-- No strings, no I/O, no network - those come in gen17+
+
+-- ============================================================
+-- SUCCESS CRITERIA
+-- ============================================================
+-- 1. tayni-bootstrap.exe can compile gen16.tyn -> gen16.exe
+-- 2. gen16.exe can compile arithmetic.tyn -> arithmetic.exe
+-- 3. arithmetic.exe returns correct exit code
+--
+-- Test case:
+--   .a: 5
+--   .b: 7
+--   .c: ADD .a .b
+--   .d: MUL .c 2
+--   !
+--   -> arithmetic.exe returns exit code 24
+
+!

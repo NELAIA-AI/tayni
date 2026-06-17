@@ -1,0 +1,564 @@
+-- TAYNI Gen17 - String + PRT Compiler
+-- Reads program.tyn, extracts string literal and generates PE that prints it
+-- First compiler to emit RUNTIME x86-64 code (not just mov eax, N)
+-- Imports: GetStdHandle, WriteFile, ExitProcess from KERNEL32.dll
+-- Date: 2026-06-16
+
+.zero: 0
+.one: 1
+
+-- ===== READ PROGRAM =====
+.ipath: "program.tyn"
+.ih: FOP .ipath .zero
+.ibuf: ALC 512
+.ilen: FRD .ih .ibuf 512
+.ic: FCL .ih
+
+-- ===== PARSE STRING LITERAL =====
+-- Find opening quote (byte 34) in input
+-- Expected format: .msg: "Hello...\n"
+-- Quote starts after ".X: " = at byte 5 (for single-char name)
+-- We scan for first quote character
+
+.q_pos: 5
+.q_check: GET .ibuf 5
+.q_is_quote: SUB .q_check 34
+
+-- String content starts at byte after first quote
+.str_start: 5
+
+-- Find closing quote - scan bytes 5..70
+.s6: GET .ibuf 6
+.s7: GET .ibuf 7
+.s8: GET .ibuf 8
+.s9: GET .ibuf 9
+.s10: GET .ibuf 10
+.s11: GET .ibuf 11
+.s12: GET .ibuf 12
+.s13: GET .ibuf 13
+.s14: GET .ibuf 14
+.s15: GET .ibuf 15
+.s16: GET .ibuf 16
+.s17: GET .ibuf 17
+.s18: GET .ibuf 18
+.s19: GET .ibuf 19
+.s20: GET .ibuf 20
+.s21: GET .ibuf 21
+.s22: GET .ibuf 22
+.s23: GET .ibuf 23
+.s24: GET .ibuf 24
+.s25: GET .ibuf 25
+.s26: GET .ibuf 26
+.s27: GET .ibuf 27
+.s28: GET .ibuf 28
+.s29: GET .ibuf 29
+.s30: GET .ibuf 30
+.s31: GET .ibuf 31
+.s32: GET .ibuf 32
+.s33: GET .ibuf 33
+.s34: GET .ibuf 34
+.s35: GET .ibuf 35
+.s36: GET .ibuf 36
+.s37: GET .ibuf 37
+
+-- Check each byte for closing quote (34)
+.e6: SUB .s6 34
+.e7: SUB .s7 34
+.e8: SUB .s8 34
+.e9: SUB .s9 34
+.e10: SUB .s10 34
+.e11: SUB .s11 34
+.e12: SUB .s12 34
+.e13: SUB .s13 34
+.e14: SUB .s14 34
+.e15: SUB .s15 34
+.e16: SUB .s16 34
+.e17: SUB .s17 34
+.e18: SUB .s18 34
+.e19: SUB .s19 34
+.e20: SUB .s20 34
+.e21: SUB .s21 34
+.e22: SUB .s22 34
+.e23: SUB .s23 34
+.e24: SUB .s24 34
+.e25: SUB .s25 34
+.e26: SUB .s26 34
+.e27: SUB .s27 34
+.e28: SUB .s28 34
+.e29: SUB .s29 34
+.e30: SUB .s30 34
+.e31: SUB .s31 34
+.e32: SUB .s32 34
+
+-- Find closing quote position (first zero = match)
+.p32: IFZ .e32 32 33
+.p31: IFZ .e31 31 .p32
+.p30: IFZ .e30 30 .p31
+.p29: IFZ .e29 29 .p30
+.p28: IFZ .e28 28 .p29
+.p27: IFZ .e27 27 .p28
+.p26: IFZ .e26 26 .p27
+.p25: IFZ .e25 25 .p26
+.p24: IFZ .e24 24 .p25
+.p23: IFZ .e23 23 .p24
+.p22: IFZ .e22 22 .p23
+.p21: IFZ .e21 21 .p22
+.p20: IFZ .e20 20 .p21
+.p19: IFZ .e19 19 .p20
+.p18: IFZ .e18 18 .p19
+.p17: IFZ .e17 17 .p18
+.p16: IFZ .e16 16 .p17
+.p15: IFZ .e15 15 .p16
+.p14: IFZ .e14 14 .p15
+.p13: IFZ .e13 13 .p14
+.p12: IFZ .e12 12 .p13
+.p11: IFZ .e11 11 .p12
+.p10: IFZ .e10 10 .p11
+.p9: IFZ .e9 9 .p10
+.p8: IFZ .e8 8 .p9
+.p7: IFZ .e7 7 .p8
+.end_quote: IFZ .e6 6 .p7
+
+-- String length = end_quote - str_start
+.str_len: SUB .end_quote .str_start
+
+-- ===== BUILD PE =====
+.pe: ALC 4096
+
+-- ===== DOS HEADER =====
+.dos0: PUT .pe 0 77
+.dos1: PUT .pe 1 90
+.dos60: PUT .pe 60 64
+
+-- ===== PE SIGNATURE =====
+.pe64: PUT .pe 64 80
+.pe65: PUT .pe 65 69
+
+-- ===== COFF HEADER =====
+-- Machine: IMAGE_FILE_MACHINE_AMD64 = 0x8664
+.coff0: PUT .pe 68 100
+.coff1: PUT .pe 69 134
+-- NumberOfSections: 2
+.coff2: PUT .pe 70 2
+-- SizeOfOptionalHeader: 0xF0 = 240
+.coff16: PUT .pe 84 240
+-- Characteristics: EXECUTABLE_IMAGE | LARGE_ADDRESS_AWARE
+.coff18: PUT .pe 86 34
+
+-- ===== OPTIONAL HEADER =====
+-- Magic: PE32+ = 0x020B
+.opt0: PUT .pe 88 11
+.opt1: PUT .pe 89 2
+-- SizeOfCode
+.opt2: PUT .pe 90 0
+.opt3: PUT .pe 91 4
+-- AddressOfEntryPoint: 0x1000 (start of .text)
+.opt16: PUT .pe 104 0
+.opt17: PUT .pe 105 16
+-- BaseOfCode
+.opt20: PUT .pe 108 0
+.opt21: PUT .pe 109 16
+-- ImageBase: 0x0000000140000000
+.opt24: PUT .pe 112 0
+.opt25: PUT .pe 113 0
+.opt26: PUT .pe 114 0
+.opt27: PUT .pe 115 64
+.opt28: PUT .pe 116 1
+-- SectionAlignment: 0x1000
+.opt32: PUT .pe 120 0
+.opt33: PUT .pe 121 16
+-- FileAlignment: 0x200
+.opt36: PUT .pe 124 0
+.opt37: PUT .pe 125 2
+-- MajorOperatingSystemVersion: 6
+.opt40: PUT .pe 128 6
+-- MajorSubsystemVersion: 6
+.opt48: PUT .pe 136 6
+-- SizeOfImage: 0x4000
+.opt56: PUT .pe 144 0
+.opt57: PUT .pe 145 64
+-- SizeOfHeaders: 0x200
+.opt60: PUT .pe 148 0
+.opt61: PUT .pe 149 2
+-- Subsystem: WINDOWS_CUI = 3
+.opt68: PUT .pe 156 3
+-- DllCharacteristics: NX_COMPAT | DYNAMIC_BASE
+.opt70: PUT .pe 158 96
+.opt71: PUT .pe 159 129
+-- SizeOfStackReserve: 0x100000
+.opt74: PUT .pe 162 16
+-- SizeOfStackCommit: 0x1000
+.opt81: PUT .pe 169 16
+-- SizeOfHeapReserve: 0x100000
+.opt90: PUT .pe 178 16
+-- SizeOfHeapCommit: 0x1000
+.opt97: PUT .pe 185 16
+-- NumberOfRvaAndSizes: 16
+.opt108: PUT .pe 196 16
+
+-- ===== DATA DIRECTORIES =====
+-- Import Table RVA: 0x2000, Size: 40
+.dd_imp_rva: PUT .pe 208 0
+.dd_imp_rva1: PUT .pe 209 32
+.dd_imp_size: PUT .pe 212 40
+
+-- IAT RVA: 0x2100, Size: 32
+.dd_iat_rva: PUT .pe 296 0
+.dd_iat_rva1: PUT .pe 297 33
+.dd_iat_size: PUT .pe 300 32
+
+-- ===== SECTION HEADERS =====
+-- .text
+.sec_t0: PUT .pe 328 46
+.sec_t1: PUT .pe 329 116
+.sec_t2: PUT .pe 330 101
+.sec_t3: PUT .pe 331 120
+.sec_t4: PUT .pe 332 116
+-- VirtualSize: 0x0400
+.sec_t_vs0: PUT .pe 336 0
+.sec_t_vs1: PUT .pe 337 4
+-- VirtualAddress: 0x1000
+.sec_t_va0: PUT .pe 340 0
+.sec_t_va1: PUT .pe 341 16
+-- SizeOfRawData: 0x0400
+.sec_t_rd0: PUT .pe 344 0
+.sec_t_rd1: PUT .pe 345 4
+-- PointerToRawData: 0x0200
+.sec_t_pr0: PUT .pe 348 0
+.sec_t_pr1: PUT .pe 349 2
+-- Characteristics: CODE | EXECUTE | READ
+.sec_t_ch0: PUT .pe 364 32
+.sec_t_ch3: PUT .pe 367 96
+
+-- .rdata
+.sec_r0: PUT .pe 368 46
+.sec_r1: PUT .pe 369 114
+.sec_r2: PUT .pe 370 100
+.sec_r3: PUT .pe 371 97
+.sec_r4: PUT .pe 372 116
+.sec_r5: PUT .pe 373 97
+-- VirtualSize: 0x0400
+.sec_r_vs0: PUT .pe 376 0
+.sec_r_vs1: PUT .pe 377 4
+-- VirtualAddress: 0x2000
+.sec_r_va0: PUT .pe 380 0
+.sec_r_va1: PUT .pe 381 32
+-- SizeOfRawData: 0x0400
+.sec_r_rd0: PUT .pe 384 0
+.sec_r_rd1: PUT .pe 385 4
+-- PointerToRawData: 0x0600
+.sec_r_pr0: PUT .pe 388 0
+.sec_r_pr1: PUT .pe 389 6
+-- Characteristics: INITIALIZED_DATA | READ
+.sec_r_ch0: PUT .pe 404 64
+.sec_r_ch3: PUT .pe 407 64
+
+-- ===== CODE SECTION (file offset 0x200 = 512) =====
+-- x86-64 machine code that:
+--   1. GetStdHandle(-11) -> stdout
+--   2. WriteFile(stdout, string, length, &written, 0)
+--   3. ExitProcess(0)
+--
+-- IAT layout (RVA 0x2100):
+--   [0x2100] = GetStdHandle
+--   [0x2108] = WriteFile
+--   [0x2110] = ExitProcess
+--
+-- String data at code offset 64 (RVA 0x1040)
+
+-- sub rsp, 56 (0x38) - shadow space + alignment + local
+.c0: PUT .pe 512 72
+.c1: PUT .pe 513 131
+.c2: PUT .pe 514 236
+.c3: PUT .pe 515 56
+
+-- mov ecx, 0xFFFFFFF5 (-11 = STD_OUTPUT_HANDLE)
+.c4: PUT .pe 516 185
+.c5: PUT .pe 517 245
+.c6: PUT .pe 518 255
+.c7: PUT .pe 519 255
+.c8: PUT .pe 520 255
+
+-- call [rip + disp_GetStdHandle]
+-- RIP after this instr = 0x1000 + 15 = 0x100F
+-- IAT[0] at RVA 0x2100
+-- disp = 0x2100 - 0x100F = 0x10F1
+.c9: PUT .pe 521 255
+.c10: PUT .pe 522 21
+.c11: PUT .pe 523 241
+.c12: PUT .pe 524 16
+.c13: PUT .pe 525 0
+.c14: PUT .pe 526 0
+
+-- mov rcx, rax (handle = first arg for WriteFile)
+.c15: PUT .pe 527 72
+.c16: PUT .pe 528 137
+.c17: PUT .pe 529 193
+
+-- lea rdx, [rip + disp_string]
+-- RIP after this instr = 0x1000 + 25 = 0x1019
+-- String at RVA 0x1040 (code offset 64)
+-- disp = 0x1040 - 0x1019 = 0x0027
+.c18: PUT .pe 530 72
+.c19: PUT .pe 531 141
+.c20: PUT .pe 532 21
+.c21: PUT .pe 533 39
+.c22: PUT .pe 534 0
+.c23: PUT .pe 535 0
+.c24: PUT .pe 536 0
+
+-- mov r8d, string_length
+.c25: PUT .pe 537 65
+.c26: PUT .pe 538 184
+.c27: PUT .pe 539 .str_len
+.c28: PUT .pe 540 0
+.c29: PUT .pe 541 0
+.c30: PUT .pe 542 0
+
+-- lea r9, [rsp+48] (lpNumberOfBytesWritten)
+.c31: PUT .pe 543 76
+.c32: PUT .pe 544 141
+.c33: PUT .pe 545 76
+.c34: PUT .pe 546 36
+.c35: PUT .pe 547 48
+
+-- mov qword [rsp+32], 0 (lpOverlapped = NULL, 5th param on stack)
+.c36: PUT .pe 548 72
+.c37: PUT .pe 549 199
+.c38: PUT .pe 550 68
+.c39: PUT .pe 551 36
+.c40: PUT .pe 552 32
+.c41: PUT .pe 553 0
+.c42: PUT .pe 554 0
+.c43: PUT .pe 555 0
+.c44: PUT .pe 556 0
+
+-- call [rip + disp_WriteFile]
+-- RIP after this instr = 0x1000 + 51 = 0x1033
+-- IAT[1] at RVA 0x2108
+-- disp = 0x2108 - 0x1033 = 0x10D5
+.c45: PUT .pe 557 255
+.c46: PUT .pe 558 21
+.c47: PUT .pe 559 213
+.c48: PUT .pe 560 16
+.c49: PUT .pe 561 0
+.c50: PUT .pe 562 0
+
+-- xor ecx, ecx (exit code = 0)
+.c51: PUT .pe 563 49
+.c52: PUT .pe 564 201
+
+-- call [rip + disp_ExitProcess]
+-- RIP after this instr = 0x1000 + 59 = 0x103B
+-- IAT[2] at RVA 0x2110
+-- disp = 0x2110 - 0x103B = 0x10D5
+.c53: PUT .pe 565 255
+.c54: PUT .pe 566 21
+.c55: PUT .pe 567 213
+.c56: PUT .pe 568 16
+.c57: PUT .pe 569 0
+.c58: PUT .pe 570 0
+
+-- Padding to offset 64 (code offset) = file offset 576
+.c59: PUT .pe 571 204
+.c60: PUT .pe 572 204
+.c61: PUT .pe 573 204
+.c62: PUT .pe 574 204
+.c63: PUT .pe 575 204
+
+-- ===== STRING DATA at file offset 576 (code offset 64, RVA 0x1040) =====
+-- Copy string bytes from ibuf[5..end_quote] to pe[576..]
+-- Unwound for up to 26 characters
+.w0: GET .ibuf 5
+.w1: GET .ibuf 6
+.w2: GET .ibuf 7
+.w3: GET .ibuf 8
+.w4: GET .ibuf 9
+.w5: GET .ibuf 10
+.w6: GET .ibuf 11
+.w7: GET .ibuf 12
+.w8: GET .ibuf 13
+.w9: GET .ibuf 14
+.w10: GET .ibuf 15
+.w11: GET .ibuf 16
+.w12: GET .ibuf 17
+.w13: GET .ibuf 18
+.w14: GET .ibuf 19
+.w15: GET .ibuf 20
+.w16: GET .ibuf 21
+.w17: GET .ibuf 22
+.w18: GET .ibuf 23
+.w19: GET .ibuf 24
+.w20: GET .ibuf 25
+.w21: GET .ibuf 26
+.w22: GET .ibuf 27
+.w23: GET .ibuf 28
+.w24: GET .ibuf 29
+.w25: GET .ibuf 30
+
+.pw0: PUT .pe 576 .w0
+.pw1: PUT .pe 577 .w1
+.pw2: PUT .pe 578 .w2
+.pw3: PUT .pe 579 .w3
+.pw4: PUT .pe 580 .w4
+.pw5: PUT .pe 581 .w5
+.pw6: PUT .pe 582 .w6
+.pw7: PUT .pe 583 .w7
+.pw8: PUT .pe 584 .w8
+.pw9: PUT .pe 585 .w9
+.pw10: PUT .pe 586 .w10
+.pw11: PUT .pe 587 .w11
+.pw12: PUT .pe 588 .w12
+.pw13: PUT .pe 589 .w13
+.pw14: PUT .pe 590 .w14
+.pw15: PUT .pe 591 .w15
+.pw16: PUT .pe 592 .w16
+.pw17: PUT .pe 593 .w17
+.pw18: PUT .pe 594 .w18
+.pw19: PUT .pe 595 .w19
+.pw20: PUT .pe 596 .w20
+.pw21: PUT .pe 597 .w21
+.pw22: PUT .pe 598 .w22
+.pw23: PUT .pe 599 .w23
+.pw24: PUT .pe 600 .w24
+.pw25: PUT .pe 601 .w25
+
+-- ===== IMPORTS (.rdata at file offset 0x600 = 1536) =====
+-- Import Directory Table (20 bytes per entry, null-terminated)
+-- Entry for KERNEL32.dll:
+--   OriginalFirstThunk (ILT RVA): 0x2080
+.idt0: PUT .pe 1536 128
+.idt1: PUT .pe 1537 32
+--   TimeDateStamp: 0
+--   ForwarderChain: 0
+--   Name RVA: 0x20C0 (dll name location)
+.idt_name0: PUT .pe 1548 192
+.idt_name1: PUT .pe 1549 32
+--   FirstThunk (IAT RVA): 0x2100
+.idt_iat0: PUT .pe 1552 0
+.idt_iat1: PUT .pe 1553 33
+
+-- Null entry (terminator) - 20 bytes of zeros (already zero)
+
+-- ===== ILT at file offset 1664 (0x680, RVA 0x2080) =====
+-- 3 entries + null terminator (8 bytes each)
+-- ILT[0] -> Hint/Name for GetStdHandle at RVA 0x20E0
+.ilt0: PUT .pe 1664 224
+.ilt1: PUT .pe 1665 32
+-- ILT[1] -> Hint/Name for WriteFile at RVA 0x20F4
+.ilt8: PUT .pe 1672 244
+.ilt9: PUT .pe 1673 32
+-- ILT[2] -> Hint/Name for ExitProcess at RVA 0x2108
+.ilt16: PUT .pe 1680 8
+.ilt17: PUT .pe 1681 33
+
+-- ===== IAT at file offset 1792 (0x700, RVA 0x2100) =====
+-- Same as ILT (loader will overwrite with actual addresses)
+.iat0: PUT .pe 1792 224
+.iat1: PUT .pe 1793 32
+.iat8: PUT .pe 1800 244
+.iat9: PUT .pe 1801 32
+.iat16: PUT .pe 1808 8
+.iat17: PUT .pe 1809 33
+
+-- ===== DLL NAME at file offset 1728 (0x6C0, RVA 0x20C0) =====
+-- "KERNEL32.dll"
+.dll0: PUT .pe 1728 75
+.dll1: PUT .pe 1729 69
+.dll2: PUT .pe 1730 82
+.dll3: PUT .pe 1731 78
+.dll4: PUT .pe 1732 69
+.dll5: PUT .pe 1733 76
+.dll6: PUT .pe 1734 51
+.dll7: PUT .pe 1735 50
+.dll8: PUT .pe 1736 46
+.dll9: PUT .pe 1737 100
+.dll10: PUT .pe 1738 108
+.dll11: PUT .pe 1739 108
+
+-- ===== HINT/NAMES =====
+-- GetStdHandle at file offset 1760 (0x6E0, RVA 0x20E0)
+-- Hint: 0x0000, then "GetStdHandle\0"
+.hn_gs0: PUT .pe 1762 71
+.hn_gs1: PUT .pe 1763 101
+.hn_gs2: PUT .pe 1764 116
+.hn_gs3: PUT .pe 1765 83
+.hn_gs4: PUT .pe 1766 116
+.hn_gs5: PUT .pe 1767 100
+.hn_gs6: PUT .pe 1768 72
+.hn_gs7: PUT .pe 1769 97
+.hn_gs8: PUT .pe 1770 110
+.hn_gs9: PUT .pe 1771 100
+.hn_gs10: PUT .pe 1772 108
+.hn_gs11: PUT .pe 1773 101
+
+-- WriteFile at file offset 1780 (0x6F4, RVA 0x20F4)
+-- Hint: 0x0000, then "WriteFile\0"
+.hn_wf0: PUT .pe 1782 87
+.hn_wf1: PUT .pe 1783 114
+.hn_wf2: PUT .pe 1784 105
+.hn_wf3: PUT .pe 1785 116
+.hn_wf4: PUT .pe 1786 101
+.hn_wf5: PUT .pe 1787 70
+.hn_wf6: PUT .pe 1788 105
+.hn_wf7: PUT .pe 1789 108
+.hn_wf8: PUT .pe 1790 101
+
+-- ExitProcess at file offset 1800 (0x708, RVA 0x2108)
+-- Wait, this conflicts with IAT. Let me recalculate...
+-- Actually IAT is at 1792-1823. ExitProcess hint goes after.
+-- Put it at file offset 1824 (RVA 0x2120... no)
+
+-- Let me fix: Hint/Name for ExitProcess at file offset 1832 (0x728)
+-- But ILT[2] points to RVA 0x2108 which is file offset 1800...
+-- That's IN the IAT! Error. Let me fix ILT[2].
+-- ILT[2] should point to Hint/Name at a different location.
+-- Put ExitProcess Hint/Name at file offset 1840 (0x730, RVA 0x2130)
+
+-- Fix ILT[2]: point to RVA 0x2130
+.ilt16_fix: PUT .pe 1680 48
+.ilt17_fix: PUT .pe 1681 33
+
+-- Fix IAT[2]: same
+.iat16_fix: PUT .pe 1808 48
+.iat17_fix: PUT .pe 1809 33
+
+-- ExitProcess at file offset 1840 (RVA 0x2130)
+.hn_ep0: PUT .pe 1842 69
+.hn_ep1: PUT .pe 1843 120
+.hn_ep2: PUT .pe 1844 105
+.hn_ep3: PUT .pe 1845 116
+.hn_ep4: PUT .pe 1846 80
+.hn_ep5: PUT .pe 1847 114
+.hn_ep6: PUT .pe 1848 111
+.hn_ep7: PUT .pe 1849 99
+.hn_ep8: PUT .pe 1850 101
+.hn_ep9: PUT .pe 1851 115
+.hn_ep10: PUT .pe 1852 115
+
+-- ===== WRITE OUTPUT =====
+.opath: "out.exe"
+.oh: FOP .opath .one
+.owlen: FWR .oh .pe 2560
+.oc: FCL .oh
+
+-- ===== DISPLAY =====
+.hdr: "Gen17: String+PRT Compiler\n"
+.ph: PRT .hdr 28
+
+.msg_len: "String length: "
+.pml: PRT .msg_len 15
+.num: ALC 8
+.its: ITS .str_len .num
+.pn: PRT .num .its
+.nl: "\n"
+.pnl: PRT .nl 1
+
+.msg_out: "-> out.exe generated\n"
+.pmo: PRT .msg_out 21
+
+.f1: FRE .pe
+.f2: FRE .ibuf
+.f3: FRE .num
+
+!
