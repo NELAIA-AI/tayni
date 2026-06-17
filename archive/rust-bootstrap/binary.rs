@@ -74,6 +74,8 @@ fn op_to_byte(op: &Op) -> u8 {
         Op::CapPublish => 0xFB, Op::CapAvailable => 0xFC, 
         Op::CapVersion => 0xFD, Op::CapDeps => 0xFE,
         Op::Call(_) => 0xFF,
+        // Stdlib operations - use extended range (will be handled specially)
+        _ => 0xFF,
     }
 }
 

@@ -1,130 +1,123 @@
--- TAYNI REST API Client Example
--- Demonstrates: http, json modules
+-- TAYNI REST API Client Example (Simplified)
+-- Uses core operations only
 -- Usage: tayni-c client.tyn -o client && ./client
-
-USE http
-USE json
 
 -- ============================================================
 -- CONFIGURATION
 -- ============================================================
 
-.base_url: "http://localhost:8080"
-.api_path: "/api"
+.server_ip: 2130706433  -- 127.0.0.1 as integer
+.server_port: 8080
 
 -- ============================================================
--- API CLIENT FUNCTIONS
+-- HTTP REQUESTS
 -- ============================================================
 
--- GET request helper
-.api_get: FUN .endpoint .endpoint_len
-  .url: ALC 256
-  -- Build full URL: base_url + endpoint
-  .url_len: 0
-  
-  .resp: HTTP.GET .url .url_len
-  .status: HTTP.STATUS .resp
-  .body: HTTP.BODY .resp
-  .body_len: HTTP.BODY_LEN .resp
-  
-  .result: .body
-!FUN
-
--- POST request helper
-.api_post: FUN .endpoint .endpoint_len .data .data_len
-  .url: ALC 256
-  .headers: "Content-Type: application/json"
-  
-  .resp: HTTP.POST .url 0 .data .data_len .headers 30
-  .status: HTTP.STATUS .resp
-  .body: HTTP.BODY .resp
-  
-  .result: .body
-!FUN
+.req_health: "GET /api/health HTTP/1.1\r\nHost: localhost\r\n\r\n"
+.req_users: "GET /api/users HTTP/1.1\r\nHost: localhost\r\n\r\n"
+.req_user1: "GET /api/users/1 HTTP/1.1\r\nHost: localhost\r\n\r\n"
+.req_user2: "GET /api/users/2 HTTP/1.1\r\nHost: localhost\r\n\r\n"
+.req_user99: "GET /api/users/99 HTTP/1.1\r\nHost: localhost\r\n\r\n"
 
 -- ============================================================
--- MAIN CLIENT
+-- FUNCTION: Make HTTP Request
 -- ============================================================
 
--- 1. Health check
-.health_url: "http://localhost:8080/api/health"
-.health_resp: HTTP.GET .health_url 35
-.health_status: HTTP.STATUS .health_resp
-.health_body: HTTP.BODY .health_resp
-.health_len: HTTP.BODY_LEN .health_resp
+-- Response buffer
+.response_buf: ALC 4096
 
-.log1: PRT "Health Check: " 14
-.log1b: PRT .health_body .health_len
-.log1c: PRT "\n" 1
+-- ============================================================
+-- REQUEST 1: Health Check
+-- ============================================================
 
--- 2. List all users
-.users_url: "http://localhost:8080/api/users"
-.users_resp: HTTP.GET .users_url 34
-.users_status: HTTP.STATUS .users_resp
-.users_body: HTTP.BODY .users_resp
-.users_len: HTTP.BODY_LEN .users_resp
+.msg1: "1. Health Check:\n"
+.print1: PRT .msg1 17
 
-.log2: PRT "Users List: " 12
-.log2b: PRT .users_body .users_len
-.log2c: PRT "\n" 1
+-- Create socket
+.sock1: TCP 0 0 0
 
--- 3. Get specific user
-.user1_url: "http://localhost:8080/api/users/1"
-.user1_resp: HTTP.GET .user1_url 36
-.user1_status: HTTP.STATUS .user1_resp
-.user1_body: HTTP.BODY .user1_resp
-.user1_len: HTTP.BODY_LEN .user1_resp
+-- Connect to server
+.conn1: TCP .sock1 .server_ip .server_port
 
-.log3: PRT "User 1: " 8
-.log3b: PRT .user1_body .user1_len
-.log3c: PRT "\n" 1
+-- Send request
+.send1: XMT .sock1 .req_health 47
 
--- 4. Get user 2
-.user2_url: "http://localhost:8080/api/users/2"
-.user2_resp: HTTP.GET .user2_url 36
-.user2_status: HTTP.STATUS .user2_resp
-.user2_body: HTTP.BODY .user2_resp
-.user2_len: HTTP.BODY_LEN .user2_resp
+-- Receive response
+.recv1: RCV .sock1 .response_buf 4096
 
-.log4: PRT "User 2: " 8
-.log4b: PRT .user2_body .user2_len
-.log4c: PRT "\n" 1
+-- Print response (skip HTTP headers, find body after \r\n\r\n)
+.print_resp1: PRT .response_buf .recv1
+.newline1: PRT "\n\n" 2
 
--- 5. Get non-existent user (404)
-.user99_url: "http://localhost:8080/api/users/99"
-.user99_resp: HTTP.GET .user99_url 37
-.user99_status: HTTP.STATUS .user99_resp
-.user99_body: HTTP.BODY .user99_resp
-.user99_len: HTTP.BODY_LEN .user99_resp
+-- Close
+.close1: CLS .sock1
 
-.log5: PRT "User 99 (404): " 15
-.log5b: PRT .user99_body .user99_len
-.log5c: PRT "\n" 1
+-- ============================================================
+-- REQUEST 2: List Users
+-- ============================================================
 
--- 6. Create new user
-.new_user: "{\"name\":\"Diana\",\"email\":\"diana@example.com\"}"
-.create_url: "http://localhost:8080/api/users"
-.create_headers: "Content-Type: application/json"
-.create_resp: HTTP.POST .create_url 34 .new_user 45 .create_headers 30
-.create_status: HTTP.STATUS .create_resp
-.create_body: HTTP.BODY .create_resp
-.create_len: HTTP.BODY_LEN .create_resp
+.msg2: "2. List Users:\n"
+.print2: PRT .msg2 15
 
-.log6: PRT "Create User: " 13
-.log6b: PRT .create_body .create_len
-.log6c: PRT "\n" 1
+.sock2: TCP 0 0 0
+.conn2: TCP .sock2 .server_ip .server_port
+.send2: XMT .sock2 .req_users 46
+.recv2: RCV .sock2 .response_buf 4096
+.print_resp2: PRT .response_buf .recv2
+.newline2: PRT "\n\n" 2
+.close2: CLS .sock2
 
--- 7. Parse JSON response
-.parsed: JSON.PARSE .user1_body .user1_len
-.user_name: JSON.GET_STRING .parsed "name" 4
-.user_email: JSON.GET_STRING .parsed "email" 5
+-- ============================================================
+-- REQUEST 3: Get User 1
+-- ============================================================
 
-.log7: PRT "Parsed name: " 13
-.log7b: PRT .user_name 5
-.log7c: PRT "\n" 1
+.msg3: "3. Get User 1:\n"
+.print3: PRT .msg3 15
 
--- Done
-.log_done: PRT "Client finished.\n" 17
+.sock3: TCP 0 0 0
+.conn3: TCP .sock3 .server_ip .server_port
+.send3: XMT .sock3 .req_user1 48
+.recv3: RCV .sock3 .response_buf 4096
+.print_resp3: PRT .response_buf .recv3
+.newline3: PRT "\n\n" 2
+.close3: CLS .sock3
+
+-- ============================================================
+-- REQUEST 4: Get User 2
+-- ============================================================
+
+.msg4: "4. Get User 2:\n"
+.print4: PRT .msg4 15
+
+.sock4: TCP 0 0 0
+.conn4: TCP .sock4 .server_ip .server_port
+.send4: XMT .sock4 .req_user2 48
+.recv4: RCV .sock4 .response_buf 4096
+.print_resp4: PRT .response_buf .recv4
+.newline4: PRT "\n\n" 2
+.close4: CLS .sock4
+
+-- ============================================================
+-- REQUEST 5: Get User 99 (Not Found)
+-- ============================================================
+
+.msg5: "5. Get User 99 (404):\n"
+.print5: PRT .msg5 22
+
+.sock5: TCP 0 0 0
+.conn5: TCP .sock5 .server_ip .server_port
+.send5: XMT .sock5 .req_user99 49
+.recv5: RCV .sock5 .response_buf 4096
+.print_resp5: PRT .response_buf .recv5
+.newline5: PRT "\n\n" 2
+.close5: CLS .sock5
+
+-- ============================================================
+-- DONE
+-- ============================================================
+
+.done_msg: "Client finished.\n"
+.print_done: PRT .done_msg 17
 
 .exit: 0
 !

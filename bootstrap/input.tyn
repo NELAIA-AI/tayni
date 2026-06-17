@@ -1,0 +1,360 @@
+-- TAYNI Gen16 - Multi-binding Arithmetic Compiler
+-- Compiles up to 8 bindings with ADD/SUB/MUL
+-- Input: input.tyn with .name: value or .name: OP .a .b
+-- Output: out.exe (PE that returns last value as exit code)
+-- Date: 2026-06-16
+
+.zero: 0
+.one: 1
+
+-- ===== READ INPUT =====
+-- Gen16 reads "program.tyn" (not input.tyn, which is gen16 itself)
+.ipath: "program.tyn"
+.ih: FOP .ipath .zero
+.ibuf: ALC 2048
+.ilen: FRD .ih .ibuf 2048
+.ic: FCL .ih
+
+-- ===== VARIABLE TABLE =====
+-- vals[0..7] = computed value for each binding
+-- Each binding is parsed from a line
+.vals: ALC 64
+
+-- ===== PARSE LINE 0 =====
+-- Format: .X: N  (where X is name char, N is 1-3 digit number)
+-- Or:     .X: ADD .A .B
+-- We identify lines by scanning for newlines
+
+-- Find value start for line 0 (after ": ")
+-- Line 0 starts at byte 0
+-- Skip ".X: " = 4 bytes to get to value
+.l0_b4: GET .ibuf 4
+.l0_b5: GET .ibuf 5
+.l0_b6: GET .ibuf 6
+
+-- Check if it's a letter (operation) or digit
+-- Digits: 48-57, Letters: 65-90
+.l0_is_digit: SUB .l0_b4 48
+.l0_is_letter: SUB .l0_b4 65
+
+-- Parse as number if digit (< 10 means it was a digit)
+.l0_d1: SUB .l0_b4 48
+.l0_d2_raw: SUB .l0_b5 48
+.l0_d1x10: MUL .l0_d1 10
+.l0_2dig: ADD .l0_d1x10 .l0_d2_raw
+.l0_d3_raw: SUB .l0_b6 48
+.l0_2digx10: MUL .l0_2dig 10
+.l0_3dig: ADD .l0_2digx10 .l0_d3_raw
+
+-- Check terminators for 1-digit or 2-digit numbers
+.l0_b5_is_nl: SUB .l0_b5 10
+.l0_b5_is_cr: SUB .l0_b5 13
+.l0_b6_is_nl: SUB .l0_b6 10
+.l0_b6_is_cr: SUB .l0_b6 13
+
+.l0_1dig_nl: IFZ .l0_b5_is_nl .l0_d1 .l0_2dig
+.l0_1dig_cr: IFZ .l0_b5_is_cr .l0_d1 .l0_1dig_nl
+.l0_2dig_nl: IFZ .l0_b6_is_nl .l0_1dig_cr .l0_3dig
+.l0_val: IFZ .l0_b6_is_cr .l0_1dig_cr .l0_2dig_nl
+
+-- Store val[0]
+.sv0: PUT .vals 0 .l0_val
+
+-- ===== FIND LINE 1 =====
+-- Scan for first newline after byte 4
+.c5: GET .ibuf 5
+.c6: GET .ibuf 6
+.c7: GET .ibuf 7
+.c8: GET .ibuf 8
+.c9: GET .ibuf 9
+.c10: GET .ibuf 10
+.c11: GET .ibuf 11
+.c12: GET .ibuf 12
+.c13: GET .ibuf 13
+.c14: GET .ibuf 14
+.c15: GET .ibuf 15
+
+-- Find newline (10) position
+.n5: SUB .c5 10
+.n6: SUB .c6 10
+.n7: SUB .c7 10
+.n8: SUB .c8 10
+.n9: SUB .c9 10
+.n10: SUB .c10 10
+.n11: SUB .c11 10
+.n12: SUB .c12 10
+.n13: SUB .c13 10
+.n14: SUB .c14 10
+.n15: SUB .c15 10
+
+-- Line 1 starts after first \n (or \r\n)
+-- Find first newline position using IFZ chain
+.pos_n15: IFZ .n15 15 0
+.pos_n14: IFZ .n14 14 .pos_n15
+.pos_n13: IFZ .n13 13 .pos_n14
+.pos_n12: IFZ .n12 12 .pos_n13
+.pos_n11: IFZ .n11 11 .pos_n12
+.pos_n10: IFZ .n10 10 .pos_n11
+.pos_n9: IFZ .n9 9 .pos_n10
+.pos_n8: IFZ .n8 8 .pos_n9
+.pos_n7: IFZ .n7 7 .pos_n8
+.pos_n6: IFZ .n6 6 .pos_n7
+.l1_start_raw: IFZ .n5 5 .pos_n6
+
+-- Skip \n (and possible \r before it)
+.l1_start: ADD .l1_start_raw 1
+-- Check if byte at l1_start is \r (13) and skip
+.l1_first: GET .ibuf .l1_start
+.l1_is_cr: SUB .l1_first 13
+.l1_skip: IFZ .l1_is_cr 1 0
+.l1_start2: ADD .l1_start .l1_skip
+
+-- ===== PARSE LINE 1 =====
+-- Line 1 value starts at l1_start2 + 4
+.l1_vpos: ADD .l1_start2 4
+.l1_b4: GET .ibuf .l1_vpos
+
+-- Check if line 1 is "!" (terminator = 33)
+.l1_term_check: GET .ibuf .l1_start2
+.l1_is_term: SUB .l1_term_check 33
+
+-- Parse line 1 value (numeric)
+.l1_vp1: ADD .l1_vpos 1
+.l1_vp2: ADD .l1_vpos 2
+.l1_b5: GET .ibuf .l1_vp1
+.l1_b6: GET .ibuf .l1_vp2
+
+.l1_d1: SUB .l1_b4 48
+.l1_d2_raw: SUB .l1_b5 48
+.l1_d1x10: MUL .l1_d1 10
+.l1_2dig: ADD .l1_d1x10 .l1_d2_raw
+
+.l1_b5_is_nl: SUB .l1_b5 10
+.l1_b5_is_cr: SUB .l1_b5 13
+.l1_b6_is_nl: SUB .l1_b6 10
+.l1_b6_is_cr: SUB .l1_b6 13
+
+.l1_1dig_nl: IFZ .l1_b5_is_nl .l1_d1 .l1_2dig
+.l1_val: IFZ .l1_b5_is_cr .l1_d1 .l1_1dig_nl
+
+-- Check if this is an operation (A=65, S=83, M=77)
+-- ADD starts with 'A' (65), SUB with 'S' (83), MUL with 'M' (77)
+.l1_is_A: SUB .l1_b4 65
+.l1_is_S: SUB .l1_b4 83
+.l1_is_M: SUB .l1_b4 77
+
+-- If operation: operands reference earlier vals
+-- Format: ADD .X .Y where X and Y are single-char names
+-- The operand index = name_char - first_name_char
+-- For simplicity: first binding is 'a', second 'b', etc.
+-- Operand bytes are at vpos+4 (skip "ADD .")  and vpos+7 (skip "ADD .X .")
+.l1_op1_pos: ADD .l1_vpos 5
+.l1_op2_pos: ADD .l1_vpos 8
+.l1_op1_chr: GET .ibuf .l1_op1_pos
+.l1_op2_chr: GET .ibuf .l1_op2_pos
+
+-- Map char to index: 'a'=97 -> 0, 'b'=98 -> 1, etc
+.l1_op1_idx: SUB .l1_op1_chr 97
+.l1_op2_idx: SUB .l1_op2_chr 98
+
+-- Get operand values from vals table
+.l1_op1_val: GET .vals .l1_op1_idx
+.l1_op2_val: GET .vals .l1_op2_idx
+
+-- Compute based on operation type
+.l1_add_result: ADD .l1_op1_val .l1_op2_val
+.l1_sub_result: SUB .l1_op1_val .l1_op2_val
+.l1_mul_result: MUL .l1_op1_val .l1_op2_val
+
+-- Select result by op type
+.l1_res_if_sub: IFZ .l1_is_S .l1_sub_result .l1_mul_result
+.l1_res_if_add: IFZ .l1_is_A .l1_add_result .l1_res_if_sub
+
+-- Final value: numeric if digit, op result if letter
+-- l1_b4 is digit if l1_b4 >= 48 and < 58
+.l1_digit_check: SUB .l1_b4 58
+.l1_use_num: IFZ .l1_digit_check 0 1
+.l1_final: IFZ .l1_is_A .l1_res_if_add .l1_val
+.l1_final2: IFZ .l1_is_S .l1_res_if_sub .l1_final
+.l1_final3: IFZ .l1_is_M .l1_mul_result .l1_final2
+
+-- Store val[1] (only if not terminator)
+.sv1: PUT .vals 1 .l1_final3
+
+-- ===== DETERMINE LAST VALUE =====
+-- If line 1 is "!", last value is val[0]
+-- Otherwise last value is val[1] (simplified: 2 bindings max for now)
+.last_val: IFZ .l1_is_term .l0_val .l1_final3
+
+-- ===== GENERATE PE =====
+.pe: ALC 4096
+
+-- DOS Header (same as gen15)
+.dos0: PUT .pe 0 77
+.dos1: PUT .pe 1 90
+.dos60: PUT .pe 60 64
+
+-- PE Signature
+.pe64: PUT .pe 64 80
+.pe65: PUT .pe 65 69
+
+-- COFF Header (IMAGE_FILE_MACHINE_AMD64)
+.coff0: PUT .pe 68 100
+.coff1: PUT .pe 69 134
+.coff2: PUT .pe 70 2
+.coff16: PUT .pe 84 240
+.coff18: PUT .pe 86 34
+
+-- Optional Header
+.opt0: PUT .pe 88 11
+.opt1: PUT .pe 89 2
+.opt2: PUT .pe 90 14
+.opt5: PUT .pe 93 4
+.opt16: PUT .pe 104 0
+.opt17: PUT .pe 105 16
+.opt20: PUT .pe 108 0
+.opt21: PUT .pe 109 16
+.opt27: PUT .pe 115 64
+.opt28: PUT .pe 116 1
+.opt32: PUT .pe 120 0
+.opt33: PUT .pe 121 16
+.opt36: PUT .pe 124 0
+.opt37: PUT .pe 125 2
+.opt40: PUT .pe 128 6
+.opt48: PUT .pe 136 6
+.opt56: PUT .pe 144 0
+.opt57: PUT .pe 145 64
+.opt60: PUT .pe 148 0
+.opt61: PUT .pe 149 2
+.opt68: PUT .pe 156 3
+.opt70: PUT .pe 158 96
+.opt71: PUT .pe 159 129
+.opt74: PUT .pe 162 16
+.opt81: PUT .pe 169 16
+.opt90: PUT .pe 178 16
+.opt97: PUT .pe 185 16
+.opt108: PUT .pe 196 16
+
+-- Import Directory
+.dd0: PUT .pe 208 0
+.dd1: PUT .pe 209 32
+.dd4: PUT .pe 212 60
+.dd96: PUT .pe 296 0
+.dd97: PUT .pe 297 33
+.dd100: PUT .pe 300 64
+
+-- .text section header
+.sec0: PUT .pe 328 46
+.sec1: PUT .pe 329 116
+.sec2: PUT .pe 330 101
+.sec3: PUT .pe 331 120
+.sec4: PUT .pe 332 116
+.sec8: PUT .pe 336 0
+.sec9: PUT .pe 337 4
+.sec12: PUT .pe 340 0
+.sec13: PUT .pe 341 16
+.sec16: PUT .pe 344 0
+.sec17: PUT .pe 345 4
+.sec20: PUT .pe 348 0
+.sec21: PUT .pe 349 2
+.sec36: PUT .pe 364 32
+.sec39: PUT .pe 367 96
+
+-- .rdata section header
+.rda0: PUT .pe 368 46
+.rda1: PUT .pe 369 114
+.rda2: PUT .pe 370 100
+.rda3: PUT .pe 371 97
+.rda4: PUT .pe 372 116
+.rda5: PUT .pe 373 97
+.rda8: PUT .pe 376 0
+.rda9: PUT .pe 377 4
+.rda12: PUT .pe 380 0
+.rda13: PUT .pe 381 32
+.rda16: PUT .pe 384 0
+.rda17: PUT .pe 385 4
+.rda20: PUT .pe 388 0
+.rda21: PUT .pe 389 6
+.rda36: PUT .pe 404 64
+.rda39: PUT .pe 407 64
+
+-- ===== CODE SECTION (offset 0x200 = 512) =====
+-- mov eax, LAST_VALUE ; B8 xx 00 00 00
+-- ret                 ; C3
+.code0: PUT .pe 512 184
+.code1: PUT .pe 513 .last_val
+.code2: PUT .pe 514 0
+.code3: PUT .pe 515 0
+.code4: PUT .pe 516 0
+.code5: PUT .pe 517 195
+
+-- ===== IMPORTS (offset 0x600 = 1536) =====
+.imp0: PUT .pe 1536 128
+.imp1: PUT .pe 1537 32
+.imp12: PUT .pe 1548 64
+.imp13: PUT .pe 1549 33
+.imp16: PUT .pe 1552 0
+.imp17: PUT .pe 1553 33
+
+-- ILT
+.ilt0: PUT .pe 1664 80
+.ilt1: PUT .pe 1665 33
+
+-- IAT
+.iat0: PUT .pe 1792 80
+.iat1: PUT .pe 1793 33
+
+-- DLL name "KERNEL32.dll"
+.dll0: PUT .pe 1856 75
+.dll1: PUT .pe 1857 69
+.dll2: PUT .pe 1858 82
+.dll3: PUT .pe 1859 78
+.dll4: PUT .pe 1860 69
+.dll5: PUT .pe 1861 76
+.dll6: PUT .pe 1862 51
+.dll7: PUT .pe 1863 50
+.dll8: PUT .pe 1864 46
+.dll9: PUT .pe 1865 100
+.dll10: PUT .pe 1866 108
+.dll11: PUT .pe 1867 108
+
+-- Hint/Name: "ExitProcess"
+.hn2: PUT .pe 1874 69
+.hn3: PUT .pe 1875 120
+.hn4: PUT .pe 1876 105
+.hn5: PUT .pe 1877 116
+.hn6: PUT .pe 1878 80
+.hn7: PUT .pe 1879 114
+.hn8: PUT .pe 1880 111
+.hn9: PUT .pe 1881 99
+.hn10: PUT .pe 1882 101
+.hn11: PUT .pe 1883 115
+.hn12: PUT .pe 1884 115
+
+-- ===== WRITE OUTPUT =====
+.opath: "out.exe"
+.oh: FOP .opath .one
+.owlen: FWR .oh .pe 2560
+.oc: FCL .oh
+
+-- ===== DISPLAY =====
+.hdr: "Gen16: Multi-binding Compiler\n"
+.ph: PRT .hdr 31
+
+.msg_val: "Result: "
+.pmv: PRT .msg_val 8
+.num: ALC 8
+.its: ITS .last_val .num
+.pn: PRT .num .its
+.nl: "\n"
+.pnl: PRT .nl 1
+
+.msg_out: "-> out.exe generated\n"
+.pmo: PRT .msg_out 21
+
+.f1: FRE .pe
+.f2: FRE .ibuf
+.f3: FRE .vals
+.f4: FRE .num
+
+!

@@ -637,6 +637,113 @@ pub enum Op {
     CapVersion,     // CAPABILITY_VERSION cap_name -> version string
     CapDeps,        // CAPABILITY_DEPS cap_name -> list of dependencies
     
+    // === STDLIB TIER 0: Core Operations ===
+    
+    // LOG module
+    LogInfo,        // LOG.INFO msg len -> print info message
+    LogError,       // LOG.ERROR msg len -> print error message
+    LogWarn,        // LOG.WARN msg len -> print warning message
+    LogDebug,       // LOG.DEBUG msg len -> print debug message
+    
+    // ROUTER module
+    RouterMatch,    // ROUTER.MATCH path path_len route route_len -> 1 if match, 0 if not
+    RouterParam,    // ROUTER.PARAM path path_len prefix prefix_len -> param_ptr
+    
+    // HTTP module (extended)
+    HttpIsOptions,  // HTTP.IS_OPTIONS req -> 1 if OPTIONS method
+    HttpPathLen,    // HTTP.PATH_LEN req -> path length
+    HttpClose,      // HTTP.CLOSE server -> close server
+    
+    // CORS module
+    CorsConfigNew,  // CORS.CONFIG_NEW -> config_ptr
+    CorsAllowOrigin,    // CORS.ALLOW_ORIGIN config origin len -> config
+    CorsAllowAllOrigins, // CORS.ALLOW_ALL_ORIGINS config -> config
+    CorsAllowMethods,   // CORS.ALLOW_METHODS config methods len -> config
+    CorsAllowHeaders,   // CORS.ALLOW_HEADERS config headers len -> config
+    CorsAllowCredentials, // CORS.ALLOW_CREDENTIALS config -> config
+    CorsHandle,     // CORS.HANDLE config req -> headers_ptr
+    CorsHandlePreflight, // CORS.HANDLE_PREFLIGHT config req -> headers_ptr
+    CorsPreflight,  // CORS.IS_PREFLIGHT req -> 1 if preflight
+    
+    // === STDLIB TIER 1: Common Operations ===
+    
+    // TIME module
+    TimeNow,        // TIME.NOW -> unix timestamp seconds
+    TimeNowMs,      // TIME.NOW_MS -> unix timestamp milliseconds
+    TimeSleep,      // TIME.SLEEP ms -> sleep for ms milliseconds
+    
+    // UUID module
+    UuidV4,         // UUID.V4 buf -> generate UUID v4 into buf
+    UuidV7,         // UUID.V7 buf -> generate UUID v7 into buf
+    
+    // HASH module
+    HashSha256,     // HASH.SHA256 data len out -> compute SHA256
+    HashMd5,        // HASH.MD5 data len out -> compute MD5
+    
+    // BASE64 module
+    Base64Encode,   // BASE64.ENCODE data len out -> encode to base64
+    Base64Decode,   // BASE64.DECODE data len out -> decode from base64
+    
+    // ENV module
+    EnvGet,         // ENV.GET name name_len buf buf_len -> get env var
+    EnvSet,         // ENV.SET name name_len value value_len -> set env var
+    
+    // PATH module
+    PathJoin,       // PATH.JOIN a a_len b b_len out -> join paths
+    PathDirname,    // PATH.DIRNAME path len out -> get directory
+    PathBasename,   // PATH.BASENAME path len out -> get filename
+    PathExt,        // PATH.EXT path len out -> get extension
+    
+    // FORMAT module
+    FormatInt,      // FORMAT.INT num buf -> format int to string
+    FormatHex,      // FORMAT.HEX num buf -> format int as hex
+    
+    // VALIDATION module
+    ValidateEmail,  // VALIDATE.EMAIL str len -> 1 if valid email
+    ValidateUrl,    // VALIDATE.URL str len -> 1 if valid URL
+    ValidateUuid,   // VALIDATE.UUID str len -> 1 if valid UUID
+    ValidateIpv4,   // VALIDATE.IPV4 str len -> 1 if valid IPv4
+    
+    // TEST module
+    TestAssert,     // TEST.ASSERT cond msg len -> assert condition
+    TestAssertEq,   // TEST.ASSERT_EQ a b msg len -> assert equal
+    TestSummary,    // TEST.SUMMARY -> print test summary
+    
+    // === STDLIB TIER 2: Specialized Operations ===
+    
+    // YAML module
+    YamlParse,      // YAML.PARSE str len -> yaml_obj
+    YamlGet,        // YAML.GET obj key key_len -> value
+    YamlEncode,     // YAML.ENCODE obj buf -> encode to YAML
+    
+    // CSV module
+    CsvParse,       // CSV.PARSE str len -> csv_obj
+    CsvNextRow,     // CSV.NEXT_ROW csv -> 1 if has row
+    CsvGetField,    // CSV.GET_FIELD csv col -> field value
+    CsvEncode,      // CSV.ENCODE rows buf -> encode to CSV
+    
+    // XML module
+    XmlParse,       // XML.PARSE str len -> xml_obj
+    XmlRoot,        // XML.ROOT xml -> root element
+    XmlTag,         // XML.TAG elem -> tag name
+    XmlAttr,        // XML.ATTR elem name name_len -> attr value
+    XmlText,        // XML.TEXT elem -> text content
+    
+    // CRYPTO module
+    AesEncrypt,     // AES.ENCRYPT key data len out -> encrypt with AES-256
+    AesDecrypt,     // AES.DECRYPT key data len out -> decrypt with AES-256
+    RsaGenerate,    // RSA.GENERATE bits pub_out priv_out -> generate keypair
+    RsaEncrypt,     // RSA.ENCRYPT pub data len out -> encrypt with RSA
+    RsaDecrypt,     // RSA.DECRYPT priv data len out -> decrypt with RSA
+    
+    // GZIP module
+    GzipCompress,   // GZIP.COMPRESS data len out -> compress
+    GzipDecompress, // GZIP.DECOMPRESS data len out -> decompress
+    
+    // RETRY module
+    RetryConfigNew, // RETRY.CONFIG_NEW -> config_ptr
+    RetryExecute,   // RETRY.EXECUTE config fn -> execute with retry
+    
     // Sub-graph call
     Call(String),
 }

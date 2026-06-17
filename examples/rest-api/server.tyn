@@ -1,176 +1,109 @@
 -- TAYNI REST API Server Example
--- Demonstrates: http, json, router, cors, log modules
+-- Uses stdlib operations (LOG, CORS, HTTP)
 -- Usage: tayni-c server.tyn -o server && ./server
 
 USE http
-USE json
-USE router
-USE cors
 USE log
+USE cors
 
 -- ============================================================
--- CONFIGURATION
+-- SAMPLE DATA
+-- ============================================================
+
+.user1_json: "{\"id\":1,\"name\":\"Alice\",\"email\":\"alice@example.com\"}"
+.users_list: "[{\"id\":1,\"name\":\"Alice\"},{\"id\":2,\"name\":\"Bob\"}]"
+.health_json: "{\"status\":\"ok\",\"version\":\"1.0\"}"
+.not_found_json: "{\"error\":\"Not Found\"}"
+
+-- HTTP Response headers
+.http_200: "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n"
+.http_404: "HTTP/1.1 404 Not Found\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n"
+
+-- ============================================================
+-- CORS CONFIGURATION
+-- ============================================================
+
+.cors_config: CORS.CONFIG_NEW
+.cors_setup: CORS.ALLOW_ALL_ORIGINS .cors_config
+
+-- ============================================================
+-- SERVER STARTUP
 -- ============================================================
 
 .port: 8080
-.host: "0.0.0.0"
+.backlog: 5
 
--- CORS configuration
-.cors_config: CORS.CONFIG_NEW
-.cors_config: CORS.ALLOW_ALL_ORIGINS .cors_config
-.cors_config: CORS.ALLOW_METHODS .cors_config "GET, POST, PUT, DELETE, OPTIONS" 35
-.cors_config: CORS.ALLOW_HEADERS .cors_config "Content-Type, Authorization" 26
+.startup_msg: "REST API Server starting on port 8080"
+.log_start: LOG.INFO .startup_msg 38
 
--- ============================================================
--- DATA STORE (In-memory)
--- ============================================================
+-- Create TCP socket
+.sock: TCP 0 0 0
+.bind_result: BND .sock .port
+.listen_result: LST .sock .backlog
 
--- Simple key-value store for demo
-.store: ALC 4096
-.store_count: 0
-
--- Pre-populate with sample data
-.user1: "{\"id\":1,\"name\":\"Alice\",\"email\":\"alice@example.com\"}"
-.user2: "{\"id\":2,\"name\":\"Bob\",\"email\":\"bob@example.com\"}"
-.user3: "{\"id\":3,\"name\":\"Charlie\",\"email\":\"charlie@example.com\"}"
+.listen_msg: "Server listening..."
+.log_listen: LOG.INFO .listen_msg 19
 
 -- ============================================================
--- ROUTES
+-- ACCEPT CONNECTION
 -- ============================================================
 
--- GET /api/health - Health check
-.route_health: ROUTER.GET "/api/health" 11
-
--- GET /api/users - List all users
-.route_users_list: ROUTER.GET "/api/users" 10
-
--- GET /api/users/:id - Get user by ID
-.route_users_get: ROUTER.GET "/api/users/:id" 14
-
--- POST /api/users - Create user
-.route_users_create: ROUTER.POST "/api/users" 10
-
--- PUT /api/users/:id - Update user
-.route_users_update: ROUTER.PUT "/api/users/:id" 14
-
--- DELETE /api/users/:id - Delete user
-.route_users_delete: ROUTER.DELETE "/api/users/:id" 14
+.client: ACC .sock
 
 -- ============================================================
--- HANDLERS
+-- READ REQUEST
 -- ============================================================
 
--- Health check handler
-.handle_health: FUN .req
-  .body: "{\"status\":\"ok\",\"version\":\"1.0\"}"
-  .resp: HTTP.RESPOND .req 200 .body 32 "application/json" 16
-!FUN
-
--- List users handler
-.handle_users_list: FUN .req
-  .body: "[{\"id\":1,\"name\":\"Alice\"},{\"id\":2,\"name\":\"Bob\"},{\"id\":3,\"name\":\"Charlie\"}]"
-  .resp: HTTP.RESPOND .req 200 .body 72 "application/json" 16
-!FUN
-
--- Get user by ID handler
-.handle_users_get: FUN .req .id
-  -- Select user based on ID
-  .is_1: SUB .id 1
-  .is_2: SUB .id 2
-  .is_3: SUB .id 3
-  
-  .body1: "{\"id\":1,\"name\":\"Alice\",\"email\":\"alice@example.com\"}"
-  .body2: "{\"id\":2,\"name\":\"Bob\",\"email\":\"bob@example.com\"}"
-  .body3: "{\"id\":3,\"name\":\"Charlie\",\"email\":\"charlie@example.com\"}"
-  .body_404: "{\"error\":\"User not found\"}"
-  
-  .body: IFZ .is_1 .body1 .body_404
-  .body: IFZ .is_2 .body2 .body
-  .body: IFZ .is_3 .body3 .body
-  
-  .status: IFZ .is_1 200 404
-  .status: IFZ .is_2 200 .status
-  .status: IFZ .is_3 200 .status
-  
-  .resp: HTTP.RESPOND .req .status .body 50 "application/json" 16
-!FUN
-
--- Create user handler
-.handle_users_create: FUN .req .body .body_len
-  -- Parse JSON body
-  .parsed: JSON.PARSE .body .body_len
-  .name: JSON.GET_STRING .parsed "name" 4
-  .email: JSON.GET_STRING .parsed "email" 5
-  
-  -- Create response with new ID
-  .resp_body: "{\"id\":4,\"name\":\"New User\",\"created\":true}"
-  .resp: HTTP.RESPOND .req 201 .resp_body 42 "application/json" 16
-!FUN
+.request_buf: ALC 4096
+.bytes_read: RCV .client .request_buf 4096
 
 -- ============================================================
--- MAIN SERVER LOOP
+-- PARSE REQUEST
 -- ============================================================
 
--- Log startup
-.log_start: LOG.INFO "Starting REST API server on port 8080" 38
+.b9: GET .request_buf 9
+.b15: GET .request_buf 15
 
--- Create HTTP server
-.server: HTTP.LISTEN .host 7 .port
+-- Check for /api/health (byte 9 = 'h' = 104)
+.diff_health: SUB .b9 104
+.is_health: IFZ .diff_health 1 0
 
--- Log listening
-.log_listen: LOG.INFO "Server listening..." 19
+-- Check for /api/users (byte 9 = 'u' = 117)
+.diff_users: SUB .b9 117
+.is_users: IFZ .diff_users 1 0
 
--- Accept connection (simplified - single request for demo)
-.req: HTTP.ACCEPT .server
+-- ============================================================
+-- SEND RESPONSE
+-- ============================================================
 
--- Get request info
-.method: HTTP.METHOD .req
-.path: HTTP.PATH .req
-.path_len: HTTP.PATH_LEN .req
+.response: ALC 1024
 
--- Log request
-.log_req: LOG.INFO .path .path_len
+-- Default: 404
+.header_404: CPY .response .http_404 72
+.body_404: CPY .response .not_found_json 22
+.send_404: XMT .client .response 94
 
--- Handle CORS preflight
-.is_options: HTTP.IS_OPTIONS .req
-.cors_headers: CORS.HANDLE .cors_config .req
+-- Health route
+.resp_health: ALC 512
+.h_header: CPY .resp_health .http_200 68
+.h_body: CPY .resp_health .health_json 32
+.do_health: XMT .client .resp_health 100
 
--- Route matching
-.match_health: ROUTER.MATCH .route_health .path .path_len
-.match_users_list: ROUTER.MATCH .route_users_list .path .path_len
-.match_users_get: ROUTER.MATCH .route_users_get .path .path_len
+-- Users route
+.resp_users: ALC 512
+.u_header: CPY .resp_users .http_200 68
+.u_body: CPY .resp_users .users_list 52
+.do_users: XMT .client .resp_users 120
 
--- Dispatch to handler
-.handled: 0
+-- ============================================================
+-- CLEANUP
+-- ============================================================
 
--- Health check
-.do_health: IFZ .match_health 1 0
-.h1: IFZ .do_health 0 .handle_health
-.handled: IFZ .do_health .handled 1
+.close_client: CLS .client
+.close_server: CLS .sock
 
--- Users list
-.do_users_list: IFZ .match_users_list 1 0
-.h2: IFZ .do_users_list 0 .handle_users_list
-.handled: IFZ .do_users_list .handled 1
+.done_msg: "Request handled"
+.log_done: LOG.INFO .done_msg 15
 
--- Users get (with ID extraction)
-.do_users_get: IFZ .match_users_get 1 0
-.user_id: ROUTER.PARAM .route_users_get .path .path_len "id" 2
-.h3: IFZ .do_users_get 0 .handle_users_get
-.handled: IFZ .do_users_get .handled 1
-
--- 404 Not Found
-.not_found: IFZ .handled 1 0
-.body_404: "{\"error\":\"Not Found\"}"
-.resp_404: IFZ .not_found 0 .body_404
-.h404: IFZ .not_found 0 HTTP.RESPOND
-
--- Close server
-.close: HTTP.CLOSE .server
-
--- Log shutdown
-.log_stop: LOG.INFO "Server stopped" 14
-
--- Exit
 .exit: 0
 !

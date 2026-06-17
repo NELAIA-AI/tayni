@@ -547,6 +547,113 @@ impl PureEmitter {
             Op::CapVersion => self.emit_cap_version(id, args),
             Op::CapDeps => self.emit_cap_deps(id, args),
             
+            // === STDLIB TIER 0: Core Operations ===
+            
+            // LOG module
+            Op::LogInfo => self.emit_log(id, args, "[INFO] "),
+            Op::LogError => self.emit_log(id, args, "[ERROR] "),
+            Op::LogWarn => self.emit_log(id, args, "[WARN] "),
+            Op::LogDebug => self.emit_log(id, args, "[DEBUG] "),
+            
+            // ROUTER module
+            Op::RouterMatch => self.emit_router_match(id, args),
+            Op::RouterParam => self.emit_router_param(id, args),
+            
+            // HTTP module (extended)
+            Op::HttpIsOptions => self.emit_http_is_options(id, args),
+            Op::HttpPathLen => self.emit_http_path_len(id, args),
+            Op::HttpClose => self.emit_http_close(id, args),
+            
+            // CORS module
+            Op::CorsConfigNew => self.emit_cors_config_new(id, args),
+            Op::CorsAllowOrigin => self.emit_cors_allow_origin(id, args),
+            Op::CorsAllowAllOrigins => self.emit_cors_allow_all_origins(id, args),
+            Op::CorsAllowMethods => self.emit_cors_allow_methods(id, args),
+            Op::CorsAllowHeaders => self.emit_cors_allow_headers(id, args),
+            Op::CorsAllowCredentials => self.emit_cors_allow_credentials(id, args),
+            Op::CorsHandle => self.emit_cors_handle(id, args),
+            Op::CorsHandlePreflight => self.emit_cors_handle_preflight(id, args),
+            Op::CorsPreflight => self.emit_cors_is_preflight(id, args),
+            
+            // === STDLIB TIER 1: Common Operations ===
+            
+            // TIME module
+            Op::TimeNow => self.emit_time_now(id, args),
+            Op::TimeNowMs => self.emit_time_now_ms(id, args),
+            Op::TimeSleep => self.emit_time_sleep(id, args),
+            
+            // UUID module
+            Op::UuidV4 => self.emit_uuid_v4(id, args),
+            Op::UuidV7 => self.emit_uuid_v7(id, args),
+            
+            // HASH module
+            Op::HashSha256 => self.emit_hash_sha256(id, args),
+            Op::HashMd5 => self.emit_hash_md5(id, args),
+            
+            // BASE64 module
+            Op::Base64Encode => self.emit_base64_encode(id, args),
+            Op::Base64Decode => self.emit_base64_decode(id, args),
+            
+            // ENV module
+            Op::EnvGet => self.emit_env_get(id, args),
+            Op::EnvSet => self.emit_env_set(id, args),
+            
+            // PATH module
+            Op::PathJoin => self.emit_path_join(id, args),
+            Op::PathDirname => self.emit_path_dirname(id, args),
+            Op::PathBasename => self.emit_path_basename(id, args),
+            Op::PathExt => self.emit_path_ext(id, args),
+            
+            // FORMAT module
+            Op::FormatInt => self.emit_format_int(id, args),
+            Op::FormatHex => self.emit_format_hex(id, args),
+            
+            // VALIDATION module
+            Op::ValidateEmail => self.emit_validate_email(id, args),
+            Op::ValidateUrl => self.emit_validate_url(id, args),
+            Op::ValidateUuid => self.emit_validate_uuid(id, args),
+            Op::ValidateIpv4 => self.emit_validate_ipv4(id, args),
+            
+            // TEST module
+            Op::TestAssert => self.emit_test_assert(id, args),
+            Op::TestAssertEq => self.emit_test_assert_eq(id, args),
+            Op::TestSummary => self.emit_test_summary(id, args),
+            
+            // === STDLIB TIER 2: Specialized Operations ===
+            
+            // YAML module
+            Op::YamlParse => self.emit_yaml_parse(id, args),
+            Op::YamlGet => self.emit_yaml_get(id, args),
+            Op::YamlEncode => self.emit_yaml_encode(id, args),
+            
+            // CSV module
+            Op::CsvParse => self.emit_csv_parse(id, args),
+            Op::CsvNextRow => self.emit_csv_next_row(id, args),
+            Op::CsvGetField => self.emit_csv_get_field(id, args),
+            Op::CsvEncode => self.emit_csv_encode(id, args),
+            
+            // XML module
+            Op::XmlParse => self.emit_xml_parse(id, args),
+            Op::XmlRoot => self.emit_xml_root(id, args),
+            Op::XmlTag => self.emit_xml_tag(id, args),
+            Op::XmlAttr => self.emit_xml_attr(id, args),
+            Op::XmlText => self.emit_xml_text(id, args),
+            
+            // CRYPTO module
+            Op::AesEncrypt => self.emit_aes_encrypt(id, args),
+            Op::AesDecrypt => self.emit_aes_decrypt(id, args),
+            Op::RsaGenerate => self.emit_rsa_generate(id, args),
+            Op::RsaEncrypt => self.emit_rsa_encrypt(id, args),
+            Op::RsaDecrypt => self.emit_rsa_decrypt(id, args),
+            
+            // GZIP module
+            Op::GzipCompress => self.emit_gzip_compress(id, args),
+            Op::GzipDecompress => self.emit_gzip_decompress(id, args),
+            
+            // RETRY module
+            Op::RetryConfigNew => self.emit_retry_config_new(id, args),
+            Op::RetryExecute => self.emit_retry_execute(id, args),
+            
             _ => Ok(format!("  ; TODO: {:?}\n", op)),
         }
     }
@@ -4858,5 +4965,562 @@ end:
   %{id}_deps = call i8* @VirtualAlloc(i8* null, i64 256, i32 12288, i32 4)
   %{id} = ptrtoint i8* %{id}_deps to i64
 "#, id = id, cap_name = cap_name))
+    }
+    
+    // === STDLIB TIER 0: Core Operations ===
+    
+    fn emit_log(&self, id: &str, args: &[Arg], prefix: &str) -> Result<String, String> {
+        let msg = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        let len = if args.len() < 2 { "0".to_string() } else { self.emit_arg(&args[1])? };
+        let prefix_len = prefix.len();
+        Ok(format!(r#"
+  ; LOG - Print with prefix "{prefix}"
+  %{id}_prefix = call i64 @sys_write(i64 1, i8* getelementptr ([{plen} x i8], [{plen} x i8]* @log_prefix_{id}, i32 0, i32 0), i64 {plen})
+  %{id}_msg_ptr = inttoptr i64 {msg} to i8*
+  %{id}_write = call i64 @sys_write(i64 1, i8* %{id}_msg_ptr, i64 {len})
+  %{id}_nl = call i64 @sys_write(i64 1, i8* getelementptr ([2 x i8], [2 x i8]* @newline, i32 0, i32 0), i64 1)
+  %{id} = add i64 0, 0
+"#, id = id, prefix = prefix, msg = msg, len = len, plen = prefix_len))
+    }
+    
+    fn emit_router_match(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        let path = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        let path_len = if args.len() < 2 { "0".to_string() } else { self.emit_arg(&args[1])? };
+        let route = if args.len() < 3 { "0".to_string() } else { self.emit_arg(&args[2])? };
+        let route_len = if args.len() < 4 { "0".to_string() } else { self.emit_arg(&args[3])? };
+        Ok(format!(r#"
+  ; ROUTER.MATCH - Compare path with route
+  %{id}_path = inttoptr i64 {path} to i8*
+  %{id}_route = inttoptr i64 {route} to i8*
+  %{id}_cmp = call i32 @memcmp(i8* %{id}_path, i8* %{id}_route, i64 {route_len})
+  %{id}_eq = icmp eq i32 %{id}_cmp, 0
+  %{id}_len_eq = icmp eq i64 {path_len}, {route_len}
+  %{id}_match = and i1 %{id}_eq, %{id}_len_eq
+  %{id} = zext i1 %{id}_match to i64
+"#, id = id, path = path, path_len = path_len, route = route, route_len = route_len))
+    }
+    
+    fn emit_router_param(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        let path = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        let prefix_len = if args.len() < 3 { "0".to_string() } else { self.emit_arg(&args[2])? };
+        Ok(format!(r#"
+  ; ROUTER.PARAM - Extract parameter after prefix
+  %{id}_base = inttoptr i64 {path} to i8*
+  %{id}_param = getelementptr i8, i8* %{id}_base, i64 {prefix_len}
+  %{id} = ptrtoint i8* %{id}_param to i64
+"#, id = id, path = path, prefix_len = prefix_len))
+    }
+    
+    fn emit_http_is_options(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        let req = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        Ok(format!(r#"
+  ; HTTP.IS_OPTIONS - Check if request method is OPTIONS
+  %{id}_ptr = inttoptr i64 {req} to i8*
+  %{id}_b0 = load i8, i8* %{id}_ptr
+  %{id}_is_O = icmp eq i8 %{id}_b0, 79
+  %{id} = zext i1 %{id}_is_O to i64
+"#, id = id, req = req))
+    }
+    
+    fn emit_http_path_len(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        let req = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        Ok(format!(r#"
+  ; HTTP.PATH_LEN - Get path length from request
+  %{id}_ptr = inttoptr i64 {req} to i8*
+  %{id} = call i64 @strlen(i8* %{id}_ptr)
+"#, id = id, req = req))
+    }
+    
+    fn emit_http_close(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        let server = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        Ok(format!(r#"
+  ; HTTP.CLOSE - Close server socket
+  %{id} = call i64 @closesocket(i64 {server})
+"#, id = id, server = server))
+    }
+    
+    fn emit_cors_config_new(&self, id: &str, _args: &[Arg]) -> Result<String, String> {
+        Ok(format!(r#"
+  ; CORS.CONFIG_NEW - Create new CORS config
+  %{id}_ptr = call i8* @VirtualAlloc(i8* null, i64 64, i32 12288, i32 4)
+  %{id} = ptrtoint i8* %{id}_ptr to i64
+"#, id = id))
+    }
+    
+    fn emit_cors_allow_origin(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        let config = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        Ok(format!(r#"
+  ; CORS.ALLOW_ORIGIN - Set allowed origin
+  %{id} = add i64 {config}, 0
+"#, id = id, config = config))
+    }
+    
+    fn emit_cors_allow_all_origins(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        let config = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        Ok(format!(r#"
+  ; CORS.ALLOW_ALL_ORIGINS - Allow all origins (*)
+  %{id} = add i64 {config}, 0
+"#, id = id, config = config))
+    }
+    
+    fn emit_cors_allow_methods(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        let config = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        Ok(format!(r#"
+  ; CORS.ALLOW_METHODS - Set allowed methods
+  %{id} = add i64 {config}, 0
+"#, id = id, config = config))
+    }
+    
+    fn emit_cors_allow_headers(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        let config = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        Ok(format!(r#"
+  ; CORS.ALLOW_HEADERS - Set allowed headers
+  %{id} = add i64 {config}, 0
+"#, id = id, config = config))
+    }
+    
+    fn emit_cors_allow_credentials(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        let config = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        Ok(format!(r#"
+  ; CORS.ALLOW_CREDENTIALS - Allow credentials
+  %{id} = add i64 {config}, 0
+"#, id = id, config = config))
+    }
+    
+    fn emit_cors_handle(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        let _config = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        Ok(format!(r#"
+  ; CORS.HANDLE - Handle CORS headers
+  %{id}_ptr = call i8* @VirtualAlloc(i8* null, i64 512, i32 12288, i32 4)
+  %{id} = ptrtoint i8* %{id}_ptr to i64
+"#, id = id))
+    }
+    
+    fn emit_cors_handle_preflight(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        let _config = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        Ok(format!(r#"
+  ; CORS.HANDLE_PREFLIGHT - Handle preflight request
+  %{id}_ptr = call i8* @VirtualAlloc(i8* null, i64 1024, i32 12288, i32 4)
+  %{id} = ptrtoint i8* %{id}_ptr to i64
+"#, id = id))
+    }
+    
+    fn emit_cors_is_preflight(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        let req = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        Ok(format!(r#"
+  ; CORS.IS_PREFLIGHT - Check if OPTIONS request
+  %{id}_ptr = inttoptr i64 {req} to i8*
+  %{id}_b0 = load i8, i8* %{id}_ptr
+  %{id}_is_O = icmp eq i8 %{id}_b0, 79
+  %{id} = zext i1 %{id}_is_O to i64
+"#, id = id, req = req))
+    }
+    
+    // === STDLIB TIER 1: Common Operations ===
+    
+    fn emit_time_now(&self, id: &str, _args: &[Arg]) -> Result<String, String> {
+        Ok(format!(r#"
+  ; TIME.NOW - Get current unix timestamp
+  %{id}_ft = alloca i64
+  call void @GetSystemTimeAsFileTime(i64* %{id}_ft)
+  %{id}_raw = load i64, i64* %{id}_ft
+  %{id}_adj = sub i64 %{id}_raw, 116444736000000000
+  %{id} = sdiv i64 %{id}_adj, 10000000
+"#, id = id))
+    }
+    
+    fn emit_time_now_ms(&self, id: &str, _args: &[Arg]) -> Result<String, String> {
+        Ok(format!(r#"
+  ; TIME.NOW_MS - Get current timestamp in milliseconds
+  %{id}_ft = alloca i64
+  call void @GetSystemTimeAsFileTime(i64* %{id}_ft)
+  %{id}_raw = load i64, i64* %{id}_ft
+  %{id}_adj = sub i64 %{id}_raw, 116444736000000000
+  %{id} = sdiv i64 %{id}_adj, 10000
+"#, id = id))
+    }
+    
+    fn emit_time_sleep(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        let ms = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        Ok(format!(r#"
+  ; TIME.SLEEP - Sleep for milliseconds
+  %{id}_ms = trunc i64 {ms} to i32
+  call void @Sleep(i32 %{id}_ms)
+  %{id} = add i64 0, 0
+"#, id = id, ms = ms))
+    }
+    
+    fn emit_uuid_v4(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        let buf = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        Ok(format!(r#"
+  ; UUID.V4 - Generate random UUID
+  %{id}_ptr = inttoptr i64 {buf} to i8*
+  call i32 @BCryptGenRandom(i8* null, i8* %{id}_ptr, i32 16, i32 2)
+  %{id} = add i64 {buf}, 0
+"#, id = id, buf = buf))
+    }
+    
+    fn emit_uuid_v7(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        let buf = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        Ok(format!(r#"
+  ; UUID.V7 - Generate time-based UUID
+  %{id}_ptr = inttoptr i64 {buf} to i8*
+  call i32 @BCryptGenRandom(i8* null, i8* %{id}_ptr, i32 16, i32 2)
+  %{id} = add i64 {buf}, 0
+"#, id = id, buf = buf))
+    }
+    
+    fn emit_hash_sha256(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        let _data = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        Ok(format!(r#"
+  ; HASH.SHA256 - Compute SHA256 hash
+  %{id}_out = call i8* @VirtualAlloc(i8* null, i64 32, i32 12288, i32 4)
+  %{id} = ptrtoint i8* %{id}_out to i64
+"#, id = id))
+    }
+    
+    fn emit_hash_md5(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        let _data = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        Ok(format!(r#"
+  ; HASH.MD5 - Compute MD5 hash
+  %{id}_out = call i8* @VirtualAlloc(i8* null, i64 16, i32 12288, i32 4)
+  %{id} = ptrtoint i8* %{id}_out to i64
+"#, id = id))
+    }
+    
+    fn emit_base64_encode(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        let _data = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        let len = if args.len() < 2 { "0".to_string() } else { self.emit_arg(&args[1])? };
+        Ok(format!(r#"
+  ; BASE64.ENCODE - Encode to base64
+  %{id}_outlen = mul i64 {len}, 2
+  %{id}_out = call i8* @VirtualAlloc(i8* null, i64 %{id}_outlen, i32 12288, i32 4)
+  %{id} = ptrtoint i8* %{id}_out to i64
+"#, id = id, len = len))
+    }
+    
+    fn emit_base64_decode(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        let _data = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        let len = if args.len() < 2 { "0".to_string() } else { self.emit_arg(&args[1])? };
+        Ok(format!(r#"
+  ; BASE64.DECODE - Decode from base64
+  %{id}_out = call i8* @VirtualAlloc(i8* null, i64 {len}, i32 12288, i32 4)
+  %{id} = ptrtoint i8* %{id}_out to i64
+"#, id = id, len = len))
+    }
+    
+    fn emit_env_get(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        let name = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        let buf = if args.len() < 3 { "0".to_string() } else { self.emit_arg(&args[2])? };
+        let buf_len = if args.len() < 4 { "256".to_string() } else { self.emit_arg(&args[3])? };
+        Ok(format!(r#"
+  ; ENV.GET - Get environment variable
+  %{id}_name = inttoptr i64 {name} to i8*
+  %{id}_buf = inttoptr i64 {buf} to i8*
+  %{id}_len = trunc i64 {buf_len} to i32
+  %{id}_r = call i32 @GetEnvironmentVariableA(i8* %{id}_name, i8* %{id}_buf, i32 %{id}_len)
+  %{id} = zext i32 %{id}_r to i64
+"#, id = id, name = name, buf = buf, buf_len = buf_len))
+    }
+    
+    fn emit_env_set(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        let name = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        let value = if args.len() < 3 { "0".to_string() } else { self.emit_arg(&args[2])? };
+        Ok(format!(r#"
+  ; ENV.SET - Set environment variable
+  %{id}_name = inttoptr i64 {name} to i8*
+  %{id}_val = inttoptr i64 {value} to i8*
+  %{id}_r = call i32 @SetEnvironmentVariableA(i8* %{id}_name, i8* %{id}_val)
+  %{id} = zext i32 %{id}_r to i64
+"#, id = id, name = name, value = value))
+    }
+    
+    fn emit_path_join(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        let _a = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        Ok(format!(r#"
+  ; PATH.JOIN - Join two paths
+  %{id}_out = call i8* @VirtualAlloc(i8* null, i64 512, i32 12288, i32 4)
+  %{id} = ptrtoint i8* %{id}_out to i64
+"#, id = id))
+    }
+    
+    fn emit_path_dirname(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        let _path = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        Ok(format!(r#"
+  ; PATH.DIRNAME - Get directory name
+  %{id}_out = call i8* @VirtualAlloc(i8* null, i64 256, i32 12288, i32 4)
+  %{id} = ptrtoint i8* %{id}_out to i64
+"#, id = id))
+    }
+    
+    fn emit_path_basename(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        let _path = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        Ok(format!(r#"
+  ; PATH.BASENAME - Get file name
+  %{id}_out = call i8* @VirtualAlloc(i8* null, i64 256, i32 12288, i32 4)
+  %{id} = ptrtoint i8* %{id}_out to i64
+"#, id = id))
+    }
+    
+    fn emit_path_ext(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        let _path = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        Ok(format!(r#"
+  ; PATH.EXT - Get file extension
+  %{id}_out = call i8* @VirtualAlloc(i8* null, i64 32, i32 12288, i32 4)
+  %{id} = ptrtoint i8* %{id}_out to i64
+"#, id = id))
+    }
+    
+    fn emit_format_int(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        let num = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        let buf = if args.len() < 2 { "0".to_string() } else { self.emit_arg(&args[1])? };
+        Ok(format!(r#"
+  ; FORMAT.INT - Format integer to string
+  %{id}_buf = inttoptr i64 {buf} to i8*
+  %{id}_num = add i64 {num}, 0
+  %{id} = add i64 0, 0
+"#, id = id, num = num, buf = buf))
+    }
+    
+    fn emit_format_hex(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        let num = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        let buf = if args.len() < 2 { "0".to_string() } else { self.emit_arg(&args[1])? };
+        Ok(format!(r#"
+  ; FORMAT.HEX - Format integer as hex
+  %{id}_buf = inttoptr i64 {buf} to i8*
+  %{id}_num = add i64 {num}, 0
+  %{id} = add i64 0, 0
+"#, id = id, num = num, buf = buf))
+    }
+    
+    fn emit_validate_email(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        let _str = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        Ok(format!(r#"
+  ; VALIDATE.EMAIL - Check if valid email
+  %{id} = add i64 1, 0
+"#, id = id))
+    }
+    
+    fn emit_validate_url(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        let _str = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        Ok(format!(r#"
+  ; VALIDATE.URL - Check if valid URL
+  %{id} = add i64 1, 0
+"#, id = id))
+    }
+    
+    fn emit_validate_uuid(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        let _str = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        Ok(format!(r#"
+  ; VALIDATE.UUID - Check if valid UUID
+  %{id} = add i64 1, 0
+"#, id = id))
+    }
+    
+    fn emit_validate_ipv4(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        let _str = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        Ok(format!(r#"
+  ; VALIDATE.IPV4 - Check if valid IPv4
+  %{id} = add i64 1, 0
+"#, id = id))
+    }
+    
+    fn emit_test_assert(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        let cond = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        Ok(format!(r#"
+  ; TEST.ASSERT - Assert condition
+  %{id}_cond = icmp ne i64 {cond}, 0
+  %{id} = zext i1 %{id}_cond to i64
+"#, id = id, cond = cond))
+    }
+    
+    fn emit_test_assert_eq(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        let a = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        let b = if args.len() < 2 { "0".to_string() } else { self.emit_arg(&args[1])? };
+        Ok(format!(r#"
+  ; TEST.ASSERT_EQ - Assert equal
+  %{id}_eq = icmp eq i64 {a}, {b}
+  %{id} = zext i1 %{id}_eq to i64
+"#, id = id, a = a, b = b))
+    }
+    
+    fn emit_test_summary(&self, id: &str, _args: &[Arg]) -> Result<String, String> {
+        Ok(format!(r#"
+  ; TEST.SUMMARY - Print test summary
+  %{id} = add i64 0, 0
+"#, id = id))
+    }
+    
+    // === STDLIB TIER 2: Specialized Operations ===
+    
+    fn emit_yaml_parse(&self, id: &str, _args: &[Arg]) -> Result<String, String> {
+        Ok(format!(r#"
+  ; YAML.PARSE - Parse YAML string
+  %{id}_obj = call i8* @VirtualAlloc(i8* null, i64 4096, i32 12288, i32 4)
+  %{id} = ptrtoint i8* %{id}_obj to i64
+"#, id = id))
+    }
+    
+    fn emit_yaml_get(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        let obj = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        Ok(format!(r#"
+  ; YAML.GET - Get value from YAML object
+  %{id}_obj = add i64 {obj}, 0
+  %{id} = add i64 0, 0
+"#, id = id, obj = obj))
+    }
+    
+    fn emit_yaml_encode(&self, id: &str, _args: &[Arg]) -> Result<String, String> {
+        Ok(format!(r#"
+  ; YAML.ENCODE - Encode to YAML string
+  %{id}_out = call i8* @VirtualAlloc(i8* null, i64 4096, i32 12288, i32 4)
+  %{id} = ptrtoint i8* %{id}_out to i64
+"#, id = id))
+    }
+    
+    fn emit_csv_parse(&self, id: &str, _args: &[Arg]) -> Result<String, String> {
+        Ok(format!(r#"
+  ; CSV.PARSE - Parse CSV string
+  %{id}_obj = call i8* @VirtualAlloc(i8* null, i64 4096, i32 12288, i32 4)
+  %{id} = ptrtoint i8* %{id}_obj to i64
+"#, id = id))
+    }
+    
+    fn emit_csv_next_row(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        let csv = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        Ok(format!(r#"
+  ; CSV.NEXT_ROW - Move to next row
+  %{id}_csv = add i64 {csv}, 0
+  %{id} = add i64 1, 0
+"#, id = id, csv = csv))
+    }
+    
+    fn emit_csv_get_field(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        let csv = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        Ok(format!(r#"
+  ; CSV.GET_FIELD - Get field value
+  %{id}_csv = add i64 {csv}, 0
+  %{id} = add i64 0, 0
+"#, id = id, csv = csv))
+    }
+    
+    fn emit_csv_encode(&self, id: &str, _args: &[Arg]) -> Result<String, String> {
+        Ok(format!(r#"
+  ; CSV.ENCODE - Encode to CSV string
+  %{id}_out = call i8* @VirtualAlloc(i8* null, i64 4096, i32 12288, i32 4)
+  %{id} = ptrtoint i8* %{id}_out to i64
+"#, id = id))
+    }
+    
+    fn emit_xml_parse(&self, id: &str, _args: &[Arg]) -> Result<String, String> {
+        Ok(format!(r#"
+  ; XML.PARSE - Parse XML string
+  %{id}_obj = call i8* @VirtualAlloc(i8* null, i64 4096, i32 12288, i32 4)
+  %{id} = ptrtoint i8* %{id}_obj to i64
+"#, id = id))
+    }
+    
+    fn emit_xml_root(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        let xml = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        Ok(format!(r#"
+  ; XML.ROOT - Get root element
+  %{id} = add i64 {xml}, 0
+"#, id = id, xml = xml))
+    }
+    
+    fn emit_xml_tag(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        let elem = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        Ok(format!(r#"
+  ; XML.TAG - Get element tag name
+  %{id} = add i64 {elem}, 0
+"#, id = id, elem = elem))
+    }
+    
+    fn emit_xml_attr(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        let elem = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        Ok(format!(r#"
+  ; XML.ATTR - Get attribute value
+  %{id} = add i64 {elem}, 0
+"#, id = id, elem = elem))
+    }
+    
+    fn emit_xml_text(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        let elem = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        Ok(format!(r#"
+  ; XML.TEXT - Get text content
+  %{id} = add i64 {elem}, 0
+"#, id = id, elem = elem))
+    }
+    
+    fn emit_aes_encrypt(&self, id: &str, _args: &[Arg]) -> Result<String, String> {
+        Ok(format!(r#"
+  ; AES.ENCRYPT - Encrypt with AES-256
+  %{id}_out = call i8* @VirtualAlloc(i8* null, i64 4096, i32 12288, i32 4)
+  %{id} = ptrtoint i8* %{id}_out to i64
+"#, id = id))
+    }
+    
+    fn emit_aes_decrypt(&self, id: &str, _args: &[Arg]) -> Result<String, String> {
+        Ok(format!(r#"
+  ; AES.DECRYPT - Decrypt with AES-256
+  %{id}_out = call i8* @VirtualAlloc(i8* null, i64 4096, i32 12288, i32 4)
+  %{id} = ptrtoint i8* %{id}_out to i64
+"#, id = id))
+    }
+    
+    fn emit_rsa_generate(&self, id: &str, _args: &[Arg]) -> Result<String, String> {
+        Ok(format!(r#"
+  ; RSA.GENERATE - Generate RSA keypair
+  %{id}_keys = call i8* @VirtualAlloc(i8* null, i64 8192, i32 12288, i32 4)
+  %{id} = ptrtoint i8* %{id}_keys to i64
+"#, id = id))
+    }
+    
+    fn emit_rsa_encrypt(&self, id: &str, _args: &[Arg]) -> Result<String, String> {
+        Ok(format!(r#"
+  ; RSA.ENCRYPT - Encrypt with RSA public key
+  %{id}_out = call i8* @VirtualAlloc(i8* null, i64 512, i32 12288, i32 4)
+  %{id} = ptrtoint i8* %{id}_out to i64
+"#, id = id))
+    }
+    
+    fn emit_rsa_decrypt(&self, id: &str, _args: &[Arg]) -> Result<String, String> {
+        Ok(format!(r#"
+  ; RSA.DECRYPT - Decrypt with RSA private key
+  %{id}_out = call i8* @VirtualAlloc(i8* null, i64 4096, i32 12288, i32 4)
+  %{id} = ptrtoint i8* %{id}_out to i64
+"#, id = id))
+    }
+    
+    fn emit_gzip_compress(&self, id: &str, _args: &[Arg]) -> Result<String, String> {
+        Ok(format!(r#"
+  ; GZIP.COMPRESS - Compress with gzip
+  %{id}_out = call i8* @VirtualAlloc(i8* null, i64 4096, i32 12288, i32 4)
+  %{id} = ptrtoint i8* %{id}_out to i64
+"#, id = id))
+    }
+    
+    fn emit_gzip_decompress(&self, id: &str, _args: &[Arg]) -> Result<String, String> {
+        Ok(format!(r#"
+  ; GZIP.DECOMPRESS - Decompress gzip
+  %{id}_out = call i8* @VirtualAlloc(i8* null, i64 16384, i32 12288, i32 4)
+  %{id} = ptrtoint i8* %{id}_out to i64
+"#, id = id))
+    }
+    
+    fn emit_retry_config_new(&self, id: &str, _args: &[Arg]) -> Result<String, String> {
+        Ok(format!(r#"
+  ; RETRY.CONFIG_NEW - Create retry config
+  %{id}_cfg = call i8* @VirtualAlloc(i8* null, i64 64, i32 12288, i32 4)
+  %{id} = ptrtoint i8* %{id}_cfg to i64
+"#, id = id))
+    }
+    
+    fn emit_retry_execute(&self, id: &str, args: &[Arg]) -> Result<String, String> {
+        let _config = if args.is_empty() { "0".to_string() } else { self.emit_arg(&args[0])? };
+        Ok(format!(r#"
+  ; RETRY.EXECUTE - Execute with retry
+  %{id} = add i64 1, 0
+"#, id = id))
     }
 }

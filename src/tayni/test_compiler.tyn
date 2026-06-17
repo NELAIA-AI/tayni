@@ -1,0 +1,10 @@
+-- Test compiler pattern: read input, write output
+.ipath: "input.txt"
+.opath: "output.txt"
+.ih: FOP .ipath 0
+.buf: ALC 64
+.len: FRD .ih .buf 64
+.ic: FCL .ih
+.oh: FOP .opath 1
+.ow: FWR .oh .buf 64
+.oc: FCL .oh

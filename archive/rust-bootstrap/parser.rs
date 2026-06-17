@@ -538,6 +538,113 @@ impl Parser {
             "CAPABILITY_VERSION" | "CAP_VER" => Ok(Op::CapVersion),
             "CAPABILITY_DEPS" | "CAP_DEPS" => Ok(Op::CapDeps),
             
+            // === STDLIB TIER 0: Core Operations ===
+            
+            // LOG module
+            "LOG.INFO" => Ok(Op::LogInfo),
+            "LOG.ERROR" => Ok(Op::LogError),
+            "LOG.WARN" => Ok(Op::LogWarn),
+            "LOG.DEBUG" => Ok(Op::LogDebug),
+            
+            // ROUTER module
+            "ROUTER.MATCH" => Ok(Op::RouterMatch),
+            "ROUTER.PARAM" => Ok(Op::RouterParam),
+            
+            // HTTP module (extended)
+            "HTTP.IS_OPTIONS" => Ok(Op::HttpIsOptions),
+            "HTTP.PATH_LEN" => Ok(Op::HttpPathLen),
+            "HTTP.CLOSE" => Ok(Op::HttpClose),
+            
+            // CORS module
+            "CORS.CONFIG_NEW" => Ok(Op::CorsConfigNew),
+            "CORS.ALLOW_ORIGIN" => Ok(Op::CorsAllowOrigin),
+            "CORS.ALLOW_ALL_ORIGINS" => Ok(Op::CorsAllowAllOrigins),
+            "CORS.ALLOW_METHODS" => Ok(Op::CorsAllowMethods),
+            "CORS.ALLOW_HEADERS" => Ok(Op::CorsAllowHeaders),
+            "CORS.ALLOW_CREDENTIALS" => Ok(Op::CorsAllowCredentials),
+            "CORS.HANDLE" => Ok(Op::CorsHandle),
+            "CORS.HANDLE_PREFLIGHT" => Ok(Op::CorsHandlePreflight),
+            "CORS.IS_PREFLIGHT" => Ok(Op::CorsPreflight),
+            
+            // === STDLIB TIER 1: Common Operations ===
+            
+            // TIME module
+            "TIME.NOW" => Ok(Op::TimeNow),
+            "TIME.NOW_MS" => Ok(Op::TimeNowMs),
+            "TIME.SLEEP" => Ok(Op::TimeSleep),
+            
+            // UUID module
+            "UUID.V4" => Ok(Op::UuidV4),
+            "UUID.V7" => Ok(Op::UuidV7),
+            
+            // HASH module
+            "HASH.SHA256" => Ok(Op::HashSha256),
+            "HASH.MD5" => Ok(Op::HashMd5),
+            
+            // BASE64 module
+            "BASE64.ENCODE" => Ok(Op::Base64Encode),
+            "BASE64.DECODE" => Ok(Op::Base64Decode),
+            
+            // ENV module
+            "ENV.GET" => Ok(Op::EnvGet),
+            "ENV.SET" => Ok(Op::EnvSet),
+            
+            // PATH module
+            "PATH.JOIN" => Ok(Op::PathJoin),
+            "PATH.DIRNAME" => Ok(Op::PathDirname),
+            "PATH.BASENAME" => Ok(Op::PathBasename),
+            "PATH.EXT" => Ok(Op::PathExt),
+            
+            // FORMAT module
+            "FORMAT.INT" => Ok(Op::FormatInt),
+            "FORMAT.HEX" => Ok(Op::FormatHex),
+            
+            // VALIDATION module
+            "VALIDATE.EMAIL" => Ok(Op::ValidateEmail),
+            "VALIDATE.URL" => Ok(Op::ValidateUrl),
+            "VALIDATE.UUID" => Ok(Op::ValidateUuid),
+            "VALIDATE.IPV4" => Ok(Op::ValidateIpv4),
+            
+            // TEST module
+            "TEST.ASSERT" => Ok(Op::TestAssert),
+            "TEST.ASSERT_EQ" => Ok(Op::TestAssertEq),
+            "TEST.SUMMARY" => Ok(Op::TestSummary),
+            
+            // === STDLIB TIER 2: Specialized Operations ===
+            
+            // YAML module
+            "YAML.PARSE" => Ok(Op::YamlParse),
+            "YAML.GET" => Ok(Op::YamlGet),
+            "YAML.ENCODE" => Ok(Op::YamlEncode),
+            
+            // CSV module
+            "CSV.PARSE" => Ok(Op::CsvParse),
+            "CSV.NEXT_ROW" => Ok(Op::CsvNextRow),
+            "CSV.GET_FIELD" => Ok(Op::CsvGetField),
+            "CSV.ENCODE" => Ok(Op::CsvEncode),
+            
+            // XML module
+            "XML.PARSE" => Ok(Op::XmlParse),
+            "XML.ROOT" => Ok(Op::XmlRoot),
+            "XML.TAG" => Ok(Op::XmlTag),
+            "XML.ATTR" => Ok(Op::XmlAttr),
+            "XML.TEXT" => Ok(Op::XmlText),
+            
+            // CRYPTO module
+            "AES.ENCRYPT" => Ok(Op::AesEncrypt),
+            "AES.DECRYPT" => Ok(Op::AesDecrypt),
+            "RSA.GENERATE" => Ok(Op::RsaGenerate),
+            "RSA.ENCRYPT" => Ok(Op::RsaEncrypt),
+            "RSA.DECRYPT" => Ok(Op::RsaDecrypt),
+            
+            // GZIP module
+            "GZIP.COMPRESS" => Ok(Op::GzipCompress),
+            "GZIP.DECOMPRESS" => Ok(Op::GzipDecompress),
+            
+            // RETRY module
+            "RETRY.CONFIG_NEW" => Ok(Op::RetryConfigNew),
+            "RETRY.EXECUTE" => Ok(Op::RetryExecute),
+            
             // === PHASE 19: Quantum Computing (QIR) ===
             // Single-qubit gates
             "QH" => Ok(Op::Call("QH".to_string())),       // Hadamard

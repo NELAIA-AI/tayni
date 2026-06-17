@@ -1,0 +1,12 @@
+.a: 1
+.b: 0
+.c: FOP .a .b
+.d: ADD .c .a
+.buf: ALC 8
+.len: ITS .d .buf
+.p: PRT .buf .len
+.path: "result.txt"
+.h: FOP .path 1
+.w: FWR .h .buf .len
+.x: FCL .h
+!
