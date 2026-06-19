@@ -1,12 +1,40 @@
 [package]
 name = "tayni-c"
-version = "0.24.0"
+version = "0.25.0"
 edition = "2021"
 description = "TAYNI Compiler - Direct native emission (PE/ELF/Mach-O), no external dependencies"
-rust-version = "1.96"
+rust-version = "1.70"
 
 [dependencies]
 
 [[bin]]
 name = "tayni-c"
-path = "src/main.rs"
+path = "main.rs"
+
+[lib]
+name = "tayni_c"
+path = "lib.rs"
+
+[[test]]
+name = "parser_tests"
+path = "tests/parser_tests.rs"
+
+[[test]]
+name = "ir_tests"
+path = "tests/ir_tests.rs"
+
+[[test]]
+name = "pe_tests"
+path = "tests/pe_tests.rs"
+
+[[test]]
+name = "integration_tests"
+path = "tests/integration_tests.rs"
+
+[[test]]
+name = "tcp_server_test"
+path = "tests/tcp_server_test.rs"
+
+[[example]]
+name = "benchmark_suite"
+path = "examples/benchmark_suite.rs"
