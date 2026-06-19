@@ -14,6 +14,7 @@ pub mod macho;
 pub mod capabilities;
 pub mod modules;
 pub mod wasm;
+pub mod wasi;
 pub mod riscv;
 pub mod interface;
 pub mod intent;
