@@ -1,0 +1,192 @@
+{
+    "TAYNI Function": {
+        "prefix": "fn",
+        "body": [
+            "fn ${1:name}(${2:params}) -> ${3:i32} {",
+            "\t$0",
+            "}"
+        ],
+        "description": "Define a TAYNI function"
+    },
+    "TAYNI Main": {
+        "prefix": "main",
+        "body": [
+            "fn main() -> i32 {",
+            "\t$0",
+            "\t0",
+            "}"
+        ],
+        "description": "Main entry point"
+    },
+    "TAYNI Capability": {
+        "prefix": "cap",
+        "body": [
+            "cap ${1|net:tcp,net:http,fs:read,fs:write,time,env,crypto|}"
+        ],
+        "description": "Declare a capability"
+    },
+    "TAYNI HTTP Server": {
+        "prefix": "httpserver",
+        "body": [
+            "cap net:http",
+            "",
+            "fn handle(req: Request) -> Response {",
+            "\tlet body = json_encode({\"status\": \"ok\"})",
+            "\tResponse::new(200, body)",
+            "}",
+            "",
+            "fn main() -> i32 {",
+            "\thttp_server(${1:8080}, handle)",
+            "}"
+        ],
+        "description": "HTTP server template"
+    },
+    "TAYNI TCP Server": {
+        "prefix": "tcpserver",
+        "body": [
+            "cap net:tcp",
+            "",
+            "fn main() -> i32 {",
+            "\tlet sock = tcp_listen(\"0.0.0.0\", ${1:8080})",
+            "\tloop {",
+            "\t\tlet client = tcp_accept(sock)",
+            "\t\tlet data = tcp_recv(client, 1024)",
+            "\t\ttcp_send(client, \"Response\\n\")",
+            "\t\ttcp_close(client)",
+            "\t}",
+            "}"
+        ],
+        "description": "TCP server template"
+    },
+    "TAYNI If Statement": {
+        "prefix": "if",
+        "body": [
+            "if ${1:condition} {",
+            "\t$0",
+            "}"
+        ],
+        "description": "If statement"
+    },
+    "TAYNI If-Else": {
+        "prefix": "ife",
+        "body": [
+            "if ${1:condition} {",
+            "\t$2",
+            "} else {",
+            "\t$0",
+            "}"
+        ],
+        "description": "If-else statement"
+    },
+    "TAYNI Loop": {
+        "prefix": "loop",
+        "body": [
+            "loop ${1:10} {",
+            "\t$0",
+            "}"
+        ],
+        "description": "Loop N times"
+    },
+    "TAYNI While": {
+        "prefix": "while",
+        "body": [
+            "while ${1:condition} {",
+            "\t$0",
+            "}"
+        ],
+        "description": "While loop"
+    },
+    "TAYNI Struct": {
+        "prefix": "struct",
+        "body": [
+            "struct ${1:Name} {",
+            "\t${2:field}: ${3:type}",
+            "}"
+        ],
+        "description": "Define a struct"
+    },
+    "TAYNI Let": {
+        "prefix": "let",
+        "body": [
+            "let ${1:name} = ${2:value}"
+        ],
+        "description": "Variable declaration (v1.5)"
+    },
+    "TAYNI LET": {
+        "prefix": "LET",
+        "body": [
+            "LET ${1:name} = ${2:value}"
+        ],
+        "description": "Variable declaration (v1.0)"
+    },
+    "TAYNI Print": {
+        "prefix": "prt",
+        "body": [
+            "PRT ${1:value}"
+        ],
+        "description": "Print value (v1.0)"
+    },
+    "TAYNI Print v1.5": {
+        "prefix": "print",
+        "body": [
+            "print(${1:value})"
+        ],
+        "description": "Print value (v1.5)"
+    },
+    "TAYNI File Read": {
+        "prefix": "fileread",
+        "body": [
+            "cap fs:read",
+            "",
+            "let content = file_read(\"${1:path}\")"
+        ],
+        "description": "Read file contents"
+    },
+    "TAYNI File Write": {
+        "prefix": "filewrite",
+        "body": [
+            "cap fs:write",
+            "",
+            "file_write(\"${1:path}\", ${2:content})"
+        ],
+        "description": "Write to file"
+    },
+    "TAYNI JSON Encode": {
+        "prefix": "jsonenc",
+        "body": [
+            "let json = json_encode({",
+            "\t\"${1:key}\": ${2:value}",
+            "})"
+        ],
+        "description": "Encode JSON object"
+    },
+    "TAYNI JSON Decode": {
+        "prefix": "jsondec",
+        "body": [
+            "let obj = json_decode(${1:json_string})",
+            "let ${2:value} = obj[\"${3:key}\"]"
+        ],
+        "description": "Decode JSON string"
+    },
+    "TAYNI Error Handling": {
+        "prefix": "error",
+        "body": [
+            "let result = ${1:operation}()",
+            "if result.is_err() {",
+            "\treturn result.err()",
+            "}",
+            "let value = result.unwrap()"
+        ],
+        "description": "Error handling pattern"
+    },
+    "TAYNI Match": {
+        "prefix": "match",
+        "body": [
+            "match ${1:value} {",
+            "\t${2:pattern} => ${3:result},",
+            "\t_ => ${4:default}",
+            "}"
+        ],
+        "description": "Pattern matching"
+    }
+}

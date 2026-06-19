@@ -1,25 +1,45 @@
 {
     "name": "tayni",
     "displayName": "TAYNI Language",
-    "description": "Language support for TAYNI - AI-first programming language",
+    "description": "Language support for TAYNI - the AI-first programming language with token-efficient syntax, zero dependencies, and capability-based security",
     "version": "0.1.0",
     "publisher": "nelaia",
+    "author": {
+        "name": "NELAIA Project",
+        "email": "contact@nelaia.ai"
+    },
+    "license": "MIT",
+    "icon": "images/icon.png",
+    "galleryBanner": {
+        "color": "#1e1e1e",
+        "theme": "dark"
+    },
     "repository": {
         "type": "git",
         "url": "https://github.com/NELAIA-AI/tayni"
     },
+    "bugs": {
+        "url": "https://github.com/NELAIA-AI/tayni/issues"
+    },
+    "homepage": "https://github.com/NELAIA-AI/tayni#readme",
     "engines": {
         "vscode": "^1.75.0"
     },
     "categories": [
-        "Programming Languages"
+        "Programming Languages",
+        "Linters",
+        "Snippets"
     ],
     "keywords": [
         "tayni",
         "ai",
-        "programming language",
         "llm",
-        "code generation"
+        "programming language",
+        "code generation",
+        "token efficient",
+        "wasm",
+        "webassembly",
+        "systems programming"
     ],
     "activationEvents": [
         "onLanguage:tayni"
@@ -31,7 +51,11 @@
                 "id": "tayni",
                 "aliases": ["TAYNI", "tayni"],
                 "extensions": [".tyn", ".tayni"],
-                "configuration": "./language-configuration.json"
+                "configuration": "./language-configuration.json",
+                "icon": {
+                    "light": "./images/file-icon.png",
+                    "dark": "./images/file-icon.png"
+                }
             }
         ],
         "grammars": [
@@ -41,30 +65,75 @@
                 "path": "./syntaxes/tayni.tmLanguage.json"
             }
         ],
+        "snippets": [
+            {
+                "language": "tayni",
+                "path": "./snippets/tayni.json"
+            }
+        ],
         "configuration": {
             "title": "TAYNI",
             "properties": {
                 "tayni.lsp.path": {
                     "type": "string",
                     "default": "",
-                    "description": "Path to tayni-lsp executable"
+                    "description": "Path to tayni-lsp executable. Leave empty to search in PATH."
                 },
                 "tayni.lsp.enabled": {
                     "type": "boolean",
                     "default": true,
-                    "description": "Enable TAYNI Language Server"
+                    "description": "Enable TAYNI Language Server for advanced features."
+                },
+                "tayni.syntax.version": {
+                    "type": "string",
+                    "enum": ["auto", "v1.0", "v1.5"],
+                    "default": "auto",
+                    "description": "TAYNI syntax version to use for highlighting."
+                },
+                "tayni.diagnostics.enabled": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Enable real-time diagnostics and error checking."
                 }
             }
+        },
+        "commands": [
+            {
+                "command": "tayni.restartLsp",
+                "title": "TAYNI: Restart Language Server"
+            },
+            {
+                "command": "tayni.showVersion",
+                "title": "TAYNI: Show Version"
+            },
+            {
+                "command": "tayni.compileFile",
+                "title": "TAYNI: Compile Current File"
+            }
+        ],
+        "menus": {
+            "editor/context": [
+                {
+                    "when": "resourceLangId == tayni",
+                    "command": "tayni.compileFile",
+                    "group": "navigation"
+                }
+            ]
         }
     },
     "scripts": {
         "vscode:prepublish": "npm run compile",
         "compile": "tsc -p ./",
-        "watch": "tsc -watch -p ./"
+        "watch": "tsc -watch -p ./",
+        "lint": "eslint src --ext ts",
+        "test": "node ./out/test/runTest.js"
     },
     "devDependencies": {
         "@types/node": "^18.0.0",
         "@types/vscode": "^1.75.0",
+        "@typescript-eslint/eslint-plugin": "^6.0.0",
+        "@typescript-eslint/parser": "^6.0.0",
+        "eslint": "^8.0.0",
         "typescript": "^5.0.0"
     },
     "dependencies": {
