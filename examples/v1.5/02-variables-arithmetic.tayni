@@ -1,0 +1,24 @@
+// TAYNI v1.5 - Variables and Arithmetic
+// Demonstrates let/LET and basic math operations
+
+fn main() {
+    // Mutable variable
+    let x = 10
+    let y = 5
+    
+    // Immutable constant
+    LET PI = 3.14159
+    
+    // Arithmetic
+    let sum = x + y
+    let diff = x - y
+    let product = x * y
+    let quotient = x / y
+    let remainder = x % y
+    
+    PRT("Sum: ${sum}")
+    PRT("Difference: ${diff}")
+    PRT("Product: ${product}")
+    PRT("Quotient: ${quotient}")
+    PRT("Remainder: ${remainder}")
+}

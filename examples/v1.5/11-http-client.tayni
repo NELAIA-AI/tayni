@@ -1,0 +1,46 @@
+// TAYNI v1.5 - HTTP Client
+// Making HTTP requests (requires cap:net)
+cap:net
+
+fn main() {
+    // Simple GET request
+    let response = HTTP.get("https://api.github.com/users/octocat")
+    
+    PRT("Status: ${response.status}")
+    PRT("Headers: ${response.headers}")
+    
+    // Parse JSON response
+    let user = JSON.decode(response.body)
+    PRT("Username: ${user.login}")
+    PRT("Name: ${user.name}")
+    PRT("Followers: ${user.followers}")
+    
+    // POST request with JSON body
+    let data = {
+        "title": "Test Post",
+        "body": "This is a test",
+        "userId": 1
+    }
+    
+    let post_response = HTTP.post(
+        "https://jsonplaceholder.typicode.com/posts",
+        data
+    )
+    
+    PRT("POST Status: ${post_response.status}")
+    let created = JSON.decode(post_response.body)
+    PRT("Created ID: ${created.id}")
+    
+    // PUT request
+    let update = HTTP.put(
+        "https://jsonplaceholder.typicode.com/posts/1",
+        { "title": "Updated Title" }
+    )
+    PRT("PUT Status: ${update.status}")
+    
+    // DELETE request
+    let delete_resp = HTTP.delete(
+        "https://jsonplaceholder.typicode.com/posts/1"
+    )
+    PRT("DELETE Status: ${delete_resp.status}")
+}

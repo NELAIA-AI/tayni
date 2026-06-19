@@ -1,0 +1,44 @@
+// TAYNI v1.5 - Functions
+// Demonstrates function definitions and calls
+
+fn add(a: int, b: int) -> int {
+    a + b
+}
+
+fn multiply(a: int, b: int) -> int {
+    a * b
+}
+
+fn factorial(n: int) -> int {
+    if n <= 1 {
+        return 1
+    }
+    n * factorial(n - 1)
+}
+
+fn fibonacci(n: int) -> int {
+    if n <= 1 {
+        return n
+    }
+    fibonacci(n - 1) + fibonacci(n - 2)
+}
+
+fn greet(name: str) {
+    PRT("Hello, ${name}!")
+}
+
+fn main() {
+    let sum = add(5, 3)
+    PRT("5 + 3 = ${sum}")
+    
+    let product = multiply(4, 7)
+    PRT("4 * 7 = ${product}")
+    
+    let fact5 = factorial(5)
+    PRT("5! = ${fact5}")
+    
+    let fib10 = fibonacci(10)
+    PRT("fib(10) = ${fib10}")
+    
+    greet("TAYNI")
+}

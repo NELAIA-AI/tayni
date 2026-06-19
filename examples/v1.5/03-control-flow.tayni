@@ -1,0 +1,45 @@
+// TAYNI v1.5 - Control Flow
+// Demonstrates if/else, match, loops
+
+fn main() {
+    let score = 85
+    
+    // If-else
+    if score >= 90 {
+        PRT("Grade: A")
+    } else if score >= 80 {
+        PRT("Grade: B")
+    } else if score >= 70 {
+        PRT("Grade: C")
+    } else {
+        PRT("Grade: F")
+    }
+    
+    // Match expression
+    let day = 3
+    match day {
+        1 => PRT("Monday"),
+        2 => PRT("Tuesday"),
+        3 => PRT("Wednesday"),
+        4 => PRT("Thursday"),
+        5 => PRT("Friday"),
+        _ => PRT("Weekend")
+    }
+    
+    // While loop
+    let i = 0
+    while i < 5 {
+        PRT("Count: ${i}")
+        i = i + 1
+    }
+    
+    // Loop with break
+    let j = 0
+    loop {
+        if j >= 3 {
+            break
+        }
+        PRT("Loop: ${j}")
+        j = j + 1
+    }
+}

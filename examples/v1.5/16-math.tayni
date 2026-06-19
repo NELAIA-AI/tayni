@@ -1,0 +1,51 @@
+// TAYNI v1.5 - Math Operations
+// Mathematical functions and operations
+
+fn main() {
+    // Basic math
+    let a = 16.0
+    let b = 3.0
+    
+    PRT("a = ${a}, b = ${b}")
+    PRT("a + b = ${a + b}")
+    PRT("a - b = ${a - b}")
+    PRT("a * b = ${a * b}")
+    PRT("a / b = ${a / b}")
+    PRT("a % b = ${a % b}")
+    
+    // Power and roots
+    PRT("pow(2, 10) = ${pow(2.0, 10.0)}")
+    PRT("sqrt(144) = ${sqrt(144.0)}")
+    
+    // Absolute value
+    PRT("abs(-42) = ${abs(-42)}")
+    PRT("abs(42) = ${abs(42)}")
+    
+    // Min/Max
+    PRT("min(5, 3) = ${min(5, 3)}")
+    PRT("max(5, 3) = ${max(5, 3)}")
+    
+    // Rounding
+    let pi = 3.14159
+    PRT("pi = ${pi}")
+    PRT("floor(pi) = ${floor(pi)}")
+    PRT("ceil(pi) = ${ceil(pi)}")
+    PRT("round(pi) = ${round(pi)}")
+    
+    // Trigonometry (radians)
+    let angle = 1.5708  // ~90 degrees
+    PRT("sin(pi/2) = ${sin(angle)}")
+    PRT("cos(pi/2) = ${cos(angle)}")
+    PRT("tan(pi/4) = ${tan(0.7854)}")
+    
+    // Logarithms
+    PRT("log(100) = ${log(100.0)}")      // natural log
+    PRT("log10(100) = ${log10(100.0)}")  // base 10
+    PRT("log2(256) = ${log2(256.0)}")    // base 2
+    
+    // Constants
+    LET PI = 3.14159265358979
+    LET E = 2.71828182845905
+    PRT("PI = ${PI}")
+    PRT("E = ${E}")
+}

@@ -1,0 +1,32 @@
+// TAYNI v1.5 - TCP Echo Server
+// Raw TCP socket programming (requires cap:net)
+cap:net
+
+fn main() {
+    let addr = "0.0.0.0:9000"
+    let listener = TCP.listen(addr)
+    PRT("Echo server listening on ${addr}")
+    
+    loop {
+        // Accept incoming connection
+        let conn = listener.accept()
+        PRT("Client connected: ${conn.remote_addr}")
+        
+        // Echo loop
+        loop {
+            let data = conn.recv(1024)
+            
+            if len(data) == 0 {
+                PRT("Client disconnected")
+                break
+            }
+            
+            PRT("Received: ${data}")
+            
+            // Echo back
+            conn.send(data)
+        }
+        
+        conn.close()
+    }
+}

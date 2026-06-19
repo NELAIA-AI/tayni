@@ -1,0 +1,59 @@
+// TAYNI v1.5 - Lambdas and Higher-Order Functions
+// Functional programming patterns
+
+fn main() {
+    // Lambda syntax
+    let add = fn(a: int, b: int) -> int { a + b }
+    let multiply = (a, b) => a * b
+    
+    PRT("add(3, 4) = ${add(3, 4)}")
+    PRT("multiply(3, 4) = ${multiply(3, 4)}")
+    
+    // Array with map
+    let numbers = [1, 2, 3, 4, 5]
+    
+    let doubled = numbers.map((x) => x * 2)
+    PRT("Doubled: ${doubled}")
+    
+    let squared = numbers.map((x) => x * x)
+    PRT("Squared: ${squared}")
+    
+    // Filter
+    let evens = numbers.filter((x) => x % 2 == 0)
+    PRT("Evens: ${evens}")
+    
+    let greater_than_2 = numbers.filter((x) => x > 2)
+    PRT("Greater than 2: ${greater_than_2}")
+    
+    // Reduce
+    let sum = numbers.reduce(0, (acc, x) => acc + x)
+    PRT("Sum: ${sum}")
+    
+    let product = numbers.reduce(1, (acc, x) => acc * x)
+    PRT("Product: ${product}")
+    
+    // Chaining
+    let result = numbers
+        .filter((x) => x > 1)
+        .map((x) => x * 2)
+        .reduce(0, (acc, x) => acc + x)
+    PRT("Chained result: ${result}")
+    
+    // Find
+    let first_even = numbers.find((x) => x % 2 == 0)
+    PRT("First even: ${first_even}")
+    
+    // Every/Some
+    let all_positive = numbers.every((x) => x > 0)
+    PRT("All positive: ${all_positive}")
+    
+    let has_even = numbers.some((x) => x % 2 == 0)
+    PRT("Has even: ${has_even}")
+    
+    // Sort with comparator
+    let unsorted = [3, 1, 4, 1, 5, 9, 2, 6]
+    let sorted_asc = unsorted.sort((a, b) => a - b)
+    let sorted_desc = unsorted.sort((a, b) => b - a)
+    PRT("Sorted asc: ${sorted_asc}")
+    PRT("Sorted desc: ${sorted_desc}")
+}

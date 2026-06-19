@@ -1,0 +1,62 @@
+// TAYNI v1.5 - String Operations
+// Comprehensive string manipulation
+
+fn main() {
+    let text = "  Hello, TAYNI World!  "
+    
+    // Length
+    PRT("Original: '${text}'")
+    PRT("Length: ${len(text)}")
+    
+    // Trim whitespace
+    let trimmed = text.trim()
+    PRT("Trimmed: '${trimmed}'")
+    
+    // Case conversion
+    PRT("Upper: ${trimmed.upper()}")
+    PRT("Lower: ${trimmed.lower()}")
+    
+    // Substring
+    let sub = trimmed[0:5]
+    PRT("First 5 chars: '${sub}'")
+    
+    // Split
+    let words = trimmed.split(" ")
+    PRT("Words: ${len(words)}")
+    for word in words {
+        PRT("  - ${word}")
+    }
+    
+    // Join
+    let joined = words.join("-")
+    PRT("Joined: ${joined}")
+    
+    // Contains
+    if trimmed.contains("TAYNI") {
+        PRT("Contains 'TAYNI': yes")
+    }
+    
+    // Replace
+    let replaced = trimmed.replace("World", "Universe")
+    PRT("Replaced: ${replaced}")
+    
+    // Starts/ends with
+    PRT("Starts with 'Hello': ${trimmed.starts_with("Hello")}")
+    PRT("Ends with '!': ${trimmed.ends_with("!")}")
+    
+    // Index of
+    let idx = trimmed.index_of("TAYNI")
+    PRT("Index of 'TAYNI': ${idx}")
+    
+    // Repeat
+    let repeated = "ab".repeat(5)
+    PRT("Repeated: ${repeated}")
+    
+    // Reverse
+    let reversed = "TAYNI".reverse()
+    PRT("Reversed: ${reversed}")
+    
+    // Pad
+    let padded = "42".pad_left(5, '0')
+    PRT("Padded: ${padded}")
+}

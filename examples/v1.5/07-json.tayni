@@ -1,0 +1,39 @@
+// TAYNI v1.5 - JSON Handling
+// Demonstrates JSON encode/decode
+
+fn main() {
+    // Create data structure
+    let data = {
+        "name": "TAYNI",
+        "version": 1.5,
+        "features": ["fast", "small", "secure"],
+        "metrics": {
+            "token_reduction": 64,
+            "binary_size_kb": 10.5
+        }
+    }
+    
+    // Encode to JSON string
+    let json_str = JSON.encode(data)
+    PRT("JSON: ${json_str}")
+    
+    // Decode back to object
+    let parsed = JSON.decode(json_str)
+    PRT("Name: ${parsed.name}")
+    PRT("Version: ${parsed.version}")
+    
+    // Access nested data
+    PRT("Token reduction: ${parsed.metrics.token_reduction}%")
+    
+    // Iterate array in JSON
+    PRT("Features:")
+    for feature in parsed.features {
+        PRT("  - ${feature}")
+    }
+    
+    // Modify and re-encode
+    parsed.version = 2.0
+    push(parsed.features, "wasm")
+    let updated = JSON.encode(parsed)
+    PRT("Updated: ${updated}")
+}

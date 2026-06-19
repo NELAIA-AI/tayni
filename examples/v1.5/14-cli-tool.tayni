@@ -1,0 +1,99 @@
+// TAYNI v1.5 - CLI Tool
+// Command-line application pattern (requires cap:proc, cap:fs)
+cap:proc
+cap:fs
+cap:env
+
+fn print_usage() {
+    PRT("Usage: mytool <command> [options]")
+    PRT("")
+    PRT("Commands:")
+    PRT("  init          Initialize a new project")
+    PRT("  build         Build the project")
+    PRT("  run           Run the project")
+    PRT("  test          Run tests")
+    PRT("  version       Show version")
+    PRT("  help          Show this help")
+    PRT("")
+    PRT("Options:")
+    PRT("  --verbose     Enable verbose output")
+    PRT("  --config=FILE Use specified config file")
+}
+
+fn cmd_init() {
+    PRT("Initializing new project...")
+    
+    // Create project structure
+    Dir.create("src")
+    Dir.create("tests")
+    
+    // Create main file
+    File.write("src/main.tayni", "fn main() {\n    PRT(\"Hello!\")\n}\n")
+    
+    // Create config
+    let config = {
+        "name": "my-project",
+        "version": "0.1.0",
+        "main": "src/main.tayni"
+    }
+    File.write("project.json", JSON.encode(config))
+    
+    PRT("Project initialized successfully!")
+}
+
+fn cmd_build(verbose: bool) {
+    if verbose {
+        PRT("Building project (verbose mode)...")
+    } else {
+        PRT("Building project...")
+    }
+    
+    // Read config
+    if !File.exists("project.json") {
+        PRTERR("Error: project.json not found. Run 'init' first.")
+        Proc.exit(1)
+    }
+    
+    let config = JSON.decode(File.read("project.json"))
+    PRT("Building ${config.name} v${config.version}")
+    
+    // Simulate build
+    PRT("Compiling ${config.main}...")
+    PRT("Build complete!")
+}
+
+fn cmd_version() {
+    PRT("mytool version 1.0.0")
+    PRT("TAYNI version 1.5")
+}
+
+fn main() {
+    let args = Proc.args()
+    
+    if len(args) < 2 {
+        print_usage()
+        Proc.exit(1)
+    }
+    
+    let cmd = args[1]
+    let verbose = false
+    
+    // Check for --verbose flag
+    for arg in args {
+        if arg == "--verbose" {
+            verbose = true
+        }
+    }
+    
+    match cmd {
+        "init" => cmd_init(),
+        "build" => cmd_build(verbose),
+        "version" => cmd_version(),
+        "help" => print_usage(),
+        _ => {
+            PRTERR("Unknown command: ${cmd}")
+            print_usage()
+            Proc.exit(1)
+        }
+    }
+}

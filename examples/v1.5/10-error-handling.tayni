@@ -1,0 +1,61 @@
+// TAYNI v1.5 - Error Handling
+// Demonstrates try-catch and Result types
+cap:fs
+
+fn divide(a: int, b: int) -> Result<int, str> {
+    if b == 0 {
+        return Err("Division by zero")
+    }
+    Ok(a / b)
+}
+
+fn read_config(path: str) -> Result<map, str> {
+    if !File.exists(path) {
+        return Err("Config file not found: ${path}")
+    }
+    
+    let content = File.read(path)
+    let config = JSON.decode(content)
+    Ok(config)
+}
+
+fn main() {
+    // Using Result with match
+    let result = divide(10, 2)
+    match result {
+        Ok(value) => PRT("10 / 2 = ${value}"),
+        Err(msg) => PRTERR("Error: ${msg}")
+    }
+    
+    // Error case
+    let bad_result = divide(10, 0)
+    match bad_result {
+        Ok(value) => PRT("Result: ${value}"),
+        Err(msg) => PRTERR("Error: ${msg}")
+    }
+    
+    // Using ? operator for propagation
+    fn process() -> Result<str, str> {
+        let config = read_config("config.json")?
+        let name = config.name ?? "default"
+        Ok("Processed: ${name}")
+    }
+    
+    // Try-catch for exceptions
+    try {
+        let data = File.read("nonexistent.txt")
+        PRT(data)
+    } catch err {
+        PRTERR("Caught error: ${err}")
+    }
+    
+    // Null coalescing
+    let value = nil
+    let safe_value = value ?? "default value"
+    PRT("Safe value: ${safe_value}")
+    
+    // Optional chaining
+    let user = { "profile": { "name": "Alice" } }
+    let name = user?.profile?.name ?? "Unknown"
+    PRT("User name: ${name}")
+}

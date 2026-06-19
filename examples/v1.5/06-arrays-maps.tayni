@@ -1,0 +1,48 @@
+// TAYNI v1.5 - Arrays and Maps
+// Demonstrates collection types
+
+fn main() {
+    // Array literal
+    let numbers = [1, 2, 3, 4, 5]
+    PRT("Array length: ${len(numbers)}")
+    
+    // Array access
+    PRT("First element: ${numbers[0]}")
+    PRT("Last element: ${numbers[4]}")
+    
+    // Array iteration
+    for num in numbers {
+        PRT("Number: ${num}")
+    }
+    
+    // Mutable array
+    let fruits = ["apple", "banana", "cherry"]
+    push(fruits, "date")
+    PRT("Fruits: ${len(fruits)} items")
+    
+    // Map literal
+    let person = {
+        "name": "Alice",
+        "age": 30,
+        "city": "Buenos Aires"
+    }
+    
+    PRT("Name: ${person.name}")
+    PRT("Age: ${person.age}")
+    
+    // Map iteration
+    for key in keys(person) {
+        PRT("${key}: ${person[key]}")
+    }
+    
+    // Nested structures
+    let users = [
+        { "name": "Bob", "score": 85 },
+        { "name": "Carol", "score": 92 },
+        { "name": "Dave", "score": 78 }
+    ]
+    
+    for user in users {
+        PRT("${user.name}: ${user.score}")
+    }
+}

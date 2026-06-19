@@ -1,0 +1,42 @@
+// TAYNI v1.5 - File Operations
+// Demonstrates file I/O (requires cap:fs)
+cap:fs
+
+fn main() {
+    let filename = "example.txt"
+    let content = "Hello from TAYNI!\nThis is a test file."
+    
+    // Write to file
+    File.write(filename, content)
+    PRT("Wrote to ${filename}")
+    
+    // Check if file exists
+    if File.exists(filename) {
+        PRT("File exists")
+        
+        // Read file contents
+        let data = File.read(filename)
+        PRT("Contents:")
+        PRT(data)
+        
+        // Append to file
+        File.append(filename, "\nAppended line.")
+        PRT("Appended to file")
+        
+        // Read again
+        let updated = File.read(filename)
+        PRT("Updated contents:")
+        PRT(updated)
+    }
+    
+    // List directory
+    let files = File.list(".")
+    PRT("Files in current directory:")
+    for f in files {
+        PRT("  ${f}")
+    }
+    
+    // Clean up
+    File.delete(filename)
+    PRT("Deleted ${filename}")
+}

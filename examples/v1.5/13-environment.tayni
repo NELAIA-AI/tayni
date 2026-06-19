@@ -1,0 +1,45 @@
+// TAYNI v1.5 - Environment Variables
+// Working with environment (requires cap:env)
+cap:env
+cap:proc
+
+fn main() {
+    // Get environment variable
+    let home = Env.get("HOME") ?? Env.get("USERPROFILE") ?? "/tmp"
+    PRT("Home directory: ${home}")
+    
+    // Get with default
+    let port = Env.get("PORT") ?? "8080"
+    PRT("Port: ${port}")
+    
+    // Set environment variable
+    Env.set("APP_MODE", "production")
+    Env.set("APP_VERSION", "1.5.0")
+    
+    // Verify it was set
+    PRT("APP_MODE: ${Env.get("APP_MODE")}")
+    
+    // Get all environment variables
+    let all_vars = Env.all()
+    PRT("Total env vars: ${len(keys(all_vars))}")
+    
+    // Print some common ones
+    let common = ["PATH", "USER", "SHELL", "LANG"]
+    for name in common {
+        let value = Env.get(name)
+        if value != nil {
+            // Truncate long values
+            if len(value) > 50 {
+                value = value[0:50] + "..."
+            }
+            PRT("${name}: ${value}")
+        }
+    }
+    
+    // Command line arguments
+    let args = Proc.args()
+    PRT("Arguments: ${len(args)}")
+    for i, arg in args {
+        PRT("  [${i}]: ${arg}")
+    }
+}

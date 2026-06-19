@@ -1,0 +1,47 @@
+// TAYNI v1.5 - Structs
+// Demonstrates struct definitions and methods
+
+struct Point {
+    x: float,
+    y: float
+}
+
+fn Point.new(x: float, y: float) -> Point {
+    Point { x: x, y: y }
+}
+
+fn Point.distance(self, other: Point) -> float {
+    let dx = self.x - other.x
+    let dy = self.y - other.y
+    sqrt(dx * dx + dy * dy)
+}
+
+fn Point.to_string(self) -> str {
+    "(${self.x}, ${self.y})"
+}
+
+struct Rectangle {
+    width: float,
+    height: float
+}
+
+fn Rectangle.area(self) -> float {
+    self.width * self.height
+}
+
+fn Rectangle.perimeter(self) -> float {
+    2.0 * (self.width + self.height)
+}
+
+fn main() {
+    let p1 = Point.new(0.0, 0.0)
+    let p2 = Point.new(3.0, 4.0)
+    
+    PRT("Point 1: ${p1.to_string()}")
+    PRT("Point 2: ${p2.to_string()}")
+    PRT("Distance: ${p1.distance(p2)}")
+    
+    let rect = Rectangle { width: 10.0, height: 5.0 }
+    PRT("Rectangle area: ${rect.area()}")
+    PRT("Rectangle perimeter: ${rect.perimeter()}")
+}

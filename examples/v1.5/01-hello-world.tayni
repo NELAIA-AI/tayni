@@ -1,0 +1,6 @@
+// TAYNI v1.5 - Hello World
+// Minimal program demonstrating basic output
+
+fn main() {
+    PRT("Hello, World!")
+}

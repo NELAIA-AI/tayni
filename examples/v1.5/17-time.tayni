@@ -1,0 +1,54 @@
+// TAYNI v1.5 - Time Operations
+// Working with time (requires cap:time)
+cap:time
+
+fn main() {
+    // Current timestamp (Unix epoch seconds)
+    let now = Time.now()
+    PRT("Current timestamp: ${now}")
+    
+    // Format timestamp
+    let formatted = Time.format(now, "%Y-%m-%d %H:%M:%S")
+    PRT("Formatted: ${formatted}")
+    
+    // Different formats
+    PRT("Date only: ${Time.format(now, "%Y-%m-%d")}")
+    PRT("Time only: ${Time.format(now, "%H:%M:%S")}")
+    PRT("ISO 8601: ${Time.format(now, "%Y-%m-%dT%H:%M:%SZ")}")
+    
+    // Parse time string
+    let parsed = Time.parse("2026-06-19 12:30:00", "%Y-%m-%d %H:%M:%S")
+    PRT("Parsed timestamp: ${parsed}")
+    
+    // Sleep (milliseconds)
+    PRT("Sleeping for 1 second...")
+    let start = Time.now()
+    Time.sleep(1000)
+    let elapsed = Time.now() - start
+    PRT("Slept for ${elapsed} seconds")
+    
+    // Time arithmetic
+    let one_hour = 3600
+    let one_day = 86400
+    let one_week = 604800
+    
+    let tomorrow = now + one_day
+    PRT("Tomorrow: ${Time.format(tomorrow, "%Y-%m-%d")}")
+    
+    let next_week = now + one_week
+    PRT("Next week: ${Time.format(next_week, "%Y-%m-%d")}")
+    
+    // Measure execution time
+    let t1 = Time.now()
+    
+    // Some work
+    let sum = 0
+    for i in 0..1000000 {
+        sum = sum + i
+    }
+    
+    let t2 = Time.now()
+    let duration = t2 - t1
+    PRT("Computation took ${duration} seconds")
+    PRT("Sum: ${sum}")
+}

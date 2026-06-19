@@ -1,0 +1,97 @@
+// TAYNI v1.5 - WebAssembly Export
+// Functions designed for Wasm export
+
+// Pure functions - automatically exported to Wasm
+fn add(a: int, b: int) -> int {
+    a + b
+}
+
+fn subtract(a: int, b: int) -> int {
+    a - b
+}
+
+fn multiply(a: int, b: int) -> int {
+    a * b
+}
+
+fn divide(a: int, b: int) -> int {
+    if b == 0 {
+        return 0
+    }
+    a / b
+}
+
+fn factorial(n: int) -> int {
+    if n <= 1 {
+        return 1
+    }
+    n * factorial(n - 1)
+}
+
+fn fibonacci(n: int) -> int {
+    if n <= 1 {
+        return n
+    }
+    fibonacci(n - 1) + fibonacci(n - 2)
+}
+
+fn is_prime(n: int) -> int {
+    if n < 2 {
+        return 0
+    }
+    if n == 2 {
+        return 1
+    }
+    if n % 2 == 0 {
+        return 0
+    }
+    
+    let i = 3
+    while i * i <= n {
+        if n % i == 0 {
+            return 0
+        }
+        i = i + 2
+    }
+    return 1
+}
+
+fn gcd(a: int, b: int) -> int {
+    while b != 0 {
+        let temp = b
+        b = a % b
+        a = temp
+    }
+    a
+}
+
+fn lcm(a: int, b: int) -> int {
+    (a * b) / gcd(a, b)
+}
+
+// Memory operations for Wasm
+fn sum_array(ptr: int, len: int) -> int {
+    let sum = 0
+    let i = 0
+    while i < len {
+        sum = sum + memory.load_i32(ptr + i * 4)
+        i = i + 1
+    }
+    sum
+}
+
+// Entry point (optional for Wasm)
+fn main() {
+    PRT("TAYNI Wasm Module")
+    PRT("Exported functions:")
+    PRT("  - add(a, b)")
+    PRT("  - subtract(a, b)")
+    PRT("  - multiply(a, b)")
+    PRT("  - divide(a, b)")
+    PRT("  - factorial(n)")
+    PRT("  - fibonacci(n)")
+    PRT("  - is_prime(n)")
+    PRT("  - gcd(a, b)")
+    PRT("  - lcm(a, b)")
+    PRT("  - sum_array(ptr, len)")
+}

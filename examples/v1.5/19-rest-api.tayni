@@ -1,0 +1,88 @@
+// TAYNI v1.5 - REST API Server
+// Complete REST API example (requires cap:net, cap:fs)
+cap:net
+cap:fs
+
+// In-memory database
+let users = []
+let next_id = 1
+
+fn find_user(id: int) -> map? {
+    for user in users {
+        if user.id == id {
+            return user
+        }
+    }
+    nil
+}
+
+fn main() {
+    let server = HTTP.listen(3000)
+    PRT("REST API running on http://localhost:3000")
+    
+    // GET /api/users - List all users
+    server.route("/api/users", fn(req) {
+        if req.method == "GET" {
+            Response.json({
+                "users": users,
+                "count": len(users)
+            })
+        } else if req.method == "POST" {
+            // Create new user
+            let body = JSON.decode(req.body)
+            let user = {
+                "id": next_id,
+                "name": body.name,
+                "email": body.email,
+                "created_at": Time.now()
+            }
+            next_id = next_id + 1
+            push(users, user)
+            
+            Response.status(201).json(user)
+        } else {
+            Response.status(405).json({"error": "Method not allowed"})
+        }
+    })
+    
+    // GET/PUT/DELETE /api/users/:id - Single user operations
+    server.route("/api/users/:id", fn(req) {
+        let id = int(req.params.id)
+        let user = find_user(id)
+        
+        if user == nil {
+            return Response.status(404).json({"error": "User not found"})
+        }
+        
+        match req.method {
+            "GET" => Response.json(user),
+            
+            "PUT" => {
+                let body = JSON.decode(req.body)
+                if body.name != nil {
+                    user.name = body.name
+                }
+                if body.email != nil {
+                    user.email = body.email
+                }
+                Response.json(user)
+            },
+            
+            "DELETE" => {
+                users = users.filter((u) => u.id != id)
+                Response.status(204).text("")
+            },
+            
+            _ => Response.status(405).json({"error": "Method not allowed"})
+        }
+    })
+    
+    // Health check
+    server.route("/health", fn(req) {
+        Response.json({
+            "status": "healthy",
+            "uptime": Time.now(),
+            "users_count": len(users)
+        })
+    })
+}

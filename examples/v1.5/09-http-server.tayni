@@ -1,0 +1,66 @@
+// TAYNI v1.5 - HTTP Server
+// Simple HTTP server with routes (requires cap:net)
+cap:net
+
+fn main() {
+    let port = 8080
+    let server = HTTP.listen(port)
+    PRT("Server running on http://localhost:${port}")
+    
+    // Root route - JSON response
+    server.route("/", fn(req) {
+        Response.json({
+            "status": "ok",
+            "message": "Welcome to TAYNI HTTP Server",
+            "version": "1.5"
+        })
+    })
+    
+    // Health check endpoint
+    server.route("/health", fn(req) {
+        Response.text("healthy")
+    })
+    
+    // Echo endpoint - returns request info
+    server.route("/echo", fn(req) {
+        Response.json({
+            "method": req.method,
+            "path": req.path,
+            "headers": req.headers,
+            "query": req.query
+        })
+    })
+    
+    // API endpoint with path parameter
+    server.route("/api/users/:id", fn(req) {
+        let user_id = req.params.id
+        Response.json({
+            "user_id": user_id,
+            "name": "User ${user_id}",
+            "email": "user${user_id}@example.com"
+        })
+    })
+    
+    // POST endpoint
+    server.route("/api/data", fn(req) {
+        if req.method == "POST" {
+            let body = JSON.decode(req.body)
+            Response.json({
+                "received": body,
+                "timestamp": Time.now()
+            })
+        } else {
+            Response.status(405).text("Method not allowed")
+        }
+    })
+    
+    // Static file serving
+    server.route("/static/*", fn(req) {
+        let filepath = "public" + req.path
+        if File.exists(filepath) {
+            Response.file(filepath)
+        } else {
+            Response.status(404).text("Not found")
+        }
+    })
+}
