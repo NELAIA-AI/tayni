@@ -1,56 +1,91 @@
-# Contributing to NELAIA
+# Contributing to TAYNI
 
-Thank you for your interest in contributing to NELAIA.
+Thank you for your interest in contributing to TAYNI!
 
-## How to Contribute
-
-### Reporting Issues
-
-- Use the issue tracker to report bugs
-- Include NELAIA version (`nelaia-c --version`)
-- Include your OS and architecture
-- Provide minimal reproduction code
-
-### Code Contributions
+## Getting Started
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/my-feature`)
-3. Make your changes
-4. Run tests (`cargo test`)
-5. Commit with clear messages
-6. Push to your fork
-7. Open a Pull Request
-
-### Code Style
-
-- Follow Rust conventions
-- Run `cargo fmt` before committing
-- Ensure `cargo clippy` passes without warnings
-- Add tests for new functionality
-
-### NELAIA Language Contributions
-
-- Follow the syntax defined in `docs/NELAIA-REFERENCE-v0.22.md`
-- Add examples to `docs/NELAIA-EXAMPLES-v0.22.md`
-- Update training data in `docs/NELAIA-TRAINING-DATA.jsonl`
+2. Clone your fork: `git clone https://github.com/YOUR_USERNAME/tayni.git`
+3. Create a branch: `git checkout -b feature/your-feature`
+4. Make your changes
+5. Run tests: `cargo test`
+6. Commit: `git commit -m "Add your feature"`
+7. Push: `git push origin feature/your-feature`
+8. Open a Pull Request
 
 ## Development Setup
 
 ```bash
-# Clone
+# Clone the repository
 git clone https://github.com/NELAIA-AI/tayni.git
-cd nelaia
+cd tayni/archive/rust-bootstrap
 
-# Build
-cargo build
+# Build the compiler
+cargo build --release
 
-# Test
+# Run tests
 cargo test
 
-# Run
-./target/debug/nelaia-c --help
+# Run a specific test
+cargo test test_name
 ```
+
+## Code Style
+
+- Use `cargo fmt` before committing
+- Use `cargo clippy` to check for issues
+- Follow Rust naming conventions
+- Add tests for new features
+
+## Areas to Contribute
+
+### High Priority
+- [ ] WASI Preview 2 implementation
+- [ ] More code examples
+- [ ] Documentation improvements
+- [ ] Bug fixes
+
+### Medium Priority
+- [ ] ARM64 backend
+- [ ] macOS Mach-O verification
+- [ ] LSP improvements
+- [ ] VS Code extension features
+
+### Low Priority (Future)
+- [ ] GPU targets
+- [ ] Quantum (QIR) targets
+- [ ] Self-hosting compiler
+
+## Reporting Issues
+
+When reporting issues, please include:
+- TAYNI version
+- Operating system
+- Steps to reproduce
+- Expected vs actual behavior
+- Error messages (if any)
+
+## Pull Request Guidelines
+
+1. Keep PRs focused on a single change
+2. Update documentation if needed
+3. Add tests for new features
+4. Ensure all tests pass
+5. Update CHANGELOG if applicable
+
+## Code of Conduct
+
+See [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
+
+## License
+
+By contributing, you agree that your contributions will be licensed under the MIT License.
 
 ## Questions?
 
-Open an issue with the "question" label.
+- Open an issue for questions
+- Email: contact@nelaia.ai
+
+---
+
+*Thank you for helping make TAYNI better!*
