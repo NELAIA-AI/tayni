@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![Wasm Conformance](https://img.shields.io/badge/Wasm-100%25%20Conformance-brightgreen.svg)](#wasm-conformance)
-[![Tests](https://img.shields.io/badge/Tests-98%20Passing-brightgreen.svg)](#testing)
+[![Tests](https://img.shields.io/badge/Tests-263%20Passing-brightgreen.svg)](#testing)
 [![Token Efficiency](https://img.shields.io/badge/Tokens-64%25%20Reduction-blue.svg)](#benchmarks)
 [![Binary Size](https://img.shields.io/badge/HTTP%20Server-10.5KB-blue.svg)](#benchmarks)
 [![Targets](https://img.shields.io/badge/Targets-PE%20%7C%20ELF%20%7C%20Wasm%20%7C%20WASI-purple.svg)](#compilation-targets)
@@ -155,15 +155,17 @@ tayni-core/
 ├── archive/rust-bootstrap/   # Rust compiler implementation
 │   ├── lib.rs               # Main compiler library
 │   ├── pe.rs                # Windows PE generator
-│   ├── elf.rs               # Linux ELF generator
+│   ├── elf.rs               # Linux ELF x86-64 generator
+│   ├── elf_arm64.rs         # Linux ELF ARM64 generator
 │   ├── wasm.rs              # WebAssembly generator
-│   ├── wasi.rs              # WASI generator
+│   ├── wasi.rs              # WASI Preview 1 generator
 │   ├── wasi_p2.rs           # WASI Preview 2 (filesystem, sockets)
 │   ├── wasi_http.rs         # WASI HTTP for serverless
 │   ├── json.rs              # JSON parser (RFC 8259)
 │   ├── pkg.rs               # Package manager (semver, manifests)
 │   ├── http_client.rs       # HTTP/1.1 client
 │   ├── arm64.rs             # ARM64 instruction encoder
+│   ├── arm64_codegen.rs     # ARM64 code generator
 │   └── dwarf.rs             # DWARF debug info generator
 ├── tools/
 │   ├── lsp/                 # Language Server Protocol
@@ -173,8 +175,13 @@ tayni-core/
 │   ├── blog/                # Technical blog posts
 │   └── *.md                 # Specifications
 ├── examples/
-│   ├── v1.5/                # 30+ example programs
-│   └── demos/               # Cloudflare/Deno demos
+│   ├── v1.5/                # 32 example programs
+│   └── demos/               # Serverless platform demos
+│       ├── cloudflare-worker/
+│       ├── deno-deploy/
+│       ├── vercel-edge/
+│       ├── fastly-compute/
+│       └── aws-lambda/
 └── stdlib/                  # Standard library specs
 ```
 

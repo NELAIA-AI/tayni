@@ -1,282 +1,317 @@
-# TAYNI Architecture v3.0
+# TAYNI Technical Architecture
+
+> **Version:** 1.0  
+> **Last Updated:** 2026-06-19
 
 ## Overview
 
-TAYNI is an AI-first programming language designed for:
-1. **Token efficiency** - Minimal tokens for maximum functionality
-2. **Multi-target compilation** - Single source to any platform
-3. **Self-hosting** - Compiler written in TAYNI itself
-4. **Zero dependencies** - Direct binary emission without external tools
+TAYNI is an AI-first programming language that compiles directly to multiple targets without external dependencies. This document describes the technical architecture of the compiler and runtime.
 
-## Current Architecture
+## Compiler Pipeline
 
 ```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                           SOURCE (.tyn)                                  │
-│                    TAYNI source code with USE directives                 │
-└─────────────────────────────────────────────────────────────────────────┘
-                                    │
-                                    ▼
-┌─────────────────────────────────────────────────────────────────────────┐
-│                         PARSER (parser.rs)                               │
-│  • Lexer: tokenizes .tyn files                                          │
-│  • Parser: builds IR Graph from tokens                                   │
-│  • USE handler: resolves module imports (modules.rs)                     │
-│  • Tree-shaking: eliminates dead code                                    │
-└─────────────────────────────────────────────────────────────────────────┘
-                                    │
-                                    ▼
-┌─────────────────────────────────────────────────────────────────────────┐
-│                    INTERMEDIATE REPRESENTATION (ir.rs)                   │
-│  • Graph: nodes + edges + entry point                                    │
-│  • Node: id, operation, arguments                                        │
-│  • Op: 100+ operations across domains                                    │
-│  • Capability system: declares required permissions                      │
-└─────────────────────────────────────────────────────────────────────────┘
-                                    │
-              ┌─────────────────────┼─────────────────────┐
-              │                     │                     │
-              ▼                     ▼                     ▼
-┌───────────────────┐  ┌───────────────────┐  ┌───────────────────┐
-│  CLASSICAL CPU    │  │     QUANTUM       │  │       GPU         │
-│    BACKENDS       │  │     BACKEND       │  │     BACKENDS      │
-├───────────────────┤  ├───────────────────┤  ├───────────────────┤
-│ • pe.rs (Windows) │  │ • qir.rs          │  │ • gpu.rs          │
-│ • elf.rs (Linux)  │  │   Native: QIR     │  │   Native: PTX     │
-│ • macho.rs (macOS)│  │   Export: QASM    │  │   Native: AMDGPU  │
-│ • wasm.rs (Web)   │  │   Export: Cirq    │  │   Export: OpenCL  │
-│ • riscv.rs        │  │   Export: Quil    │  │   Export: SPIR-V  │
-│ • elf_arm64.rs    │  │                   │  │   Export: WGSL    │
-│                   │  │                   │  │   Export: Metal   │
-└───────────────────┘  └───────────────────┘  └───────────────────┘
-              │                     │                     │
-              ▼                     ▼                     ▼
-┌───────────────────┐  ┌───────────────────┐  ┌───────────────────┐
-│  OUTPUT FORMATS   │  │  OUTPUT FORMATS   │  │  OUTPUT FORMATS   │
-├───────────────────┤  ├───────────────────┤  ├───────────────────┤
-│ • .exe (PE)       │  │ • .qir (native)   │  │ • .ptx (CUDA)     │
-│ • ELF (Linux)     │  │ • .qasm (IBM)     │  │ • .amdgpu (ROCm)  │
-│ • Mach-O (macOS)  │  │ • .py (Cirq)      │  │ • .cl (OpenCL)    │
-│ • .wasm (Web)     │  │ • .quil (Rigetti) │  │ • .spvasm (Vulkan)│
-│ • ELF-RISCV64     │  │                   │  │ • .wgsl (WebGPU)  │
-│ • ELF-ARM64       │  │                   │  │ • .metal (Apple)  │
-└───────────────────┘  └───────────────────┘  └───────────────────┘
+Source Code (.tayni)
+        │
+        ▼
+┌───────────────┐
+│    Lexer      │  → Tokens
+└───────────────┘
+        │
+        ▼
+┌───────────────┐
+│    Parser     │  → AST
+└───────────────┘
+        │
+        ▼
+┌───────────────┐
+│  Type Check   │  → Typed AST
+└───────────────┘
+        │
+        ▼
+┌───────────────┐
+│   IR Gen      │  → Internal Representation
+└───────────────┘
+        │
+        ▼
+┌───────────────┐
+│  Optimizer    │  → Optimized IR
+└───────────────┘
+        │
+        ▼
+┌───────────────────────────────────────────┐
+│              Code Generator               │
+├─────────┬─────────┬─────────┬────────────┤
+│   PE    │   ELF   │  Wasm   │   WASI     │
+│ x86-64  │ x86-64  │ wasm32  │ wasm32    │
+│         │ ARM64   │         │ Preview 2  │
+└─────────┴─────────┴─────────┴────────────┘
 ```
 
-## File Structure
+## Module Structure
+
+### Core Modules
+
+| Module | File | Description |
+|--------|------|-------------|
+| Lexer | `lexer.rs` | Tokenizes source code |
+| Parser | `parser.rs` | Builds AST from tokens |
+| Type Checker | `types.rs` | Type inference and checking |
+| IR | `ir.rs` | Intermediate representation |
+| Optimizer | `optimizer.rs` | Constant folding, DCE |
+
+### Target Generators
+
+| Target | File | Output |
+|--------|------|--------|
+| Windows PE | `pe.rs` | `.exe` x86-64 |
+| Linux ELF x86-64 | `elf.rs` | Binary |
+| Linux ELF ARM64 | `elf_arm64.rs` | Binary |
+| WebAssembly | `wasm.rs` | `.wasm` |
+| WASI Preview 1 | `wasi.rs` | `.wasm` |
+| WASI Preview 2 | `wasi_p2.rs` | `.wasm` |
+| WASI HTTP | `wasi_http.rs` | `.wasm` |
+
+### Support Modules
+
+| Module | File | Description |
+|--------|------|-------------|
+| ARM64 Encoder | `arm64.rs` | Instruction encoding |
+| ARM64 CodeGen | `arm64_codegen.rs` | Register allocation, IR→code |
+| DWARF | `dwarf.rs` | Debug information |
+| JSON | `json.rs` | RFC 8259 parser |
+| HTTP Client | `http_client.rs` | HTTP/1.1 client |
+| Package Manager | `pkg.rs` | Semver, manifests |
+
+## Binary Format Details
+
+### Windows PE (x86-64)
 
 ```
-tayni-core/
-├── src/
-│   ├── main.rs              # CLI entry point, target selection
-│   ├── parser.rs            # Lexer + parser
-│   ├── ir.rs                # Intermediate representation (100+ ops)
-│   ├── emitter_pure.rs      # LLVM IR generation
-│   ├── modules.rs           # USE directive, module resolution
-│   │
-│   ├── # Classical CPU backends
-│   ├── pe.rs                # Windows PE direct emission
-│   ├── elf.rs               # Linux ELF direct emission
-│   ├── macho.rs             # macOS Mach-O direct emission
-│   ├── wasm.rs              # WebAssembly generation
-│   ├── riscv.rs             # RISC-V ELF generation
-│   ├── elf_arm64.rs         # ARM64 Linux ELF generation
-│   │
-│   ├── # Quantum backend
-│   ├── qir.rs               # QIR generation + translations
-│   │
-│   ├── # GPU backends
-│   ├── gpu.rs               # PTX/AMDGPU generation + translations
-│   │
-│   ├── # Additional features
-│   ├── interface.rs         # Interface generation (Web, Native, Terminal)
-│   ├── intent.rs            # Structured Intent (JSON → TAYNI)
-│   │
-│   └── tayni/               # Self-hosted compiler (bootstrap)
-│       ├── tayni-c.tyn      # Main self-compiler
-│       ├── tayni-c-v1.1.tyn # Version with file I/O
-│       ├── tayni-c-v1.2.tyn # Version with PE headers
-│       ├── tayni-c-v1.3.tyn # Version with CHR, ITS
-│       └── archive/         # Historical versions
-│
-├── stdlib/                  # Standard library (43 modules)
-│   ├── tier0/              # Core (10 modules)
-│   │   ├── args.tyn        # Command-line arguments
-│   │   ├── base64.tyn      # Base64 encoding
-│   │   ├── file.tyn        # File operations
-│   │   ├── http.tyn        # HTTP client/server
-│   │   ├── json.tyn        # JSON parsing
-│   │   ├── log.tyn         # Logging
-│   │   ├── random.tyn      # Random numbers
-│   │   ├── router.tyn      # HTTP routing
-│   │   ├── string.tyn      # String operations
-│   │   └── url.tyn         # URL parsing
-│   │
-│   ├── tier1/              # Standard (12 modules)
-│   │   ├── async.tyn       # Async patterns
-│   │   ├── env.tyn         # Environment variables
-│   │   ├── format.tyn      # String formatting
-│   │   ├── hash.tyn        # Cryptographic hashes
-│   │   ├── jwt.tyn         # JSON Web Tokens
-│   │   ├── path.tyn        # Path manipulation
-│   │   ├── regex.tyn       # Regular expressions
-│   │   ├── test.tyn        # Unit testing
-│   │   ├── time.tyn        # Date/time
-│   │   ├── timeout.tyn     # Timeouts
-│   │   ├── uuid.tyn        # UUID generation
-│   │   └── validation.tyn  # Input validation
-│   │
-│   └── tier2/              # Extended (21 modules)
-│       ├── cookie.tyn      # HTTP cookies
-│       ├── cors.tyn        # CORS handling
-│       ├── crypto.tyn      # Encryption
-│       ├── csv.tyn         # CSV parsing
-│       ├── gpu.tyn         # GPU computing
-│       ├── grpc.tyn        # gRPC
-│       ├── gzip.tyn        # Compression
-│       ├── mime.tyn        # MIME types
-│       ├── mongodb.tyn     # MongoDB client
-│       ├── postgres.tyn    # PostgreSQL client
-│       ├── pqc.tyn         # Post-quantum crypto
-│       ├── quantum.tyn     # Quantum computing
-│       ├── redis.tyn       # Redis client
-│       ├── retry.tyn       # Retry logic
-│       ├── sql.tyn         # SQL builder
-│       ├── sqlite.tyn      # SQLite
-│       ├── tls.tyn         # TLS/SSL
-│       ├── toml.tyn        # TOML parsing
-│       ├── websocket.tyn   # WebSocket
-│       ├── xml.tyn         # XML parsing
-│       └── yaml.tyn        # YAML parsing
-│
-├── examples/
-│   └── quantum/            # Quantum computing examples
-│       └── bell.tyn        # Bell state example
-│
-├── docs/                   # Documentation
-└── tests/                  # Test suite
+┌─────────────────┐
+│   DOS Header    │  64 bytes
+├─────────────────┤
+│   PE Signature  │  4 bytes
+├─────────────────┤
+│   COFF Header   │  20 bytes
+├─────────────────┤
+│ Optional Header │  240 bytes
+├─────────────────┤
+│ Section Headers │  40 bytes each
+├─────────────────┤
+│   .text         │  Code
+├─────────────────┤
+│   .rdata        │  Read-only data
+├─────────────────┤
+│   .data         │  Initialized data
+└─────────────────┘
 ```
 
-## Operation Categories
+### Linux ELF (x86-64/ARM64)
 
-TAYNI supports 100+ operations organized by domain:
+```
+┌─────────────────┐
+│   ELF Header    │  64 bytes
+├─────────────────┤
+│ Program Headers │  56 bytes each
+├─────────────────┤
+│   .text         │  Code (PF_R | PF_X)
+├─────────────────┤
+│   .rodata       │  Read-only data
+├─────────────────┤
+│   .data         │  Initialized data
+├─────────────────┤
+│   .bss          │  Uninitialized data
+└─────────────────┘
+```
 
-| Domain | Operations | Purpose |
-|--------|------------|---------|
-| **Arithmetic** | ADD, SUB, MUL, DIV, MOD, NEG | Basic math |
-| **Comparison** | EQ, NE, LT, GT, LE, GE | Comparisons |
-| **Logic** | AND, OR, NOT, XOR | Boolean logic |
-| **Bitwise** | SHL, SHR, BND, BOR, BXR, BNT | Bit manipulation |
-| **Memory** | ALC, FRE, PUT, GET, CPY, SLN, CHR | Memory operations |
-| **Control** | BRN, IFZ, LBL, JMP | Control flow |
-| **I/O** | PRT, INP, FOP, FRD, FWR, FCL | File/console I/O |
-| **String** | CAT, ITS, SBS, SCM, WRT | String operations |
-| **Network** | TCP, UDP, BND, LST, ACC, XMT, RCV, CLS | Networking |
-| **HTTP** | HTTP.LISTEN, HTTP.ACCEPT, HTTP.RESPOND, HTTP.GET, HTTP.POST | HTTP |
-| **SQL** | SQL.CONNECT, SQL.QUERY, SQL.EXEC, SQL.CLOSE | Database |
-| **JSON** | JSON.PARSE, JSON.ENCODE, JSON.GET, JSON.SET | JSON |
-| **Quantum** | QH, QX, QY, QZ, QCNOT, QM, QUBIT.ALLOC | Quantum gates |
-| **GPU** | GKERNEL, GLAUNCH, GALLOC, GH2D, GD2H, GSYNC | GPU computing |
-| **Vector** | VEC, VPH, VGT, VST, VLN | Dynamic arrays |
-| **HashMap** | HMP, HPT, HGT, HHS | Hash tables |
-| **GUI** | WIN, SHW, BTN, LBL, TXB, DLG | Windowing |
+### WebAssembly
 
-## Target Architecture Families
+```
+┌─────────────────┐
+│  Magic + Ver    │  8 bytes
+├─────────────────┤
+│  Type Section   │  Function signatures
+├─────────────────┤
+│ Import Section  │  External functions
+├─────────────────┤
+│  Func Section   │  Function declarations
+├─────────────────┤
+│ Memory Section  │  Linear memory
+├─────────────────┤
+│ Export Section  │  Public symbols
+├─────────────────┤
+│  Code Section   │  Function bodies
+├─────────────────┤
+│  Data Section   │  Initialized data
+└─────────────────┘
+```
 
-```rust
-pub enum TargetFamily {
-    Classical,  // CPU-based (Windows, Linux, macOS, WASM, RISC-V, ARM64)
-    Quantum,    // QPU-based (QIR native, translations to QASM/Cirq/Quil)
-    Gpu,        // GPU-based (PTX/AMDGPU native, translations to OpenCL/SPIR-V/WGSL/Metal)
+## ARM64 Code Generation
+
+### Register Allocation
+
+| Register | Usage |
+|----------|-------|
+| X0-X7 | Arguments / Return values |
+| X8 | Syscall number |
+| X9-X15 | Temporaries (caller-saved) |
+| X16-X17 | Intra-procedure scratch |
+| X19-X28 | Callee-saved |
+| X29 (FP) | Frame pointer |
+| X30 (LR) | Link register |
+| X31 (SP/XZR) | Stack pointer / Zero |
+
+### Calling Convention (AAPCS64)
+
+```
+Caller:
+  1. Place args in X0-X7 (or stack)
+  2. BL target
+  3. Result in X0
+
+Callee:
+  1. STP X29, X30, [SP, #-16]!  ; Save FP, LR
+  2. MOV X29, SP                ; Set frame pointer
+  3. ... function body ...
+  4. LDP X29, X30, [SP], #16    ; Restore FP, LR
+  5. RET
+```
+
+## DWARF Debug Information
+
+### Sections Generated
+
+| Section | Content |
+|---------|---------|
+| `.debug_info` | Compilation unit, types, functions |
+| `.debug_abbrev` | Abbreviation tables |
+| `.debug_line` | Line number program |
+| `.debug_aranges` | Address ranges |
+| `.debug_str` | String table |
+| `.debug_pubnames` | Public function names |
+| `.debug_pubtypes` | Public type names |
+| `.debug_frame` | Call frame information |
+
+### DIE Structure
+
+```
+Compile Unit (DW_TAG_compile_unit)
+├── Base Types (DW_TAG_base_type)
+│   ├── i32
+│   ├── i64
+│   ├── f32
+│   ├── f64
+│   └── bool
+└── Functions (DW_TAG_subprogram)
+    ├── Parameters (DW_TAG_formal_parameter)
+    └── Local Variables (DW_TAG_variable)
+```
+
+## WASI Implementation
+
+### Preview 1 Functions
+
+| Function | Description |
+|----------|-------------|
+| `fd_write` | Write to file descriptor |
+| `fd_read` | Read from file descriptor |
+| `proc_exit` | Exit process |
+| `args_get` | Get command line args |
+| `args_sizes_get` | Get args buffer sizes |
+| `environ_get` | Get environment |
+| `environ_sizes_get` | Get env buffer sizes |
+
+### Preview 2 Extensions
+
+| Interface | Functions |
+|-----------|-----------|
+| `wasi:filesystem` | open, read, write, close, stat, mkdir, remove |
+| `wasi:sockets/tcp` | create, bind, listen, accept, connect, shutdown |
+| `wasi:sockets/udp` | create, bind, send, receive |
+| `wasi:http` | incoming-handler, outgoing-handler |
+
+## Serverless Platforms
+
+### Supported Platforms
+
+| Platform | Runtime | Entry Point |
+|----------|---------|-------------|
+| Cloudflare Workers | V8 + Wasm | `fetch` handler |
+| Deno Deploy | Deno + Wasm | `Deno.serve` |
+| Vercel Edge | V8 + Wasm | Edge function |
+| Fastly Compute | Wasm | `main` |
+| AWS Lambda | Custom runtime | `handler` |
+
+### WASI HTTP Handler Pattern
+
+```tayni
+fn handle(req: IncomingRequest) -> OutgoingResponse {
+    match req.path() {
+        "/" => Response.json({"status": "ok"}),
+        "/health" => Response.text("healthy"),
+        _ => Response.status(404).json({"error": "Not Found"})
+    }
 }
 ```
 
-### Classical Targets
-- **Windows**: Direct PE emission (no clang required)
-- **Linux**: Direct ELF emission
-- **macOS**: Direct Mach-O emission
-- **WASM**: WebAssembly for browsers
-- **RISC-V**: RISC-V 64-bit Linux
-- **ARM64**: ARM64 Linux (Raspberry Pi, etc.)
+## Testing Strategy
 
-### Quantum Targets
-- **QIR** (native): Azure Quantum, IonQ, Quantinuum
-- **QASM** (export): IBM Quantum
-- **Cirq** (export): Google Quantum
-- **Quil** (export): Rigetti
+### Test Categories
 
-### GPU Targets
-- **PTX** (native): NVIDIA CUDA
-- **AMDGPU** (native): AMD ROCm
-- **OpenCL** (export): Cross-platform
-- **SPIR-V** (export): Vulkan
-- **WGSL** (export): WebGPU
-- **Metal** (export): Apple
+| Category | Count | Description |
+|----------|-------|-------------|
+| Unit Tests | 200+ | Individual function tests |
+| Integration | 50+ | Multi-module tests |
+| Conformance | 10+ | Wasm validation |
+| Examples | 32 | Full program tests |
 
-## Self-Hosting Bootstrap
+### Test Files
 
-TAYNI is working towards self-hosting:
+- `tests_comprehensive.rs` - Core module tests
+- `tests_batch2.rs` - Format and encoding tests
+- `tests_batch3.rs` - Extended coverage
 
-```
-Stage 0: tayni-c.exe (Rust) compiles tayni-c.tyn → tayni-c-self.exe
-Stage 1: tayni-c-self.exe compiles tayni-c.tyn → tayni-c-stage1.exe
-Stage 2: Verify tayni-c-self.exe == tayni-c-stage1.exe (bootstrap complete)
-```
+## Performance Characteristics
 
-### Current Progress (v1.3)
-- ✅ File I/O (FOP, FRD, FWR, FCL)
-- ✅ Character operations (CHR)
-- ✅ Integer to string (ITS) - multi-digit
-- ✅ Memory operations (PUT, ALC)
-- ✅ PE header generation
-- ⏳ Full TAYNI parser in TAYNI
-- ⏳ Code emission from AST
+### Compilation Speed
 
-## Compilation Flow
+| Target | Time (hello world) |
+|--------|-------------------|
+| Wasm | < 10ms |
+| PE | < 50ms |
+| ELF | < 50ms |
 
-```
-1. Parse .tyn source
-   └── Tokenize → Build AST → Resolve USE imports → Tree-shake
+### Binary Sizes
 
-2. Generate IR Graph
-   └── Nodes with operations and dependencies
+| Program | Wasm | PE | ELF |
+|---------|------|-----|-----|
+| Hello World | 198B | 2KB | 1KB |
+| HTTP Server | 15KB | 10.5KB | 8KB |
+| JSON Parser | 5KB | 8KB | 6KB |
 
-3. Select target backend
-   └── Based on --target flag or auto-detect
+### Runtime Performance
 
-4. Emit output
-   ├── Direct emission (PE/ELF/Mach-O) - no external tools
-   ├── LLVM IR + clang (--use-clang) - for complex programs
-   └── Specialized (QIR/PTX/WASM) - for specific targets
-```
+- Zero-copy string handling
+- Stack allocation by default
+- No garbage collection
+- Direct syscalls (no libc)
 
-## Design Principles
+## Future Architecture
 
-### AI-First
-- Minimal syntax for token efficiency
-- Predictable patterns for AI generation
-- Self-documenting through consistent naming
+### Planned Additions
 
-### Zero Dependencies
-- Direct binary emission without clang/gcc
-- No runtime libraries required
-- Standalone executables
+1. **LLVM Backend** (optional)
+   - GPU support via NVPTX/AMDGPU
+   - Advanced optimizations
 
-### Multi-Target
-- Single source compiles to any platform
-- Native formats where possible
-- Translations for ecosystem compatibility
+2. **Self-Hosting**
+   - TAYNI compiler written in TAYNI
+   - Bootstrap from Rust version
 
-### Self-Hosting
-- Compiler written in TAYNI
-- Demonstrates language completeness
-- Enables AI-driven compiler improvements
+3. **Formal Verification**
+   - Type system proofs
+   - Memory safety guarantees
 
-## Version History
+---
 
-| Version | Date | Changes |
-|---------|------|---------|
-| 3.0 | 2026-06-16 | Multi-target (QIR, GPU), stdlib (43 modules), self-hosting v1.3 |
-| 2.1 | 2026-06-13 | Simplified architecture, unified Op enum |
-| 2.0 | 2026-06-13 | Initial modular architecture |
-| 1.x | 2026-06-xx | Monolithic compiler |
+*TAYNI - AI-first programming language by NELAIA*

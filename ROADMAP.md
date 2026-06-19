@@ -17,7 +17,7 @@
 | **JSON Parser** | ✅ Complete | RFC 8259 compliant |
 | **HTTP Client** | ✅ Complete | Zero-dependency |
 | **Package Manager** | ✅ Basic | Semver, manifests, lockfiles |
-| **Tests** | ✅ 350+ Passing | Comprehensive test suite |
+| **Tests** | ✅ 263 Passing | Comprehensive test suite |
 
 ## Verified Capabilities
 
@@ -86,9 +86,9 @@
 | Real JSON parser | ✅ Done | json.rs - RFC 8259 |
 | Real HTTP client | ✅ Done | http_client.rs |
 | Package manager basics | ✅ Done | pkg.rs - semver, manifests |
-| ARM64 Linux backend | ✅ Started | arm64.rs encoder |
+| ARM64 Linux backend | ✅ Done | arm64.rs + arm64_codegen.rs |
 | WASI-http for serverless | ✅ Done | wasi_http.rs |
-| Debugger (DWARF) | ✅ Started | dwarf.rs |
+| Debugger (DWARF) | ✅ Done | dwarf.rs (all sections) |
 
 ### Strategic
 | Task | Status | Notes |
@@ -97,6 +97,9 @@
 | Discord community plan | ✅ Draft | nelaia-internal/community/ |
 | Cloudflare Workers demo | ✅ Template | examples/demos/cloudflare-worker/ |
 | Deno Deploy demo | ✅ Template | examples/demos/deno-deploy/ |
+| Vercel Edge demo | ✅ Template | examples/demos/vercel-edge/ |
+| Fastly Compute demo | ✅ Template | examples/demos/fastly-compute/ |
+| AWS Lambda demo | ✅ Template | examples/demos/aws-lambda/ |
 | 3 technical blog posts | ✅ Done | docs/blog/ |
 | Submit paper to PLDI 2027 | 📋 Pending | |
 
@@ -180,12 +183,17 @@
 ### Week of June 19
 - ✅ WASI Preview 2 sockets (TCP/UDP)
 - ✅ Real HTTP client implementation
-- ✅ ARM64 backend plan documented
+- ✅ ARM64 instruction encoder + code generator
+- ✅ DWARF debug info (all sections)
 - ✅ Bytecode Alliance application draft
 - ✅ Discord community setup plan
 - ✅ Cloudflare Workers demo template
 - ✅ Deno Deploy demo template
+- ✅ Vercel Edge demo template
+- ✅ Fastly Compute@Edge demo template
+- ✅ AWS Lambda demo template
 - ✅ 3 technical blog posts
+- ✅ 263 tests passing
 
 ### Week of June 18
 - ✅ WASI Preview 2 filesystem
