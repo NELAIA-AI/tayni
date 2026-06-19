@@ -2,18 +2,14 @@
 //! Generates minimal ELF executables for RISC-V Linux
 
 use crate::ir::{Graph, Node, Value, Arg, Op};
+use crate::target::format::elf64::{Elf64Config, generate_elf64, PF_R, PF_X};
 use std::collections::HashMap;
 
-const ELF_MAGIC: [u8; 4] = [0x7F, b'E', b'L', b'F'];
-const ELFCLASS64: u8 = 2;
-const ELFDATA2LSB: u8 = 1;
-const EV_CURRENT: u8 = 1;
-const ELFOSABI_NONE: u8 = 0;
-const ET_EXEC: u16 = 2;
-const EM_RISCV: u16 = 243;
-const PT_LOAD: u32 = 1;
-const PF_X: u32 = 1;
-const PF_R: u32 = 4;
+// Re-export for backward compatibility
+pub use crate::target::format::elf64::{
+    ELF_MAGIC, ELFCLASS64, ELFDATA2LSB, EV_CURRENT, ELFOSABI_NONE,
+    ET_EXEC, EM_RISCV, PT_LOAD,
+};
 
 const BASE_ADDR: u64 = 0x10000;
 
@@ -120,7 +116,7 @@ pub fn generate_elf_riscv_from_graph(graph: &Graph) -> Vec<u8> {
     let mut strings: Vec<(String, Vec<u8>)> = Vec::new();
     
     for node in &graph.nodes {
-        if let Node::Literal { id, value: Value::String(s) } = node {
+        if let Node::Literal { id, value: Value::String(s), runtime: _ } = node {
             strings.push((id.clone(), s.as_bytes().to_vec()));
         }
     }

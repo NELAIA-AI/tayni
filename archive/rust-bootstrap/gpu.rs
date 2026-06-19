@@ -138,7 +138,7 @@ impl PtxEmitter {
     fn emit_gpu_node(&self, node: &Node) -> Result<String, String> {
         let mut code = String::new();
         
-        if let Node::Operation { id, op, args } = node {
+        if let Node::Operation { id, op, args, runtime: _ } = node {
             match op {
                 Op::Call(name) => {
                     match name.as_str() {

@@ -1,0 +1,55 @@
+-- TAYNI Redis Client Example
+-- Demonstrates full Redis RESP protocol
+
+REQUIRES { redis, tcp }
+
+-- Configuration
+.host: "127.0.0.1"
+.port: 6379
+
+-- Connect to Redis
+@.redis: REDIS.CONNECT .host .port
+@.check: EQ .redis 0
+@.j: JNZ :error .check
+
+.connected: "Connected to Redis!\n"
+@.out1: PRT .connected 20
+
+-- SET operation
+.key1: "counter"
+.val1: "42"
+@.set1: REDIS.SET .redis .key1 7 .val1 2
+
+.set_msg: "SET counter 42: OK\n"
+@.out2: PRT .set_msg 19
+
+-- GET operation
+.buf: ALC 256
+@.len: REDIS.GET .redis .buf .key1 7
+
+.get_msg: "GET counter: "
+@.out3: PRT .get_msg 13
+@.out4: PRT .buf .len
+.nl: "\n"
+@.out5: PRT .nl 1
+
+-- INCR simulation (GET + ADD + SET)
+-- Note: Real Redis has INCR command
+
+-- DEL operation
+@.deleted: REDIS.DEL .redis .key1 7
+
+.del_msg: "DEL counter: OK\n"
+@.out6: PRT .del_msg 16
+
+-- Close connection
+@.closed: REDIS.CLOSE .redis
+
+.done: "Done!\n"
+@.out7: PRT .done 6
+!
+
+:error
+.err: "Failed to connect to Redis at 127.0.0.1:6379\n"
+@.out: PRT .err 44
+!

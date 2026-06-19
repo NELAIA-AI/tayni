@@ -1,0 +1,28 @@
+-- TAYNI Threading Example
+-- Demonstrates mutex and thread operations
+
+REQUIRES { threading }
+
+-- Create a mutex for synchronization
+@.mutex: MTX.NEW
+
+-- Shared counter
+.counter: 0
+
+-- Lock mutex before modifying shared data
+@.locked: MTX.LOCK .mutex
+
+-- Increment counter (critical section)
+@.counter: ADD .counter 1
+@.counter: ADD .counter 1
+@.counter: ADD .counter 1
+
+-- Unlock mutex
+@.unlocked: MTX.UNLOCK .mutex
+
+-- Print result
+.msg: "Counter value: "
+@.out1: PRT .msg 15
+@.out2: PRT .counter 1
+
+!

@@ -2,41 +2,18 @@
 //! Generates minimal Mach-O executables without external dependencies
 
 use crate::ir::{Graph, Node, Value, Arg, Op};
+use crate::target::format::macho64::{
+    MachOConfig, generate_macho64, macos_syscalls,
+    MH_MAGIC_64, CPU_TYPE_X86_64, CPU_TYPE_ARM64,
+    CPU_SUBTYPE_X86_64_ALL, CPU_SUBTYPE_ARM64_ALL,
+    MH_EXECUTE, MH_NOUNDEFS, MH_PIE,
+    LC_SEGMENT_64, LC_MAIN,
+    VM_PROT_READ, VM_PROT_WRITE, VM_PROT_EXECUTE,
+};
 use std::collections::HashMap;
 
-// Mach-O Magic Numbers
-const MH_MAGIC_64: u32 = 0xFEEDFACF;           // 64-bit Mach-O
-const MH_CIGAM_64: u32 = 0xCFFAEDFE;           // 64-bit Mach-O (byte-swapped)
-
-// CPU Types
-const CPU_TYPE_X86_64: u32 = 0x01000007;       // x86-64
-const CPU_TYPE_ARM64: u32 = 0x0100000C;        // ARM64
-
-// CPU Subtypes
-const CPU_SUBTYPE_X86_64_ALL: u32 = 3;
-const CPU_SUBTYPE_ARM64_ALL: u32 = 0;
-
-// File Types
-const MH_EXECUTE: u32 = 2;                     // Executable
-
-// Flags
-const MH_NOUNDEFS: u32 = 0x1;                  // No undefined references
-const MH_PIE: u32 = 0x200000;                  // Position Independent Executable
-
-// Load Commands
-const LC_SEGMENT_64: u32 = 0x19;               // 64-bit segment
-const LC_MAIN: u32 = 0x80000028;               // Main entry point
-const LC_UNIXTHREAD: u32 = 0x5;                // Unix thread (older method)
-
-// Segment/Section constants
-const VM_PROT_READ: u32 = 0x1;
-const VM_PROT_WRITE: u32 = 0x2;
-const VM_PROT_EXECUTE: u32 = 0x4;
-
-// macOS syscall numbers (different from Linux!)
-// macOS uses BSD syscalls with 0x2000000 offset
-const SYS_EXIT: u64 = 0x2000001;               // exit(status)
-const SYS_WRITE: u64 = 0x2000004;              // write(fd, buf, len)
+// Re-export syscall constants
+pub use crate::target::format::macho64::macos_syscalls::{SYS_EXIT, SYS_WRITE};
 
 #[derive(Clone, Copy, PartialEq)]
 pub enum MacOSArch {
@@ -294,12 +271,12 @@ pub fn generate_macho_from_graph(graph: &Graph, arch: MacOSArch) -> Vec<u8> {
     
     for node in &graph.nodes {
         match node {
-            Node::Literal { id, value } => {
+            Node::Literal { id, value, runtime: _ } => {
                 if let Value::String(s) = value {
                     strings.push((id.clone(), s.clone()));
                 }
             }
-            Node::Operation { id, op: Op::Prt, args } => {
+            Node::Operation { id, op: Op::Prt, args, runtime: _ } => {
                 if let Some(Arg::Ref(buf_ref)) = args.get(0) {
                     let len = args.get(1).and_then(|a| {
                         if let Arg::Lit(Value::Int(n)) = a { Some(*n) } else { None }

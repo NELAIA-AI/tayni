@@ -1,0 +1,134 @@
+-- TAYNI stdlib: url v1.0
+-- RFC 3986 URL parsing
+
+.url_safe: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_.~"
+.hex: "0123456789ABCDEF"
+
+-- URL.ENC input out -> len (percent-encode)
+.url_enc: FUNC .in .out
+  @.len: SLN .in
+  .i: 0
+  .o: 0
+  :loop
+    @.d: GE .i .len
+    JNZ :done .d
+    @.ch: GET .in .i
+    
+    -- check if safe
+    @.safe: 0
+    .j: 0
+    :chk
+      @.sc: GET .url_safe .j
+      @.end: EQ .sc 0
+      JNZ :unsafe .end
+      @.m: EQ .ch .sc
+      JNZ :is_safe .m
+      @.j: ADD .j 1
+      JMP :chk
+    
+    :is_safe
+      PUT .out .o .ch
+      @.o: ADD .o 1
+      JMP :next
+    
+    :unsafe
+      PUT .out .o 37
+      @.o: ADD .o 1
+      @.hi: DIV .ch 16
+      @.lo: MOD .ch 16
+      @.hc: GET .hex .hi
+      @.lc: GET .hex .lo
+      PUT .out .o .hc
+      @.o: ADD .o 1
+      PUT .out .o .lc
+      @.o: ADD .o 1
+    
+    :next
+      @.i: ADD .i 1
+      JMP :loop
+  :done
+    PUT .out .o 0
+    RET .o
+
+-- URL.DEC input out -> len (percent-decode)
+.url_dec: FUNC .in .out
+  @.len: SLN .in
+  .i: 0
+  .o: 0
+  :loop
+    @.d: GE .i .len
+    JNZ :done .d
+    @.ch: GET .in .i
+    @.is_pct: EQ .ch 37
+    JZ :copy .is_pct
+    
+    -- decode %XX
+    @.i1: ADD .i 1
+    @.i2: ADD .i 2
+    @.h: GET .in .i1
+    @.l: GET .in .i2
+    -- hex to int (simplified: assumes valid)
+    @.hv: SUB .h 48
+    @.gt9: GT .hv 9
+    JZ :h_ok .gt9
+    @.hv: SUB .h 55
+    :h_ok
+    @.lv: SUB .l 48
+    @.gt9: GT .lv 9
+    JZ :l_ok .gt9
+    @.lv: SUB .l 55
+    :l_ok
+    @.val: MUL .hv 16
+    @.val: ADD .val .lv
+    PUT .out .o .val
+    @.o: ADD .o 1
+    @.i: ADD .i 3
+    JMP :loop
+    
+    :copy
+      PUT .out .o .ch
+      @.o: ADD .o 1
+      @.i: ADD .i 1
+      JMP :loop
+  :done
+    PUT .out .o 0
+    RET .o
+
+-- URL.HOST url out -> len (extract host from URL)
+.url_host: FUNC .url .out
+  @.len: SLN .url
+  -- find :// 
+  .i: 0
+  :find_scheme
+    @.d: GE .i .len
+    JNZ :no_scheme .d
+    @.c: GET .url .i
+    @.is_colon: EQ .c 58
+    JNZ :found_scheme .is_colon
+    @.i: ADD .i 1
+    JMP :find_scheme
+  :found_scheme
+    @.i: ADD .i 3
+    .start: .i
+    -- find end of host (: / ? # or end)
+    :find_end
+      @.d: GE .i .len
+      JNZ :copy_host .d
+      @.c: GET .url .i
+      @.is_colon: EQ .c 58
+      @.is_slash: EQ .c 47
+      @.is_quest: EQ .c 63
+      @.is_hash: EQ .c 35
+      @.stop: OR .is_colon .is_slash
+      @.stop: OR .stop .is_quest
+      @.stop: OR .stop .is_hash
+      JNZ :copy_host .stop
+      @.i: ADD .i 1
+      JMP :find_end
+  :copy_host
+    @.hlen: SUB .i .start
+    @.src: ADD .url .start
+    @.r: SBS .out .src 0 .hlen
+    RET .hlen
+  :no_scheme
+    RET 0

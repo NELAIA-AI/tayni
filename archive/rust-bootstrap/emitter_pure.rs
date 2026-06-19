@@ -284,7 +284,7 @@ impl PureEmitter {
     
     fn collect_strings(&mut self, node: &Node) {
         match node {
-            Node::Literal { id, value: Value::String(s) } => {
+            Node::Literal { id, value: Value::String(s), runtime: _ } => {
                 let str_id = if let Some((existing_id, _)) = self.strings.iter().find(|(_, v)| v == s) {
                     existing_id.clone()
                 } else {
@@ -304,7 +304,7 @@ impl PureEmitter {
                     self.strings.push((format!("str_{}", new_id), s.clone()));
                 }
             }
-            Node::Operation { id: _, op: _, args } => {
+            Node::Operation { id: _, op: _, args, runtime: _ } => {
                 for arg in args {
                     if let Arg::Lit(Value::String(s)) = arg {
                         if !self.strings.iter().any(|(_, v)| v == s) {
@@ -321,8 +321,8 @@ impl PureEmitter {
     
     fn emit_node(&mut self, node: &Node) -> Result<String, String> {
         match node {
-            Node::Literal { id, value } => self.emit_literal(id, value),
-            Node::Operation { id, op, args } => self.emit_operation(id, op, args),
+            Node::Literal { id, value, runtime: _ } => self.emit_literal(id, value),
+            Node::Operation { id, op, args, runtime: _ } => self.emit_operation(id, op, args),
             Node::Flow { source, dest } => self.emit_flow(source, dest),
             _ => Ok(String::new()),
         }
@@ -3062,6 +3062,10 @@ declare void @llvm.memcpy.p0i8.p0i8.i64(i8*, i8*, i64, i1)
 "#.to_string()
     }
     
+    fn emit_windows_syscalls_default(&self) -> String {
+        self.emit_windows_syscalls()
+    }
+    
     fn emit_windows_syscalls(&self) -> String {
         r#"
 ; ============================================================================
@@ -3308,7 +3312,10 @@ define void @mainCRTStartup() {
     
     /// Optimized Windows syscalls - only emit what's needed
     fn emit_windows_syscalls_optimized(&self) -> String {
-        let usage = self.usage.as_ref().unwrap();
+        let usage = match self.usage.as_ref() {
+            Some(u) => u,
+            None => return self.emit_windows_syscalls_default(),
+        };
         let mut ir = String::new();
         
         ir.push_str(r#"

@@ -185,7 +185,7 @@ declare %Result* @__quantum__rt__result_get_zero()
     fn emit_quantum_node(&self, node: &Node) -> Result<String, String> {
         let mut code = String::new();
         
-        if let Node::Operation { id, op, args } = node {
+        if let Node::Operation { id, op, args, runtime: _ } = node {
             match op {
                 Op::Call(name) => {
                     match name.as_str() {

@@ -1,0 +1,25 @@
+-- TAYNI Capabilities Example
+-- Demonstrates the capability system (SEN)
+
+-- Declare required capabilities
+REQUIRES { io, memory }
+
+-- Contract: This program only reads files, never writes
+CONTRACT read_only {
+    GUARANTEE no_write
+    GUARANTEE no_network
+}
+
+-- Allocate memory buffer
+.buffer: ALC 1024
+
+-- Read from stdin
+.input: "Enter your name: "
+@.prompt: PRT .input 17
+
+-- Process input
+.greeting: "Hello, "
+@.out1: PRT .greeting 7
+
+-- Exit cleanly
+!

@@ -1,0 +1,102 @@
+-- TAYNI stdlib: string v1.0
+-- Operaciones de strings
+
+-- NATIVAS (compilador)
+-- SLN ptr -> len          : longitud hasta \0
+-- CAT dst s1 s2 -> len    : concatenar
+-- SBS dst src pos len     : substring
+-- CMP a b len -> -1|0|1   : comparar bytes
+
+-- EXTENDIDAS (TAYNI puro)
+
+-- STR.EQ a b -> 0|1
+.str_eq: FUNC .a .b
+  @.la: SLN .a
+  @.lb: SLN .b
+  @.same: EQ .la .lb
+  JZ :neq .same
+  @.c: CMP .a .b .la
+  @.r: EQ .c 0
+  RET .r
+  :neq
+  RET 0
+
+-- STR.HAS haystack needle -> pos|-1
+.str_has: FUNC .h .n
+  @.hl: SLN .h
+  @.nl: SLN .n
+  @.max: SUB .hl .nl
+  @.max: ADD .max 1
+  .i: 0
+  :loop
+    @.done: GE .i .max
+    JNZ :notfound .done
+    @.p: ADD .h .i
+    @.c: CMP .p .n .nl
+    @.m: EQ .c 0
+    JNZ :found .m
+    @.i: ADD .i 1
+    JMP :loop
+  :found
+    RET .i
+  :notfound
+    RET -1
+
+-- STR.UP str out -> len (a-z → A-Z)
+.str_up: FUNC .s .o
+  @.l: SLN .s
+  .i: 0
+  :loop
+    @.d: GE .i .l
+    JNZ :done .d
+    @.c: GET .s .i
+    @.lo: GE .c 97
+    @.hi: LE .c 122
+    @.is: AND .lo .hi
+    JZ :skip .is
+    @.c: SUB .c 32
+    :skip
+    PUT .o .i .c
+    @.i: ADD .i 1
+    JMP :loop
+  :done
+    PUT .o .i 0
+    RET .l
+
+-- STR.LO str out -> len (A-Z → a-z)
+.str_lo: FUNC .s .o
+  @.l: SLN .s
+  .i: 0
+  :loop
+    @.d: GE .i .l
+    JNZ :done .d
+    @.c: GET .s .i
+    @.lo: GE .c 65
+    @.hi: LE .c 90
+    @.is: AND .lo .hi
+    JZ :skip .is
+    @.c: ADD .c 32
+    :skip
+    PUT .o .i .c
+    @.i: ADD .i 1
+    JMP :loop
+  :done
+    PUT .o .i 0
+    RET .l
+
+-- STR.IDX str char -> pos|-1
+.str_idx: FUNC .s .ch
+  @.l: SLN .s
+  .i: 0
+  :loop
+    @.d: GE .i .l
+    JNZ :notfound .d
+    @.c: GET .s .i
+    @.m: EQ .c .ch
+    JNZ :found .m
+    @.i: ADD .i 1
+    JMP :loop
+  :found
+    RET .i
+  :notfound
+    RET -1

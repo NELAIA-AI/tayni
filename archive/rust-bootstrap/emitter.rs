@@ -216,7 +216,7 @@ impl Emitter {
     
     fn analyze_node(&mut self, node: &Node) {
         match node {
-            Node::Literal { id, value } => {
+            Node::Literal { id, value, runtime: _ } => {
                 match value {
                     Value::String(s) => {
                         let str_id = format!("str_{}", self.next_id());
@@ -255,9 +255,9 @@ impl Emitter {
     
     fn emit_node(&mut self, node: &Node) -> Result<String, String> {
         match node {
-            Node::Literal { id, value } => self.emit_literal(id, value),
+            Node::Literal { id, value, runtime: _ } => self.emit_literal(id, value),
             Node::Reference { id, target } => self.emit_reference(id, target),
-            Node::Operation { id, op, args } => self.emit_operation(id, op, args),
+            Node::Operation { id, op, args, runtime: _ } => self.emit_operation(id, op, args),
             Node::Flow { source, dest } => self.emit_flow(source, dest),
             Node::SubGraph { id, inputs, outputs, nodes } => {
                 self.emit_subgraph(id, inputs, outputs, nodes)

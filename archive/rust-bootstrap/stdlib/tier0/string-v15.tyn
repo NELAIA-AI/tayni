@@ -1,0 +1,102 @@
+-- TAYNI stdlib: string v1.5
+-- String operations
+
+-- NATIVE (compiler)
+-- strlen(ptr) -> len          : length until \0
+-- cat(dst, s1, s2) -> len     : concatenate
+-- sbs(dst, src, pos, len)     : substring
+-- cmp(a, b, len) -> -1|0|1    : compare bytes
+
+-- EXTENDED (pure TAYNI)
+
+-- str_eq(a, b) -> 0|1
+fn str_eq(a, b)
+  la = strlen(a)
+  lb = strlen(b)
+  same = eq(la, lb)
+  jz same :neq
+  c = cmp(a, b, la)
+  r = eq(c, 0)
+  ret r
+  :neq
+  ret 0
+
+-- str_has(haystack, needle) -> pos|-1
+fn str_has(h, n)
+  hl = strlen(h)
+  nl = strlen(n)
+  max = sub(hl, nl)
+  max = add(max, 1)
+  i = 0
+  :loop
+    done = ge(i, max)
+    jnz done :notfound
+    p = add(h, i)
+    c = cmp(p, n, nl)
+    m = eq(c, 0)
+    jnz m :found
+    i = add(i, 1)
+    jmp :loop
+  :found
+    ret i
+  :notfound
+    ret -1
+
+-- str_up(str, out) -> len (a-z to A-Z)
+fn str_up(s, o)
+  l = strlen(s)
+  i = 0
+  :loop
+    d = ge(i, l)
+    jnz d :done
+    c = get(s, i)
+    lo = ge(c, 97)
+    hi = le(c, 122)
+    is_lower = and(lo, hi)
+    jz is_lower :skip
+    c = sub(c, 32)
+    :skip
+    put(o, i, c)
+    i = add(i, 1)
+    jmp :loop
+  :done
+    put(o, i, 0)
+    ret l
+
+-- str_lo(str, out) -> len (A-Z to a-z)
+fn str_lo(s, o)
+  l = strlen(s)
+  i = 0
+  :loop
+    d = ge(i, l)
+    jnz d :done
+    c = get(s, i)
+    lo = ge(c, 65)
+    hi = le(c, 90)
+    is_upper = and(lo, hi)
+    jz is_upper :skip
+    c = add(c, 32)
+    :skip
+    put(o, i, c)
+    i = add(i, 1)
+    jmp :loop
+  :done
+    put(o, i, 0)
+    ret l
+
+-- str_idx(str, char) -> pos|-1
+fn str_idx(s, ch)
+  l = strlen(s)
+  i = 0
+  :loop
+    d = ge(i, l)
+    jnz d :notfound
+    c = get(s, i)
+    m = eq(c, ch)
+    jnz m :found
+    i = add(i, 1)
+    jmp :loop
+  :found
+    ret i
+  :notfound
+    ret -1

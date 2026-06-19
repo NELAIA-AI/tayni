@@ -2,20 +2,14 @@
 //! Generates minimal ELF executables for ARM64 Linux
 
 use crate::ir::{Graph, Node, Value, Arg, Op};
+use crate::target::format::elf64::{Elf64Config, generate_elf64, PF_R, PF_X};
 use std::collections::HashMap;
 
-// ELF64 Constants
-const ELF_MAGIC: [u8; 4] = [0x7F, b'E', b'L', b'F'];
-const ELFCLASS64: u8 = 2;
-const ELFDATA2LSB: u8 = 1;
-const EV_CURRENT: u8 = 1;
-const ELFOSABI_NONE: u8 = 0;
-const ET_EXEC: u16 = 2;
-const EM_AARCH64: u16 = 183;  // ARM64
-const PT_LOAD: u32 = 1;
-const PF_X: u32 = 1;
-const PF_W: u32 = 2;
-const PF_R: u32 = 4;
+// Re-export for backward compatibility
+pub use crate::target::format::elf64::{
+    ELF_MAGIC, ELFCLASS64, ELFDATA2LSB, EV_CURRENT, ELFOSABI_NONE,
+    ET_EXEC, EM_AARCH64, PT_LOAD, PF_W,
+};
 
 const BASE_ADDR: u64 = 0x400000;
 
@@ -130,10 +124,10 @@ pub fn generate_elf_arm64_from_graph(graph: &Graph) -> Vec<u8> {
     // Collect strings and constants
     for node in &graph.nodes {
         match node {
-            Node::Literal { id, value: Value::String(s) } => {
+            Node::Literal { id, value: Value::String(s), runtime: _ } => {
                 strings.push((id.clone(), s.as_bytes().to_vec()));
             }
-            Node::Literal { id, value: Value::Int(n) } => {
+            Node::Literal { id, value: Value::Int(n), runtime: _ } => {
                 constants.insert(id.clone(), *n);
             }
             _ => {}

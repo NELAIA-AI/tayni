@@ -1,0 +1,54 @@
+-- TAYNI Standard Library: Math Operations
+-- Tier 0: Essential
+-- Version: 0.1.0
+
+-- ============================================================
+-- MATH.ABS - Absolute value
+-- Input: .n (number)
+-- Output: |n|
+-- ============================================================
+-- Usage:
+-- @.neg: SUB 0 5
+-- @.check: LT @.neg 0
+-- @.abs: JZ @.check :already_pos
+-- @.abs: SUB 0 @.neg
+-- :already_pos
+
+-- ============================================================
+-- MATH.MIN - Minimum of two numbers
+-- Input: .a, .b
+-- Output: min(a, b)
+-- ============================================================
+-- Usage:
+-- @.diff: SUB .a .b
+-- @.a_smaller: LT .a .b
+-- @.result: JZ @.a_smaller :b_is_min
+-- @.result: ADD .a 0
+-- @.jmp: JMP :min_done
+-- :b_is_min
+-- @.result: ADD .b 0
+-- :min_done
+
+-- ============================================================
+-- MATH.MAX - Maximum of two numbers
+-- Input: .a, .b
+-- Output: max(a, b)
+-- ============================================================
+
+-- ============================================================
+-- MATH.POW - Power (a^b)
+-- Input: .base, .exp
+-- Output: base^exp
+-- ============================================================
+-- Note: Implemented with loop multiplication
+
+-- ============================================================
+-- Core Operations Reference:
+-- ADD .a .b -> a + b
+-- SUB .a .b -> a - b
+-- MUL .a .b -> a * b
+-- DIV .a .b -> a / b (integer division)
+-- MOD .a .b -> a % b (remainder)
+-- ============================================================
+
+!

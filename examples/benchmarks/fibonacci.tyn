@@ -1,0 +1,22 @@
+-- TAYNI Benchmark: Fibonacci
+-- Calculates Fibonacci numbers for performance comparison
+
+.n: 35
+.a: 0
+.b: 1
+.i: 0
+
+:loop
+@.temp: ADD .a .b
+@.a: MOV .b
+@.b: MOV .temp
+@.i: ADD .i 1
+@.done: GE .i .n
+@.j: JZ :loop .done
+
+-- Print result
+.msg: "Fib(35) = "
+@.out1: PRT .msg 10
+@.out2: PRT .b 10
+
+!

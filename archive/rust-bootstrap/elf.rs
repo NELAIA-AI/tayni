@@ -3,20 +3,14 @@
 //! Uses "Teensy ELF" techniques for extreme size optimization
 
 use crate::ir::{Graph, Node, Value, Arg, Op};
+use crate::target::format::elf64::{Elf64Config, generate_elf64, PF_R, PF_X};
 use std::collections::HashMap;
 
-// ELF64 Constants
-const ELF_MAGIC: [u8; 4] = [0x7F, b'E', b'L', b'F'];
-const ELFCLASS64: u8 = 2;
-const ELFDATA2LSB: u8 = 1;  // Little endian
-const EV_CURRENT: u8 = 1;
-const ELFOSABI_NONE: u8 = 0;
-const ET_EXEC: u16 = 2;     // Executable
-const EM_X86_64: u16 = 62;
-const PT_LOAD: u32 = 1;
-const PF_X: u32 = 1;        // Execute
-const PF_W: u32 = 2;        // Write
-const PF_R: u32 = 4;        // Read
+// Re-export constants for backward compatibility
+pub use crate::target::format::elf64::{
+    ELF_MAGIC, ELFCLASS64, ELFDATA2LSB, EV_CURRENT, ELFOSABI_NONE,
+    ET_EXEC, EM_X86_64, PT_LOAD, PF_W,
+};
 
 const BASE_ADDR: u64 = 0x400000;
 

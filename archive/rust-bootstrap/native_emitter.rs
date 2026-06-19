@@ -31,7 +31,7 @@ impl NativeEmitter {
     fn emit(&mut self, graph: &Graph) {
         // First pass: collect literals
         for node in &graph.nodes {
-            if let Node::Literal { id, value } = node {
+            if let Node::Literal { id, value, runtime: _ } = node {
                 if let Value::Int(n) = value {
                     self.values.insert(id.clone(), *n);
                 }
@@ -44,7 +44,7 @@ impl NativeEmitter {
         
         for node in &graph.nodes {
             match node {
-                Node::Literal { id, value } => {
+                Node::Literal { id, value, runtime: _ } => {
                     if let Value::Int(n) = value {
                         if first_value {
                             // mov rax, imm64
@@ -54,7 +54,7 @@ impl NativeEmitter {
                         self.values.insert(id.clone(), *n);
                     }
                 }
-                Node::Operation { id, op, args } => {
+                Node::Operation { id, op, args, runtime: _ } => {
                     match op {
                         Op::Add => {
                             if args.len() >= 2 {
@@ -310,12 +310,14 @@ mod tests {
         let mut graph = Graph::new();
         graph.add_node(Node::Literal { 
             id: "a".to_string(), 
-            value: Value::Int(5) 
+            value: Value::Int(5),
+            runtime: false,
         });
         graph.add_node(Node::Operation {
             id: "b".to_string(),
             op: Op::Add,
             args: vec![Arg::Ref("a".to_string()), Arg::Lit(Value::Int(3))],
+            runtime: true,
         });
         
         let exe = emit_native_exe(&graph);

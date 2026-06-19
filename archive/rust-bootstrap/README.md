@@ -1,42 +1,74 @@
-# TAYNI Rust Bootstrap (Archived)
+# TAYNI-C (Rust Bootstrap Compiler)
 
-## Status: ARCHIVED - Historical Reference Only
+## Status: ACTIVE - Primary Compiler
 
-This directory contains the Rust-based bootstrap compiler (`tayni-c`) that was used to generate the first functional TAYNI compiler (`gen28.exe`).
+The Rust compiler `tayni-c` generates native Windows PE x86-64 executables directly from `.tyn` source files without any external dependencies (no LLVM, no clang, no linker).
 
-## Purpose
+## Features (v0.24)
 
-The Rust compiler served ONE purpose: generate a TAYNI compiler that can compile TAYNI programs. Once `gen28.exe` was successfully generated and verified, the Rust code became obsolete.
+### Core Operations
+- **Arithmetic**: ADD, SUB, MUL, DIV, MOD
+- **Memory**: ALC, PUT, GET
+- **Conversion**: ITS (int-to-string)
+- **Strings**: SLN (length), CAT (concatenate), CMP (compare)
+- **I/O**: PRT (print to stdout)
 
-## Historical Milestone
+### JSON (stdlib/tier0)
+- **JSON.ENCODE** `dst key val → len` — Generate `{"key":value}`
+- **JSON.GET** `json key val → len` — Extract value by key
+- **JSON.SET** `json key new_val → len` — Modify value in-place
 
-- **Date**: 2026-06-17
-- **Achievement**: `tayni-c` successfully compiled `gen28.tyn` into `gen28.exe`
-- **Verification**: `gen28.exe` compiled `program.tyn` into a working `out.exe`
+### Runtime Operations (@)
+All operations prefixed with `@` are computed at **runtime** (x86-64 machine code).
+Operations without `@` are evaluated at **compile time**.
 
-## Why Archived (Not Deleted)
+### Architecture
+- `RuntimeCodeGen` struct: single source of x86-64 opcode emission
+- Static `.data` section for buffers (no heap allocation needed)
+- Buffer base pointer in `[rsp+0x48]` enables all `emit_*` methods
+- PE generation: DOS header → COFF → Optional Header → .text/.rdata/.data/.idata
 
-1. **Historical reference** - Documents the bootstrap process
-2. **Emergency fallback** - If gen28+ chain breaks, can regenerate
-3. **Educational** - Shows how TAYNI achieved self-hosting
+## Build
 
-## TAYNI Autonomy
+```bash
+cargo build --release
+```
 
-From `gen28.exe` forward, TAYNI is **100% autonomous**:
-- No Rust dependencies
-- No external compilers
-- Self-compiling chain: genX.exe compiles genX+1.tyn
+## Usage
+
+```bash
+tayni-c input.tyn -o output.exe
+```
+
+## Tests
+
+```bash
+# All tests should produce correct output and exit 0
+tayni-c test-arith.tyn -o t.exe && t.exe      # 27
+tayni-c test-sln.tyn -o t.exe && t.exe        # 5
+tayni-c test-cat.tyn -o t.exe && t.exe        # 10
+tayni-c test-cmp.tyn -o t.exe && t.exe        # 0
+tayni-c test-json-encode.tyn -o t.exe && t.exe # {"name":42}
+tayni-c test-json-get.tyn -o t.exe && t.exe    # 25
+tayni-c test-json-set.tyn -o t.exe && t.exe    # {"age":99}
+```
 
 ## Files
 
-- `src/` - Rust source code (parser, PE generator, etc.)
-- `Cargo.toml` - Rust dependencies
-- `target/release/tayni-c.exe` - The bootstrap compiler binary
+| File | Purpose |
+|------|---------|
+| `pe.rs` | PE generator + RuntimeCodeGen (x86-64 emission) |
+| `ir.rs` | Intermediate representation (Op, Node, Arg, Value) |
+| `parser.rs` | TAYNI source parser |
+| `modules.rs` | Module resolver (USE directives, stdlib tiers) |
+| `main.rs` | CLI entry point |
 
-## DO NOT USE
+## Next Steps
 
-This code should NOT be used for new development. All TAYNI development should use the self-hosted compiler chain starting from `gen28.exe`.
+- Fase 5: TIME.NOW, TIME.SLEEP (requires IAT extension)
+- Fase 6: Threading (THR, JON, MTX)
+- Fase 7: HTTP alto nivel
 
 ---
 
-*"The bootstrap is complete. TAYNI is now autonomous."*
+*Consorcio TAYNI, 2026*

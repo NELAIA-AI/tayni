@@ -1,4 +1,4 @@
-//! TAYNI Compiler v0.24
+//! TAYNI Compiler v0.25
 //! Direct Native Emission (PE/ELF/Mach-O) - No External Dependencies
 //! Supports: Windows PE, Linux ELF, macOS Mach-O, Capability System (SCN)
 //! Phase 12.6a: USE directive and module resolution
@@ -8,7 +8,8 @@ mod parser;
 mod emitter_pure;
 mod binary;
 mod native_emitter;
-mod pe;
+mod pe;  // Modular PE constants, headers, imports
+mod pe_gen;  // PE generator
 mod elf;
 mod elf_arm64;
 mod macho;
@@ -20,6 +21,8 @@ mod interface;
 mod intent;
 mod qir;
 mod gpu;
+mod target;
+mod codegen;
 
 use parser::Parser;
 use emitter_pure::{PureEmitter, TargetPlatform};
@@ -27,12 +30,13 @@ use std::env;
 use std::fs;
 use std::process::Command;
 
-const VERSION: &str = "0.24.0";
+const VERSION: &str = "0.25.0";
 
 fn main() {
     let args: Vec<String> = env::args().collect();
     
     let quiet = args.contains(&"--quiet".to_string()) || args.contains(&"-q".to_string());
+    let use_new_backend = args.contains(&"--new-backend".to_string());
     
     // Handle --version
     if args.contains(&"--version".to_string()) || args.contains(&"-V".to_string()) {
@@ -96,9 +100,14 @@ fn main() {
         println!("  --version, -V       Show version");
         println!("  --help, -h          Show this help");
         println!();
+        println!("EXPERIMENTAL:");
+        println!("  --new-backend       Use unified CodeEmitter backend (experimental)");
+        println!();
         println!("SPECIAL COMMANDS:");
         println!("  --test-pe           Generate test PE executable");
         println!("  --tcp-server        Generate TCP server PE");
+        println!("  --http-server       Generate HTTP server PE (with recv)");
+        println!("  --http-get          Generate HTTP GET client PE");
         println!("  --gui               Generate GUI PE");
         println!("  --tiny              Generate minimal PE (~1KB)");
         println!("  --ultra-tiny        Generate ultra-tiny PE (~1KB optimized)");
@@ -132,7 +141,7 @@ fn main() {
     
     // Special command: generate test PE
     if input_file == "--test-pe" {
-        let pe_data = pe::generate_hello_pe();
+        let pe_data = pe_gen::generate_hello_pe();
         let output = if args.len() > 2 { &args[2] } else { "test_pe.exe" };
         if let Err(e) = fs::write(output, &pe_data) {
             eprintln!("E:WRITE:{}", e);
@@ -144,11 +153,25 @@ fn main() {
         return;
     }
     
+    // Special command: generate PE template for TAYNI self-hosting
+    if input_file == "--pe-template" {
+        let pe_data = pe_gen::generate_pe_template();
+        let output = if args.len() > 2 { &args[2] } else { "pe-template.bin" };
+        if let Err(e) = fs::write(output, &pe_data) {
+            eprintln!("E:WRITE:{}", e);
+            std::process::exit(1);
+        }
+        if !quiet {
+            eprintln!("Generated PE template {} ({} bytes)", output, pe_data.len());
+        }
+        return;
+    }
+    
     // Special command: generate TCP server PE
     if input_file == "--tcp-server" {
         let port: u16 = args.get(2).and_then(|s| s.parse().ok()).unwrap_or(8080);
         let response = "HTTP/1.1 200 OK\r\nContent-Length: 13\r\n\r\nHello TAYNI!";
-        let pe_data = pe::generate_tcp_server_pe(port, response);
+        let pe_data = pe_gen::generate_tcp_server_pe(port, response);
         let output = args.get(3).map(|s| s.as_str()).unwrap_or("tcp_server.exe");
         if let Err(e) = fs::write(output, &pe_data) {
             eprintln!("E:WRITE:{}", e);
@@ -160,12 +183,45 @@ fn main() {
         return;
     }
     
+    // Special command: generate HTTP server PE
+    if input_file == "--http-server" {
+        let port: u16 = args.get(2).and_then(|s| s.parse().ok()).unwrap_or(8080);
+        let output = args.get(3).map(|s| s.as_str()).unwrap_or("http_server.exe");
+        let pe_data = pe_gen::generate_http_server_pe(port, &[]);
+        if let Err(e) = fs::write(output, &pe_data) {
+            eprintln!("E:WRITE:{}", e);
+            std::process::exit(1);
+        }
+        if !quiet {
+            eprintln!("Generated HTTP server {} on port {} ({} bytes)", output, port, pe_data.len());
+        }
+        return;
+    }
+    
+    // Special command: generate HTTP client PE
+    if input_file == "--http-get" {
+        // Usage: --http-get <host> <port> <path> [output]
+        let host = args.get(2).map(|s| s.as_str()).unwrap_or("127.0.0.1");
+        let port: u16 = args.get(3).and_then(|s| s.parse().ok()).unwrap_or(80);
+        let path = args.get(4).map(|s| s.as_str()).unwrap_or("/");
+        let output = args.get(5).map(|s| s.as_str()).unwrap_or("http_get.exe");
+        let pe_data = pe_gen::generate_http_get_pe(host, port, path);
+        if let Err(e) = fs::write(output, &pe_data) {
+            eprintln!("E:WRITE:{}", e);
+            std::process::exit(1);
+        }
+        if !quiet {
+            eprintln!("Generated HTTP GET client {} -> {}:{}{} ({} bytes)", output, host, port, path, pe_data.len());
+        }
+        return;
+    }
+    
     // Special command: generate GUI PE
     if input_file == "--gui" {
         let title = args.get(2).map(|s| s.as_str()).unwrap_or("NELAIA");
         let message = args.get(3).map(|s| s.as_str()).unwrap_or("Hello from TAYNI GUI!");
         let output = args.get(4).map(|s| s.as_str()).unwrap_or("gui.exe");
-        let pe_data = pe::generate_gui_pe(title, message);
+        let pe_data = pe_gen::generate_gui_pe(title, message);
         if let Err(e) = fs::write(output, &pe_data) {
             eprintln!("E:WRITE:{}", e);
             std::process::exit(1);
@@ -180,7 +236,7 @@ fn main() {
     if input_file == "--tiny" {
         let message = args.get(2).map(|s| s.as_str()).unwrap_or("Hello from TAYNI!\n");
         let output = args.get(3).map(|s| s.as_str()).unwrap_or("tiny.exe");
-        let pe_data = pe::generate_tiny_pe(message);
+        let pe_data = pe_gen::generate_tiny_pe(message);
         if let Err(e) = fs::write(output, &pe_data) {
             eprintln!("E:WRITE:{}", e);
             std::process::exit(1);
@@ -195,7 +251,7 @@ fn main() {
     if input_file == "--smallest" {
         let message = args.get(2).map(|s| s.as_str()).unwrap_or("Hello\n");
         let output = args.get(3).map(|s| s.as_str()).unwrap_or("smallest.exe");
-        let pe_data = pe::generate_smallest_pe(message);
+        let pe_data = pe_gen::generate_smallest_pe(message);
         if let Err(e) = fs::write(output, &pe_data) {
             eprintln!("E:WRITE:{}", e);
             std::process::exit(1);
@@ -210,7 +266,7 @@ fn main() {
     if input_file == "--ultra-tiny" {
         let message = args.get(2).map(|s| s.as_str()).unwrap_or("Hello\n");
         let output = args.get(3).map(|s| s.as_str()).unwrap_or("ultra_tiny.exe");
-        let pe_data = pe::generate_ultra_tiny_pe(message);
+        let pe_data = pe_gen::generate_ultra_tiny_pe(message);
         if let Err(e) = fs::write(output, &pe_data) {
             eprintln!("E:WRITE:{}", e);
             std::process::exit(1);
@@ -622,6 +678,71 @@ fn main() {
     }
     
     // =========================================================================
+    // NEW UNIFIED BACKEND (experimental)
+    // Uses the CodeEmitter trait for all targets
+    // =========================================================================
+    
+    if use_new_backend {
+        use codegen::{EmitterFactory, CodeEmitter};
+        use target::Target;
+        
+        // Convert TargetPlatform to Target
+        let unified_target = match target {
+            TargetPlatform::Windows => Target::windows_x64(),
+            TargetPlatform::Linux => Target::linux_x64(),
+            TargetPlatform::LinuxArm64 => Target::linux_arm64(),
+            TargetPlatform::MacOS => Target::macos_arm64(), // Default to ARM64 for new backend
+            TargetPlatform::MacOSArm64 => Target::macos_arm64(),
+            TargetPlatform::Wasm => Target::wasm(),
+            TargetPlatform::Ptx => Target::cuda(),
+            TargetPlatform::AmdGpu => Target::rocm(),
+            TargetPlatform::Qir => Target::qpu_azure(),
+            _ => Target::windows_x64(), // Fallback
+        };
+        
+        let mut emitter = match EmitterFactory::create(unified_target.clone()) {
+            Ok(e) => e,
+            Err(e) => {
+                eprintln!("E:EMITTER:{}", e);
+                std::process::exit(1);
+            }
+        };
+        
+        if let Err(e) = emitter.emit_graph(&graph) {
+            eprintln!("E:EMIT:{}", e);
+            std::process::exit(1);
+        }
+        
+        let binary = match emitter.build() {
+            Ok(b) => b,
+            Err(e) => {
+                eprintln!("E:BUILD:{}", e);
+                std::process::exit(1);
+            }
+        };
+        
+        let ext = emitter.extension();
+        let out_file = if ext.is_empty() {
+            output_name.clone()
+        } else {
+            format!("{}.{}", output_name, ext)
+        };
+        
+        if let Err(e) = fs::write(&out_file, &binary) {
+            eprintln!("E:WRITE:{}", e);
+            std::process::exit(1);
+        }
+        
+        if !quiet {
+            eprintln!("OK:{}:{}:{} bytes (unified backend)", 
+                unified_target.native_format().to_uppercase(),
+                out_file, 
+                binary.len());
+        }
+        return;
+    }
+    
+    // =========================================================================
     // DEFAULT: Direct native emission (no external dependencies)
     // Automatically selects PE (Windows), ELF (Linux), Mach-O (macOS), WASM, RISC-V
     // =========================================================================
@@ -875,7 +996,7 @@ fn main() {
     }
     
     if emit_pe {
-        let exe_data = pe::generate_pe_from_graph(&graph);
+        let exe_data = pe_gen::generate_pe_from_graph(&graph);
         let exe_file = format!("{}.exe", output_name);
         if let Err(e) = fs::write(&exe_file, &exe_data) {
             eprintln!("E:WRITE:{}", e);

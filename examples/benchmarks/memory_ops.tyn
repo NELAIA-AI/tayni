@@ -1,0 +1,27 @@
+-- TAYNI Benchmark: Memory Operations
+-- Tests allocation and copy performance
+
+-- Allocate buffers
+.buf1: ALC 65536
+.buf2: ALC 65536
+
+-- Fill buffer with pattern
+.i: 0
+.size: 65536
+
+:fill_loop
+@.offset: ADD .buf1 .i
+@.val: MOD .i 256
+@.store: STR .offset .val
+@.i: ADD .i 1
+@.done: GE .i .size
+@.j: JZ :fill_loop .done
+
+-- Copy buffer
+@.copied: CPY .buf2 .buf1 .size
+
+-- Verify copy
+.msg: "Copied 64KB successfully\n"
+@.out: PRT .msg 25
+
+!

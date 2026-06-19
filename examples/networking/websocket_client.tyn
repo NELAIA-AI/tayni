@@ -1,0 +1,40 @@
+-- TAYNI WebSocket Client Example
+-- Demonstrates WebSocket frame encoding/decoding
+
+REQUIRES { websocket }
+
+-- WebSocket URL
+.url: "ws://localhost:8080/chat"
+.url_len: 25
+
+-- Connect to WebSocket server
+@.ws: WS.CONNECT .url .url_len
+
+-- Prepare message
+.msg: "Hello, WebSocket!"
+.msg_len: 17
+
+-- Allocate frame buffer
+.frame: ALC 256
+
+-- Encode message as WebSocket frame
+@.frame_len: WS.SEND .frame .ws .msg .msg_len
+
+-- Print frame info
+.info: "Frame length: "
+@.out1: PRT .info 14
+@.out2: PRT .frame_len 2
+
+-- Receive response
+.recv_buf: ALC 1024
+@.recv_len: WS.RECV .recv_buf .ws .frame .frame_len
+
+-- Print received data
+.recv_info: "Received: "
+@.out3: PRT .recv_info 10
+@.out4: PRT .recv_buf .recv_len
+
+-- Close connection
+@.closed: WS.CLOSE .ws
+
+!

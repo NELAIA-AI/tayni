@@ -35,7 +35,8 @@ fn parse_json_value(s: &str) -> Result<(JsonValue, &str), String> {
         return Err("Unexpected end of input".to_string());
     }
     
-    match s.chars().next().unwrap() {
+    let first_char = s.chars().next().ok_or("Empty input")?;
+    match first_char {
         '"' => {
             let end = s[1..].find('"').ok_or("Unterminated string")?;
             let val = &s[1..end + 1];
@@ -107,7 +108,7 @@ fn parse_json_value(s: &str) -> Result<(JsonValue, &str), String> {
         't' if s.starts_with("true") => Ok((JsonValue::Bool(true), &s[4..])),
         'f' if s.starts_with("false") => Ok((JsonValue::Bool(false), &s[5..])),
         'n' if s.starts_with("null") => Ok((JsonValue::Null, &s[4..])),
-        _ => Err(format!("Unexpected character: {}", s.chars().next().unwrap())),
+        c => Err(format!("Unexpected character: {}", c)),
     }
 }
 

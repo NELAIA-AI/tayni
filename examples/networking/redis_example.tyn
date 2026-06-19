@@ -1,0 +1,44 @@
+-- TAYNI Redis Example
+-- Demonstrates Redis RESP protocol operations
+
+REQUIRES { redis }
+
+-- Connect to Redis server
+.host: "127.0.0.1"
+.port: 6379
+
+@.redis: REDIS.CONNECT .host .port
+@.check: EQ .redis 0
+@.j: JNZ :error .check
+
+-- Set a key-value pair
+.key: "greeting"
+.key_len: 8
+.value: "Hello from TAYNI!"
+.val_len: 17
+
+@.set_ok: REDIS.SET .redis .key .key_len .value .val_len
+
+-- Get the value back
+.buf: ALC 256
+@.len: REDIS.GET .redis .buf .key .key_len
+
+-- Print result
+.msg: "Redis GET result: "
+@.out1: PRT .msg 18
+@.out2: PRT .buf .len
+
+-- Delete the key
+@.deleted: REDIS.DEL .redis .key .key_len
+
+-- Close connection
+@.closed: REDIS.CLOSE .redis
+
+.done: "\nDone!\n"
+@.out3: PRT .done 7
+!
+
+:error
+.err: "Failed to connect to Redis\n"
+@.out: PRT .err 28
+!

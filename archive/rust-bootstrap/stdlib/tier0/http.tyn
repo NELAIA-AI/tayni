@@ -1,0 +1,53 @@
+-- TAYNI stdlib: http v1.0
+-- HTTP/1.1 client/server
+
+-- CLIENT (requiere ws2_32.dll en IAT)
+-- HTTP.GET url buf -> len|-1
+-- HTTP.POST url body buf -> len|-1
+-- HTTP.PUT url body buf -> len|-1
+-- HTTP.DEL url buf -> len|-1
+
+-- SERVER
+-- HTTP.LSN port -> server_handle
+-- HTTP.ACC server -> req_handle
+-- HTTP.MTH req -> method_ptr ("GET","POST",...)
+-- HTTP.PTH req -> path_ptr ("/api/users")
+-- HTTP.HDR req name -> value_ptr
+-- HTTP.BDY req -> body_ptr
+-- HTTP.RSP req status body -> 0|-1
+
+-- Request handle structure (64 bytes):
+--   +0:  socket (8)
+--   +8:  method_ptr (8)
+--   +16: path_ptr (8)
+--   +24: headers_ptr (8)
+--   +32: body_ptr (8)
+--   +40: body_len (8)
+--   +48: content_type_ptr (8)
+--   +56: reserved (8)
+
+-- Status codes:
+-- 200 OK, 201 Created, 204 No Content
+-- 301 Moved, 302 Found, 304 Not Modified
+-- 400 Bad Request, 401 Unauthorized, 403 Forbidden, 404 Not Found
+-- 500 Server Error, 502 Bad Gateway, 503 Unavailable
+
+-- Example: Simple server
+-- @.s: HTTP.LSN 8080
+-- :loop
+--   @.r: HTTP.ACC .s
+--   @.p: HTTP.PTH .r
+--   @.eq: CMP .p "/health" 7
+--   JNZ :health .eq
+--   HTTP.RSP .r 404 '{"error":"not found"}'
+--   JMP :loop
+--   :health
+--   HTTP.RSP .r 200 '{"status":"ok"}'
+--   JMP :loop
+
+-- Example: Client GET
+-- .buf: ALC 4096
+-- @.len: HTTP.GET "http://api.example.com/users" .buf
+-- @.ok: GT .len 0
+-- JZ :error .ok
+-- PRT .buf

@@ -153,7 +153,7 @@ pub fn serialize(graph: &Graph) -> Vec<u8> {
     for node in &graph.nodes {
         let mut nd = Vec::new();
         match node {
-            Node::Literal { id, value } => {
+            Node::Literal { id, value, runtime: _ } => {
                 nd.push(0); // type = Literal
                 nd.push(0); // no op
                 let id_idx = intern(id);
@@ -175,7 +175,7 @@ pub fn serialize(graph: &Graph) -> Vec<u8> {
                     _ => {}
                 }
             }
-            Node::Operation { id, op, args } => {
+            Node::Operation { id, op, args, runtime: _ } => {
                 nd.push(1); // type = Operation
                 nd.push(op_to_byte(op));
                 let id_idx = intern(id);
@@ -363,7 +363,7 @@ pub fn deserialize(data: &[u8]) -> Result<Graph, String> {
                         }
                         _ => Value::Int(0),
                     };
-                    graph.add_node(Node::Literal { id, value });
+                    graph.add_node(Node::Literal { id, value, runtime: false });
                 }
             }
             1 => { // Operation
@@ -408,7 +408,7 @@ pub fn deserialize(data: &[u8]) -> Result<Graph, String> {
                     }
                 }
                 
-                graph.add_node(Node::Operation { id, op, args });
+                graph.add_node(Node::Operation { id, op, args, runtime: false });
             }
             3 => { // Reference
                 if npos + 8 > pos + node_len { continue; }

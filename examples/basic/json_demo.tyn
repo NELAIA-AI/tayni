@@ -1,0 +1,22 @@
+-- TAYNI JSON Example
+-- Demonstrates JSON encoding and decoding
+
+REQUIRES { json }
+
+-- Create a simple object
+.name: "Alice"
+.age: 30
+.city: "Madrid"
+
+-- Encode to JSON
+.json_buf: ALC 256
+@.json_len: JSON.ENCODE .json_buf .name .age .city
+
+-- Print the JSON
+@.out: PRT .json_buf .json_len
+
+-- Decode JSON
+.decoded: ALC 256
+@.dec_len: JSON.DECODE .decoded .json_buf .json_len
+
+!

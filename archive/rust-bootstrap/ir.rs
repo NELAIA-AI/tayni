@@ -29,6 +29,7 @@ pub enum Capability {
     FileSystem,
     FileSystemReadOnly,
     Threading,
+    Time,
     Gui,
     
     // Custom capability
@@ -337,13 +338,15 @@ pub enum Node {
     Use { module: String },
     
     /// Literal value: .id: 42 or .id: "string"
-    Literal { id: String, value: Value },
+    /// runtime: true if prefixed with @ (evaluated at runtime)
+    Literal { id: String, value: Value, runtime: bool },
     
     /// Reference to another node: .id: .other
     Reference { id: String, target: String },
     
     /// Operation: .id: OP .args
-    Operation { id: String, op: Op, args: Vec<Arg> },
+    /// runtime: true if prefixed with @ (executed at runtime)
+    Operation { id: String, op: Op, args: Vec<Arg>, runtime: bool },
     
     /// Sub-graph definition: .id: { IN ... OUT }
     SubGraph { id: String, inputs: Vec<String>, outputs: Vec<String>, nodes: Vec<Node> },
@@ -373,20 +376,22 @@ impl Node {
         let mut hasher = DefaultHasher::new();
         
         match self {
-            Node::Literal { id, value } => {
+            Node::Literal { id, value, runtime } => {
                 "Literal".hash(&mut hasher);
                 id.hash(&mut hasher);
                 format!("{:?}", value).hash(&mut hasher);
+                runtime.hash(&mut hasher);
             }
             Node::Reference { id, target } => {
                 "Reference".hash(&mut hasher);
                 id.hash(&mut hasher);
                 target.hash(&mut hasher);
             }
-            Node::Operation { id, op, args } => {
+            Node::Operation { id, op, args, runtime } => {
                 "Operation".hash(&mut hasher);
                 id.hash(&mut hasher);
                 format!("{:?}", op).hash(&mut hasher);
+                runtime.hash(&mut hasher);
                 for arg in args {
                     format!("{:?}", arg).hash(&mut hasher);
                 }
@@ -477,7 +482,9 @@ pub enum Op {
     // Control (BRN only - LOOP/BRK/CNT deprecated)
     Brn,
     // Conditional Jump (for real loops)
-    Jmp,  // JMP cond label_true label_false -> conditional branch
+    Jmp,  // JMP :label -> unconditional jump to label
+    Jz,   // JZ cond :label -> jump to label if cond == 0
+    Jnz,  // JNZ cond :label -> jump to label if cond != 0
     // While loop
     Whl,  // WHL cond body_label -> while loop
     // Conditional termination
@@ -505,7 +512,20 @@ pub enum Op {
     // High-performance I/O
     Epl, Ewa, Ect,
     // Threading
-    Thr, Jon, Mtx, Lck, Ulk,
+    Thr, Jon, Mtx, Lck, Ulk, Tlk, Yld,
+    // Atomic Operations (lock-free primitives)
+    AtmLd,   // ATM.LD ptr -> value (atomic load, SeqCst)
+    AtmSt,   // ATM.ST ptr val -> store atomically
+    AtmXchg, // ATM.XCHG ptr new -> old (atomic exchange)
+    AtmCas,  // ATM.CAS ptr expected desired -> success (compare-and-swap)
+    AtmAdd,  // ATM.ADD ptr val -> old (atomic fetch-add)
+    AtmSub,  // ATM.SUB ptr val -> old (atomic fetch-sub)
+    Fence,   // FNC -> memory fence (full barrier)
+    // Channels (CSP-style communication)
+    Chn,     // CHN capacity -> channel_ptr
+    ChnSnd,  // CHN.SND chan val -> success
+    ChnRcv,  // CHN.RCV chan -> val
+    ChnCls,  // CHN.CLS chan -> close channel
     // Atomic Queue (lock-free)
     Que,  // QUE capacity -> queue_ptr (creates atomic queue)
     Psh,  // PSH queue value -> success (atomic push)
@@ -524,6 +544,34 @@ pub enum Op {
     Frd,  // FRD handle buf len -> bytes_read
     Fwr,  // FWR handle buf len -> bytes_written
     Fcl,  // FCL handle -> close file
+    // Command Line Arguments
+    Argc, // ARGC -> number of arguments
+    Argv, // ARGV index -> pointer to argument string at index
+    // Random Numbers (PRNG using time as seed)
+    Rnd,  // RND -> random 64-bit integer
+    Rng,  // RNG max -> random integer in [0, max)
+    // Logging
+    Log,  // LOG buf len -> print "[timestamp] message\n"
+    // HTTP Routing
+    Route, // ROUTE path handler -> register route
+    // Environment Variables
+    GetEnv, // GETENV name buf -> length (get env var into buffer)
+    // Path Operations
+    PathJoin,  // PATH.JOIN dst a b -> join paths a and b into dst
+    PathDir,   // PATH.DIR dst src -> get directory part of path
+    PathBase,  // PATH.BASE dst src -> get filename part of path
+    PathExt,   // PATH.EXT dst src -> get extension part of path
+    // Hash Operations
+    HashMd5,    // HASH.MD5 dst src len -> compute MD5 hash
+    HashSha256, // HASH.SHA256 dst src len -> compute SHA256 hash
+    // Time Formatting Operations
+    TimeFmt,    // TIME.FMT dst timestamp -> format timestamp as ISO 8601
+    TimeYear,   // TIME.YEAR timestamp -> extract year
+    TimeMonth,  // TIME.MONTH timestamp -> extract month (1-12)
+    TimeDay,    // TIME.DAY timestamp -> extract day (1-31)
+    TimeHour,   // TIME.HOUR timestamp -> extract hour (0-23)
+    TimeMin,    // TIME.MIN timestamp -> extract minute (0-59)
+    TimeSec,    // TIME.SEC timestamp -> extract second (0-59)
     // Dynamic Vectors (AI-native data structures)
     Vec,  // VEC capacity -> vec_ptr (creates growable vector)
     Vph,  // VPH vec value -> push value to vector
@@ -676,9 +724,8 @@ pub enum Op {
     UuidV4,         // UUID.V4 buf -> generate UUID v4 into buf
     UuidV7,         // UUID.V7 buf -> generate UUID v7 into buf
     
-    // HASH module
-    HashSha256,     // HASH.SHA256 data len out -> compute SHA256
-    HashMd5,        // HASH.MD5 data len out -> compute MD5
+    // HASH module (aliases for compatibility)
+    // HashSha256 and HashMd5 defined above in Hash Operations section
     
     // BASE64 module
     Base64Encode,   // BASE64.ENCODE data len out -> encode to base64
@@ -688,11 +735,9 @@ pub enum Op {
     EnvGet,         // ENV.GET name name_len buf buf_len -> get env var
     EnvSet,         // ENV.SET name name_len value value_len -> set env var
     
-    // PATH module
-    PathJoin,       // PATH.JOIN a a_len b b_len out -> join paths
-    PathDirname,    // PATH.DIRNAME path len out -> get directory
-    PathBasename,   // PATH.BASENAME path len out -> get filename
-    PathExt,        // PATH.EXT path len out -> get extension
+    // PATH module (aliases for compatibility)
+    PathDirname,    // PATH.DIRNAME path len out -> get directory (alias for PathDir)
+    PathBasename,   // PATH.BASENAME path len out -> get filename (alias for PathBase)
     
     // FORMAT module
     FormatInt,      // FORMAT.INT num buf -> format int to string
@@ -708,6 +753,23 @@ pub enum Op {
     TestAssert,     // TEST.ASSERT cond msg len -> assert condition
     TestAssertEq,   // TEST.ASSERT_EQ a b msg len -> assert equal
     TestSummary,    // TEST.SUMMARY -> print test summary
+    
+    // JWT module
+    JwtEncode,      // JWT.ENCODE payload payload_len secret secret_len out -> encode JWT (HS256)
+    JwtDecode,      // JWT.DECODE token token_len secret secret_len out -> decode JWT payload
+    JwtVerify,      // JWT.VERIFY token token_len secret secret_len -> 1 if valid
+    
+    // REGEX module (simplified pattern matching)
+    RegexMatch,     // REGEX.MATCH str len pattern pat_len -> 1 if matches
+    RegexFind,      // REGEX.FIND str len pattern pat_len -> position or -1
+    
+    // ASYNC module (uses existing threading)
+    AsyncSpawn,     // ASYNC.SPAWN func arg -> handle (alias for THR)
+    AsyncAwait,     // ASYNC.AWAIT handle -> result (alias for JON)
+    
+    // TIMEOUT module
+    TimeoutSet,     // TIMEOUT.SET ms -> sets timeout for next operation
+    TimeoutCheck,   // TIMEOUT.CHECK -> 1 if timeout occurred
     
     // === STDLIB TIER 2: Specialized Operations ===
     
@@ -735,6 +797,54 @@ pub enum Op {
     RsaGenerate,    // RSA.GENERATE bits pub_out priv_out -> generate keypair
     RsaEncrypt,     // RSA.ENCRYPT pub data len out -> encrypt with RSA
     RsaDecrypt,     // RSA.DECRYPT priv data len out -> decrypt with RSA
+    Sha1,           // SHA1 dst src len -> compute SHA1 hash (20 bytes / 40 hex)
+    Md5,            // MD5 dst src len -> compute MD5 hash (16 bytes / 32 hex)
+    HmacSha256,     // HMAC.SHA256 dst key key_len data data_len -> compute HMAC-SHA256
+    
+    // POSTGRES module
+    PgConnect,      // PG.CONNECT connstr -> connection handle
+    PgQuery,        // PG.QUERY conn query query_len -> result handle
+    PgFetch,        // PG.FETCH result dst -> row data length
+    PgClose,        // PG.CLOSE conn -> close connection
+    
+    // REDIS module
+    RedisConnect,   // REDIS.CONNECT host port -> connection handle
+    RedisSet,       // REDIS.SET conn key key_len val val_len -> 1 if OK
+    RedisGet,       // REDIS.GET conn dst key key_len -> value length
+    RedisDel,       // REDIS.DEL conn key key_len -> 1 if deleted
+    RedisClose,     // REDIS.CLOSE conn -> close connection
+    
+    // SQL/ODBC module - SqlFetch added (others already exist)
+    SqlFetch,       // SQL.FETCH result dst -> row data length
+    
+    // WEBSOCKET module
+    WsConnect,      // WS.CONNECT url url_len -> ws handle
+    WsAccept,       // WS.ACCEPT server -> ws handle (for server)
+    WsSend,         // WS.SEND ws data len -> bytes sent
+    WsRecv,         // WS.RECV ws buf buf_len -> bytes received
+    WsClose,        // WS.CLOSE ws -> close websocket
+    
+    // TLS module
+    TlsConnect,     // TLS.CONNECT host port -> tls handle
+    TlsAccept,      // TLS.ACCEPT server cert key -> tls handle
+    TlsSend,        // TLS.SEND tls data len -> bytes sent
+    TlsRecv,        // TLS.RECV tls buf buf_len -> bytes received
+    TlsClose,       // TLS.CLOSE tls -> close connection
+    
+    // GRPC module
+    GrpcChannel,    // GRPC.CHANNEL host port -> channel handle
+    GrpcCall,       // GRPC.CALL channel method method_len -> call handle
+    GrpcSend,       // GRPC.SEND call data len -> bytes sent
+    GrpcRecv,       // GRPC.RECV call buf buf_len -> bytes received
+    GrpcClose,      // GRPC.CLOSE channel -> close channel
+    
+    // PQC (Post-Quantum Cryptography) module
+    KyberKeygen,    // KYBER.KEYGEN pub_out priv_out -> 1 if success
+    KyberEncaps,    // KYBER.ENCAPS pub ct_out ss_out -> 1 if success
+    KyberDecaps,    // KYBER.DECAPS priv ct ss_out -> 1 if success
+    DilithiumKeygen,// DILITHIUM.KEYGEN pub_out priv_out -> 1 if success
+    DilithiumSign,  // DILITHIUM.SIGN priv msg msg_len sig_out -> sig_len
+    DilithiumVerify,// DILITHIUM.VERIFY pub msg msg_len sig sig_len -> 1 if valid
     
     // GZIP module
     GzipCompress,   // GZIP.COMPRESS data len out -> compress
@@ -743,6 +853,24 @@ pub enum Op {
     // RETRY module
     RetryConfigNew, // RETRY.CONFIG_NEW -> config_ptr
     RetryExecute,   // RETRY.EXECUTE config fn -> execute with retry
+    
+    // COOKIE module
+    CookieParse,    // COOKIE.PARSE str len -> cookie_obj
+    CookieGet,      // COOKIE.GET cookie name name_len -> value
+    
+    // GUI module (Windows user32.dll)
+    GuiWin,         // GUI.WIN title title_len width height -> hwnd
+    GuiShow,        // GUI.SHOW hwnd -> 1 if shown
+    GuiHide,        // GUI.HIDE hwnd -> 1 if hidden
+    GuiEvent,       // GUI.EVENT -> event_type (0=none, 1=click, 2=close, etc)
+    GuiRun,         // GUI.RUN -> runs message loop until WM_QUIT
+    GuiLabel,       // GUI.LABEL parent text text_len x y w h -> hwnd
+    GuiTextbox,     // GUI.TEXTBOX parent x y w h -> hwnd
+    GuiButton,      // GUI.BUTTON parent text text_len x y w h -> hwnd
+    GuiGetVal,      // GUI.GETVAL hwnd dst max_len -> actual_len
+    GuiSetVal,      // GUI.SETVAL hwnd text text_len -> 1 if set
+    GuiMsgBox,      // GUI.MSGBOX title title_len text text_len -> button_id
+    GuiDlg,         // GUI.DLG template parent -> dialog handle
     
     // Sub-graph call
     Call(String),
@@ -779,7 +907,7 @@ pub enum ResourceType {
 }
 
 /// The complete graph
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Graph {
     pub nodes: Vec<Node>,
     pub node_map: HashMap<String, usize>,
@@ -887,6 +1015,10 @@ impl Graph {
         
         for node in &self.nodes {
             match node {
+                Node::Label(label_name) => {
+                    // Labels are defined names (with : prefix for consistency)
+                    defined.insert(format!(":{}", label_name));
+                }
                 Node::Literal { id, .. } => {
                     defined.insert(id.clone());
                     deps.insert(id.clone(), Vec::new());
@@ -896,13 +1028,18 @@ impl Graph {
                     deps.insert(id.clone(), vec![target.clone()]);
                     used.insert(target.clone());
                 }
-                Node::Operation { id, args, .. } => {
+                Node::Operation { id, op, args, .. } => {
                     defined.insert(id.clone());
                     let mut node_deps = Vec::new();
                     for arg in args {
                         Self::collect_refs(arg, &mut node_deps, &mut used);
                     }
                     deps.insert(id.clone(), node_deps);
+                    
+                    // Operations with side effects are always "used"
+                    if matches!(op, Op::Put | Op::Prt | Op::Fwr | Op::Fop | Op::Frd | Op::Fcl | Op::Jmp | Op::Jz | Op::Jnz | Op::TimeSleep | Op::Thr | Op::Jon | Op::Mtx | Op::Lck | Op::Ulk | Op::Tlk | Op::Yld | Op::AtmSt | Op::AtmXchg | Op::AtmCas | Op::AtmAdd | Op::AtmSub | Op::Fence) {
+                        used.insert(id.clone());
+                    }
                 }
                 Node::Flow { source, dest } => {
                     Self::collect_refs(source, &mut Vec::new(), &mut used);
@@ -952,8 +1089,11 @@ impl Graph {
     fn collect_refs(arg: &Arg, deps: &mut Vec<String>, used: &mut HashSet<String>) {
         match arg {
             Arg::Ref(name) => {
-                deps.push(name.clone());
-                used.insert(name.clone());
+                // Skip label references (they start with ':')
+                if !name.starts_with(':') {
+                    deps.push(name.clone());
+                    used.insert(name.clone());
+                }
             }
             Arg::Expr(_, inner_args) => {
                 for inner in inner_args {
@@ -1094,7 +1234,7 @@ impl UsageAnalysis {
     
     fn visit_node(&mut self, node: &Node) {
         match node {
-            Node::Operation { op, args: _, id: _ } => {
+            Node::Operation { op, args: _, id: _, runtime: _ } => {
                 self.used_ops.insert(op.clone());
                 self.categorize_op(op);
             }
@@ -1175,6 +1315,9 @@ impl UsageAnalysis {
             }
             Op::JsonParse | Op::JsonEncode | Op::JsonGet | Op::JsonSet => {
                 self.used_capabilities.insert(Capability::Json);
+            }
+            Op::TimeNow | Op::TimeSleep => {
+                self.used_capabilities.insert(Capability::Time);
             }
             // Phase 8: Contracts & Negotiation
             Op::Contract | Op::Guarantee | Op::Limit | Op::Sandbox => {

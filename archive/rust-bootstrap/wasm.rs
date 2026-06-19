@@ -2,85 +2,16 @@
 //! Generates minimal WASM modules from TAYNI graphs
 
 use crate::ir::{Graph, Node, Value, Arg, Op};
+use crate::target::format::wasm::{
+    encode_uleb128, encode_sleb128, encode_string, encode_section,
+    WASM_MAGIC, WASM_VERSION,
+    SECTION_TYPE, SECTION_IMPORT, SECTION_FUNCTION, SECTION_MEMORY,
+    SECTION_EXPORT, SECTION_CODE, SECTION_DATA,
+    TYPE_I32, TYPE_I64, TYPE_FUNC,
+    OP_END, OP_CALL, OP_LOCAL_GET, OP_I32_CONST, OP_I64_CONST,
+    OP_I32_ADD, OP_I32_SUB, OP_I32_MUL, OP_I32_DIV_S,
+};
 use std::collections::HashMap;
-
-// WASM Constants
-const WASM_MAGIC: [u8; 4] = [0x00, 0x61, 0x73, 0x6D]; // \0asm
-const WASM_VERSION: [u8; 4] = [0x01, 0x00, 0x00, 0x00]; // version 1
-
-// Section IDs
-const SECTION_TYPE: u8 = 1;
-const SECTION_IMPORT: u8 = 2;
-const SECTION_FUNCTION: u8 = 3;
-const SECTION_MEMORY: u8 = 5;
-const SECTION_EXPORT: u8 = 7;
-const SECTION_CODE: u8 = 10;
-const SECTION_DATA: u8 = 11;
-
-// Value types
-const TYPE_I32: u8 = 0x7F;
-const TYPE_I64: u8 = 0x7E;
-const TYPE_FUNC: u8 = 0x60;
-
-// Instructions
-const OP_END: u8 = 0x0B;
-const OP_CALL: u8 = 0x10;
-const OP_LOCAL_GET: u8 = 0x20;
-const OP_I32_CONST: u8 = 0x41;
-const OP_I64_CONST: u8 = 0x42;
-const OP_I32_ADD: u8 = 0x6A;
-const OP_I32_SUB: u8 = 0x6B;
-const OP_I32_MUL: u8 = 0x6C;
-const OP_I32_DIV_S: u8 = 0x6D;
-
-/// Encode unsigned LEB128
-fn encode_uleb128(mut value: u64) -> Vec<u8> {
-    let mut result = Vec::new();
-    loop {
-        let mut byte = (value & 0x7F) as u8;
-        value >>= 7;
-        if value != 0 {
-            byte |= 0x80;
-        }
-        result.push(byte);
-        if value == 0 {
-            break;
-        }
-    }
-    result
-}
-
-/// Encode signed LEB128
-fn encode_sleb128(mut value: i64) -> Vec<u8> {
-    let mut result = Vec::new();
-    let mut more = true;
-    while more {
-        let mut byte = (value & 0x7F) as u8;
-        value >>= 7;
-        if (value == 0 && (byte & 0x40) == 0) || (value == -1 && (byte & 0x40) != 0) {
-            more = false;
-        } else {
-            byte |= 0x80;
-        }
-        result.push(byte);
-    }
-    result
-}
-
-/// Encode a string (length-prefixed)
-fn encode_string(s: &str) -> Vec<u8> {
-    let mut result = encode_uleb128(s.len() as u64);
-    result.extend(s.as_bytes());
-    result
-}
-
-/// Encode a section
-fn encode_section(id: u8, content: &[u8]) -> Vec<u8> {
-    let mut result = vec![id];
-    result.extend(encode_uleb128(content.len() as u64));
-    result.extend(content);
-    result
-}
 
 /// Generate minimal WASM module that exports a main function
 pub fn generate_hello_wasm() -> Vec<u8> {
@@ -154,10 +85,10 @@ pub fn generate_wasm_from_graph(graph: &Graph) -> Vec<u8> {
     // Collect strings and constants
     for node in &graph.nodes {
         match node {
-            Node::Literal { id, value: Value::String(s) } => {
+            Node::Literal { id, value: Value::String(s), runtime: _ } => {
                 strings.push((id.clone(), s.as_bytes().to_vec()));
             }
-            Node::Literal { id, value: Value::Int(n) } => {
+            Node::Literal { id, value: Value::Int(n), runtime: _ } => {
                 constants.insert(id.clone(), *n);
             }
             _ => {}
