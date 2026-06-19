@@ -1,0 +1,129 @@
+// AWS Lambda handler in TAYNI
+cap:net
+
+struct LambdaEvent {
+    httpMethod: str,
+    path: str,
+    headers: Map<str, str>,
+    queryStringParameters: Map<str, str>,
+    body: str,
+    isBase64Encoded: bool
+}
+
+struct LambdaContext {
+    function_name: str,
+    function_version: str,
+    memory_limit_mb: i32,
+    aws_request_id: str
+}
+
+struct LambdaResponse {
+    statusCode: i32,
+    headers: Map<str, str>,
+    body: str,
+    isBase64Encoded: bool
+}
+
+fn handler(event: LambdaEvent, context: LambdaContext) -> LambdaResponse {
+    let path = event.path
+    let method = event.httpMethod
+    
+    match (method, path) {
+        ("GET", "/") => home_response(context),
+        ("GET", "/health") => health_response(),
+        ("GET", "/users") => list_users(),
+        ("POST", "/users") => create_user(event.body),
+        ("GET", p) if p.starts_with("/users/") => get_user(p),
+        ("GET", "/env") => env_response(),
+        _ => not_found()
+    }
+}
+
+fn home_response(ctx: LambdaContext) -> LambdaResponse {
+    json_response(200, {
+        "service": "TAYNI on AWS Lambda",
+        "version": "1.0.0",
+        "runtime": "WebAssembly",
+        "function": ctx.function_name,
+        "region": ENV.get("AWS_REGION", "unknown"),
+        "memory_mb": ctx.memory_limit_mb,
+        "request_id": ctx.aws_request_id
+    })
+}
+
+fn health_response() -> LambdaResponse {
+    json_response(200, {
+        "status": "healthy",
+        "timestamp": Time.now_iso()
+    })
+}
+
+fn env_response() -> LambdaResponse {
+    json_response(200, {
+        "AWS_REGION": ENV.get("AWS_REGION", ""),
+        "AWS_LAMBDA_FUNCTION_NAME": ENV.get("AWS_LAMBDA_FUNCTION_NAME", ""),
+        "AWS_LAMBDA_FUNCTION_VERSION": ENV.get("AWS_LAMBDA_FUNCTION_VERSION", ""),
+        "AWS_LAMBDA_FUNCTION_MEMORY_SIZE": ENV.get("AWS_LAMBDA_FUNCTION_MEMORY_SIZE", "")
+    })
+}
+
+fn list_users() -> LambdaResponse {
+    let users = [
+        {"id": "1", "name": "Alice", "email": "alice@example.com"},
+        {"id": "2", "name": "Bob", "email": "bob@example.com"},
+        {"id": "3", "name": "Charlie", "email": "charlie@example.com"}
+    ]
+    json_response(200, {"users": users, "count": users.len()})
+}
+
+fn create_user(body: str) -> LambdaResponse {
+    let data = JSON.decode(body)
+    let id = UUID.v4()
+    
+    let user = {
+        "id": id,
+        "name": data.name,
+        "email": data.email,
+        "created_at": Time.now_iso()
+    }
+    
+    json_response(201, {
+        "message": "User created successfully",
+        "user": user
+    })
+}
+
+fn get_user(path: str) -> LambdaResponse {
+    let id = path.strip_prefix("/users/")
+    
+    let users = {
+        "1": {"id": "1", "name": "Alice", "email": "alice@example.com"},
+        "2": {"id": "2", "name": "Bob", "email": "bob@example.com"},
+        "3": {"id": "3", "name": "Charlie", "email": "charlie@example.com"}
+    }
+    
+    match users.get(id) {
+        Some(user) => json_response(200, user),
+        None => json_response(404, {"error": "User not found", "id": id})
+    }
+}
+
+fn not_found() -> LambdaResponse {
+    json_response(404, {
+        "error": "Not Found",
+        "message": "The requested resource was not found"
+    })
+}
+
+fn json_response(status: i32, data: any) -> LambdaResponse {
+    LambdaResponse {
+        statusCode: status,
+        headers: {
+            "Content-Type": "application/json",
+            "X-Powered-By": "TAYNI",
+            "Access-Control-Allow-Origin": "*"
+        },
+        body: JSON.encode(data),
+        isBase64Encoded: false
+    }
+}

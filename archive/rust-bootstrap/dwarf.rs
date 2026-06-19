@@ -499,6 +499,227 @@ impl DwarfGenerator {
         
         line
     }
+    
+    /// Generate .debug_aranges section (address ranges)
+    pub fn generate_debug_aranges(&self) -> Vec<u8> {
+        let mut aranges = Vec::new();
+        
+        // Header
+        let header_start = aranges.len();
+        aranges.extend(&0u32.to_le_bytes()); // unit_length placeholder
+        aranges.extend(&2u16.to_le_bytes()); // version
+        aranges.extend(&0u32.to_le_bytes()); // debug_info_offset
+        aranges.push(self.address_size);     // address_size
+        aranges.push(0);                      // segment_selector_size
+        
+        // Padding to align to 2*address_size
+        while aranges.len() % 16 != 0 {
+            aranges.push(0);
+        }
+        
+        // Address range entries
+        if self.low_pc != 0 || self.high_pc != 0 {
+            aranges.extend(&self.low_pc.to_le_bytes());
+            aranges.extend(&(self.high_pc - self.low_pc).to_le_bytes());
+        }
+        
+        // Terminator (two zeros)
+        aranges.extend(&0u64.to_le_bytes());
+        aranges.extend(&0u64.to_le_bytes());
+        
+        // Fix unit length
+        let unit_length = (aranges.len() - header_start - 4) as u32;
+        aranges[header_start..header_start + 4].copy_from_slice(&unit_length.to_le_bytes());
+        
+        aranges
+    }
+    
+    /// Generate .debug_str section (string table)
+    pub fn generate_debug_str(&self) -> Vec<u8> {
+        let mut str_section = Vec::new();
+        
+        // Add producer string
+        str_section.extend(self.producer.as_bytes());
+        str_section.push(0);
+        
+        // Add comp_dir
+        str_section.extend(self.comp_dir.as_bytes());
+        str_section.push(0);
+        
+        // Add file names
+        for file in &self.files {
+            str_section.extend(file.name.as_bytes());
+            str_section.push(0);
+            str_section.extend(file.directory.as_bytes());
+            str_section.push(0);
+        }
+        
+        // Add function names
+        for func in &self.functions {
+            str_section.extend(func.name.as_bytes());
+            str_section.push(0);
+        }
+        
+        // Add type names
+        for ty in &self.types {
+            str_section.extend(ty.name.as_bytes());
+            str_section.push(0);
+        }
+        
+        str_section
+    }
+    
+    /// Generate .debug_pubnames section (public names)
+    pub fn generate_debug_pubnames(&self) -> Vec<u8> {
+        let mut pubnames = Vec::new();
+        
+        // Header
+        let header_start = pubnames.len();
+        pubnames.extend(&0u32.to_le_bytes()); // unit_length placeholder
+        pubnames.extend(&2u16.to_le_bytes()); // version
+        pubnames.extend(&0u32.to_le_bytes()); // debug_info_offset
+        pubnames.extend(&0u32.to_le_bytes()); // debug_info_length placeholder
+        
+        // Entries for external functions
+        let mut offset = 11u32; // Approximate offset in .debug_info
+        for func in &self.functions {
+            if func.is_external {
+                pubnames.extend(&offset.to_le_bytes());
+                pubnames.extend(func.name.as_bytes());
+                pubnames.push(0);
+            }
+            offset += 50; // Approximate size per function DIE
+        }
+        
+        // Terminator
+        pubnames.extend(&0u32.to_le_bytes());
+        
+        // Fix unit length
+        let unit_length = (pubnames.len() - header_start - 4) as u32;
+        pubnames[header_start..header_start + 4].copy_from_slice(&unit_length.to_le_bytes());
+        
+        pubnames
+    }
+    
+    /// Generate .debug_pubtypes section (public types)
+    pub fn generate_debug_pubtypes(&self) -> Vec<u8> {
+        let mut pubtypes = Vec::new();
+        
+        // Header
+        let header_start = pubtypes.len();
+        pubtypes.extend(&0u32.to_le_bytes()); // unit_length placeholder
+        pubtypes.extend(&2u16.to_le_bytes()); // version
+        pubtypes.extend(&0u32.to_le_bytes()); // debug_info_offset
+        pubtypes.extend(&0u32.to_le_bytes()); // debug_info_length placeholder
+        
+        // Entries for types
+        let mut offset = 100u32; // Approximate offset in .debug_info
+        for ty in &self.types {
+            pubtypes.extend(&offset.to_le_bytes());
+            pubtypes.extend(ty.name.as_bytes());
+            pubtypes.push(0);
+            offset += 10; // Approximate size per type DIE
+        }
+        
+        // Terminator
+        pubtypes.extend(&0u32.to_le_bytes());
+        
+        // Fix unit length
+        let unit_length = (pubtypes.len() - header_start - 4) as u32;
+        pubtypes[header_start..header_start + 4].copy_from_slice(&unit_length.to_le_bytes());
+        
+        pubtypes
+    }
+    
+    /// Generate .debug_frame section (call frame information)
+    pub fn generate_debug_frame(&self) -> Vec<u8> {
+        let mut frame = Vec::new();
+        
+        // CIE (Common Information Entry)
+        let cie_start = frame.len();
+        frame.extend(&0u32.to_le_bytes()); // length placeholder
+        frame.extend(&0xFFFFFFFFu32.to_le_bytes()); // CIE_id
+        frame.push(4); // version
+        frame.push(0); // augmentation (empty string)
+        frame.push(self.address_size); // address_size
+        frame.push(0); // segment_selector_size
+        frame.extend(&encode_uleb128(1)); // code_alignment_factor
+        frame.extend(&encode_sleb128(-8)); // data_alignment_factor
+        frame.push(30); // return_address_register (X30/LR)
+        
+        // Initial instructions (CFA = SP)
+        frame.push(0x0C); // DW_CFA_def_cfa
+        frame.extend(&encode_uleb128(31)); // SP
+        frame.extend(&encode_uleb128(0));  // offset
+        
+        // Padding
+        while (frame.len() - cie_start) % 8 != 0 {
+            frame.push(0); // DW_CFA_nop
+        }
+        
+        // Fix CIE length
+        let cie_length = (frame.len() - cie_start - 4) as u32;
+        frame[cie_start..cie_start + 4].copy_from_slice(&cie_length.to_le_bytes());
+        
+        // FDEs (Frame Description Entries) for each function
+        for func in &self.functions {
+            let fde_start = frame.len();
+            frame.extend(&0u32.to_le_bytes()); // length placeholder
+            frame.extend(&(cie_start as u32).to_le_bytes()); // CIE_pointer
+            frame.extend(&func.low_pc.to_le_bytes()); // initial_location
+            frame.extend(&(func.high_pc - func.low_pc).to_le_bytes()); // address_range
+            
+            // Instructions for typical prologue
+            // DW_CFA_advance_loc(4) - after STP
+            frame.push(0x44);
+            // DW_CFA_def_cfa_offset(16)
+            frame.push(0x0E);
+            frame.extend(&encode_uleb128(16));
+            // DW_CFA_offset(X29, -16)
+            frame.push(0x80 | 29);
+            frame.extend(&encode_uleb128(2)); // offset / data_alignment
+            // DW_CFA_offset(X30, -8)
+            frame.push(0x80 | 30);
+            frame.extend(&encode_uleb128(1));
+            
+            // Padding
+            while (frame.len() - fde_start) % 8 != 0 {
+                frame.push(0);
+            }
+            
+            // Fix FDE length
+            let fde_length = (frame.len() - fde_start - 4) as u32;
+            frame[fde_start..fde_start + 4].copy_from_slice(&fde_length.to_le_bytes());
+        }
+        
+        frame
+    }
+    
+    /// Generate all DWARF sections
+    pub fn generate_all(&self) -> DwarfSections {
+        DwarfSections {
+            debug_info: self.generate_debug_info(),
+            debug_abbrev: self.generate_debug_abbrev(),
+            debug_line: self.generate_debug_line(),
+            debug_aranges: self.generate_debug_aranges(),
+            debug_str: self.generate_debug_str(),
+            debug_pubnames: self.generate_debug_pubnames(),
+            debug_pubtypes: self.generate_debug_pubtypes(),
+            debug_frame: self.generate_debug_frame(),
+        }
+    }
+}
+
+/// All DWARF sections
+pub struct DwarfSections {
+    pub debug_info: Vec<u8>,
+    pub debug_abbrev: Vec<u8>,
+    pub debug_line: Vec<u8>,
+    pub debug_aranges: Vec<u8>,
+    pub debug_str: Vec<u8>,
+    pub debug_pubnames: Vec<u8>,
+    pub debug_pubtypes: Vec<u8>,
+    pub debug_frame: Vec<u8>,
 }
 
 // ============================================================================

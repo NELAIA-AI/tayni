@@ -1,0 +1,135 @@
+// Fastly Compute@Edge handler in TAYNI
+cap:net
+
+fn main() {
+    let req = Fastly.get_request()
+    let resp = handle(req)
+    Fastly.send_response(resp)
+}
+
+fn handle(req: Request) -> Response {
+    let path = req.url.path()
+    
+    match path {
+        "/" => home_handler(req),
+        "/api/data" => data_handler(req),
+        "/geo" => geo_handler(req),
+        "/headers" => headers_handler(req),
+        _ if path.starts_with("/cache/") => cache_handler(req),
+        _ => not_found()
+    }
+}
+
+fn home_handler(req: Request) -> Response {
+    Response.json({
+        "service": "TAYNI on Fastly Compute@Edge",
+        "version": "1.0.0",
+        "pop": Fastly.pop(),
+        "timestamp": Time.now_iso()
+    })
+}
+
+fn geo_handler(req: Request) -> Response {
+    Response.json({
+        "client_ip": req.client_ip(),
+        "country": Fastly.geo_country(),
+        "country_code": Fastly.geo_country_code(),
+        "city": Fastly.geo_city(),
+        "region": Fastly.geo_region(),
+        "latitude": Fastly.geo_latitude(),
+        "longitude": Fastly.geo_longitude(),
+        "timezone": Fastly.geo_timezone()
+    })
+}
+
+fn headers_handler(req: Request) -> Response {
+    let headers = {}
+    for (key, value) in req.headers {
+        headers[key] = value
+    }
+    Response.json({
+        "method": req.method,
+        "url": req.url.to_string(),
+        "headers": headers
+    })
+}
+
+fn data_handler(req: Request) -> Response {
+    let cache_key = "data:" + req.url.query_string()
+    
+    match Fastly.cache_get(cache_key) {
+        Some(cached) => {
+            Response.json(JSON.decode(cached))
+                .header("X-Cache", "HIT")
+                .header("X-Cache-Key", cache_key)
+        },
+        None => {
+            let origin = Fastly.backend("origin")
+            let origin_req = Request.new("GET", "/data")
+            let origin_resp = origin.send(origin_req)
+            
+            if origin_resp.status == 200 {
+                let body = origin_resp.body_text()
+                Fastly.cache_set(cache_key, body, 3600)
+                Response.json(JSON.decode(body))
+                    .header("X-Cache", "MISS")
+                    .header("X-Cache-Key", cache_key)
+            } else {
+                Response.status(502).json({
+                    "error": "Origin error",
+                    "status": origin_resp.status
+                })
+            }
+        }
+    }
+}
+
+fn cache_handler(req: Request) -> Response {
+    let key = req.url.path().strip_prefix("/cache/")
+    
+    match req.method {
+        "GET" => cache_get(key),
+        "PUT" => cache_put(key, req.body_text()),
+        "DELETE" => cache_delete(key),
+        _ => Response.status(405).json({"error": "Method not allowed"})
+    }
+}
+
+fn cache_get(key: str) -> Response {
+    match Fastly.cache_get(key) {
+        Some(value) => Response.json({
+            "key": key,
+            "value": value,
+            "found": true
+        }),
+        None => Response.status(404).json({
+            "key": key,
+            "found": false
+        })
+    }
+}
+
+fn cache_put(key: str, value: str) -> Response {
+    let ttl = 3600
+    Fastly.cache_set(key, value, ttl)
+    Response.status(201).json({
+        "key": key,
+        "stored": true,
+        "ttl": ttl
+    })
+}
+
+fn cache_delete(key: str) -> Response {
+    Fastly.cache_delete(key)
+    Response.json({
+        "key": key,
+        "deleted": true
+    })
+}
+
+fn not_found() -> Response {
+    Response.status(404).json({
+        "error": "Not Found",
+        "message": "The requested resource was not found"
+    })
+}

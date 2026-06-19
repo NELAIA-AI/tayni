@@ -21,10 +21,17 @@ pub mod json;
 pub mod pkg;
 pub mod http_client;
 pub mod arm64;
+pub mod arm64_codegen;
 pub mod dwarf;
 
 #[cfg(test)]
 mod tests_comprehensive;
+
+#[cfg(test)]
+mod tests_batch2;
+
+#[cfg(test)]
+mod tests_batch3;
 pub mod riscv;
 pub mod interface;
 pub mod intent;

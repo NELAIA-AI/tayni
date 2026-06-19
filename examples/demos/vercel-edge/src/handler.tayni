@@ -1,0 +1,69 @@
+// Vercel Edge Function handler in TAYNI
+cap:net
+
+struct Request {
+    method: str,
+    url: str,
+    headers: Map<str, str>
+}
+
+struct Response {
+    status: i32,
+    headers: Map<str, str>,
+    body: str
+}
+
+fn handle(req: Request) -> Response {
+    match req.url {
+        "/" => json_response(200, {
+            "service": "TAYNI on Vercel Edge",
+            "version": "1.0.0",
+            "runtime": "WebAssembly",
+            "region": ENV.get("VERCEL_REGION", "unknown")
+        }),
+        
+        "/health" => json_response(200, {
+            "status": "healthy",
+            "timestamp": Time.now_iso()
+        }),
+        
+        "/echo" => json_response(200, {
+            "method": req.method,
+            "url": req.url,
+            "headers": req.headers
+        }),
+        
+        "/api/users" if req.method == "GET" => {
+            let users = [
+                {"id": 1, "name": "Alice"},
+                {"id": 2, "name": "Bob"},
+                {"id": 3, "name": "Charlie"}
+            ]
+            json_response(200, {"users": users})
+        },
+        
+        "/api/users" if req.method == "POST" => {
+            let body = JSON.decode(req.body)
+            json_response(201, {
+                "message": "User created",
+                "user": body
+            })
+        },
+        
+        _ => json_response(404, {
+            "error": "Not Found",
+            "path": req.url
+        })
+    }
+}
+
+fn json_response(status: i32, data: any) -> Response {
+    Response {
+        status: status,
+        headers: {
+            "Content-Type": "application/json",
+            "X-Powered-By": "TAYNI"
+        },
+        body: JSON.encode(data)
+    }
+}
