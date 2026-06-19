@@ -1,0 +1,73 @@
+{
+    "name": "tayni",
+    "displayName": "TAYNI Language",
+    "description": "Language support for TAYNI - AI-first programming language",
+    "version": "0.1.0",
+    "publisher": "nelaia",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/NELAIA-AI/tayni"
+    },
+    "engines": {
+        "vscode": "^1.75.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "keywords": [
+        "tayni",
+        "ai",
+        "programming language",
+        "llm",
+        "code generation"
+    ],
+    "activationEvents": [
+        "onLanguage:tayni"
+    ],
+    "main": "./out/extension.js",
+    "contributes": {
+        "languages": [
+            {
+                "id": "tayni",
+                "aliases": ["TAYNI", "tayni"],
+                "extensions": [".tyn", ".tayni"],
+                "configuration": "./language-configuration.json"
+            }
+        ],
+        "grammars": [
+            {
+                "language": "tayni",
+                "scopeName": "source.tayni",
+                "path": "./syntaxes/tayni.tmLanguage.json"
+            }
+        ],
+        "configuration": {
+            "title": "TAYNI",
+            "properties": {
+                "tayni.lsp.path": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Path to tayni-lsp executable"
+                },
+                "tayni.lsp.enabled": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Enable TAYNI Language Server"
+                }
+            }
+        }
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run compile",
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./"
+    },
+    "devDependencies": {
+        "@types/node": "^18.0.0",
+        "@types/vscode": "^1.75.0",
+        "typescript": "^5.0.0"
+    },
+    "dependencies": {
+        "vscode-languageclient": "^9.0.0"
+    }
+}

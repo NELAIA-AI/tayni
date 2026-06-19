@@ -1,0 +1,180 @@
+{
+    "$schema": "https://raw.githubusercontent.com/AnttiKawormo/vscode-textmate/main/syntaxes/JSON.tmLanguage.json",
+    "name": "TAYNI",
+    "scopeName": "source.tayni",
+    "patterns": [
+        { "include": "#comments" },
+        { "include": "#strings" },
+        { "include": "#numbers" },
+        { "include": "#keywords-v15" },
+        { "include": "#keywords-v10" },
+        { "include": "#capabilities" },
+        { "include": "#types" },
+        { "include": "#operators" },
+        { "include": "#functions" },
+        { "include": "#variables" }
+    ],
+    "repository": {
+        "comments": {
+            "patterns": [
+                {
+                    "name": "comment.line.double-slash.tayni",
+                    "match": "//.*$"
+                },
+                {
+                    "name": "comment.block.tayni",
+                    "begin": "/\\*",
+                    "end": "\\*/"
+                },
+                {
+                    "name": "comment.line.hash.tayni",
+                    "match": "#.*$"
+                }
+            ]
+        },
+        "strings": {
+            "patterns": [
+                {
+                    "name": "string.quoted.double.tayni",
+                    "begin": "\"",
+                    "end": "\"",
+                    "patterns": [
+                        {
+                            "name": "constant.character.escape.tayni",
+                            "match": "\\\\."
+                        }
+                    ]
+                },
+                {
+                    "name": "string.quoted.single.tayni",
+                    "begin": "'",
+                    "end": "'"
+                }
+            ]
+        },
+        "numbers": {
+            "patterns": [
+                {
+                    "name": "constant.numeric.hex.tayni",
+                    "match": "\\b0x[0-9A-Fa-f]+\\b"
+                },
+                {
+                    "name": "constant.numeric.binary.tayni",
+                    "match": "\\b0b[01]+\\b"
+                },
+                {
+                    "name": "constant.numeric.float.tayni",
+                    "match": "\\b[0-9]+\\.[0-9]+\\b"
+                },
+                {
+                    "name": "constant.numeric.integer.tayni",
+                    "match": "\\b[0-9]+\\b"
+                }
+            ]
+        },
+        "keywords-v15": {
+            "patterns": [
+                {
+                    "name": "keyword.control.tayni",
+                    "match": "\\b(if|else|while|loop|for|match|return|break|continue)\\b"
+                },
+                {
+                    "name": "keyword.declaration.tayni",
+                    "match": "\\b(fn|struct|enum|type|impl|trait|use|mod|pub|mut|const|static)\\b"
+                },
+                {
+                    "name": "keyword.capability.tayni",
+                    "match": "\\b(cap|require)\\b"
+                }
+            ]
+        },
+        "keywords-v10": {
+            "patterns": [
+                {
+                    "name": "keyword.control.v10.tayni",
+                    "match": "\\b(LET|SET|PRT|GET|PUT|JMP|JEQ|JNE|JLT|JGT|JLE|JGE|RET|CALL|NOP|HLT)\\b"
+                },
+                {
+                    "name": "keyword.operator.v10.tayni",
+                    "match": "\\b(ADD|SUB|MUL|DIV|MOD|AND|OR|XOR|NOT|SHL|SHR|CMP|INC|DEC)\\b"
+                },
+                {
+                    "name": "keyword.io.v10.tayni",
+                    "match": "\\b(FOP|FCL|FRD|FWR|NET|TCP|UDP|HTTP)\\b"
+                },
+                {
+                    "name": "keyword.memory.v10.tayni",
+                    "match": "\\b(PUSH|POP|MOV|LEA|LOAD|STORE)\\b"
+                }
+            ]
+        },
+        "capabilities": {
+            "patterns": [
+                {
+                    "name": "support.constant.capability.tayni",
+                    "match": "\\b(net:tcp|net:udp|net:http|fs:read|fs:write|fs:all|time|env|crypto|gpu|quantum)\\b"
+                }
+            ]
+        },
+        "types": {
+            "patterns": [
+                {
+                    "name": "storage.type.tayni",
+                    "match": "\\b(i8|i16|i32|i64|u8|u16|u32|u64|f32|f64|bool|str|void|ptr|vec|map|opt|res)\\b"
+                },
+                {
+                    "name": "constant.language.tayni",
+                    "match": "\\b(true|false|nil|null|none|some|ok|err)\\b"
+                }
+            ]
+        },
+        "operators": {
+            "patterns": [
+                {
+                    "name": "keyword.operator.comparison.tayni",
+                    "match": "(==|!=|<=|>=|<|>)"
+                },
+                {
+                    "name": "keyword.operator.assignment.tayni",
+                    "match": "(=|\\+=|-=|\\*=|/=)"
+                },
+                {
+                    "name": "keyword.operator.arithmetic.tayni",
+                    "match": "(\\+|-|\\*|/|%)"
+                },
+                {
+                    "name": "keyword.operator.logical.tayni",
+                    "match": "(&&|\\|\\||!)"
+                },
+                {
+                    "name": "keyword.operator.arrow.tayni",
+                    "match": "(->|=>|\\?>)"
+                },
+                {
+                    "name": "keyword.operator.pipe.tayni",
+                    "match": "(\\|>|<\\|)"
+                }
+            ]
+        },
+        "functions": {
+            "patterns": [
+                {
+                    "name": "entity.name.function.tayni",
+                    "match": "\\b([a-z_][a-zA-Z0-9_]*)\\s*(?=\\()"
+                }
+            ]
+        },
+        "variables": {
+            "patterns": [
+                {
+                    "name": "variable.other.tayni",
+                    "match": "\\b[a-z_][a-zA-Z0-9_]*\\b"
+                },
+                {
+                    "name": "variable.other.constant.tayni",
+                    "match": "\\b[A-Z][A-Z0-9_]*\\b"
+                }
+            ]
+        }
+    }
+}
