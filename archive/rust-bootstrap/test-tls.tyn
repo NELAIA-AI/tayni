@@ -1,0 +1,9 @@
+.data: ALC 512
+.msg: "Hello TLS!"
+.record: ALC 128
+.recv: ALC 64
+
+@.tls: TLS.CONNECT .msg 443
+@.record_len: TLS.SEND .record .tls .msg 10
+@.recv_len: TLS.RECV .recv .tls .record .record_len
+@.prt: PRT .recv .recv_len

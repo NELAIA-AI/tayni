@@ -1,0 +1,6 @@
+.out: ALC 32
+@.sock: TCP
+@.bnd: BND @.sock 44485
+@.str: ITS @.bnd .out
+.prt: PRT .out @.str
+!

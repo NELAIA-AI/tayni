@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![Wasm Conformance](https://img.shields.io/badge/Wasm-100%25%20Conformance-brightgreen.svg)](#wasm-conformance)
-[![Tests](https://img.shields.io/badge/Tests-322%20Passing-brightgreen.svg)](#testing)
+[![Tests](https://img.shields.io/badge/Tests-98%20Passing-brightgreen.svg)](#testing)
 [![Token Efficiency](https://img.shields.io/badge/Tokens-64%25%20Reduction-blue.svg)](#benchmarks)
 [![Binary Size](https://img.shields.io/badge/HTTP%20Server-10.5KB-blue.svg)](#benchmarks)
 [![Targets](https://img.shields.io/badge/Targets-PE%20%7C%20ELF%20%7C%20Wasm%20%7C%20WASI-purple.svg)](#compilation-targets)
@@ -72,7 +72,9 @@ fn main() {
 | Linux ELF | x86-64 | ✅ Verified | binary |
 | WebAssembly | wasm32 | ✅ 100% Conformance | `.wasm` |
 | WASI | wasm32-wasi | ✅ Implemented | `.wasm` |
+| WASI Preview 2 | wasm32-wasip2 | ✅ Implemented | `.wasm` |
 | macOS Mach-O | x86-64/ARM64 | 🔄 In Progress | binary |
+| Linux ELF | ARM64 | 🔄 In Progress | binary |
 
 ## Capabilities (Security Model)
 
@@ -151,18 +153,28 @@ Conformance: 100%
 ```
 tayni-core/
 ├── archive/rust-bootstrap/   # Rust compiler implementation
-│   ├── src/lib.rs           # Main compiler library
+│   ├── lib.rs               # Main compiler library
 │   ├── pe.rs                # Windows PE generator
 │   ├── elf.rs               # Linux ELF generator
 │   ├── wasm.rs              # WebAssembly generator
-│   └── wasi.rs              # WASI generator
+│   ├── wasi.rs              # WASI generator
+│   ├── wasi_p2.rs           # WASI Preview 2 (filesystem, sockets)
+│   ├── wasi_http.rs         # WASI HTTP for serverless
+│   ├── json.rs              # JSON parser (RFC 8259)
+│   ├── pkg.rs               # Package manager (semver, manifests)
+│   ├── http_client.rs       # HTTP/1.1 client
+│   ├── arm64.rs             # ARM64 instruction encoder
+│   └── dwarf.rs             # DWARF debug info generator
 ├── tools/
 │   ├── lsp/                 # Language Server Protocol
 │   └── vscode-extension/    # VS Code extension
 ├── docs/
 │   ├── paper/               # arXiv paper
+│   ├── blog/                # Technical blog posts
 │   └── *.md                 # Specifications
-├── examples/                # Example programs
+├── examples/
+│   ├── v1.5/                # 30+ example programs
+│   └── demos/               # Cloudflare/Deno demos
 └── stdlib/                  # Standard library specs
 ```
 

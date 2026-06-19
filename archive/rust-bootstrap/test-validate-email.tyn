@@ -1,0 +1,5 @@
+.email: "test@example.com"
+.buf: ALC 32
+@.valid: VALIDATE.EMAIL .email 16
+@.len: FORMAT.INT .buf .valid
+@.out: PRT .buf .len

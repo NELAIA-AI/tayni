@@ -1,0 +1,8 @@
+.data: ALC 256
+.cookie_str: "session=abc123; user=alice; theme=dark"
+.name: "user"
+.value: ALC 64
+
+@.cookie: COOKIE.PARSE .cookie_str 40
+@.len: COOKIE.GET .value .cookie .name 4
+@.prt: PRT .value .len

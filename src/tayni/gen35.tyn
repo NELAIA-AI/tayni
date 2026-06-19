@@ -1,0 +1,45 @@
+-- TAYNI Gen35 - Parse and Add
+-- Reads "25 17" from program.tyn
+-- Parses both numbers and prints their sum
+--
+-- Format: "NN MM" where NN and MM are 2-digit numbers
+-- Output: NN + MM
+
+.zero: 0
+.ten: 10
+.ascii_0: 48
+.space: 32
+
+.input_path: "program.tyn"
+
+.ibuf: ALC 256
+.obuf: ALC 64
+
+.ih: FOP .input_path .zero
+.ilen: FRD .ih .ibuf 256
+.ic: FCL .ih
+
+-- Parse first number (positions 0-1)
+@.a0: GET .ibuf 0
+@.a1: GET .ibuf 1
+@.av0: SUB @.a0 .ascii_0
+@.av1: SUB @.a1 .ascii_0
+@.av0_x10: MUL @.av0 .ten
+@.num_a: ADD @.av0_x10 @.av1
+
+-- Parse second number (positions 3-4, after space)
+@.b0: GET .ibuf 3
+@.b1: GET .ibuf 4
+@.bv0: SUB @.b0 .ascii_0
+@.bv1: SUB @.b1 .ascii_0
+@.bv0_x10: MUL @.bv0 .ten
+@.num_b: ADD @.bv0_x10 @.bv1
+
+-- Add them
+@.result: ADD @.num_a @.num_b
+
+-- Print
+@.its_len: ITS @.result .obuf
+.done: PRT .obuf @.its_len
+
+!

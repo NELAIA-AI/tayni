@@ -1,0 +1,17 @@
+-- TAYNI Test PUT then GET same buffer
+-- Store 42, read it back, print
+
+.zero: 0
+
+.out: ALC 64
+
+-- Store 42 at offset 0
+@.store: PUT .out 0 42
+
+-- Read back from offset 0
+@.read: GET .out 0
+
+-- Print the value directly (should be 42 = '*')
+.done: PRT .out 1
+
+!

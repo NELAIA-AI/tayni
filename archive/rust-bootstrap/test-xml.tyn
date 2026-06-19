@@ -1,0 +1,7 @@
+.data: ALC 256
+.xml_data: "<name>Alice</name>"
+.text: ALC 64
+
+@.xml: XML.PARSE .xml_data 18
+@.len: XML.TEXT .text .xml
+@.prt: PRT .text .len

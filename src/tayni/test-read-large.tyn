@@ -1,0 +1,18 @@
+-- Test: Read large file (1536 bytes)
+.buf: ALC 1536
+.out: ALC 32
+
+.path: "pe-template.bin"
+@.h: FOP .path 0
+@.len: FRD @.h .buf 1536
+
+-- Print first 2 bytes (should be "MZ" = 77 90)
+@.b0: GET .buf 0
+@.b1: GET .buf 1
+@.p0: PUT .out 0 @.b0
+@.p1: PUT .out 1 @.b1
+@.p2: PUT .out 2 10
+
+.done: PRT .out 3
+
+!

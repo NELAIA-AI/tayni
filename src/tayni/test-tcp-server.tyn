@@ -1,0 +1,32 @@
+-- TCP Server test - create, bind, listen
+.out: ALC 64
+
+-- Create TCP socket
+@.sock: TCP
+
+-- Print socket handle
+@.its1: ITS @.sock .out
+.prt1: PRT .out @.its1
+
+-- Print newline
+.nl: "\n"
+.prt_nl: PRT .nl 1
+
+-- Bind to port 8080
+@.bnd: BND @.sock 8080
+
+-- Print bind result
+@.its2: ITS @.bnd .out
+.prt2: PRT .out @.its2
+
+-- Print newline
+.prt_nl2: PRT .nl 1
+
+-- Listen with backlog 5
+@.lst: LST @.sock 5
+
+-- Print listen result
+@.its3: ITS @.lst .out
+.prt3: PRT .out @.its3
+
+!

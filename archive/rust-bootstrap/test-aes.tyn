@@ -1,0 +1,9 @@
+.data: ALC 256
+.key: "0123456789abcdef"
+.plaintext: "Hello, World!"
+.encrypted: ALC 64
+.decrypted: ALC 64
+
+@.elen: AES.ENCRYPT .encrypted .key .plaintext 13
+@.dlen: AES.DECRYPT .decrypted .key .encrypted 13
+@.prt: PRT .decrypted .dlen

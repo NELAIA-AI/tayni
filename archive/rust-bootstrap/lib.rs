@@ -16,9 +16,15 @@ pub mod modules;
 pub mod wasm;
 pub mod wasi;
 pub mod wasi_p2;
+pub mod wasi_http;
 pub mod json;
 pub mod pkg;
 pub mod http_client;
+pub mod arm64;
+pub mod dwarf;
+
+#[cfg(test)]
+mod tests_comprehensive;
 pub mod riscv;
 pub mod interface;
 pub mod intent;

@@ -1,0 +1,288 @@
+﻿{
+    "Summary":  {
+                    "Failed":  1,
+                    "PassRate":  95.65,
+                    "Skipped":  0,
+                    "Total":  23,
+                    "Passed":  22
+                },
+    "Timestamp":  "2026-06-17T18:42:33.6483932-03:00",
+    "Tests":  [
+                  {
+                      "Name":  "add_simple",
+                      "Category":  "Core/Arithmetic",
+                      "Status":  "PASS",
+                      "Message":  "Output: 15",
+                      "Error":  "",
+                      "Timestamp":  {
+                                        "value":  "\/Date(1781732549791)\/",
+                                        "DisplayHint":  2,
+                                        "DateTime":  "miércoles, 17 de junio de 2026 18:42:29"
+                                    }
+                  },
+                  {
+                      "Name":  "sub_simple",
+                      "Category":  "Core/Arithmetic",
+                      "Status":  "PASS",
+                      "Message":  "Output: 5",
+                      "Error":  "",
+                      "Timestamp":  {
+                                        "value":  "\/Date(1781732549953)\/",
+                                        "DisplayHint":  2,
+                                        "DateTime":  "miércoles, 17 de junio de 2026 18:42:29"
+                                    }
+                  },
+                  {
+                      "Name":  "mul_simple",
+                      "Category":  "Core/Arithmetic",
+                      "Status":  "PASS",
+                      "Message":  "Output: 50",
+                      "Error":  "",
+                      "Timestamp":  {
+                                        "value":  "\/Date(1781732550055)\/",
+                                        "DisplayHint":  2,
+                                        "DateTime":  "miércoles, 17 de junio de 2026 18:42:30"
+                                    }
+                  },
+                  {
+                      "Name":  "div_simple",
+                      "Category":  "Core/Arithmetic",
+                      "Status":  "PASS",
+                      "Message":  "Output: 2",
+                      "Error":  "",
+                      "Timestamp":  {
+                                        "value":  "\/Date(1781732550258)\/",
+                                        "DisplayHint":  2,
+                                        "DateTime":  "miércoles, 17 de junio de 2026 18:42:30"
+                                    }
+                  },
+                  {
+                      "Name":  "mod_simple",
+                      "Category":  "Core/Arithmetic",
+                      "Status":  "PASS",
+                      "Message":  "Output: 1",
+                      "Error":  "",
+                      "Timestamp":  {
+                                        "value":  "\/Date(1781732550358)\/",
+                                        "DisplayHint":  2,
+                                        "DateTime":  "miércoles, 17 de junio de 2026 18:42:30"
+                                    }
+                  },
+                  {
+                      "Name":  "chained_arith",
+                      "Category":  "Core/Arithmetic",
+                      "Status":  "PASS",
+                      "Message":  "Output: 25",
+                      "Error":  "",
+                      "Timestamp":  {
+                                        "value":  "\/Date(1781732550522)\/",
+                                        "DisplayHint":  2,
+                                        "DateTime":  "miércoles, 17 de junio de 2026 18:42:30"
+                                    }
+                  },
+                  {
+                      "Name":  "ifz_zero",
+                      "Category":  "Core/ControlFlow",
+                      "Status":  "PASS",
+                      "Message":  "Output: 1",
+                      "Error":  "",
+                      "Timestamp":  {
+                                        "value":  "\/Date(1781732550647)\/",
+                                        "DisplayHint":  2,
+                                        "DateTime":  "miércoles, 17 de junio de 2026 18:42:30"
+                                    }
+                  },
+                  {
+                      "Name":  "ifz_nonzero",
+                      "Category":  "Core/ControlFlow",
+                      "Status":  "PASS",
+                      "Message":  "Output: 0",
+                      "Error":  "",
+                      "Timestamp":  {
+                                        "value":  "\/Date(1781732550753)\/",
+                                        "DisplayHint":  2,
+                                        "DateTime":  "miércoles, 17 de junio de 2026 18:42:30"
+                                    }
+                  },
+                  {
+                      "Name":  "loop_count",
+                      "Category":  "Core/ControlFlow",
+                      "Status":  "PASS",
+                      "Message":  "Output: 5",
+                      "Error":  "",
+                      "Timestamp":  {
+                                        "value":  "\/Date(1781732551048)\/",
+                                        "DisplayHint":  2,
+                                        "DateTime":  "miércoles, 17 de junio de 2026 18:42:31"
+                                    }
+                  },
+                  {
+                      "Name":  "put_get_byte",
+                      "Category":  "Memory",
+                      "Status":  "PASS",
+                      "Message":  "Output: 65",
+                      "Error":  "",
+                      "Timestamp":  {
+                                        "value":  "\/Date(1781732551206)\/",
+                                        "DisplayHint":  2,
+                                        "DateTime":  "miércoles, 17 de junio de 2026 18:42:31"
+                                    }
+                  },
+                  {
+                      "Name":  "multiple_buffers",
+                      "Category":  "Memory",
+                      "Status":  "PASS",
+                      "Message":  "Output: 30",
+                      "Error":  "",
+                      "Timestamp":  {
+                                        "value":  "\/Date(1781732551397)\/",
+                                        "DisplayHint":  2,
+                                        "DateTime":  "miércoles, 17 de junio de 2026 18:42:31"
+                                    }
+                  },
+                  {
+                      "Name":  "sequential_bytes",
+                      "Category":  "Memory",
+                      "Status":  "PASS",
+                      "Message":  "Output: 6",
+                      "Error":  "",
+                      "Timestamp":  {
+                                        "value":  "\/Date(1781732551618)\/",
+                                        "DisplayHint":  2,
+                                        "DateTime":  "miércoles, 17 de junio de 2026 18:42:31"
+                                    }
+                  },
+                  {
+                      "Name":  "vec_create_empty",
+                      "Category":  "Vector",
+                      "Status":  "PASS",
+                      "Message":  "Output: 0",
+                      "Error":  "",
+                      "Timestamp":  {
+                                        "value":  "\/Date(1781732551782)\/",
+                                        "DisplayHint":  2,
+                                        "DateTime":  "miércoles, 17 de junio de 2026 18:42:31"
+                                    }
+                  },
+                  {
+                      "Name":  "vec_push_one",
+                      "Category":  "Vector",
+                      "Status":  "PASS",
+                      "Message":  "Output: 1",
+                      "Error":  "",
+                      "Timestamp":  {
+                                        "value":  "\/Date(1781732551937)\/",
+                                        "DisplayHint":  2,
+                                        "DateTime":  "miércoles, 17 de junio de 2026 18:42:31"
+                                    }
+                  },
+                  {
+                      "Name":  "vec_push_multi",
+                      "Category":  "Vector",
+                      "Status":  "PASS",
+                      "Message":  "Output: 4",
+                      "Error":  "",
+                      "Timestamp":  {
+                                        "value":  "\/Date(1781732552137)\/",
+                                        "DisplayHint":  2,
+                                        "DateTime":  "miércoles, 17 de junio de 2026 18:42:32"
+                                    }
+                  },
+                  {
+                      "Name":  "vec_get",
+                      "Category":  "Vector",
+                      "Status":  "PASS",
+                      "Message":  "Output: 20",
+                      "Error":  "",
+                      "Timestamp":  {
+                                        "value":  "\/Date(1781732552292)\/",
+                                        "DisplayHint":  2,
+                                        "DateTime":  "miércoles, 17 de junio de 2026 18:42:32"
+                                    }
+                  },
+                  {
+                      "Name":  "vec_set",
+                      "Category":  "Vector",
+                      "Status":  "PASS",
+                      "Message":  "Output: 99",
+                      "Error":  "",
+                      "Timestamp":  {
+                                        "value":  "\/Date(1781732552437)\/",
+                                        "DisplayHint":  2,
+                                        "DateTime":  "miércoles, 17 de junio de 2026 18:42:32"
+                                    }
+                  },
+                  {
+                      "Name":  "vec_capacity",
+                      "Category":  "Vector",
+                      "Status":  "FAIL",
+                      "Message":  "",
+                      "Error":  "Expected \u002716\u0027, got \u0027\u0027",
+                      "Timestamp":  {
+                                        "value":  "\/Date(1781732552562)\/",
+                                        "DisplayHint":  2,
+                                        "DateTime":  "miércoles, 17 de junio de 2026 18:42:32"
+                                    }
+                  },
+                  {
+                      "Name":  "tcp_bind",
+                      "Category":  "Networking",
+                      "Status":  "PASS",
+                      "Message":  "Output: 0",
+                      "Error":  "",
+                      "Timestamp":  {
+                                        "value":  "\/Date(1781732552857)\/",
+                                        "DisplayHint":  2,
+                                        "DateTime":  "miércoles, 17 de junio de 2026 18:42:32"
+                                    }
+                  },
+                  {
+                      "Name":  "tcp_listen",
+                      "Category":  "Networking",
+                      "Status":  "PASS",
+                      "Message":  "Output: 0",
+                      "Error":  "",
+                      "Timestamp":  {
+                                        "value":  "\/Date(1781732553230)\/",
+                                        "DisplayHint":  2,
+                                        "DateTime":  "miércoles, 17 de junio de 2026 18:42:33"
+                                    }
+                  },
+                  {
+                      "Name":  "fibonacci_9",
+                      "Category":  "Integration",
+                      "Status":  "PASS",
+                      "Message":  "Output: 55",
+                      "Error":  "",
+                      "Timestamp":  {
+                                        "value":  "\/Date(1781732553342)\/",
+                                        "DisplayHint":  2,
+                                        "DateTime":  "miércoles, 17 de junio de 2026 18:42:33"
+                                    }
+                  },
+                  {
+                      "Name":  "factorial_5",
+                      "Category":  "Integration",
+                      "Status":  "PASS",
+                      "Message":  "Output: 120",
+                      "Error":  "",
+                      "Timestamp":  {
+                                        "value":  "\/Date(1781732553453)\/",
+                                        "DisplayHint":  2,
+                                        "DateTime":  "miércoles, 17 de junio de 2026 18:42:33"
+                                    }
+                  },
+                  {
+                      "Name":  "sum_1_to_10",
+                      "Category":  "Integration",
+                      "Status":  "PASS",
+                      "Message":  "Output: 55",
+                      "Error":  "",
+                      "Timestamp":  {
+                                        "value":  "\/Date(1781732553615)\/",
+                                        "DisplayHint":  2,
+                                        "DateTime":  "miércoles, 17 de junio de 2026 18:42:33"
+                                    }
+                  }
+              ]
+}

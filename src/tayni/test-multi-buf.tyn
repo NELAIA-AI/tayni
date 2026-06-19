@@ -1,0 +1,25 @@
+-- TAYNI Test Multiple Buffers
+-- Test that .symbols and .out are separate
+
+.zero: 0
+
+.symbols: ALC 64
+.out: ALC 64
+
+-- Store 65 (A) in symbols at offset 0
+@.store1: PUT .symbols 0 65
+
+-- Store 66 (B) in out at offset 0
+@.store2: PUT .out 0 66
+
+-- Read from symbols - should be 65
+@.read1: GET .symbols 0
+
+-- Read from out - should be 66
+@.read2: GET .out 0
+
+-- Print both values
+@.len1: ITS @.read1 .out
+.prt1: PRT .out @.len1
+
+!

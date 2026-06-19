@@ -1,0 +1,46 @@
+-- TAYNI Test Comparisons (Simplified)
+-- Tests @EQ, @LT, @GT runtime comparisons
+-- 
+-- Reads a number from input.txt
+-- If number < 5: prints the number (no change)
+-- If number >= 5: prints number + 100
+--
+-- Date: 2026-06-17
+
+.zero: 0
+.one: 1
+.five: 5
+.hundred: 100
+.ascii_offset: 48
+
+.input_path: "input.txt"
+
+-- Buffers
+.buf: ALC 256
+.out: ALC 64
+
+-- Read input
+.h: FOP .input_path .zero
+.len: FRD .h .buf 256
+.fc: FCL .h
+
+-- Get first digit and convert to number
+@.byte0: GET .buf 0
+@.val: SUB @.byte0 .ascii_offset
+
+-- Compare: is val >= 5?
+@.is_ge_five: GE @.val .five
+
+-- If >= 5, add 100; else add 0
+-- IFZ returns first arg if cond==0, else second arg
+-- So: IFZ is_ge_five 0 100 means: if is_ge_five==0 return 0, else return 100
+@.add_amount: IFZ @.is_ge_five .zero .hundred
+
+-- Calculate result
+@.result: ADD @.val @.add_amount
+
+-- Convert to string and print
+@.its_len: ITS @.result .out
+.done: PRT .out @.its_len
+
+!

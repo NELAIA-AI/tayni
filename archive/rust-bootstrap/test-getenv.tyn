@@ -1,0 +1,4 @@
+.buf: ALC 256
+.name: "USERNAME"
+@.len: GETENV .name .buf
+@.out: PRT .buf .len

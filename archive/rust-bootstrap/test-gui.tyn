@@ -1,0 +1,15 @@
+.data: ALC 512
+.title: "My Window"
+.btn_text: "Click Me"
+.lbl_text: "Hello GUI!"
+.buf: ALC 64
+
+@.hwnd: GUI.WIN .title 9 800 600
+@.shown: GUI.SHOW .hwnd
+
+@.lbl: GUI.LABEL .hwnd .lbl_text 10 10 20 200 30
+@.txt: GUI.TEXTBOX .hwnd 10 50 200 25
+@.btn: GUI.BUTTON .hwnd .btn_text 8 10 90 100 30
+
+@.len: GUI.GETVAL .buf .txt 64
+@.prt: PRT .buf .len

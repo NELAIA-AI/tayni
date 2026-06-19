@@ -1,0 +1,19 @@
+-- TAYNI Test ITS Debug
+-- Print the value directly first, then convert
+
+.zero: 0
+
+.data: ALC 64
+.out: ALC 64
+
+-- Store 42 at offset 0 of data buffer
+@.store: PUT .data 0 42
+
+-- Read back from offset 0 of data buffer
+@.read: GET .data 0
+
+-- Print the raw byte first (should be '*' = 42)
+@.put_raw: PUT .out 0 @.read
+.prt_raw: PRT .out 1
+
+!

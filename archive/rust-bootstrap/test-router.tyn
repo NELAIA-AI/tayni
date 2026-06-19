@@ -1,0 +1,19 @@
+-- HTTP Server with routing
+.port: 8080
+.path1: "/"
+.resp1: "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\"route\":\"home\"}"
+.path2: "/api"
+.resp2: "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\"route\":\"api\"}"
+.path3: "/health"
+.resp3: "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\nOK"
+
+.r1: ROUTE .path1 .resp1
+.r2: ROUTE .path2 .resp2
+.r3: ROUTE .path3 .resp3
+
+.sock: TCP
+.bind: BND .sock .port
+.listen: LST .sock 10
+:loop
+.client: ACC .sock
+.jmp: JMP :loop

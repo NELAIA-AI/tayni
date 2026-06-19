@@ -1,0 +1,91 @@
+-- TAYNI Parser v11 - Detect operations and evaluate
+-- Input format:
+--   Line 0: ".a: 10"
+--   Line 1: ".b: 20"  
+--   Line 2: ".c: ADD .a .b"
+-- Output: Result of .c (should be 30)
+
+.zero: 0
+.one: 1
+.ten: 10
+.digit_0: 48
+.char_A: 65
+.char_D: 68
+.char_a: 97
+.char_b: 98
+
+-- Buffers
+.src: ALC 512
+.symbols: ALC 256
+.out: ALC 64
+
+-- Read input file
+.input_path: "input.txt"
+.fh: FOP .input_path 0
+.flen: FRD .fh .src 512
+
+-- ============================================
+-- LINE 0: ".a: 10" (8 chars with \r\n)
+-- Value at position 4-5
+-- ============================================
+@.ch0_4: GET .src 4
+@.ch0_5: GET .src 5
+@.d0_0: SUB @.ch0_4 .digit_0
+@.d0_1: SUB @.ch0_5 .digit_0
+@.t0: MUL @.d0_0 .ten
+@.val0: ADD @.t0 @.d0_1
+@.s0: PUT .symbols 0 @.val0
+
+-- ============================================
+-- LINE 1: ".b: 20" (starts at position 8)
+-- Value at position 12-13
+-- ============================================
+@.ch1_4: GET .src 12
+@.ch1_5: GET .src 13
+@.d1_0: SUB @.ch1_4 .digit_0
+@.d1_1: SUB @.ch1_5 .digit_0
+@.t1: MUL @.d1_0 .ten
+@.val1: ADD @.t1 @.d1_1
+@.s1: PUT .symbols 1 @.val1
+
+-- ============================================
+-- LINE 2: ".c: ADD .a .b" (starts at position 16)
+-- Check if it's ADD at position 20-22
+-- ============================================
+@.ch2_4: GET .src 20
+@.ch2_5: GET .src 21
+@.ch2_6: GET .src 22
+
+@.is_A: EQ @.ch2_4 .char_A
+@.is_D1: EQ @.ch2_5 .char_D
+@.is_D2: EQ @.ch2_6 .char_D
+@.is_ADD1: MUL @.is_A @.is_D1
+@.is_ADD: MUL @.is_ADD1 @.is_D2
+
+-- If ADD, get references at positions 25 and 28
+-- ".c: ADD .a .b"
+--  0123456789...
+-- Position 24 is '.', 25 is 'a'
+-- Position 27 is '.', 28 is 'b'
+@.ref1_char: GET .src 25
+@.ref2_char: GET .src 28
+
+-- Map 'a' to slot 0, 'b' to slot 1
+@.slot1: SUB @.ref1_char .char_a
+@.slot2: SUB @.ref2_char .char_a
+
+-- Read values from symbol table
+@.arg1: GET .symbols @.slot1
+@.arg2: GET .symbols @.slot2
+
+-- Perform ADD
+@.result: ADD @.arg1 @.arg2
+
+-- Store result in slot 2 (for .c)
+@.s2: PUT .symbols 2 @.result
+
+-- Print result
+@.len: ITS @.result .out
+.done: PRT .out @.len
+
+!

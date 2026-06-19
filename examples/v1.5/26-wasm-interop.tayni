@@ -1,0 +1,178 @@
+// Example 26: WebAssembly Interop
+// Demonstrates WASM-specific features in TAYNI
+
+// Export functions to JavaScript
+#[wasm_export]
+fn add(a: i32, b: i32) -> i32 {
+    a + b
+}
+
+#[wasm_export]
+fn multiply(a: f64, b: f64) -> f64 {
+    a * b
+}
+
+// Export with custom name
+#[wasm_export(name = "greet")]
+fn greet_user(name_ptr: i32, name_len: i32) -> i32 {
+    let name = str::from_wasm_memory(name_ptr, name_len);
+    let greeting = "Hello, " + name + "!";
+    
+    // Return pointer to greeting in linear memory
+    greeting.to_wasm_memory()
+}
+
+// Import functions from JavaScript
+#[wasm_import(module = "env", name = "console_log")]
+extern fn js_log(ptr: i32, len: i32);
+
+#[wasm_import(module = "env", name = "get_random")]
+extern fn js_random() -> f64;
+
+#[wasm_import(module = "env", name = "current_time")]
+extern fn js_time() -> f64;
+
+// Wrapper for imported functions
+fn log(msg: str) {
+    let (ptr, len) = msg.as_wasm_ptr();
+    js_log(ptr, len);
+}
+
+fn random() -> f64 {
+    js_random()
+}
+
+fn now() -> f64 {
+    js_time()
+}
+
+// Linear memory management
+static mut HEAP_PTR: i32 = 1024;  // Start after stack
+
+#[wasm_export]
+fn alloc(size: i32) -> i32 {
+    unsafe {
+        let ptr = HEAP_PTR;
+        HEAP_PTR += size;
+        // Align to 8 bytes
+        HEAP_PTR = (HEAP_PTR + 7) & !7;
+        ptr
+    }
+}
+
+#[wasm_export]
+fn free(ptr: i32) {
+    // Simple bump allocator - no actual freeing
+    // In production, use a proper allocator
+}
+
+// Shared memory for multi-threading (WASM threads)
+#[wasm_shared]
+static mut COUNTER: i32 = 0;
+
+#[wasm_export]
+fn atomic_increment() -> i32 {
+    unsafe {
+        atomic_add(&mut COUNTER, 1)
+    }
+}
+
+#[wasm_export]
+fn atomic_get() -> i32 {
+    unsafe {
+        atomic_load(&COUNTER)
+    }
+}
+
+// SIMD operations (WASM SIMD)
+#[wasm_export]
+fn simd_dot_product(a_ptr: i32, b_ptr: i32, len: i32) -> f32 {
+    let a = f32x4::from_memory(a_ptr);
+    let b = f32x4::from_memory(b_ptr);
+    
+    let mut sum = f32x4::splat(0.0);
+    
+    for i in 0..(len / 4) {
+        let offset = i * 16;
+        let va = f32x4::load(a_ptr + offset);
+        let vb = f32x4::load(b_ptr + offset);
+        sum = sum + va * vb;
+    }
+    
+    // Horizontal sum
+    sum.reduce_add()
+}
+
+// Table for indirect calls (function pointers)
+#[wasm_table]
+static CALLBACKS: [fn(i32) -> i32; 10];
+
+#[wasm_export]
+fn register_callback(index: i32, func_ptr: i32) {
+    CALLBACKS[index] = func_ptr as fn(i32) -> i32;
+}
+
+#[wasm_export]
+fn call_callback(index: i32, arg: i32) -> i32 {
+    CALLBACKS[index](arg)
+}
+
+// Memory growth
+#[wasm_export]
+fn grow_memory(pages: i32) -> i32 {
+    memory_grow(pages)
+}
+
+#[wasm_export]
+fn memory_size() -> i32 {
+    memory_pages() * 65536
+}
+
+// Bulk memory operations
+#[wasm_export]
+fn memory_copy(dest: i32, src: i32, len: i32) {
+    memory_copy_impl(dest, src, len);
+}
+
+#[wasm_export]
+fn memory_fill(dest: i32, value: i32, len: i32) {
+    memory_fill_impl(dest, value as u8, len);
+}
+
+// Example: Image processing in WASM
+#[wasm_export]
+fn grayscale(pixels_ptr: i32, width: i32, height: i32) {
+    let total = width * height;
+    
+    for i in 0..total {
+        let offset = pixels_ptr + i * 4;
+        let r = memory_load_u8(offset);
+        let g = memory_load_u8(offset + 1);
+        let b = memory_load_u8(offset + 2);
+        
+        // Luminance formula
+        let gray = (r * 77 + g * 150 + b * 29) / 256;
+        
+        memory_store_u8(offset, gray);
+        memory_store_u8(offset + 1, gray);
+        memory_store_u8(offset + 2, gray);
+        // Alpha unchanged
+    }
+}
+
+fn main() {
+    log("WebAssembly Interop Demo");
+    
+    // Test exports
+    log("add(2, 3) = " + add(2, 3).to_string());
+    log("multiply(2.5, 4.0) = " + multiply(2.5, 4.0).to_string());
+    
+    // Test imports
+    log("Random: " + random().to_string());
+    log("Time: " + now().to_string());
+    
+    // Test memory
+    let ptr = alloc(100);
+    log("Allocated at: " + ptr.to_string());
+    log("Memory size: " + memory_size().to_string() + " bytes");
+}

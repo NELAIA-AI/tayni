@@ -1,0 +1,14 @@
+-- TAYNI Test ITS Direct
+-- Convert 42 directly to string
+
+.zero: 0
+
+.out: ALC 64
+
+-- Convert 42 to string
+@.len: ITS 42 .out
+
+-- Print
+.done: PRT .out @.len
+
+!

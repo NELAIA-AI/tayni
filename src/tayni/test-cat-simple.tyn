@@ -1,0 +1,22 @@
+-- Simple CAT test
+.buf: ALC 128
+
+-- Write "AB" at offset 0
+@.a0: PUT .buf 0 65
+@.a1: PUT .buf 1 66
+@.a2: PUT .buf 2 0
+
+-- Write "CD" at offset 64
+@.b0: PUT .buf 64 67
+@.b1: PUT .buf 65 68
+@.b2: PUT .buf 66 0
+
+-- Concatenate to offset 100
+@.len: CAT .buf .buf .buf
+
+-- Print length
+.out: ALC 32
+@.n: ITS @.len .out
+.prt: PRT .out @.n
+
+!

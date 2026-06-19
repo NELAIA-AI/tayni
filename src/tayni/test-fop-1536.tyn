@@ -1,0 +1,15 @@
+-- Test: FOP with 1536 byte buffer
+.a: ALC 1536
+.b: ALC 32
+
+.path: "pe-template.bin"
+@.h: FOP .path 0
+@.len: FRD @.h .a 1536
+
+@.x: GET .a 0
+@.p: PUT .b 0 @.x
+.p1: PUT .b 1 10
+
+.done: PRT .b 2
+
+!

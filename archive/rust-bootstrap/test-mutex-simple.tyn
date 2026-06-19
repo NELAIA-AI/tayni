@@ -1,0 +1,14 @@
+-- Test MTX (mutex) operation - simple version
+-- Creates a mutex, locks it, unlocks it, then exits
+
+-- Create a mutex
+@.mtx: MTX
+
+-- Lock the mutex
+@.lock: LCK .mtx
+
+-- Unlock the mutex
+@.unlock: ULK .mtx
+
+-- Exit (no print to avoid stack issues)
+!

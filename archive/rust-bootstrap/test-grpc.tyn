@@ -1,0 +1,11 @@
+.data: ALC 256
+.host: "localhost"
+.method: "/myservice/MyMethod"
+.request: "test_request"
+.response: ALC 64
+
+@.ch: GRPC.CHANNEL .host 50051
+@.call: GRPC.CALL .ch .method 19
+@.sent: GRPC.SEND .call .request 12
+@.len: GRPC.RECV .response .call 64
+@.prt: PRT .response .len

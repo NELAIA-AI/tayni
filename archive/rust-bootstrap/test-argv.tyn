@@ -1,0 +1,3 @@
+.buf: ALC 64
+@.arg1: ARGV 1
+.out: PRT .arg1 10

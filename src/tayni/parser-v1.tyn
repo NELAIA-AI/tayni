@@ -1,0 +1,209 @@
+-- TAYNI Self-Hosting Parser v1
+-- Parsea un archivo .tyn simple y extrae símbolos
+-- Usa unrolling fijo (64 chars por línea max)
+--
+-- Formato soportado:
+--   .nombre: VALOR     (literal numérico)
+--   @.nombre: OP args  (operación runtime)
+--   -- comentario      (ignorado)
+--
+-- Date: 2026-06-17
+
+-- Constants
+.zero: 0
+.one: 1
+.space: 32
+.newline: 10
+.dot: 46
+.colon: 58
+.dash: 45
+.at: 64
+.digit_0: 48
+.digit_9: 57
+
+-- Allocate buffers
+.src: ALC 4096      -- Source code buffer
+.out: ALC 256       -- Output buffer for printing
+
+-- Symbol table: 64 slots x 16 bytes (8 name + 8 value)
+.symbols: ALC 1024
+.sym_count: 0
+
+-- Read source file
+.src_path: "test-parse-input.tyn"
+.sh: FOP .src_path .zero
+.slen: FRD .sh .src 4096
+.sc: FCL .sh
+
+-- ============================================
+-- PARSER: Process each line (unrolled for 64 lines)
+-- ============================================
+
+-- Line 0: Check first char
+@.pos: 0
+@.ch0: GET .src @.pos
+
+-- Skip if comment (starts with --)
+@.is_dash: EQ @.ch0 .dash
+@.skip0: JNZ @.is_dash :line1
+
+-- Check if starts with . (literal) or @ (runtime)
+@.is_dot: EQ @.ch0 .dot
+@.is_at: EQ @.ch0 .at
+
+-- If starts with ., parse literal definition
+@.jnz_lit0: JNZ @.is_dot :parse_lit0
+@.jmp_next0: JMP :line1
+
+:parse_lit0
+-- Extract symbol name (chars after . until :)
+@.pos: ADD @.pos .one
+@.name_start: ADD @.pos .zero
+
+-- Find colon (unrolled for 8 chars max name)
+@.c0: GET .src @.pos
+@.is_colon0: EQ @.c0 .colon
+@.jnz_found0: JNZ @.is_colon0 :found_colon0
+@.pos: ADD @.pos .one
+
+@.c1: GET .src @.pos
+@.is_colon1: EQ @.c1 .colon
+@.jnz_found1: JNZ @.is_colon1 :found_colon0
+@.pos: ADD @.pos .one
+
+@.c2: GET .src @.pos
+@.is_colon2: EQ @.c2 .colon
+@.jnz_found2: JNZ @.is_colon2 :found_colon0
+@.pos: ADD @.pos .one
+
+@.c3: GET .src @.pos
+@.is_colon3: EQ @.c3 .colon
+@.jnz_found3: JNZ @.is_colon3 :found_colon0
+@.pos: ADD @.pos .one
+
+@.c4: GET .src @.pos
+@.is_colon4: EQ @.c4 .colon
+@.jnz_found4: JNZ @.is_colon4 :found_colon0
+@.pos: ADD @.pos .one
+
+@.c5: GET .src @.pos
+@.is_colon5: EQ @.c5 .colon
+@.jnz_found5: JNZ @.is_colon5 :found_colon0
+@.pos: ADD @.pos .one
+
+@.c6: GET .src @.pos
+@.is_colon6: EQ @.c6 .colon
+@.jnz_found6: JNZ @.is_colon6 :found_colon0
+@.pos: ADD @.pos .one
+
+@.c7: GET .src @.pos
+@.is_colon7: EQ @.c7 .colon
+@.jnz_found7: JNZ @.is_colon7 :found_colon0
+
+:found_colon0
+-- @.pos now points to colon
+-- Name length = @.pos - @.name_start
+@.name_len: SUB @.pos @.name_start
+
+-- Skip colon and space
+@.pos: ADD @.pos .one
+@.ch_space: GET .src @.pos
+@.is_space: EQ @.ch_space .space
+@.skip_space: JZ @.is_space :parse_value0
+@.pos: ADD @.pos .one
+
+:parse_value0
+-- Parse numeric value (unrolled for 8 digits)
+@.value: 0
+
+@.d0: GET .src @.pos
+@.is_digit_d0: GE @.d0 .digit_0
+@.is_digit_d0b: LE @.d0 .digit_9
+@.valid_d0: MUL @.is_digit_d0 @.is_digit_d0b
+@.jz_end0: JZ @.valid_d0 :store_sym0
+@.digit_val0: SUB @.d0 .digit_0
+@.value: MUL @.value 10
+@.value: ADD @.value @.digit_val0
+@.pos: ADD @.pos .one
+
+@.d1: GET .src @.pos
+@.is_digit_d1: GE @.d1 .digit_0
+@.is_digit_d1b: LE @.d1 .digit_9
+@.valid_d1: MUL @.is_digit_d1 @.is_digit_d1b
+@.jz_end1: JZ @.valid_d1 :store_sym0
+@.digit_val1: SUB @.d1 .digit_0
+@.value: MUL @.value 10
+@.value: ADD @.value @.digit_val1
+@.pos: ADD @.pos .one
+
+@.d2: GET .src @.pos
+@.is_digit_d2: GE @.d2 .digit_0
+@.is_digit_d2b: LE @.d2 .digit_9
+@.valid_d2: MUL @.is_digit_d2 @.is_digit_d2b
+@.jz_end2: JZ @.valid_d2 :store_sym0
+@.digit_val2: SUB @.d2 .digit_0
+@.value: MUL @.value 10
+@.value: ADD @.value @.digit_val2
+@.pos: ADD @.pos .one
+
+@.d3: GET .src @.pos
+@.is_digit_d3: GE @.d3 .digit_0
+@.is_digit_d3b: LE @.d3 .digit_9
+@.valid_d3: MUL @.is_digit_d3 @.is_digit_d3b
+@.jz_end3: JZ @.valid_d3 :store_sym0
+@.digit_val3: SUB @.d3 .digit_0
+@.value: MUL @.value 10
+@.value: ADD @.value @.digit_val3
+
+:store_sym0
+-- Store symbol in table
+-- Slot offset = sym_count * 16
+@.slot: MUL .sym_count 16
+
+-- Store first char of name at slot
+@.name_ch0: GET .src @.name_start
+@.p0: PUT .symbols @.slot @.name_ch0
+
+-- Store value at slot + 8
+@.val_offset: ADD @.slot 8
+@.p1: PUT .symbols @.val_offset @.value
+
+-- Increment symbol count
+.sym_count: ADD .sym_count .one
+
+:line1
+-- Find next line (skip to newline)
+-- ... (would continue for more lines)
+
+-- ============================================
+-- OUTPUT: Print parsed symbols
+-- ============================================
+:print_results
+
+-- Print "Symbols: "
+.msg1: "Symbols: "
+.pr1: PRT .msg1 9
+
+-- Print symbol count
+@.count_str_len: ITS .sym_count .out
+.pr2: PRT .out @.count_str_len
+
+-- Print newline
+.nl: "\n"
+.pr3: PRT .nl 1
+
+-- Print first symbol value if exists
+@.has_sym: GT .sym_count .zero
+@.jz_nosym: JZ @.has_sym :done
+
+-- Get first symbol value
+@.first_val: GET .symbols 8
+@.val_str_len: ITS @.first_val .out
+
+.msg2: "First value: "
+.pr4: PRT .msg2 13
+.pr5: PRT .out @.val_str_len
+.pr6: PRT .nl 1
+
+:done
+!

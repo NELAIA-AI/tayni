@@ -1,0 +1,9 @@
+.data: ALC 256
+.connstr: "host=localhost dbname=test"
+.query: "SELECT * FROM users"
+.row: ALC 64
+
+@.conn: PG.CONNECT .connstr
+@.result: PG.QUERY .conn .query 19
+@.len: PG.FETCH .row .result
+@.prt: PRT .row .len

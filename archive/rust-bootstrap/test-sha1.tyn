@@ -1,0 +1,6 @@
+.data: ALC 256
+.input: "Hello"
+.hash: ALC 64
+
+@.len: SHA1 .hash .input 5
+@.prt: PRT .hash .len

@@ -1,0 +1,24 @@
+-- Test TRN (Transform) runtime operation
+-- Transform bytes in a buffer
+
+-- Allocate buffers
+.src: ALC 16
+.dst: ALC 16
+.out: ALC 16
+
+-- Initialize source buffer with "ABCD" using PUT (runtime)
+@.p0: PUT .src 0 65
+@.p1: PUT .src 1 66
+@.p2: PUT .src 2 67
+@.p3: PUT .src 3 68
+
+-- Length to process
+.len: 4
+
+-- Apply TRN: add 1 to each byte (A->B, B->C, C->D, D->E)
+@.result: TRN .dst .src .len "ADD" 1
+
+-- Print result (should be "BCDE")
+.prt: PRT .dst .len
+
+!

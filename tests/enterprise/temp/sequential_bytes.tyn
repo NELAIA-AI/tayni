@@ -1,0 +1,13 @@
+.buf: ALC 32
+.out: ALC 32
+@.p0: PUT .buf 0 1
+@.p1: PUT .buf 1 2
+@.p2: PUT .buf 2 3
+@.v0: GET .buf 0
+@.v1: GET .buf 1
+@.v2: GET .buf 2
+@.s1: ADD @.v0 @.v1
+@.sum: ADD @.s1 @.v2
+@.str: ITS @.sum .out
+.prt: PRT .out @.str
+!

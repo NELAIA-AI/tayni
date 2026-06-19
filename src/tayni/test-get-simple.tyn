@@ -1,0 +1,16 @@
+-- TAYNI Test GET Simple
+-- Read from input buffer and print
+
+.zero: 0
+
+.src: ALC 64
+.out: ALC 64
+
+-- Read first byte from input (should be 'd' = 100 from "dummy")
+@.ch: GET .src 0
+
+-- Convert to string and print
+@.len: ITS @.ch .out
+.done: PRT .out @.len
+
+!

@@ -1,0 +1,18 @@
+-- Test MTX (mutex) operation
+-- Creates a mutex and releases it
+
+-- Create a mutex
+@.mtx: MTX
+
+-- Lock the mutex
+@.lock: LCK .mtx
+
+-- Unlock the mutex
+@.unlock: ULK .mtx
+
+-- Print result
+.buf: ALC 64
+.msg: "Mutex OK\n"
+.put: PUT .buf 0 .msg
+.prt: PRT .buf 9
+!

@@ -1,0 +1,7 @@
+-- TAYNI v1.5 Mutex Test
+-- Equivalent to test-mutex-simple.tyn
+
+mtx = mutex()
+l = lock(mtx)
+u = unlock(mtx)
+!

@@ -1,0 +1,7 @@
+.data: ALC 256
+.json: "{\"name\":\"test\",\"value\":42}"
+.buf: ALC 64
+
+@.parsed: JSON.PARSE .json 27
+@.get: JSON.GET .buf .parsed "name" 4
+@.prt: PRT .buf .get

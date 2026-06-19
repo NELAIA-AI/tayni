@@ -1,0 +1,25 @@
+-- JSON.ENCODE test
+-- Generate {"name":42} and print it
+.key: ALC 32
+.val: ALC 16
+.out: ALC 128
+
+-- Write key "name"
+@.k0: PUT .key 0 110
+@.k1: PUT .key 1 97
+@.k2: PUT .key 2 109
+@.k3: PUT .key 3 101
+@.k4: PUT .key 4 0
+
+-- Write value "42"
+@.v0: PUT .val 0 52
+@.v1: PUT .val 1 50
+@.v2: PUT .val 2 0
+
+-- Encode JSON
+@.len: JSON.ENCODE .out .key .val
+
+-- Print the JSON string
+.prt: PRT .out @.len
+
+!

@@ -1,0 +1,3 @@
+.msg: "Hello Test"
+.cond: 1
+@.t: TEST.ASSERT .cond .msg 10

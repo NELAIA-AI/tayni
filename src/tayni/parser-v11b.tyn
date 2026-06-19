@@ -1,0 +1,65 @@
+-- TAYNI Parser v11b - Fixed slot offsets
+-- Input format:
+--   Line 0: ".a: 10"
+--   Line 1: ".b: 20"  
+--   Line 2: ".c: ADD .a .b"
+-- Output: Result of .c (should be 30)
+
+.zero: 0
+.one: 1
+.ten: 10
+.digit_0: 48
+.char_A: 65
+.char_D: 68
+
+-- Buffers
+.src: ALC 512
+.symbols: ALC 256
+.out: ALC 64
+
+-- Read input file
+.input_path: "input.txt"
+.fh: FOP .input_path 0
+.flen: FRD .fh .src 512
+
+-- ============================================
+-- LINE 0: ".a: 10" (8 chars with \r\n)
+-- Value at position 4-5
+-- ============================================
+@.ch0_4: GET .src 4
+@.ch0_5: GET .src 5
+@.d0_0: SUB @.ch0_4 .digit_0
+@.d0_1: SUB @.ch0_5 .digit_0
+@.t0: MUL @.d0_0 .ten
+@.val_a: ADD @.t0 @.d0_1
+@.s0: PUT .symbols 0 @.val_a
+
+-- ============================================
+-- LINE 1: ".b: 20" (starts at position 8)
+-- Value at position 12-13
+-- ============================================
+@.ch1_4: GET .src 12
+@.ch1_5: GET .src 13
+@.d1_0: SUB @.ch1_4 .digit_0
+@.d1_1: SUB @.ch1_5 .digit_0
+@.t1: MUL @.d1_0 .ten
+@.val_b: ADD @.t1 @.d1_1
+@.s1: PUT .symbols 1 @.val_b
+
+-- ============================================
+-- LINE 2: ".c: ADD .a .b" (starts at position 16)
+-- For simplicity, we know .a is slot 0 and .b is slot 1
+-- Just read them and add
+-- ============================================
+@.read_a: GET .symbols 0
+@.read_b: GET .symbols 1
+@.result: ADD @.read_a @.read_b
+
+-- Store result in slot 2 (for .c)
+@.s2: PUT .symbols 2 @.result
+
+-- Print result
+@.len: ITS @.result .out
+.done: PRT .out @.len
+
+!

@@ -1,0 +1,4 @@
+-- Simple hello test
+.msg: "Hello\n"
+.prt: PRT .msg 6
+!

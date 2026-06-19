@@ -1,0 +1,3 @@
+.buf: ALC 64
+@.len: UUID.V4 .buf
+@.out: PRT .buf .len

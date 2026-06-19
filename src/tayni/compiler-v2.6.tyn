@@ -1,0 +1,103 @@
+-- TAYNI Compiler v2.6 - Hardcoded values, full code injection
+-- Generates simple.exe that prints "30"
+
+.tpl: ALC 1536
+.out: ALC 32
+
+-- Read PE template
+.tpl_path: "pe-template.bin"
+@.tpl_h: FOP .tpl_path 0
+@.tpl_len: FRD @.tpl_h .tpl 1536
+
+-- Inject code at offset 512
+.c0: PUT .tpl 512 72
+.c1: PUT .tpl 513 131
+.c2: PUT .tpl 514 236
+.c3: PUT .tpl 515 56
+.c4: PUT .tpl 516 185
+.c5: PUT .tpl 517 245
+.c6: PUT .tpl 518 255
+.c7: PUT .tpl 519 255
+.c8: PUT .tpl 520 255
+.c9: PUT .tpl 521 255
+.c10: PUT .tpl 522 21
+.c11: PUT .tpl 523 121
+.c12: PUT .tpl 524 16
+.c13: PUT .tpl 525 0
+.c14: PUT .tpl 526 0
+.c15: PUT .tpl 527 72
+.c16: PUT .tpl 528 137
+.c17: PUT .tpl 529 68
+.c18: PUT .tpl 530 36
+.c19: PUT .tpl 531 48
+.c20: PUT .tpl 532 198
+.c21: PUT .tpl 533 68
+.c22: PUT .tpl 534 36
+.c23: PUT .tpl 535 40
+.c24: PUT .tpl 536 51
+.c25: PUT .tpl 537 198
+.c26: PUT .tpl 538 68
+.c27: PUT .tpl 539 36
+.c28: PUT .tpl 540 41
+.c29: PUT .tpl 541 48
+.c30: PUT .tpl 542 198
+.c31: PUT .tpl 543 68
+.c32: PUT .tpl 544 36
+.c33: PUT .tpl 545 42
+.c34: PUT .tpl 546 10
+.c35: PUT .tpl 547 72
+.c36: PUT .tpl 548 139
+.c37: PUT .tpl 549 76
+.c38: PUT .tpl 550 36
+.c39: PUT .tpl 551 48
+.c40: PUT .tpl 552 72
+.c41: PUT .tpl 553 141
+.c42: PUT .tpl 554 84
+.c43: PUT .tpl 555 36
+.c44: PUT .tpl 556 40
+.c45: PUT .tpl 557 65
+.c46: PUT .tpl 558 184
+.c47: PUT .tpl 559 3
+.c48: PUT .tpl 560 0
+.c49: PUT .tpl 561 0
+.c50: PUT .tpl 562 0
+.c51: PUT .tpl 563 76
+.c52: PUT .tpl 564 141
+.c53: PUT .tpl 565 76
+.c54: PUT .tpl 566 36
+.c55: PUT .tpl 567 32
+.c56: PUT .tpl 568 72
+.c57: PUT .tpl 569 199
+.c58: PUT .tpl 570 68
+.c59: PUT .tpl 571 36
+.c60: PUT .tpl 572 32
+.c61: PUT .tpl 573 0
+.c62: PUT .tpl 574 0
+.c63: PUT .tpl 575 0
+.c64: PUT .tpl 576 0
+.c65: PUT .tpl 577 255
+.c66: PUT .tpl 578 21
+.c67: PUT .tpl 579 73
+.c68: PUT .tpl 580 16
+.c69: PUT .tpl 581 0
+.c70: PUT .tpl 582 0
+.c71: PUT .tpl 583 49
+.c72: PUT .tpl 584 201
+.c73: PUT .tpl 585 255
+.c74: PUT .tpl 586 21
+.c75: PUT .tpl 587 49
+.c76: PUT .tpl 588 16
+.c77: PUT .tpl 589 0
+.c78: PUT .tpl 590 0
+
+-- Write output
+.out_path: "simple.exe"
+@.out_h: FOP .out_path 1
+@.out_len: FWR @.out_h .tpl 1536
+
+.p0: PUT .out 0 79
+.p1: PUT .out 1 75
+.p2: PUT .out 2 10
+.done: PRT .out 3
+
+!

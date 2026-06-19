@@ -1,0 +1,15 @@
+-- Test: Read template and write it back
+.template: ALC 1536
+
+.tpl_path: "pe-template.bin"
+@.tpl_h: FOP .tpl_path 0
+@.tpl_len: FRD @.tpl_h .template 1536
+
+.out_path: "copy.exe"
+@.out_h: FOP .out_path 1
+@.out_len: FWR @.out_h .template 1536
+
+.msg: "OK"
+.done: PRT .msg 2
+
+!

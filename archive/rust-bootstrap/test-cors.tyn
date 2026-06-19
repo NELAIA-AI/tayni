@@ -1,0 +1,6 @@
+.buf: ALC 32
+
+@.config: CORS.CONFIG_NEW
+@.config2: CORS.ALLOW_ALL_ORIGINS .config
+@.len: FORMAT.INT .buf .config2
+@.prt: PRT .buf .len

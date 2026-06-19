@@ -1,0 +1,24 @@
+-- TAYNI Test GET Runtime
+-- Verify GET is runtime
+
+.zero: 0
+
+.data: ALC 64
+.out: ALC 64
+
+-- Store 42 in data buffer
+@.store: PUT .data 0 42
+
+-- Read from data buffer (should be runtime)
+@.val: GET .data 0
+
+-- Add 0 to verify the value is runtime
+@.val2: ADD @.val 0
+
+-- Store in out buffer
+@.put_out: PUT .out 0 @.val2
+
+-- Print 1 byte (should be *)
+.done: PRT .out 1
+
+!

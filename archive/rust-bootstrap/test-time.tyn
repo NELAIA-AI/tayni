@@ -1,0 +1,6 @@
+.ts: 1718700000000
+.buf: ALC 32
+@.year: TIME.YEAR .ts
+-- Convert year to string and print
+.msg: "Year: "
+@.out1: PRT .msg 6

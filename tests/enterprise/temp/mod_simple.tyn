@@ -1,0 +1,9 @@
+.out: ALC 32
+@.a: PUT .out 0 10
+@.b: PUT .out 1 3
+@.va: GET .out 0
+@.vb: GET .out 1
+@.rem: MOD @.va @.vb
+@.str: ITS @.rem .out
+.prt: PRT .out @.str
+!

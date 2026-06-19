@@ -1,0 +1,10 @@
+.data: ALC 64
+.out: ALC 64
+@.vec: VEC 16
+@.p1: VPH .vec 10
+@.p2: VPH .vec 20
+@.p3: VPH .vec 30
+@.val: VGT .vec 1
+@.str: ITS @.val .out
+.prt: PRT .out @.str
+!

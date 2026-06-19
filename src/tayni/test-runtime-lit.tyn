@@ -1,0 +1,17 @@
+-- TAYNI Test Runtime Literal
+-- Test that runtime literals work
+
+.zero: 0
+
+.out: ALC 64
+
+-- Create runtime literal
+@.val: 42
+
+-- Store in out buffer
+@.put_out: PUT .out 0 @.val
+
+-- Print 1 byte (should be *)
+@.done: PRT .out 1
+
+!

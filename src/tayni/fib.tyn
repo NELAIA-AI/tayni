@@ -1,0 +1,64 @@
+-- TAYNI Fibonacci Calculator
+-- Calculates Fibonacci numbers using runtime operations
+-- Demonstrates: loops (JMP/JZ), arithmetic, memory operations
+
+-- Configuration
+.n: 10
+.zero: 0
+.one: 1
+
+-- Buffers
+.data: ALC 128
+.out: ALC 64
+
+-- Initialize: fib(0) = 0, fib(1) = 1
+@.init0: PUT .data 0 0
+@.init1: PUT .data 1 1
+
+-- Counter starts at 2
+@.store_i: PUT .data 2 2
+
+-- Loop: calculate fib(i) = fib(i-1) + fib(i-2)
+:loop
+
+-- Read counter i
+@.i: GET .data 2
+
+-- Check if i >= n (exit condition)
+@.cmp: SUB .n @.i
+@.done: JZ @.cmp :end
+
+-- Read fib(i-1) from offset 1
+@.prev1: GET .data 1
+
+-- Read fib(i-2) from offset 0
+@.prev2: GET .data 0
+
+-- Calculate fib(i) = prev1 + prev2
+@.fib: ADD @.prev1 @.prev2
+
+-- Shift values: fib(i-2) = fib(i-1)
+@.shift1: PUT .data 0 @.prev1
+
+-- Store new fib: fib(i-1) = fib(i)
+@.shift2: PUT .data 1 @.fib
+
+-- Increment counter
+@.inc: ADD @.i .one
+@.store_inc: PUT .data 2 @.inc
+
+-- Loop back
+@.jmp: JMP :loop
+
+:end
+
+-- Read final result (fib(n-1))
+@.result: GET .data 1
+
+-- Convert to string
+@.len: ITS @.result .out
+
+-- Print result
+.prt: PRT .out @.len
+
+!

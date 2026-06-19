@@ -1,0 +1,9 @@
+.data: ALC 256
+.connstr: "DSN=test"
+.query: "SELECT * FROM users"
+.row: ALC 64
+
+@.conn: SQL.CONNECT .connstr
+@.result: SQL.EXEC .conn .query 19
+@.len: SQL.FETCH .row .result
+@.prt: PRT .row .len

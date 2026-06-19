@@ -1,0 +1,70 @@
+-- TAYNI Parser v10 - Multi-line parser with symbol table
+-- Parses up to 4 lines, stores in symbol table, evaluates
+-- Format: ".name: value" or ".name: ADD .ref1 .ref2"
+
+.zero: 0
+.one: 1
+.ten: 10
+.hundred: 100
+.digit_0: 48
+.newline: 10
+
+-- Buffers
+.src: ALC 512
+.symbols: ALC 256
+.out: ALC 64
+
+-- Symbol table layout:
+-- Each slot: 8 bytes (value only, name is implicit by position)
+-- Slot 0: first symbol value
+-- Slot 1: second symbol value
+-- etc.
+
+-- Read input file
+.input_path: "input.txt"
+.fh: FOP .input_path 0
+.flen: FRD .fh .src 512
+
+-- ============================================
+-- LINE 0: Parse first line (positions 0-15)
+-- Format: ".a: 10" (value at position 4-5)
+-- ============================================
+@.ch0_4: GET .src 4
+@.ch0_5: GET .src 5
+
+@.d0_0: SUB @.ch0_4 .digit_0
+@.d0_1: SUB @.ch0_5 .digit_0
+@.t0: MUL @.d0_0 .ten
+@.val0: ADD @.t0 @.d0_1
+
+-- Store in slot 0
+@.s0: PUT .symbols 0 @.val0
+
+-- ============================================
+-- LINE 1: Parse second line (starts at ~position 8)
+-- Assuming lines are 8 chars each: ".a: 10\r\n"
+-- Line 1 starts at position 8, value at 8+4=12
+-- ============================================
+@.ch1_4: GET .src 12
+@.ch1_5: GET .src 13
+
+@.d1_0: SUB @.ch1_4 .digit_0
+@.d1_1: SUB @.ch1_5 .digit_0
+@.t1: MUL @.d1_0 .ten
+@.val1: ADD @.t1 @.d1_1
+
+-- Store in slot 1
+@.s1: PUT .symbols 1 @.val1
+
+-- ============================================
+-- Evaluate: Read both values and add them
+-- ============================================
+@.read0: GET .symbols 0
+@.read1: GET .symbols 1
+@.result: ADD @.read0 @.read1
+
+-- Print result
+@.len: ITS @.result .out
+.done: PRT .out @.len
+
+!

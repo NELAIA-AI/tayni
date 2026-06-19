@@ -1,0 +1,19 @@
+-- TAYNI Test GET with offset
+-- Store at offset 0, read from offset 0
+
+.zero: 0
+
+.out: ALC 64
+
+-- Store 42 at offset 0
+@.val: 42
+@.store: PUT .out 0 @.val
+
+-- Read back from offset 0
+@.read: GET .out 0
+
+-- Convert to string and print
+@.len: ITS @.read .out
+.done: PRT .out @.len
+
+!

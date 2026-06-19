@@ -1,0 +1,27 @@
+-- CMP test - compare memory
+.a: ALC 64
+.b: ALC 64
+
+-- Write "Hello" to a
+@.a0: PUT .a 0 72
+@.a1: PUT .a 1 101
+@.a2: PUT .a 2 108
+@.a3: PUT .a 3 108
+@.a4: PUT .a 4 111
+
+-- Write "Hello" to b (same)
+@.b0: PUT .b 0 72
+@.b1: PUT .b 1 101
+@.b2: PUT .b 2 108
+@.b3: PUT .b 3 108
+@.b4: PUT .b 4 111
+
+-- Compare 5 bytes (should be 0 = equal)
+@.result: CMP .a .b 5
+
+-- Print result
+.out: ALC 32
+@.n: ITS @.result .out
+.prt: PRT .out @.n
+
+!

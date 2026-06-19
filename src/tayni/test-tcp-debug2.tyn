@@ -1,0 +1,16 @@
+-- Minimal TCP test - print then TCP
+.out: ALC 64
+.msg: "Before TCP\n"
+.msglen: 11
+
+-- Print message first
+.prt1: PRT .msg .msglen
+
+-- Create TCP socket
+@.sock: TCP
+
+-- Print socket value
+@.its: ITS @.sock .out
+.prt2: PRT .out @.its
+
+!

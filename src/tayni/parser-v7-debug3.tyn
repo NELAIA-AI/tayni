@@ -1,0 +1,24 @@
+-- TAYNI Parser v7 Debug3 - Test PUT with variable
+-- Store 42 in variable, then PUT
+
+.zero: 0
+
+.symbols: ALC 64
+.out: ALC 64
+
+-- Create variable with value 42
+@.val: ADD 40 2
+
+-- Store variable at offset 0 of symbols buffer
+@.store: PUT .symbols 0 @.val
+
+-- Read back from symbols buffer
+@.read: GET .symbols 0
+
+-- Store in out buffer to verify
+@.put_out: PUT .out 0 @.read
+
+-- Print 1 byte from out buffer (should be *)
+@.done: PRT .out 1
+
+!

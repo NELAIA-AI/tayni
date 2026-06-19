@@ -1,0 +1,21 @@
+-- TAYNI Test ITS Separate Buffers
+-- Use separate buffers for data and output
+
+.zero: 0
+
+.data: ALC 64
+.out: ALC 64
+
+-- Store 42 in data buffer
+@.store: PUT .data 0 42
+
+-- Read from data buffer
+@.val: GET .data 0
+
+-- Convert to string in out buffer
+@.len: ITS @.val .out
+
+-- Print from out buffer
+.done: PRT .out @.len
+
+!

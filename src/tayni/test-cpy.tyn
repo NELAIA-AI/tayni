@@ -1,0 +1,21 @@
+-- CPY test - copy memory
+.src: ALC 64
+.dst: ALC 64
+
+-- Write "Hello" to src
+@.a0: PUT .src 0 72
+@.a1: PUT .src 1 101
+@.a2: PUT .src 2 108
+@.a3: PUT .src 3 108
+@.a4: PUT .src 4 111
+@.a5: PUT .src 5 0
+
+-- Copy 5 bytes
+@.len: CPY .dst .src 5
+
+-- Print result
+.out: ALC 32
+@.n: ITS @.len .out
+.prt: PRT .out @.n
+
+!

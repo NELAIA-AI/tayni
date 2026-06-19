@@ -1,0 +1,18 @@
+.data: ALC 256
+.host: "127.0.0.1"
+.buf: ALC 64
+
+@.udp: UDP
+@.con: CON .udp .host 8080
+@.nbk: NBK .udp 1
+@.ndl: NDL .udp
+@.kal: KAL .udp 60
+
+@.map: HMP 16
+@.key: "mykey"
+@.val: "myvalue"
+@.put: HPT .map .key 5 .val 7
+@.len: HGT .buf .map .key 5
+@.has: HHS .map .key 5
+
+@.prt: PRT .buf .len

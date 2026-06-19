@@ -1,0 +1,18 @@
+-- Simple TCP server test
+-- Creates a socket, binds to port 8080, listens, accepts one connection
+
+.out: ALC 256
+.msg: "Server starting...\n"
+.msglen: 19
+
+-- Print startup message
+.prt1: PRT .msg .msglen
+
+-- Create TCP socket
+@.sock: TCP
+
+-- Print socket handle
+@.its1: ITS @.sock .out
+.prt2: PRT .out @.its1
+
+!

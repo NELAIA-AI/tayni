@@ -1,0 +1,13 @@
+-- Test: Multiple buffers with different sizes
+.a: ALC 64
+.b: ALC 512
+.c: ALC 32
+
+.p0: PUT .a 0 65
+.p1: PUT .b 0 66
+.p2: PUT .c 0 67
+.p3: PUT .c 1 10
+
+.done: PRT .c 2
+
+!

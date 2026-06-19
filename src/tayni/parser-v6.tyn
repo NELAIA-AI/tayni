@@ -1,0 +1,56 @@
+-- TAYNI Parser v6 - Parse and store in symbol table
+-- Input: ".x: 42" -> store x=42 in symbol table, then print
+
+.zero: 0
+.ten: 10
+.digit_0: 48
+
+.src: ALC 256
+.out: ALC 64
+
+-- Symbol table: 64 slots x 16 bytes (8 name + 8 value)
+.symbols: ALC 1024
+
+.src_path: "test-parse-input.tyn"
+.sh: FOP .src_path .zero
+.slen: FRD .sh .src 256
+.sc: FCL .sh
+
+-- Read symbol name at position 1 (should be 'x' = 120)
+@.name: GET .src 1
+
+-- Read digits at position 4,5
+@.ch4: GET .src 4
+@.ch5: GET .src 5
+
+-- Convert to value
+@.d0: SUB @.ch4 .digit_0
+@.d1: SUB @.ch5 .digit_0
+@.tens: MUL @.d0 .ten
+@.value: ADD @.tens @.d1
+
+-- Store in symbol table slot 0
+-- Slot 0: bytes 0-7 = name, bytes 8-15 = value
+@.store_name: PUT .symbols 0 @.name
+@.store_val: PUT .symbols 8 @.value
+
+-- Read back from symbol table
+@.read_name: GET .symbols 0
+@.read_val: GET .symbols 8
+
+-- Print "x = 42"
+-- First print the name char
+@.put_name: PUT .out 0 @.read_name
+.pr1: PRT .out 1
+
+.eq: " = "
+.pr2: PRT .eq 3
+
+-- Print value
+@.len: ITS @.read_val .out
+.pr3: PRT .out @.len
+
+.nl: "\n"
+.pr4: PRT .nl 1
+
+!

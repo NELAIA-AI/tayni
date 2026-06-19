@@ -1,0 +1,19 @@
+-- TAYNI Test Two Buffers v2
+-- Store in data buffer, read back, print directly
+
+.zero: 0
+
+.data: ALC 64
+.out: ALC 64
+
+-- Store 42 at offset 0 of data buffer
+@.store: PUT .data 0 42
+
+-- Read back from data buffer
+@.read: GET .data 0
+
+-- Print the raw byte (should be '*' = 42)
+@.put_raw: PUT .out 0 @.read
+.done: PRT .out 1
+
+!

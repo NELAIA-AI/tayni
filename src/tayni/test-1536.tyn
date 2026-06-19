@@ -1,0 +1,11 @@
+-- Test: Buffer of 1536 bytes
+.a: ALC 1536
+.b: ALC 32
+
+.p0: PUT .a 0 65
+.p1: PUT .b 0 66
+.p2: PUT .b 1 10
+
+.done: PRT .b 2
+
+!

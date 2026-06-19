@@ -1,0 +1,20 @@
+-- TAYNI Test GET from output buffer
+-- Store in output buffer, read back
+
+.zero: 0
+
+.out: ALC 64
+
+-- Store 42 at offset 0
+@.store: PUT .out 0 42
+
+-- Read back
+@.read: GET .out 0
+
+-- Convert to string
+@.len: ITS @.read .out
+
+-- Print
+.done: PRT .out @.len
+
+!

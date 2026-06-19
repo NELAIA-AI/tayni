@@ -1,0 +1,11 @@
+# Test FOP with working base
+.zero: 0
+.symbols: ALC 64
+.out: ALC 64
+.path: "input.txt"
+.handle: FOP .path 0
+@.val: 42
+@.store: PUT .symbols 0 @.val
+@.read: GET .symbols 0
+@.len: ITS @.read .out
+.done: PRT .out @.len

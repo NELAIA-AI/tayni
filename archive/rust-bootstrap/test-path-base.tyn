@@ -1,0 +1,4 @@
+.path: "C:\\Users\\test\\documents\\file.txt"
+.dst: ALC 64
+@.len: PATH.BASE .dst .path
+@.out: PRT .dst .len

@@ -1,0 +1,8 @@
+.data: ALC 256
+.input: "Hello, World!"
+.compressed: ALC 256
+.decompressed: ALC 256
+
+@.clen: GZIP.COMPRESS .compressed .input 13
+@.dlen: GZIP.DECOMPRESS .decompressed .compressed .clen
+@.prt: PRT .decompressed .dlen

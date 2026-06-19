@@ -1,0 +1,4 @@
+.buf: ALC 64
+@.r: RNG 100
+@.len: ITS .r .buf
+.out: PRT .buf .len

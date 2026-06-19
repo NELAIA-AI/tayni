@@ -1,0 +1,46 @@
+; TAYNI Quantum IR (QIR) - Auto-generated
+; Compatible with Azure Quantum, IBM Qiskit
+
+
+; QIR Type definitions
+%Qubit = type opaque
+%Result = type opaque
+
+; Qubit management
+declare %Qubit* @__quantum__rt__qubit_allocate()
+declare void @__quantum__rt__qubit_release(%Qubit*)
+declare %Result* @__quantum__rt__result_allocate()
+
+; Single-qubit gates
+declare void @__quantum__qis__h__body(%Qubit*)
+declare void @__quantum__qis__x__body(%Qubit*)
+declare void @__quantum__qis__y__body(%Qubit*)
+declare void @__quantum__qis__z__body(%Qubit*)
+declare void @__quantum__qis__s__body(%Qubit*)
+declare void @__quantum__qis__t__body(%Qubit*)
+declare void @__quantum__qis__rx__body(double, %Qubit*)
+declare void @__quantum__qis__ry__body(double, %Qubit*)
+declare void @__quantum__qis__rz__body(double, %Qubit*)
+
+; Two-qubit gates
+declare void @__quantum__qis__cnot__body(%Qubit*, %Qubit*)
+declare void @__quantum__qis__cz__body(%Qubit*, %Qubit*)
+declare void @__quantum__qis__swap__body(%Qubit*, %Qubit*)
+
+; Three-qubit gates
+declare void @__quantum__qis__ccx__body(%Qubit*, %Qubit*, %Qubit*)
+
+; Measurement
+declare %Result* @__quantum__qis__m__body(%Qubit*)
+declare i1 @__quantum__rt__result_equal(%Result*, %Result*)
+declare %Result* @__quantum__rt__result_get_one()
+declare %Result* @__quantum__rt__result_get_zero()
+
+
+define void @TAYNI_quantum_main() {
+entry:
+
+
+  ; Release qubits
+  ret void
+}

@@ -1,0 +1,5 @@
+.dst: ALC 128
+.dir: "C:/Users/test"
+.file: "document.txt"
+@.len: PATH.JOIN .dst .dir .file
+@.out: PRT .dst .len

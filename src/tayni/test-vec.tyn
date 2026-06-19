@@ -1,0 +1,18 @@
+-- Test VEC (Dynamic Vector) runtime operations
+-- Create a vector, push values, get length, print
+
+-- Create vector with capacity 16
+@.v: VEC 16
+
+-- Push values and chain dependencies
+@.p1: VPH .v 72
+@.p2: VPH .v 105
+@.p3: VPH .v 33
+@.p4: VPH .v 10
+
+-- Use p4 result (new length after 4 pushes = 4)
+.buf: ALC 16
+@.its: ITS .buf @.p4
+.prt: PRT .buf @.its
+
+!

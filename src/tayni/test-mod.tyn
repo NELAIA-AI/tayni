@@ -1,0 +1,12 @@
+-- Test MOD
+.data: ALC 64
+.out: ALC 64
+
+-- MOD: 17 % 5 = 2
+@.store1: PUT .data 0 17
+@.a: GET .data 0
+@.mod_result: MOD @.a 5
+@.its1: ITS @.mod_result .out
+.prt1: PRT .out @.its1
+
+!

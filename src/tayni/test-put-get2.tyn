@@ -1,0 +1,18 @@
+-- TAYNI Test PUT/GET v2 - Store and read back
+-- Store 65 (ASCII 'A'), read it, convert to string, print
+
+.zero: 0
+
+.out: ALC 64
+
+-- Store 65 at offset 0 of output buffer
+@.store: PUT .out 0 65
+
+-- Read back from offset 0
+@.read: GET .out 0
+
+-- Convert to string and print
+@.len: ITS @.read .out
+.done: PRT .out @.len
+
+!

@@ -1,0 +1,44 @@
+-- TAYNI Compiler v2.3 - Minimal test
+-- Just read both files and print result
+
+.ten: 10
+.digit_0: 48
+
+.src: ALC 64
+.tpl: ALC 1536
+.out: ALC 32
+
+-- Read source file
+.src_path: "simple.tyn"
+@.src_h: FOP .src_path 0
+@.src_len: FRD @.src_h .src 64
+
+-- Parse Line 0: ".a: 10" - value at pos 4-5
+@.ch0_4: GET .src 4
+@.ch0_5: GET .src 5
+@.d0_0: SUB @.ch0_4 .digit_0
+@.d0_1: SUB @.ch0_5 .digit_0
+@.t0: MUL @.d0_0 .ten
+@.val_a: ADD @.t0 @.d0_1
+
+-- Parse Line 1: ".b: 20" - value at pos 12-13 (after CRLF)
+@.ch1_4: GET .src 12
+@.ch1_5: GET .src 13
+@.d1_0: SUB @.ch1_4 .digit_0
+@.d1_1: SUB @.ch1_5 .digit_0
+@.t1: MUL @.d1_0 .ten
+@.val_b: ADD @.t1 @.d1_1
+
+-- Compute result
+@.result: ADD @.val_a @.val_b
+
+-- Read PE template
+.tpl_path: "pe-template.bin"
+@.tpl_h: FOP .tpl_path 0
+@.tpl_len: FRD @.tpl_h .tpl 1536
+
+-- Print result
+@.msg_len: ITS @.result .out
+.done: PRT .out @.msg_len
+
+!

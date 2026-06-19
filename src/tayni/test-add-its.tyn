@@ -1,0 +1,17 @@
+-- TAYNI Test ADD then ITS
+-- Use ADD to create a runtime value, then ITS
+
+.zero: 0
+
+.out: ALC 64
+
+-- Create a runtime value
+@.val: ADD 40 2
+
+-- Convert to string
+@.len: ITS @.val .out
+
+-- Print
+.done: PRT .out @.len
+
+!

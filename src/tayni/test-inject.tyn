@@ -1,0 +1,129 @@
+-- Test: Inject hardcoded code into template
+.template: ALC 1536
+
+-- Read PE template
+.tpl_path: "pe-template.bin"
+@.tpl_h: FOP .tpl_path 0
+@.tpl_len: FRD @.tpl_h .template 1536
+
+-- Inject code directly at offset 512 (0x200 = .text section)
+-- Code: sub rsp,56; mov ecx,-11; call GetStdHandle; ... print "30\n" ... call ExitProcess
+
+-- sub rsp, 56
+.c0: PUT .template 512 72
+.c1: PUT .template 513 131
+.c2: PUT .template 514 236
+.c3: PUT .template 515 56
+
+-- mov ecx, -11
+.c4: PUT .template 516 185
+.c5: PUT .template 517 245
+.c6: PUT .template 518 255
+.c7: PUT .template 519 255
+.c8: PUT .template 520 255
+
+-- call [GetStdHandle] - FF 15 79 10 00 00
+.c9: PUT .template 521 255
+.c10: PUT .template 522 21
+.c11: PUT .template 523 121
+.c12: PUT .template 524 16
+.c13: PUT .template 525 0
+.c14: PUT .template 526 0
+
+-- mov [rsp+48], rax
+.c15: PUT .template 527 72
+.c16: PUT .template 528 137
+.c17: PUT .template 529 68
+.c18: PUT .template 530 36
+.c19: PUT .template 531 48
+
+-- mov byte [rsp+40], '3' (51)
+.c20: PUT .template 532 198
+.c21: PUT .template 533 68
+.c22: PUT .template 534 36
+.c23: PUT .template 535 40
+.c24: PUT .template 536 51
+
+-- mov byte [rsp+41], '0' (48)
+.c25: PUT .template 537 198
+.c26: PUT .template 538 68
+.c27: PUT .template 539 36
+.c28: PUT .template 540 41
+.c29: PUT .template 541 48
+
+-- mov byte [rsp+42], 10 (newline)
+.c30: PUT .template 542 198
+.c31: PUT .template 543 68
+.c32: PUT .template 544 36
+.c33: PUT .template 545 42
+.c34: PUT .template 546 10
+
+-- mov rcx, [rsp+48]
+.c35: PUT .template 547 72
+.c36: PUT .template 548 139
+.c37: PUT .template 549 76
+.c38: PUT .template 550 36
+.c39: PUT .template 551 48
+
+-- lea rdx, [rsp+40]
+.c40: PUT .template 552 72
+.c41: PUT .template 553 141
+.c42: PUT .template 554 84
+.c43: PUT .template 555 36
+.c44: PUT .template 556 40
+
+-- mov r8d, 3
+.c45: PUT .template 557 65
+.c46: PUT .template 558 184
+.c47: PUT .template 559 3
+.c48: PUT .template 560 0
+.c49: PUT .template 561 0
+.c50: PUT .template 562 0
+
+-- lea r9, [rsp+32]
+.c51: PUT .template 563 76
+.c52: PUT .template 564 141
+.c53: PUT .template 565 76
+.c54: PUT .template 566 36
+.c55: PUT .template 567 32
+
+-- mov qword [rsp+32], 0
+.c56: PUT .template 568 72
+.c57: PUT .template 569 199
+.c58: PUT .template 570 68
+.c59: PUT .template 571 36
+.c60: PUT .template 572 32
+.c61: PUT .template 573 0
+.c62: PUT .template 574 0
+.c63: PUT .template 575 0
+.c64: PUT .template 576 0
+
+-- call [WriteFile] - FF 15 49 10 00 00
+.c65: PUT .template 577 255
+.c66: PUT .template 578 21
+.c67: PUT .template 579 73
+.c68: PUT .template 580 16
+.c69: PUT .template 581 0
+.c70: PUT .template 582 0
+
+-- xor ecx, ecx
+.c71: PUT .template 583 49
+.c72: PUT .template 584 201
+
+-- call [ExitProcess] - FF 15 31 10 00 00
+.c73: PUT .template 585 255
+.c74: PUT .template 586 21
+.c75: PUT .template 587 49
+.c76: PUT .template 588 16
+.c77: PUT .template 589 0
+.c78: PUT .template 590 0
+
+-- Write output executable
+.out_path: "hello30.exe"
+@.out_h: FOP .out_path 1
+@.out_len: FWR @.out_h .template 1536
+
+.msg: "DONE"
+.done: PRT .msg 4
+
+!

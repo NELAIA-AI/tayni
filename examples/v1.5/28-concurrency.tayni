@@ -1,0 +1,244 @@
+// Example 28: Concurrency
+// Demonstrates concurrent programming in TAYNI
+
+// Spawn a new thread
+fn thread_example() {
+    let handle = thread::spawn(|| {
+        for i in 0..5 {
+            print("Thread: " + i.to_string());
+            thread::sleep(100);
+        }
+        42  // Return value
+    });
+    
+    // Do work in main thread
+    for i in 0..5 {
+        print("Main: " + i.to_string());
+        thread::sleep(100);
+    }
+    
+    // Wait for thread and get result
+    let result = handle.join().unwrap();
+    print("Thread returned: " + result.to_string());
+}
+
+// Channels for message passing
+fn channel_example() {
+    let (tx, rx) = channel::<i32>();
+    
+    // Producer thread
+    thread::spawn(move || {
+        for i in 0..10 {
+            tx.send(i * i).unwrap();
+            thread::sleep(50);
+        }
+        drop(tx);  // Close channel
+    });
+    
+    // Consumer in main thread
+    while let Option::Some(value) = rx.recv() {
+        print("Received: " + value.to_string());
+    }
+    print("Channel closed");
+}
+
+// Multiple producers, single consumer
+fn mpsc_example() {
+    let (tx, rx) = channel::<str>();
+    
+    // Spawn multiple producers
+    for id in 0..3 {
+        let tx_clone = tx.clone();
+        thread::spawn(move || {
+            for i in 0..5 {
+                let msg = "Worker " + id.to_string() + ": message " + i.to_string();
+                tx_clone.send(msg).unwrap();
+                thread::sleep(100);
+            }
+        });
+    }
+    drop(tx);  // Drop original sender
+    
+    // Receive all messages
+    let count = 0;
+    while let Option::Some(msg) = rx.recv() {
+        print(msg);
+        count += 1;
+    }
+    print("Total messages: " + count.to_string());
+}
+
+// Mutex for shared state
+fn mutex_example() {
+    let counter = Arc::new(Mutex::new(0));
+    let mut handles = [];
+    
+    for _ in 0..10 {
+        let counter_clone = counter.clone();
+        let handle = thread::spawn(move || {
+            for _ in 0..100 {
+                let mut guard = counter_clone.lock().unwrap();
+                *guard += 1;
+            }
+        });
+        handles.push(handle);
+    }
+    
+    // Wait for all threads
+    for handle in handles {
+        handle.join().unwrap();
+    }
+    
+    print("Final count: " + counter.lock().unwrap().to_string());
+}
+
+// Read-write lock for read-heavy workloads
+fn rwlock_example() {
+    let data = Arc::new(RwLock::new(vec![1, 2, 3, 4, 5]));
+    let mut handles = [];
+    
+    // Multiple readers
+    for id in 0..5 {
+        let data_clone = data.clone();
+        handles.push(thread::spawn(move || {
+            for _ in 0..10 {
+                let guard = data_clone.read().unwrap();
+                let sum: i32 = guard.iter().sum();
+                print("Reader " + id.to_string() + ": sum = " + sum.to_string());
+                thread::sleep(50);
+            }
+        }));
+    }
+    
+    // Single writer
+    let data_clone = data.clone();
+    handles.push(thread::spawn(move || {
+        for i in 0..5 {
+            thread::sleep(100);
+            let mut guard = data_clone.write().unwrap();
+            guard.push(i + 6);
+            print("Writer: added " + (i + 6).to_string());
+        }
+    }));
+    
+    for handle in handles {
+        handle.join().unwrap();
+    }
+}
+
+// Condition variables for signaling
+fn condvar_example() {
+    let pair = Arc::new((Mutex::new(false), Condvar::new()));
+    let pair_clone = pair.clone();
+    
+    // Waiter thread
+    thread::spawn(move || {
+        let (lock, cvar) = &*pair_clone;
+        let mut started = lock.lock().unwrap();
+        while !*started {
+            started = cvar.wait(started).unwrap();
+        }
+        print("Worker: received signal, starting work");
+    });
+    
+    // Main thread signals after delay
+    thread::sleep(500);
+    let (lock, cvar) = &*pair;
+    let mut started = lock.lock().unwrap();
+    *started = true;
+    cvar.notify_one();
+    print("Main: sent signal");
+}
+
+// Thread pool for task parallelism
+fn threadpool_example() {
+    let pool = ThreadPool::new(4);
+    
+    for i in 0..20 {
+        pool.execute(move || {
+            let result = expensive_computation(i);
+            print("Task " + i.to_string() + " result: " + result.to_string());
+        });
+    }
+    
+    pool.join();  // Wait for all tasks
+    print("All tasks completed");
+}
+
+fn expensive_computation(n: i32) -> i32 {
+    thread::sleep(100);
+    n * n
+}
+
+// Parallel iterators
+fn parallel_iter_example() {
+    let numbers: [i32] = (0..1000).collect();
+    
+    // Parallel map
+    let squares = numbers.par_iter()
+        .map(|x| x * x)
+        .collect();
+    
+    // Parallel filter
+    let evens = numbers.par_iter()
+        .filter(|x| x % 2 == 0)
+        .collect();
+    
+    // Parallel reduce
+    let sum = numbers.par_iter()
+        .reduce(0, |a, b| a + b);
+    
+    print("Sum of 0..1000: " + sum.to_string());
+}
+
+// Atomic operations
+fn atomic_example() {
+    let counter = Arc::new(AtomicI32::new(0));
+    let mut handles = [];
+    
+    for _ in 0..10 {
+        let counter_clone = counter.clone();
+        handles.push(thread::spawn(move || {
+            for _ in 0..1000 {
+                counter_clone.fetch_add(1, Ordering::SeqCst);
+            }
+        }));
+    }
+    
+    for handle in handles {
+        handle.join().unwrap();
+    }
+    
+    print("Atomic counter: " + counter.load(Ordering::SeqCst).to_string());
+}
+
+fn main() {
+    print("=== Concurrency Demo ===\n");
+    
+    print("1. Basic threads:");
+    thread_example();
+    
+    print("\n2. Channels:");
+    channel_example();
+    
+    print("\n3. Multiple producers:");
+    mpsc_example();
+    
+    print("\n4. Mutex:");
+    mutex_example();
+    
+    print("\n5. RwLock:");
+    rwlock_example();
+    
+    print("\n6. Condition variables:");
+    condvar_example();
+    
+    print("\n7. Thread pool:");
+    threadpool_example();
+    
+    print("\n8. Parallel iterators:");
+    parallel_iter_example();
+    
+    print("\n9. Atomics:");
+    atomic_example();
+}

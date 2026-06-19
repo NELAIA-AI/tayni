@@ -1,0 +1,24 @@
+-- TAYNI Test GET then ADD then ITS
+-- Read from buffer, add 0, convert to string
+
+.zero: 0
+
+.data: ALC 64
+.out: ALC 64
+
+-- Store 42 in data buffer
+@.store: PUT .data 0 42
+
+-- Read from data buffer
+@.val: GET .data 0
+
+-- Add 0 to the value (this should work)
+@.val2: ADD @.val 0
+
+-- Convert to string
+@.len: ITS @.val2 .out
+
+-- Print
+.done: PRT .out @.len
+
+!

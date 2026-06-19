@@ -1,0 +1,129 @@
+// Example 22: Generics
+// Demonstrates generic types and functions in TAYNI
+
+// Generic identity function
+fn identity<T>(x: T) -> T {
+    x
+}
+
+// Generic pair struct
+struct Pair<A, B> {
+    first: A,
+    second: B
+}
+
+impl<A, B> Pair<A, B> {
+    fn new(first: A, second: B) -> Self {
+        Pair { first, second }
+    }
+    
+    fn swap(self) -> Pair<B, A> {
+        Pair { first: self.second, second: self.first }
+    }
+}
+
+// Generic stack
+struct Stack<T> {
+    items: [T],
+    size: i32
+}
+
+impl<T> Stack<T> {
+    fn new() -> Self {
+        Stack { items: [], size: 0 }
+    }
+    
+    fn push(mut self, item: T) {
+        self.items.push(item);
+        self.size += 1;
+    }
+    
+    fn pop(mut self) -> Option<T> {
+        if self.size == 0 {
+            Option::None
+        } else {
+            self.size -= 1;
+            Option::Some(self.items.pop())
+        }
+    }
+    
+    fn peek(self) -> Option<T> {
+        if self.size == 0 {
+            Option::None
+        } else {
+            Option::Some(self.items[self.size - 1])
+        }
+    }
+    
+    fn is_empty(self) -> bool {
+        self.size == 0
+    }
+}
+
+// Generic map function
+fn map<T, U>(items: [T], f: fn(T) -> U) -> [U] {
+    let result: [U] = [];
+    for item in items {
+        result.push(f(item));
+    }
+    result
+}
+
+// Generic filter function
+fn filter<T>(items: [T], predicate: fn(T) -> bool) -> [T] {
+    let result: [T] = [];
+    for item in items {
+        if predicate(item) {
+            result.push(item);
+        }
+    }
+    result
+}
+
+// Generic reduce function
+fn reduce<T, U>(items: [T], initial: U, f: fn(U, T) -> U) -> U {
+    let acc = initial;
+    for item in items {
+        acc = f(acc, item);
+    }
+    acc
+}
+
+fn main() {
+    // Identity function
+    print("identity(42) = " + identity(42).to_string());
+    print("identity(\"hello\") = " + identity("hello"));
+    
+    // Pair
+    let pair = Pair::new(1, "one");
+    print("Pair: (" + pair.first.to_string() + ", " + pair.second + ")");
+    
+    let swapped = pair.swap();
+    print("Swapped: (" + swapped.first + ", " + swapped.second.to_string() + ")");
+    
+    // Stack
+    let mut stack = Stack::<i32>::new();
+    stack.push(1);
+    stack.push(2);
+    stack.push(3);
+    
+    print("Stack peek: " + stack.peek().unwrap().to_string());
+    print("Stack pop: " + stack.pop().unwrap().to_string());
+    print("Stack pop: " + stack.pop().unwrap().to_string());
+    
+    // Map
+    let numbers = [1, 2, 3, 4, 5];
+    let doubled = map(numbers, |x| x * 2);
+    print("Doubled: " + doubled.to_string());
+    
+    // Filter
+    let evens = filter(numbers, |x| x % 2 == 0);
+    print("Evens: " + evens.to_string());
+    
+    // Reduce
+    let sum = reduce(numbers, 0, |acc, x| acc + x);
+    print("Sum: " + sum.to_string());
+    
+    let product = reduce(numbers, 1, |acc, x| acc * x);
+    print("Product: " + product.to_string());
+}

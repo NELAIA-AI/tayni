@@ -1,0 +1,14 @@
+-- TAYNI v1.5 Simple Test
+-- Tests basic v1.5 syntax
+
+a = 10
+b = 5
+c = add(a, b)
+jge c 15 :pass
+jmp :fail
+
+:pass
+! 0
+
+:fail
+! 1

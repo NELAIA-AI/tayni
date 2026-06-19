@@ -1,0 +1,12 @@
+-- Test: read PE template into 1536 buffer (exact size)
+.tpl_path: "pe-template.bin"
+.template: ALC 1536
+.out: ALC 32
+
+@.tpl_h: FOP .tpl_path 0
+@.tpl_len: FRD @.tpl_h .template 1536
+
+@.s1: ITS @.tpl_len .out
+.p1: PRT .out @.s1
+
+!

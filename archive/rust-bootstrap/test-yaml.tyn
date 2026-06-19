@@ -1,0 +1,8 @@
+.data: ALC 256
+.yaml_data: "name: Alice\nage: 30\ncity: NYC"
+.key: "city"
+.value: ALC 64
+
+@.yaml: YAML.PARSE .yaml_data 30
+@.len: YAML.GET .value .yaml .key 4
+@.prt: PRT .value .len

@@ -1,0 +1,6 @@
+.buf: ALC 32
+
+@.config: RETRY.CONFIG_NEW
+@.result: RETRY.EXECUTE .config
+@.len: FORMAT.INT .buf .result
+@.prt: PRT .buf .len

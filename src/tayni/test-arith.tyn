@@ -1,0 +1,17 @@
+-- TAYNI Core Operations Test Suite
+-- Tests all working core operations
+
+.data: ALC 64
+.out: ALC 64
+.one: 1
+
+-- ========== TEST 1: Arithmetic (10 + 5) * 2 - 3 = 27 ==========
+@.store1: PUT .data 0 10
+@.a: GET .data 0
+@.sum: ADD @.a 5
+@.prod: MUL @.sum 2
+@.result: SUB @.prod 3
+@.its1: ITS @.result .out
+.prt1: PRT .out @.its1
+
+!

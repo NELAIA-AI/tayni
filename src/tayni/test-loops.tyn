@@ -1,0 +1,52 @@
+-- TAYNI Test Loops - Simple Jump Test
+-- Tests @JMP and labels for basic control flow
+-- 
+-- Expected behavior:
+--   1. Read a digit from input.txt
+--   2. Skip over some code using JMP
+--   3. Print the digit
+--
+-- If input.txt contains "5", output should be "5"
+--
+-- Date: 2026-06-17
+
+-- Constants (compile-time)
+.zero: 0
+.one: 1
+.ascii_offset: 48
+
+-- File path
+.input_path: "input.txt"
+
+-- Allocate buffers
+.buf: ALC 256
+.out: ALC 64
+
+-- Open and read input file
+.h: FOP .input_path .zero
+.len: FRD .h .buf 256
+.fc: FCL .h
+
+-- Runtime operations (marked with @)
+
+-- Read first byte from buffer
+@.byte0: GET .buf 0
+
+-- Convert ASCII to number: '5' (53) - 48 = 5
+@.val: SUB @.byte0 .ascii_offset
+
+-- Jump over the "bad" code
+@.jmp1: JMP :good_path
+
+-- This code should be skipped
+@.bad_val: ADD @.val 100
+
+:good_path
+
+-- Convert value to string (should be original value, not +100)
+@.its_len: ITS @.val .out
+
+-- Print result
+.done: PRT .out @.its_len
+
+!

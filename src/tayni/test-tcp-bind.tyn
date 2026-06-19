@@ -1,0 +1,16 @@
+-- TCP + BND test
+.out: ALC 64
+
+-- Create TCP socket
+@.sock: TCP
+
+-- Bind to port 8080
+@.bnd: BND @.sock 8080
+
+-- Convert bind result to string
+@.its1: ITS @.bnd .out
+
+-- Print
+.prt1: PRT .out @.its1
+
+!

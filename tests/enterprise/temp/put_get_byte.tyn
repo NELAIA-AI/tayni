@@ -1,0 +1,6 @@
+.out: ALC 32
+@.put: PUT .out 0 65
+@.get: GET .out 0
+@.str: ITS @.get .out
+.prt: PRT .out @.str
+!

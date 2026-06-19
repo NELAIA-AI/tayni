@@ -1,0 +1,24 @@
+-- TAYNI Test GET Debug
+-- Verify GET is generating code
+
+.zero: 0
+
+.data: ALC 64
+.out: ALC 64
+
+-- Store 42 at offset 0 of data buffer
+@.store: PUT .data 0 42
+
+-- Read back from data buffer
+@.read: GET .data 0
+
+-- Add 0 to force runtime and verify value
+@.val: ADD @.read .zero
+
+-- Convert to string
+@.len: ITS @.val .out
+
+-- Print
+.done: PRT .out @.len
+
+!

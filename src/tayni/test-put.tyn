@@ -1,0 +1,19 @@
+-- Test PUT and PRT
+-- Simple test: put bytes in buffer and print
+
+-- Allocate buffer
+.buf: ALC 16
+
+-- Put "ABCD" in buffer
+@.p0: PUT .buf 0 65
+@.p1: PUT .buf 1 66
+@.p2: PUT .buf 2 67
+@.p3: PUT .buf 3 68
+
+-- Length
+.len: 4
+
+-- Print
+.prt: PRT .buf .len
+
+!

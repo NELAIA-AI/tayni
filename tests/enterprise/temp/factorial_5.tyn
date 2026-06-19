@@ -1,0 +1,20 @@
+.out: ALC 64
+@.n: PUT .out 0 6
+@.result: PUT .out 8 1
+@.i: PUT .out 16 1
+:loop
+@.idx: GET .out 16
+@.max: GET .out 0
+@.diff: SUB @.max @.idx
+@.jz: JZ @.diff :end
+@.r: GET .out 8
+@.prod: MUL @.r @.idx
+@.ur: PUT .out 8 @.prod
+@.inc: ADD @.idx 1
+@.ui: PUT .out 16 @.inc
+@.jmp: JMP :loop
+:end
+@.final: GET .out 8
+@.str: ITS @.final .out
+.prt: PRT .out @.str
+!

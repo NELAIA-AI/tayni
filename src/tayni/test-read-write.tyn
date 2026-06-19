@@ -1,0 +1,19 @@
+-- Test: Read file and write to another file
+.buf: ALC 1536
+.out: ALC 32
+
+-- Read template
+.in_path: "pe-template.bin"
+@.in_h: FOP .in_path 0
+@.in_len: FRD @.in_h .buf 1536
+
+-- Write to output
+.out_path: "copy2.exe"
+@.out_h: FOP .out_path 1
+@.out_len: FWR @.out_h .buf 1536
+
+-- Print confirmation
+.msg: "OK"
+.done: PRT .msg 2
+
+!

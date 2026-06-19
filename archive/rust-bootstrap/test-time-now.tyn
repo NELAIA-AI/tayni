@@ -1,0 +1,8 @@
+-- Test TIME.NOW operation
+-- Should print current Unix timestamp (seconds since 1970)
+
+.buf: ALC 64
+@.ts: TIME.NOW
+@.len: ITS .ts .buf
+.prt: PRT .buf @.len
+!

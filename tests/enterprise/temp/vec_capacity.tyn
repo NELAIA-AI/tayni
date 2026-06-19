@@ -1,0 +1,7 @@
+.data: ALC 64
+.out: ALC 64
+@.vec: VEC 16
+@.cap: VCP .vec
+@.str: ITS @.cap .out
+.prt: PRT .out @.str
+!

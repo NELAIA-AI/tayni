@@ -1,0 +1,17 @@
+.data: ALC 512
+.pub_key: ALC 64
+.priv_key: ALC 64
+.ct: ALC 64
+.ss1: ALC 64
+.ss2: ALC 64
+.nl: "\n"
+
+@.kg: KYBER.KEYGEN .pub_key .priv_key
+@.enc: KYBER.ENCAPS .pub_key .ct .ss1
+@.dec: KYBER.DECAPS .priv_key .ct .ss2
+
+@.prt1: PRT .pub_key 9
+@.prt_nl: PRT .nl 1
+@.prt2: PRT .ss1 16
+@.prt_nl2: PRT .nl 1
+@.prt3: PRT .ss2 16

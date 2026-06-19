@@ -1,0 +1,49 @@
+-- TAYNI Parser v3 - Minimal test
+-- Just parse a number from position 4 of input
+-- Input: ".x: 42" -> should print "42"
+
+-- Constants
+.zero: 0
+.ten: 10
+.digit_0: 48
+.digit_9: 57
+
+-- Allocate buffers
+.src: ALC 256
+.out: ALC 64
+
+-- Read source file
+.src_path: "test-parse-input.tyn"
+.sh: FOP .src_path .zero
+.slen: FRD .sh .src 256
+.sc: FCL .sh
+
+-- Read digits at position 4 and 5
+-- ".x: 42" -> pos 4 = '4', pos 5 = '2'
+@.ch4: GET .src 4
+@.ch5: GET .src 5
+
+-- Convert first digit
+@.d0: SUB @.ch4 .digit_0
+
+-- Convert second digit
+@.d1_raw: SUB @.ch5 .digit_0
+
+-- Check if ch5 is a digit
+@.is_d5: GE @.ch5 .digit_0
+@.is_d5b: LE @.ch5 .digit_9
+@.valid5: MUL @.is_d5 @.is_d5b
+
+-- d1 = 0 if not valid, else d1_raw
+@.d1: IFZ @.valid5 .zero @.d1_raw
+
+-- Calculate value: d0 * 10 + d1 (if valid) or just d0
+@.tens: MUL @.d0 .ten
+@.sum: ADD @.tens @.d1
+@.value: IFZ @.valid5 @.d0 @.sum
+
+-- Print value
+@.len: ITS @.value .out
+.done: PRT .out @.len
+
+!

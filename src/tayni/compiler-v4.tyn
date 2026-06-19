@@ -1,0 +1,39 @@
+-- TAYNI Compiler v4 - Generate code bytes only
+-- Prints the x86-64 bytes that would be generated
+
+.zero: 0
+.one: 1
+
+-- Buffers
+.code: ALC 256
+.out: ALC 64
+
+-- ============================================
+-- Generate x86-64 code for "print Hi and exit"
+-- ============================================
+
+-- sub rsp, 56 (0x48 0x83 0xEC 0x38)
+@.w0: PUT .code 0 72
+@.w1: PUT .code 1 131
+@.w2: PUT .code 2 236
+@.w3: PUT .code 3 56
+
+-- mov ecx, -11 (0xB9 0xF5 0xFF 0xFF 0xFF)
+@.w4: PUT .code 4 185
+@.w5: PUT .code 5 245
+@.w6: PUT .code 6 255
+@.w7: PUT .code 7 255
+@.w8: PUT .code 8 255
+
+-- Verify first few bytes
+@.b0: GET .code 0
+@.b1: GET .code 1
+@.b2: GET .code 2
+@.b3: GET .code 3
+@.b4: GET .code 4
+
+-- Print byte 0 (should be 72 = 0x48)
+@.len0: ITS @.b0 .out
+.p0: PRT .out @.len0
+
+!

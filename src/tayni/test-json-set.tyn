@@ -1,0 +1,38 @@
+-- JSON.SET test
+-- Start with {"age":25} and change age to 99
+.json: ALC 128
+.key: ALC 16
+.newval: ALC 16
+.out: ALC 16
+
+-- Write {"age":25}
+@.j0: PUT .json 0 123
+@.j1: PUT .json 1 34
+@.j2: PUT .json 2 97
+@.j3: PUT .json 3 103
+@.j4: PUT .json 4 101
+@.j5: PUT .json 5 34
+@.j6: PUT .json 6 58
+@.j7: PUT .json 7 50
+@.j8: PUT .json 8 53
+@.j9: PUT .json 9 125
+@.j10: PUT .json 10 0
+
+-- Key = "age"
+@.k0: PUT .key 0 97
+@.k1: PUT .key 1 103
+@.k2: PUT .key 2 101
+@.k3: PUT .key 3 0
+
+-- New value = "99"
+@.v0: PUT .newval 0 57
+@.v1: PUT .newval 1 57
+@.v2: PUT .newval 2 0
+
+-- Set the value
+@.newlen: JSON.SET .json .key .newval
+
+-- Print modified JSON (should be {"age":99})
+.prt: PRT .json @.newlen
+
+!

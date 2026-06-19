@@ -1,0 +1,19 @@
+-- TAYNI v1.5 Complete Test
+-- Tests: compound operators, conditional jumps, for loop
+
+-- Test compound operators
+counter = 0
+counter += 5
+counter += 3
+
+-- Test conditional jump
+jge counter 8 :pass
+jmp :fail
+
+:pass
+-- Exit with success (counter should be 8)
+! 0
+
+:fail
+-- Exit with failure
+! 1

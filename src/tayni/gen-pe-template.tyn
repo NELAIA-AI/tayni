@@ -1,0 +1,280 @@
+-- TAYNI PE Template Generator
+-- Genera pe-template.bin: un PE mínimo válido para Windows x64
+-- Date: 2026-06-17
+
+-- Allocate buffer for PE (4KB)
+.pe: ALC 4096
+
+-- ============================================
+-- DOS HEADER (64 bytes) - offset 0
+-- ============================================
+.d00: PUT .pe 0 77     -- 'M' (0x4D)
+.d01: PUT .pe 1 90     -- 'Z' (0x5A)
+-- e_lfanew at offset 60 = 128 (PE header starts at 0x80)
+.d3c: PUT .pe 60 128
+.d3d: PUT .pe 61 0
+.d3e: PUT .pe 62 0
+.d3f: PUT .pe 63 0
+
+-- ============================================
+-- PE SIGNATURE (4 bytes) - offset 128
+-- ============================================
+.p80: PUT .pe 128 80   -- 'P' (0x50)
+.p81: PUT .pe 129 69   -- 'E' (0x45)
+.p82: PUT .pe 130 0
+.p83: PUT .pe 131 0
+
+-- ============================================
+-- COFF HEADER (20 bytes) - offset 132
+-- ============================================
+-- Machine: AMD64 (0x8664 = 34404)
+.c00: PUT .pe 132 100  -- 0x64
+.c01: PUT .pe 133 134  -- 0x86
+-- NumberOfSections: 1
+.c02: PUT .pe 134 1
+.c03: PUT .pe 135 0
+-- TimeDateStamp: 0 (4 bytes)
+.c04: PUT .pe 136 0
+.c05: PUT .pe 137 0
+.c06: PUT .pe 138 0
+.c07: PUT .pe 139 0
+-- PointerToSymbolTable: 0 (4 bytes)
+.c08: PUT .pe 140 0
+.c09: PUT .pe 141 0
+.c0a: PUT .pe 142 0
+.c0b: PUT .pe 143 0
+-- NumberOfSymbols: 0 (4 bytes)
+.c0c: PUT .pe 144 0
+.c0d: PUT .pe 145 0
+.c0e: PUT .pe 146 0
+.c0f: PUT .pe 147 0
+-- SizeOfOptionalHeader: 240 (0xF0)
+.c10: PUT .pe 148 240
+.c11: PUT .pe 149 0
+-- Characteristics: EXECUTABLE_IMAGE | LARGE_ADDRESS_AWARE (0x0022)
+.c12: PUT .pe 150 34
+.c13: PUT .pe 151 0
+
+-- ============================================
+-- OPTIONAL HEADER PE32+ - offset 152
+-- ============================================
+-- Magic: PE32+ (0x020B = 523)
+.o00: PUT .pe 152 11   -- 0x0B
+.o01: PUT .pe 153 2    -- 0x02
+-- Linker Version: 1.0
+.o02: PUT .pe 154 1
+.o03: PUT .pe 155 0
+-- SizeOfCode: 512 (0x200)
+.o04: PUT .pe 156 0
+.o05: PUT .pe 157 2
+.o06: PUT .pe 158 0
+.o07: PUT .pe 159 0
+-- SizeOfInitializedData: 0
+.o08: PUT .pe 160 0
+.o09: PUT .pe 161 0
+.o0a: PUT .pe 162 0
+.o0b: PUT .pe 163 0
+-- SizeOfUninitializedData: 0
+.o0c: PUT .pe 164 0
+.o0d: PUT .pe 165 0
+.o0e: PUT .pe 166 0
+.o0f: PUT .pe 167 0
+-- AddressOfEntryPoint: 0x1000 (4096)
+.o10: PUT .pe 168 0
+.o11: PUT .pe 169 16   -- 0x10
+.o12: PUT .pe 170 0
+.o13: PUT .pe 171 0
+-- BaseOfCode: 0x1000
+.o14: PUT .pe 172 0
+.o15: PUT .pe 173 16
+.o16: PUT .pe 174 0
+.o17: PUT .pe 175 0
+-- ImageBase: 0x140000000 (little endian)
+.o18: PUT .pe 176 0
+.o19: PUT .pe 177 0
+.o1a: PUT .pe 178 0
+.o1b: PUT .pe 179 64   -- 0x40
+.o1c: PUT .pe 180 1
+.o1d: PUT .pe 181 0
+.o1e: PUT .pe 182 0
+.o1f: PUT .pe 183 0
+-- SectionAlignment: 0x1000 (4096)
+.o20: PUT .pe 184 0
+.o21: PUT .pe 185 16
+.o22: PUT .pe 186 0
+.o23: PUT .pe 187 0
+-- FileAlignment: 0x200 (512)
+.o24: PUT .pe 188 0
+.o25: PUT .pe 189 2
+.o26: PUT .pe 190 0
+.o27: PUT .pe 191 0
+-- OS Version: 6.0
+.o28: PUT .pe 192 6
+.o29: PUT .pe 193 0
+.o2a: PUT .pe 194 0
+.o2b: PUT .pe 195 0
+-- Image Version: 0.0
+.o2c: PUT .pe 196 0
+.o2d: PUT .pe 197 0
+.o2e: PUT .pe 198 0
+.o2f: PUT .pe 199 0
+-- Subsystem Version: 6.0
+.o30: PUT .pe 200 6
+.o31: PUT .pe 201 0
+.o32: PUT .pe 202 0
+.o33: PUT .pe 203 0
+-- Win32VersionValue: 0
+.o34: PUT .pe 204 0
+.o35: PUT .pe 205 0
+.o36: PUT .pe 206 0
+.o37: PUT .pe 207 0
+-- SizeOfImage: 0x3000 (12288)
+.o38: PUT .pe 208 0
+.o39: PUT .pe 209 48   -- 0x30
+.o3a: PUT .pe 210 0
+.o3b: PUT .pe 211 0
+-- SizeOfHeaders: 0x200 (512)
+.o3c: PUT .pe 212 0
+.o3d: PUT .pe 213 2
+.o3e: PUT .pe 214 0
+.o3f: PUT .pe 215 0
+-- CheckSum: 0
+.o40: PUT .pe 216 0
+.o41: PUT .pe 217 0
+.o42: PUT .pe 218 0
+.o43: PUT .pe 219 0
+-- Subsystem: CONSOLE (3)
+.o44: PUT .pe 220 3
+.o45: PUT .pe 221 0
+-- DllCharacteristics: NX_COMPAT | DYNAMIC_BASE (0x0160)
+.o46: PUT .pe 222 96   -- 0x60
+.o47: PUT .pe 223 1    -- 0x01
+-- SizeOfStackReserve: 0x100000 (1MB)
+.o48: PUT .pe 224 0
+.o49: PUT .pe 225 0
+.o4a: PUT .pe 226 16   -- 0x10
+.o4b: PUT .pe 227 0
+.o4c: PUT .pe 228 0
+.o4d: PUT .pe 229 0
+.o4e: PUT .pe 230 0
+.o4f: PUT .pe 231 0
+-- SizeOfStackCommit: 0x1000 (4KB)
+.o50: PUT .pe 232 0
+.o51: PUT .pe 233 16
+.o52: PUT .pe 234 0
+.o53: PUT .pe 235 0
+.o54: PUT .pe 236 0
+.o55: PUT .pe 237 0
+.o56: PUT .pe 238 0
+.o57: PUT .pe 239 0
+-- SizeOfHeapReserve: 0x100000
+.o58: PUT .pe 240 0
+.o59: PUT .pe 241 0
+.o5a: PUT .pe 242 16
+.o5b: PUT .pe 243 0
+.o5c: PUT .pe 244 0
+.o5d: PUT .pe 245 0
+.o5e: PUT .pe 246 0
+.o5f: PUT .pe 247 0
+-- SizeOfHeapCommit: 0x1000
+.o60: PUT .pe 248 0
+.o61: PUT .pe 249 16
+.o62: PUT .pe 250 0
+.o63: PUT .pe 251 0
+.o64: PUT .pe 252 0
+.o65: PUT .pe 253 0
+.o66: PUT .pe 254 0
+.o67: PUT .pe 255 0
+-- LoaderFlags: 0
+.o68: PUT .pe 256 0
+.o69: PUT .pe 257 0
+.o6a: PUT .pe 258 0
+.o6b: PUT .pe 259 0
+-- NumberOfRvaAndSizes: 16
+.o6c: PUT .pe 260 16
+.o6d: PUT .pe 261 0
+.o6e: PUT .pe 262 0
+.o6f: PUT .pe 263 0
+
+-- ============================================
+-- DATA DIRECTORIES (128 bytes) - offset 264
+-- ============================================
+-- [0] Export: 0,0
+-- [1] Import: RVA=0x2000, Size=0x50 - at offset 272
+.dd10: PUT .pe 272 0
+.dd11: PUT .pe 273 32   -- 0x20 -> RVA 0x2000
+.dd12: PUT .pe 274 0
+.dd13: PUT .pe 275 0
+.dd14: PUT .pe 276 80   -- Size 0x50
+.dd15: PUT .pe 277 0
+.dd16: PUT .pe 278 0
+.dd17: PUT .pe 279 0
+
+-- ============================================
+-- SECTION HEADER .text (40 bytes) - offset 392
+-- ============================================
+-- Name: ".text"
+.s00: PUT .pe 392 46   -- '.'
+.s01: PUT .pe 393 116  -- 't'
+.s02: PUT .pe 394 101  -- 'e'
+.s03: PUT .pe 395 120  -- 'x'
+.s04: PUT .pe 396 116  -- 't'
+.s05: PUT .pe 397 0
+.s06: PUT .pe 398 0
+.s07: PUT .pe 399 0
+-- VirtualSize: 0x1000
+.s08: PUT .pe 400 0
+.s09: PUT .pe 401 16
+.s0a: PUT .pe 402 0
+.s0b: PUT .pe 403 0
+-- VirtualAddress: 0x1000
+.s0c: PUT .pe 404 0
+.s0d: PUT .pe 405 16
+.s0e: PUT .pe 406 0
+.s0f: PUT .pe 407 0
+-- SizeOfRawData: 0x200
+.s10: PUT .pe 408 0
+.s11: PUT .pe 409 2
+.s12: PUT .pe 410 0
+.s13: PUT .pe 411 0
+-- PointerToRawData: 0x200
+.s14: PUT .pe 412 0
+.s15: PUT .pe 413 2
+.s16: PUT .pe 414 0
+.s17: PUT .pe 415 0
+-- PointerToRelocations: 0
+.s18: PUT .pe 416 0
+.s19: PUT .pe 417 0
+.s1a: PUT .pe 418 0
+.s1b: PUT .pe 419 0
+-- PointerToLinenumbers: 0
+.s1c: PUT .pe 420 0
+.s1d: PUT .pe 421 0
+.s1e: PUT .pe 422 0
+.s1f: PUT .pe 423 0
+-- NumberOfRelocations: 0
+.s20: PUT .pe 424 0
+.s21: PUT .pe 425 0
+-- NumberOfLinenumbers: 0
+.s22: PUT .pe 426 0
+.s23: PUT .pe 427 0
+-- Characteristics: CODE | EXECUTE | READ (0x60000020)
+.s24: PUT .pe 428 32   -- 0x20
+.s25: PUT .pe 429 0
+.s26: PUT .pe 430 0
+.s27: PUT .pe 431 96   -- 0x60
+
+-- ============================================
+-- Write template to file
+-- ============================================
+.zero: 0
+.one: 1
+.template_path: "pe-template.bin"
+.fh: FOP .template_path .one
+.fw: FWR .fh .pe 512
+.fc: FCL .fh
+
+.msg: "OK: pe-template.bin\n"
+.done: PRT .msg 20
+
+!

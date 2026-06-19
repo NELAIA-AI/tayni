@@ -1,0 +1,222 @@
+// Example 30: AI/ML Integration
+// Demonstrates machine learning capabilities in TAYNI
+
+// Tensor operations (similar to NumPy/PyTorch)
+fn tensor_basics() {
+    // Create tensors
+    let a = Tensor::zeros([3, 3]);
+    let b = Tensor::ones([3, 3]);
+    let c = Tensor::from_data([1.0, 2.0, 3.0, 4.0], [2, 2]);
+    
+    print("Zeros:\n" + a.to_string());
+    print("Ones:\n" + b.to_string());
+    print("From data:\n" + c.to_string());
+    
+    // Basic operations
+    let sum = a + b;
+    let product = c * c;
+    let scaled = c * 2.0;
+    
+    print("Sum:\n" + sum.to_string());
+    print("Element-wise product:\n" + product.to_string());
+    print("Scaled:\n" + scaled.to_string());
+    
+    // Matrix multiplication
+    let d = Tensor::from_data([1.0, 2.0, 3.0, 4.0, 5.0, 6.0], [2, 3]);
+    let e = Tensor::from_data([1.0, 2.0, 3.0, 4.0, 5.0, 6.0], [3, 2]);
+    let matmul = d.matmul(e);
+    print("Matrix multiplication:\n" + matmul.to_string());
+    
+    // Reductions
+    let data = Tensor::from_data([1.0, 2.0, 3.0, 4.0, 5.0], [5]);
+    print("Sum: " + data.sum().to_string());
+    print("Mean: " + data.mean().to_string());
+    print("Max: " + data.max().to_string());
+    print("Min: " + data.min().to_string());
+}
+
+// Simple neural network
+struct LinearLayer {
+    weights: Tensor,
+    bias: Tensor
+}
+
+impl LinearLayer {
+    fn new(in_features: i32, out_features: i32) -> Self {
+        LinearLayer {
+            weights: Tensor::randn([in_features, out_features]) * 0.01,
+            bias: Tensor::zeros([out_features])
+        }
+    }
+    
+    fn forward(self, x: Tensor) -> Tensor {
+        x.matmul(self.weights) + self.bias
+    }
+}
+
+fn relu(x: Tensor) -> Tensor {
+    x.maximum(0.0)
+}
+
+fn softmax(x: Tensor) -> Tensor {
+    let exp_x = (x - x.max()).exp();
+    exp_x / exp_x.sum()
+}
+
+struct MLP {
+    layer1: LinearLayer,
+    layer2: LinearLayer,
+    layer3: LinearLayer
+}
+
+impl MLP {
+    fn new(input_size: i32, hidden_size: i32, output_size: i32) -> Self {
+        MLP {
+            layer1: LinearLayer::new(input_size, hidden_size),
+            layer2: LinearLayer::new(hidden_size, hidden_size),
+            layer3: LinearLayer::new(hidden_size, output_size)
+        }
+    }
+    
+    fn forward(self, x: Tensor) -> Tensor {
+        let h1 = relu(self.layer1.forward(x));
+        let h2 = relu(self.layer2.forward(h1));
+        softmax(self.layer3.forward(h2))
+    }
+}
+
+// Training loop
+fn train_example() {
+    // Create model
+    let model = MLP::new(784, 128, 10);  // MNIST-like
+    let learning_rate = 0.01;
+    
+    // Dummy data
+    let x = Tensor::randn([32, 784]);  // Batch of 32 images
+    let y = Tensor::zeros([32, 10]);   // One-hot labels
+    
+    // Training step
+    for epoch in 0..10 {
+        // Forward pass
+        let predictions = model.forward(x);
+        
+        // Cross-entropy loss
+        let loss = -(y * predictions.log()).sum() / 32.0;
+        
+        // Backward pass (autograd)
+        loss.backward();
+        
+        // Update weights
+        model.layer1.weights -= model.layer1.weights.grad() * learning_rate;
+        model.layer1.bias -= model.layer1.bias.grad() * learning_rate;
+        model.layer2.weights -= model.layer2.weights.grad() * learning_rate;
+        model.layer2.bias -= model.layer2.bias.grad() * learning_rate;
+        model.layer3.weights -= model.layer3.weights.grad() * learning_rate;
+        model.layer3.bias -= model.layer3.bias.grad() * learning_rate;
+        
+        // Zero gradients
+        model.zero_grad();
+        
+        print("Epoch " + epoch.to_string() + ", Loss: " + loss.item().to_string());
+    }
+}
+
+// ONNX model loading
+fn onnx_example() {
+    // Load pre-trained model
+    let model = OnnxModel::load("model.onnx").unwrap();
+    
+    print("Model inputs: " + model.input_names().to_string());
+    print("Model outputs: " + model.output_names().to_string());
+    
+    // Prepare input
+    let input = Tensor::randn([1, 3, 224, 224]);  // ImageNet format
+    
+    // Run inference
+    let outputs = model.run([("input", input)]).unwrap();
+    let predictions = outputs["output"];
+    
+    // Get top-5 predictions
+    let (values, indices) = predictions.topk(5);
+    print("Top 5 predictions:");
+    for i in 0..5 {
+        print("  " + indices[i].to_string() + ": " + values[i].to_string());
+    }
+}
+
+// Embeddings and similarity
+fn embeddings_example() {
+    // Text embeddings (simulated)
+    let texts = [
+        "The quick brown fox",
+        "A fast auburn canine",
+        "Hello world program",
+        "Machine learning is fun"
+    ];
+    
+    // Generate embeddings (would use actual model)
+    let embeddings: [Tensor] = texts.map(|t| {
+        // Simulated embedding
+        Tensor::randn([384])
+    });
+    
+    // Compute similarity matrix
+    print("Similarity matrix:");
+    for i in 0..texts.len() {
+        let mut row = "";
+        for j in 0..texts.len() {
+            let sim = cosine_similarity(embeddings[i], embeddings[j]);
+            row += sim.to_string().slice(0, 5) + " ";
+        }
+        print(row);
+    }
+}
+
+fn cosine_similarity(a: Tensor, b: Tensor) -> f32 {
+    let dot = (a * b).sum();
+    let norm_a = (a * a).sum().sqrt();
+    let norm_b = (b * b).sum().sqrt();
+    dot / (norm_a * norm_b)
+}
+
+// Quantization for edge deployment
+fn quantization_example() {
+    let model = MLP::new(784, 128, 10);
+    
+    // Quantize to int8
+    let quantized = model.quantize(QuantConfig {
+        dtype: DType::Int8,
+        calibration_data: Tensor::randn([100, 784])
+    });
+    
+    print("Original size: " + model.size_bytes().to_string() + " bytes");
+    print("Quantized size: " + quantized.size_bytes().to_string() + " bytes");
+    
+    // Compare accuracy
+    let test_input = Tensor::randn([1, 784]);
+    let original_output = model.forward(test_input);
+    let quantized_output = quantized.forward(test_input);
+    
+    let diff = (original_output - quantized_output).abs().mean();
+    print("Mean absolute difference: " + diff.to_string());
+}
+
+fn main() {
+    print("=== AI/ML Integration Demo ===\n");
+    
+    print("1. Tensor basics:");
+    tensor_basics();
+    
+    print("\n2. Neural network training:");
+    train_example();
+    
+    print("\n3. Embeddings and similarity:");
+    embeddings_example();
+    
+    print("\n4. Quantization:");
+    quantization_example();
+    
+    // ONNX requires actual model file
+    // print("\n5. ONNX inference:");
+    // onnx_example();
+}

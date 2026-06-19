@@ -1,0 +1,182 @@
+-- TAYNI Self-Hosting Test: Template + Hardcoded Code
+-- Uses pe-template.bin to generate a working exe
+-- 
+-- The generated exe will:
+--   1. Call GetStdHandle(-11) to get stdout
+--   2. Call WriteFile to print "Hi\n"
+--   3. Call ExitProcess(0)
+--
+-- Date: 2026-06-17
+
+-- Constants
+.zero: 0
+.one: 1
+
+-- Allocate buffers
+.template: ALC 2048
+.code: ALC 512
+
+-- ============================================
+-- STEP 1: Read template
+-- ============================================
+.template_path: "pe-template.bin"
+.th: FOP .template_path .zero
+.tlen: FRD .th .template 1536
+.tc: FCL .th
+
+-- ============================================
+-- STEP 2: Write x86-64 code to .code buffer
+-- Code starts at file offset 0x200, RVA 0x1000
+-- IAT is at RVA 0x2080:
+--   [0] ExitProcess  at 0x2080
+--   [1] GetStdHandle at 0x2088
+--   [2] WriteFile    at 0x2090
+-- ============================================
+
+-- Position counter
+@.pos: 0
+
+-- sub rsp, 56 (0x38) - allocate shadow space + align
+-- 48 83 EC 38
+.c00: PUT .code 0 72    -- 0x48
+.c01: PUT .code 1 131   -- 0x83
+.c02: PUT .code 2 236   -- 0xEC
+.c03: PUT .code 3 56    -- 0x38
+
+-- mov ecx, -11 (STD_OUTPUT_HANDLE)
+-- B9 F5 FF FF FF
+.c04: PUT .code 4 185   -- 0xB9
+.c05: PUT .code 5 245   -- 0xF5
+.c06: PUT .code 6 255   -- 0xFF
+.c07: PUT .code 7 255   -- 0xFF
+.c08: PUT .code 8 255   -- 0xFF
+
+-- call [rip + offset_to_GetStdHandle]
+-- GetStdHandle is at IAT[1] = RVA 0x2088
+-- Current RIP after this instruction = 0x1000 + 15 = 0x100F
+-- Offset = 0x2088 - 0x100F = 0x1079
+-- FF 15 79 10 00 00
+.c09: PUT .code 9 255   -- 0xFF
+.c0a: PUT .code 10 21   -- 0x15
+.c0b: PUT .code 11 121  -- 0x79
+.c0c: PUT .code 12 16   -- 0x10
+.c0d: PUT .code 13 0
+.c0e: PUT .code 14 0
+
+-- Save handle to [rsp+32]
+-- mov [rsp+32], rax
+-- 48 89 44 24 20
+.c0f: PUT .code 15 72   -- 0x48
+.c10: PUT .code 16 137  -- 0x89
+.c11: PUT .code 17 68   -- 0x44
+.c12: PUT .code 18 36   -- 0x24
+.c13: PUT .code 19 32   -- 0x20
+
+-- Put "Hi\n" at [rsp+40]
+-- mov dword [rsp+40], 0x000A6948  ('H'=0x48, 'i'=0x69, '\n'=0x0A)
+-- C7 44 24 28 48 69 0A 00
+.c14: PUT .code 20 199  -- 0xC7
+.c15: PUT .code 21 68   -- 0x44
+.c16: PUT .code 22 36   -- 0x24
+.c17: PUT .code 23 40   -- 0x28
+.c18: PUT .code 24 72   -- 'H' = 0x48
+.c19: PUT .code 25 105  -- 'i' = 0x69
+.c1a: PUT .code 26 10   -- '\n' = 0x0A
+.c1b: PUT .code 27 0
+
+-- WriteFile(handle, buffer, length, &written, NULL)
+-- rcx = handle
+-- mov rcx, [rsp+32]
+-- 48 8B 4C 24 20
+.c1c: PUT .code 28 72   -- 0x48
+.c1d: PUT .code 29 139  -- 0x8B
+.c1e: PUT .code 30 76   -- 0x4C
+.c1f: PUT .code 31 36   -- 0x24
+.c20: PUT .code 32 32   -- 0x20
+
+-- rdx = buffer = rsp+40
+-- lea rdx, [rsp+40]
+-- 48 8D 54 24 28
+.c21: PUT .code 33 72   -- 0x48
+.c22: PUT .code 34 141  -- 0x8D
+.c23: PUT .code 35 84   -- 0x54
+.c24: PUT .code 36 36   -- 0x24
+.c25: PUT .code 37 40   -- 0x28
+
+-- r8d = length = 3
+-- 41 B8 03 00 00 00
+.c26: PUT .code 38 65   -- 0x41
+.c27: PUT .code 39 184  -- 0xB8
+.c28: PUT .code 40 3
+.c29: PUT .code 41 0
+.c2a: PUT .code 42 0
+.c2b: PUT .code 43 0
+
+-- r9 = &written = rsp+48
+-- lea r9, [rsp+48]
+-- 4C 8D 4C 24 30
+.c2c: PUT .code 44 76   -- 0x4C
+.c2d: PUT .code 45 141  -- 0x8D
+.c2e: PUT .code 46 76   -- 0x4C
+.c2f: PUT .code 47 36   -- 0x24
+.c30: PUT .code 48 48   -- 0x30
+
+-- push NULL for lpOverlapped (5th arg on stack)
+-- mov qword [rsp+32], 0
+-- 48 C7 44 24 20 00 00 00 00
+.c31: PUT .code 49 72   -- 0x48
+.c32: PUT .code 50 199  -- 0xC7
+.c33: PUT .code 51 68   -- 0x44
+.c34: PUT .code 52 36   -- 0x24
+.c35: PUT .code 53 32   -- 0x20
+.c36: PUT .code 54 0
+.c37: PUT .code 55 0
+.c38: PUT .code 56 0
+.c39: PUT .code 57 0
+
+-- call [rip + offset_to_WriteFile]
+-- WriteFile is at IAT[2] = RVA 0x2090
+-- Current RIP = 0x1000 + 64 = 0x1040
+-- Offset = 0x2090 - 0x1040 = 0x1050
+-- FF 15 50 10 00 00
+.c3a: PUT .code 58 255  -- 0xFF
+.c3b: PUT .code 59 21   -- 0x15
+.c3c: PUT .code 60 38   -- 0x26 (adjusted)
+.c3d: PUT .code 61 16   -- 0x10
+.c3e: PUT .code 62 0
+.c3f: PUT .code 63 0
+
+-- xor ecx, ecx (exit code 0)
+-- 31 C9
+.c40: PUT .code 64 49   -- 0x31
+.c41: PUT .code 65 201  -- 0xC9
+
+-- call [rip + offset_to_ExitProcess]
+-- ExitProcess is at IAT[0] = RVA 0x2080
+-- Current RIP = 0x1000 + 72 = 0x1048
+-- Offset = 0x2080 - 0x1048 = 0x1038
+-- FF 15 38 10 00 00
+.c42: PUT .code 66 255  -- 0xFF
+.c43: PUT .code 67 21   -- 0x15
+.c44: PUT .code 68 18   -- 0x12 (adjusted)
+.c45: PUT .code 69 16   -- 0x10
+.c46: PUT .code 70 0
+.c47: PUT .code 71 0
+
+-- ============================================
+-- STEP 3: Copy code to template at offset 0x200
+-- ============================================
+.copy: CPY .template 512 .code 72
+
+-- ============================================
+-- STEP 4: Write output exe
+-- ============================================
+.out_path: "hello-from-tayni.exe"
+.oh: FOP .out_path .one
+.ow: FWR .oh .template 1536
+.oc: FCL .oh
+
+.msg: "OK: hello-from-tayni.exe\n"
+.done: PRT .msg 25
+
+!

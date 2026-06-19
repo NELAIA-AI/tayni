@@ -1,0 +1,56 @@
+-- Test: 40 PUT operations
+.tpl: ALC 1536
+.out: ALC 32
+
+.tpl_path: "pe-template.bin"
+@.tpl_h: FOP .tpl_path 0
+@.tpl_len: FRD @.tpl_h .tpl 1536
+
+.c0: PUT .tpl 512 72
+.c1: PUT .tpl 513 131
+.c2: PUT .tpl 514 236
+.c3: PUT .tpl 515 56
+.c4: PUT .tpl 516 185
+.c5: PUT .tpl 517 245
+.c6: PUT .tpl 518 255
+.c7: PUT .tpl 519 255
+.c8: PUT .tpl 520 255
+.c9: PUT .tpl 521 255
+.c10: PUT .tpl 522 21
+.c11: PUT .tpl 523 121
+.c12: PUT .tpl 524 16
+.c13: PUT .tpl 525 0
+.c14: PUT .tpl 526 0
+.c15: PUT .tpl 527 72
+.c16: PUT .tpl 528 137
+.c17: PUT .tpl 529 68
+.c18: PUT .tpl 530 36
+.c19: PUT .tpl 531 48
+.c20: PUT .tpl 532 198
+.c21: PUT .tpl 533 68
+.c22: PUT .tpl 534 36
+.c23: PUT .tpl 535 40
+.c24: PUT .tpl 536 51
+.c25: PUT .tpl 537 198
+.c26: PUT .tpl 538 68
+.c27: PUT .tpl 539 36
+.c28: PUT .tpl 540 41
+.c29: PUT .tpl 541 48
+.c30: PUT .tpl 542 198
+.c31: PUT .tpl 543 68
+.c32: PUT .tpl 544 36
+.c33: PUT .tpl 545 42
+.c34: PUT .tpl 546 10
+.c35: PUT .tpl 547 72
+.c36: PUT .tpl 548 139
+.c37: PUT .tpl 549 76
+.c38: PUT .tpl 550 36
+.c39: PUT .tpl 551 48
+
+.p0: PUT .out 0 79
+.p1: PUT .out 1 75
+.p2: PUT .out 2 10
+
+.done: PRT .out 3
+
+!

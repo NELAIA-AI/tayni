@@ -1,0 +1,4 @@
+.data: "Hello, World!"
+.hash: ALC 128
+@.len: HASH.SHA256 .hash .data 13
+@.out: PRT .hash .len

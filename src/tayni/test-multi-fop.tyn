@@ -1,0 +1,27 @@
+-- Test multiple FOP operations
+-- Read from input.txt, write to output.txt
+
+-- Strings for file paths
+.input_path: "input.txt"
+.output_path: "output.txt"
+
+-- Allocate buffers
+.buf: ALC 256
+
+-- Open input file for reading (mode 0)
+@.in_handle: FOP .input_path 0
+
+-- Read from input file into buffer
+@.bytes_read: FRD @.in_handle .buf 256
+
+-- Open output file for writing (mode 1)
+@.out_handle: FOP .output_path 1
+
+-- Write buffer to output file
+@.bytes_written: FWR @.out_handle .buf @.bytes_read
+
+-- Print bytes written
+@.len: ITS @.bytes_written .buf
+.done: PRT .buf @.len
+
+!

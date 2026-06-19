@@ -1,1 +1,3 @@
-Hello from TAYNI test!
+Hello World!
+This is a test file for ROT13 encoding.
+ABCDEFGHIJKLMNOPQRSTUVWXYZ

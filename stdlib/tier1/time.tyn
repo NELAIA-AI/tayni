@@ -1,11 +1,16 @@
 -- TAYNI stdlib: time v1.0
--- Provides: TIME.NOW, TIME.SLEEP, TIME.FORMAT
+-- Provides: TIME.NOW, TIME.NOW_MS, TIME.SLEEP (native runtime operations)
 -- Usage: USE time
 --
 -- AI-Native Design:
--- - Direct syscall access
+-- - Direct syscall access (GetSystemTimeAsFileTime, Sleep from kernel32.dll)
 -- - No timezone complexity (UTC by default)
--- - Unwound date calculations
+-- - TIME.NOW and TIME.NOW_MS return milliseconds since Unix epoch
+-- - TIME.SLEEP pauses execution for N milliseconds
+--
+-- STATUS: TIME.NOW, TIME.NOW_MS, TIME.SLEEP are NATIVE operations
+--         (compiled directly to x86-64 via IAT calls, no interpreter needed)
+--         TIME.FORMAT, TIME.PARSE are NOT YET IMPLEMENTED
 
 -- ============================================================
 -- SYSCALL DECLARATIONS (Windows)

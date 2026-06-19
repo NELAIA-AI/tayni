@@ -1,0 +1,7 @@
+.data: ALC 256
+.csv_data: "name,age,city\nAlice,30,NYC\nBob,25,LA"
+.field: ALC 64
+
+@.csv: CSV.PARSE .csv_data 38
+@.len: CSV.GET_FIELD .field .csv 1
+@.prt: PRT .field .len

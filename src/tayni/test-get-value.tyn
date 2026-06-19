@@ -1,0 +1,21 @@
+-- TAYNI Test GET Value
+-- Store 65 (A), read back, print directly
+
+.zero: 0
+
+.data: ALC 64
+.out: ALC 64
+
+-- Store 65 at offset 0 of data buffer
+@.store: PUT .data 0 65
+
+-- Read back from data buffer
+@.read: GET .data 0
+
+-- Store the read value in out buffer
+@.put_out: PUT .out 0 @.read
+
+-- Print 1 byte from out buffer
+.done: PRT .out 1
+
+!

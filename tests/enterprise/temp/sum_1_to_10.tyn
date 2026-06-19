@@ -1,0 +1,18 @@
+.out: ALC 64
+@.sum: PUT .out 0 0
+@.i: PUT .out 8 1
+:loop
+@.idx: GET .out 8
+@.cmp: SUB @.idx 11
+@.jz: JZ @.cmp :end
+@.s: GET .out 0
+@.add: ADD @.s @.idx
+@.us: PUT .out 0 @.add
+@.inc: ADD @.idx 1
+@.ui: PUT .out 8 @.inc
+@.jmp: JMP :loop
+:end
+@.final: GET .out 0
+@.str: ITS @.final .out
+.prt: PRT .out @.str
+!

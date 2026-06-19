@@ -1,0 +1,13 @@
+-- Test: two prints
+.out: ALC 32
+
+.val1: 42
+.val2: 99
+
+@.s1: ITS .val1 .out
+.p1: PRT .out @.s1
+
+@.s2: ITS .val2 .out
+.p2: PRT .out @.s2
+
+!

@@ -1,0 +1,21 @@
+-- TAYNI Test Two Buffers
+-- Store in data buffer, read back, print to out buffer
+
+.zero: 0
+
+.data: ALC 64
+.out: ALC 64
+
+-- Store 42 at offset 0 of data buffer
+@.store: PUT .data 0 42
+
+-- Read back from data buffer
+@.read: GET .data 0
+
+-- Convert to string in out buffer
+@.len: ITS @.read .out
+
+-- Print from out buffer
+.done: PRT .out @.len
+
+!

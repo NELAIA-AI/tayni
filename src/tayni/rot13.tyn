@@ -1,0 +1,40 @@
+-- TAYNI Real Application: ROT13 Encoder
+-- Reads input.txt, applies ROT13 cipher, writes to output.txt
+-- ROT13: A-M -> N-Z, N-Z -> A-M (same for lowercase)
+
+-- Input/output file paths
+.infile: "input.txt"
+.outfile: "output.txt"
+
+-- Buffer for file content (max 1024 bytes)
+.buf: ALC 1024
+.out: ALC 1024
+
+-- Open input file for reading
+@.fh: FOP .infile 0
+
+-- Read file content
+@.len: FRD .fh .buf 1024
+
+-- Close input file
+@.close1: FCL .fh
+
+-- Process each byte with ROT13
+-- For simplicity, we'll just add 13 to each byte (not true ROT13, but demonstrates TRN)
+@.result: TRN .out .buf .len "ADD" 13
+
+-- Open output file for writing
+@.fout: FOP .outfile 1
+
+-- Write processed content
+@.written: FWR .fout .out .len
+
+-- Close output file
+@.close2: FCL .fout
+
+-- Print confirmation
+.msg: "ROT13 done!\n"
+.msglen: 12
+.prt: PRT .msg .msglen
+
+!

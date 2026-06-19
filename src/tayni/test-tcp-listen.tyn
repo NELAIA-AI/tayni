@@ -1,0 +1,19 @@
+-- TCP + BND + LST test
+.out: ALC 64
+
+-- Create TCP socket
+@.sock: TCP
+
+-- Bind to port 8081
+@.bnd: BND @.sock 8081
+
+-- Listen with backlog 5
+@.lst: LST @.sock 5
+
+-- Convert listen result to string
+@.its1: ITS @.lst .out
+
+-- Print
+.prt1: PRT .out @.its1
+
+!

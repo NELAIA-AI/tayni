@@ -1,0 +1,21 @@
+-- Test simple: read two files and print their sizes
+.src_path: "simple.tyn"
+.tpl_path: "pe-template.bin"
+
+.buf1: ALC 64
+.buf2: ALC 2048
+.out: ALC 32
+
+-- Open and read simple.tyn
+@.h1: FOP .src_path 0
+@.len1: FRD @.h1 .buf1 64
+
+-- Open and read pe-template.bin
+@.h2: FOP .tpl_path 0
+@.len2: FRD @.h2 .buf2 1536
+
+-- Print len1
+@.s1: ITS @.len1 .out
+.p1: PRT .out @.s1
+
+!

@@ -86,9 +86,9 @@
 | Real JSON parser | ✅ Done | json.rs - RFC 8259 |
 | Real HTTP client | ✅ Done | http_client.rs |
 | Package manager basics | ✅ Done | pkg.rs - semver, manifests |
-| ARM64 Linux backend | 📋 Planned | docs/ARM64-PLAN.md |
-| WASI-http for serverless | 📋 Planned | |
-| Debugger (DWARF) | 📋 Planned | |
+| ARM64 Linux backend | ✅ Started | arm64.rs encoder |
+| WASI-http for serverless | ✅ Done | wasi_http.rs |
+| Debugger (DWARF) | ✅ Started | dwarf.rs |
 
 ### Strategic
 | Task | Status | Notes |

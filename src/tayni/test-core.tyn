@@ -1,0 +1,75 @@
+-- TAYNI Core Operations Test Suite
+-- Tests all working core operations
+
+-- ========== SETUP ==========
+.data: ALC 256
+.out: ALC 256
+.zero: 0
+.one: 1
+
+-- ========== TEST 1: Arithmetic ==========
+-- Test ADD: 10 + 5 = 15
+@.store1: PUT .data 0 10
+@.a: GET .data 0
+@.add_result: ADD @.a 5
+
+-- Test SUB: 15 - 3 = 12
+@.sub_result: SUB @.add_result 3
+
+-- Test MUL: 12 * 2 = 24
+@.mul_result: MUL @.sub_result 2
+
+-- Print arithmetic result (should be 24)
+@.its1: ITS @.mul_result .out
+.prt1: PRT .out @.its1
+
+-- Print newline
+@.nl1: PUT .out 0 10
+.pnl1: PRT .out .one
+
+-- ========== TEST 2: Comparisons with JZ ==========
+-- Test: if 5 == 5, print 1, else print 0
+@.cmp1: SUB 5 5
+@.jz1: JZ @.cmp1 :eq_true
+@.eq_false: PUT .out 0 48
+@.jmp1: JMP :eq_done
+:eq_true
+@.eq_true: PUT .out 0 49
+:eq_done
+.prt2: PRT .out .one
+
+-- Print newline
+@.nl2: PUT .out 0 10
+.pnl2: PRT .out .one
+
+-- ========== TEST 3: Loop (count to 5) ==========
+@.counter: PUT .data 0 0
+:loop_start
+@.i: GET .data 0
+@.check: SUB 5 @.i
+@.done: JZ @.check :loop_end
+@.inc: ADD @.i .one
+@.store_i: PUT .data 0 @.inc
+@.jmp_loop: JMP :loop_start
+:loop_end
+
+-- Print final counter (should be 5)
+@.final: GET .data 0
+@.its3: ITS @.final .out
+.prt3: PRT .out @.its3
+
+-- Print newline
+@.nl3: PUT .out 0 10
+.pnl3: PRT .out .one
+
+-- ========== TEST 4: Memory GET/PUT ==========
+-- Store 65 (A), 66 (B), 67 (C) and print
+@.put_a: PUT .out 0 65
+@.put_b: PUT .out 1 66
+@.put_c: PUT .out 2 67
+@.put_nl: PUT .out 3 10
+.len4: 4
+.prt4: PRT .out .len4
+
+-- ========== DONE ==========
+!

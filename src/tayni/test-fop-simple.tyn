@@ -1,0 +1,3 @@
+# Simple FOP test
+.path: "input.txt"
+@.handle: FOP .path 0

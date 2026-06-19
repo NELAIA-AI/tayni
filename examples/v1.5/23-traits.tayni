@@ -1,0 +1,172 @@
+// Example 23: Traits and Interfaces
+// Demonstrates trait-based polymorphism in TAYNI
+
+// Define a trait for printable types
+trait Display {
+    fn display(self) -> str;
+}
+
+// Define a trait for comparable types
+trait Comparable {
+    fn compare(self, other: Self) -> i32;  // -1, 0, 1
+    
+    fn less_than(self, other: Self) -> bool {
+        self.compare(other) < 0
+    }
+    
+    fn greater_than(self, other: Self) -> bool {
+        self.compare(other) > 0
+    }
+    
+    fn equals(self, other: Self) -> bool {
+        self.compare(other) == 0
+    }
+}
+
+// Define a trait for numeric operations
+trait Numeric {
+    fn zero() -> Self;
+    fn one() -> Self;
+    fn add(self, other: Self) -> Self;
+    fn mul(self, other: Self) -> Self;
+}
+
+// Implement traits for a custom type
+struct Temperature {
+    celsius: f64
+}
+
+impl Display for Temperature {
+    fn display(self) -> str {
+        self.celsius.to_string() + "°C"
+    }
+}
+
+impl Comparable for Temperature {
+    fn compare(self, other: Temperature) -> i32 {
+        if self.celsius < other.celsius {
+            -1
+        } else if self.celsius > other.celsius {
+            1
+        } else {
+            0
+        }
+    }
+}
+
+impl Temperature {
+    fn new(celsius: f64) -> Self {
+        Temperature { celsius }
+    }
+    
+    fn to_fahrenheit(self) -> f64 {
+        self.celsius * 9.0 / 5.0 + 32.0
+    }
+    
+    fn from_fahrenheit(f: f64) -> Self {
+        Temperature { celsius: (f - 32.0) * 5.0 / 9.0 }
+    }
+}
+
+// Another type implementing the same traits
+struct Distance {
+    meters: f64
+}
+
+impl Display for Distance {
+    fn display(self) -> str {
+        if self.meters >= 1000.0 {
+            (self.meters / 1000.0).to_string() + " km"
+        } else if self.meters < 1.0 {
+            (self.meters * 100.0).to_string() + " cm"
+        } else {
+            self.meters.to_string() + " m"
+        }
+    }
+}
+
+impl Comparable for Distance {
+    fn compare(self, other: Distance) -> i32 {
+        if self.meters < other.meters {
+            -1
+        } else if self.meters > other.meters {
+            1
+        } else {
+            0
+        }
+    }
+}
+
+// Generic function using trait bounds
+fn print_all<T: Display>(items: [T]) {
+    for item in items {
+        print(item.display());
+    }
+}
+
+fn find_max<T: Comparable>(items: [T]) -> Option<T> {
+    if items.len() == 0 {
+        return Option::None;
+    }
+    
+    let max = items[0];
+    for i in 1..items.len() {
+        if items[i].greater_than(max) {
+            max = items[i];
+        }
+    }
+    Option::Some(max)
+}
+
+fn find_min<T: Comparable>(items: [T]) -> Option<T> {
+    if items.len() == 0 {
+        return Option::None;
+    }
+    
+    let min = items[0];
+    for i in 1..items.len() {
+        if items[i].less_than(min) {
+            min = items[i];
+        }
+    }
+    Option::Some(min)
+}
+
+fn main() {
+    // Create temperatures
+    let temps = [
+        Temperature::new(20.0),
+        Temperature::new(35.0),
+        Temperature::new(-5.0),
+        Temperature::new(100.0)
+    ];
+    
+    print("Temperatures:");
+    print_all(temps);
+    
+    let max_temp = find_max(temps).unwrap();
+    let min_temp = find_min(temps).unwrap();
+    print("Max: " + max_temp.display());
+    print("Min: " + min_temp.display());
+    
+    // Create distances
+    let distances = [
+        Distance { meters: 100.0 },
+        Distance { meters: 5000.0 },
+        Distance { meters: 0.5 },
+        Distance { meters: 42195.0 }  // Marathon
+    ];
+    
+    print("\nDistances:");
+    print_all(distances);
+    
+    let max_dist = find_max(distances).unwrap();
+    print("Longest: " + max_dist.display());
+    
+    // Temperature conversion
+    let boiling = Temperature::new(100.0);
+    print("\n" + boiling.display() + " = " + boiling.to_fahrenheit().to_string() + "°F");
+    
+    let freezing = Temperature::from_fahrenheit(32.0);
+    print("32°F = " + freezing.display());
+}

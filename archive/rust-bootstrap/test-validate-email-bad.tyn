@@ -1,0 +1,5 @@
+.email: "invalid-email"
+.buf: ALC 32
+@.valid: VALIDATE.EMAIL .email 13
+@.len: FORMAT.INT .buf .valid
+@.out: PRT .buf .len

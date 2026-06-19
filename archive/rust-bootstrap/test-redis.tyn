@@ -1,0 +1,11 @@
+.data: ALC 256
+.host: "localhost"
+.key: "mykey"
+.value: "myvalue"
+.result: ALC 64
+.buf: ALC 32
+
+@.conn: REDIS.CONNECT .host 6379
+@.set: REDIS.SET .conn .key 5 .value 7
+@.len: FORMAT.INT .buf .set
+@.prt: PRT .buf .len

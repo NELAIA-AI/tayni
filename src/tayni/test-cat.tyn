@@ -1,0 +1,30 @@
+-- CAT test - concatenate strings
+.src1: ALC 64
+.src2: ALC 64
+.dst: ALC 128
+
+-- Write "Hello" to src1
+@.a0: PUT .src1 0 72
+@.a1: PUT .src1 1 101
+@.a2: PUT .src1 2 108
+@.a3: PUT .src1 3 108
+@.a4: PUT .src1 4 111
+@.a5: PUT .src1 5 0
+
+-- Write "World" to src2
+@.b0: PUT .src2 0 87
+@.b1: PUT .src2 1 111
+@.b2: PUT .src2 2 114
+@.b3: PUT .src2 3 108
+@.b4: PUT .src2 4 100
+@.b5: PUT .src2 5 0
+
+-- Concatenate
+@.len: CAT .dst .src1 .src2
+
+-- Print result (should be "HelloWorld" = 10 chars)
+.out: ALC 32
+@.n: ITS @.len .out
+.prt: PRT .out @.n
+
+!

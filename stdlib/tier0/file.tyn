@@ -1,68 +1,50 @@
--- TAYNI stdlib: file v1.0 (AI-Native Pure)
--- Provides: FILE operations via inline expansion
--- Usage: USE file
--- 
--- AI-Native Design:
--- - No FUN (functions require runtime stack)
--- - Operations expand inline at compile time
--- - Each operation is a template that gets instantiated
+-- TAYNI Standard Library: File Operations
+-- Tier 0: Essential
+-- Version: 0.1.0
 
 -- ============================================================
--- FILE CONSTANTS
+-- FILE.READ - Read entire file into buffer
+-- Input: .path (filename string), .buf (destination buffer), .maxlen (max bytes)
+-- Output: bytes read
 -- ============================================================
-.FILE_READ: 0
-.FILE_WRITE: 1
-
--- ============================================================
--- FILE.READ Template
--- Usage: Copy and customize with your paths/buffers
--- ============================================================
--- .myfile: "path/to/file.txt"
--- .myhandle: FOP .myfile .FILE_READ
--- .mybuf: ALC 4096
--- .mylen: FRD .myhandle .mybuf 4096
--- .myclose: FCL .myhandle
-
--- ============================================================
--- FILE.WRITE Template
--- Usage: Copy and customize with your paths/data
--- ============================================================
--- .outfile: "path/to/output.txt"
--- .outhandle: FOP .outfile .FILE_WRITE
--- .outlen: FWR .outhandle .data .datalen
--- .outclose: FCL .outhandle
-
--- ============================================================
--- FILE.COPY Template
--- Usage: Copy file from src to dst
--- ============================================================
--- .srcpath: "source.txt"
--- .srch: FOP .srcpath .FILE_READ
--- .buf: ALC 65536
--- .len: FRD .srch .buf 65536
--- .srcc: FCL .srch
--- .dstpath: "dest.txt"
--- .dsth: FOP .dstpath .FILE_WRITE
--- .wlen: FWR .dsth .buf .len
--- .dstc: FCL .dsth
-
--- ============================================================
--- Example: Read file and print length
--- ============================================================
--- USE file
--- 
--- .path: "test.txt"
--- .h: FOP .path .FILE_READ
+-- Usage:
+-- .path: "data.txt"
 -- .buf: ALC 4096
--- .len: FRD .h .buf 4096
--- .c: FCL .h
--- 
--- .msg: "File length: "
--- .p1: PRT .msg 13
--- .num: ALC 16
--- .its: ITS .len .num
--- .p2: PRT .num .its
--- .nl: "\n"
--- .p3: PRT .nl 1
+-- @.fh: FOP .path 0
+-- @.len: FRD .fh .buf 4096
+-- @.close: FCL .fh
+
+-- ============================================================
+-- FILE.WRITE - Write buffer to file
+-- Input: .path (filename string), .buf (source buffer), .len (bytes to write)
+-- Output: bytes written
+-- ============================================================
+-- Usage:
+-- .path: "output.txt"
+-- @.fh: FOP .path 1
+-- @.written: FWR .fh .buf .len
+-- @.close: FCL .fh
+
+-- ============================================================
+-- FILE.EXISTS - Check if file exists
+-- Input: .path (filename string)
+-- Output: 1 if exists, 0 if not
+-- ============================================================
+-- Note: Implemented by trying to open and checking for error
+
+-- ============================================================
+-- FILE.APPEND - Append to file
+-- Input: .path (filename string), .buf (source buffer), .len (bytes to write)
+-- Output: bytes written
+-- ============================================================
+-- Note: Open with mode 2 (append)
+
+-- ============================================================
+-- Core Operations Reference:
+-- FOP .path mode -> handle (mode: 0=read, 1=write, 2=append)
+-- FRD .handle .buf .maxlen -> bytes_read
+-- FWR .handle .buf .len -> bytes_written
+-- FCL .handle -> close file
+-- ============================================================
 
 !

@@ -1,0 +1,152 @@
+-- TAYNI Compiler v3 - Complete compiler
+-- Generates a working executable that prints "Hi" and exits
+-- Uses PE template + hardcoded x86-64 code
+
+.zero: 0
+.one: 1
+
+-- Buffers
+.pe: ALC 2048
+.out: ALC 64
+
+-- ============================================
+-- STEP 1: Read PE template
+-- ============================================
+.template_path: "pe-template.bin"
+.th: FOP .template_path 0
+.tlen: FRD .th .pe 1536
+
+-- ============================================
+-- STEP 2: Write x86-64 code to .text section
+-- Code starts at file offset 0x200 (512)
+-- This is a complete "Hello" program
+-- ============================================
+
+-- sub rsp, 56 (0x48 0x83 0xEC 0x38)
+@.w0: PUT .pe 512 72
+@.w1: PUT .pe 513 131
+@.w2: PUT .pe 514 236
+@.w3: PUT .pe 515 56
+
+-- mov ecx, -11 (0xB9 0xF5 0xFF 0xFF 0xFF)
+@.w4: PUT .pe 516 185
+@.w5: PUT .pe 517 245
+@.w6: PUT .pe 518 255
+@.w7: PUT .pe 519 255
+@.w8: PUT .pe 520 255
+
+-- call [rip+0x0FF1] - GetStdHandle at IAT[0]
+-- 0xFF 0x15 + offset (little endian)
+-- IAT at RVA 0x2000, current RIP = 0x100F
+-- offset = 0x2000 - 0x100F = 0x0FF1
+@.w9: PUT .pe 521 255
+@.w10: PUT .pe 522 21
+@.w11: PUT .pe 523 241
+@.w12: PUT .pe 524 15
+@.w13: PUT .pe 525 0
+@.w14: PUT .pe 526 0
+
+-- mov [rsp+32], rax (save handle)
+-- 0x48 0x89 0x44 0x24 0x20
+@.w15: PUT .pe 527 72
+@.w16: PUT .pe 528 137
+@.w17: PUT .pe 529 68
+@.w18: PUT .pe 530 36
+@.w19: PUT .pe 531 32
+
+-- mov dword [rsp+40], 0x0A6948 ("Hi\n" as little endian)
+-- 0xC7 0x44 0x24 0x28 0x48 0x69 0x0A 0x00
+@.w20: PUT .pe 532 199
+@.w21: PUT .pe 533 68
+@.w22: PUT .pe 534 36
+@.w23: PUT .pe 535 40
+@.w24: PUT .pe 536 72
+@.w25: PUT .pe 537 105
+@.w26: PUT .pe 538 10
+@.w27: PUT .pe 539 0
+
+-- mov rcx, [rsp+32] (handle)
+-- 0x48 0x8B 0x4C 0x24 0x20
+@.w28: PUT .pe 540 72
+@.w29: PUT .pe 541 139
+@.w30: PUT .pe 542 76
+@.w31: PUT .pe 543 36
+@.w32: PUT .pe 544 32
+
+-- lea rdx, [rsp+40] (buffer)
+-- 0x48 0x8D 0x54 0x24 0x28
+@.w33: PUT .pe 545 72
+@.w34: PUT .pe 546 141
+@.w35: PUT .pe 547 84
+@.w36: PUT .pe 548 36
+@.w37: PUT .pe 549 40
+
+-- mov r8d, 3 (length)
+-- 0x41 0xB8 0x03 0x00 0x00 0x00
+@.w38: PUT .pe 550 65
+@.w39: PUT .pe 551 184
+@.w40: PUT .pe 552 3
+@.w41: PUT .pe 553 0
+@.w42: PUT .pe 554 0
+@.w43: PUT .pe 555 0
+
+-- lea r9, [rsp+48] (&written)
+-- 0x4C 0x8D 0x4C 0x24 0x30
+@.w44: PUT .pe 556 76
+@.w45: PUT .pe 557 141
+@.w46: PUT .pe 558 76
+@.w47: PUT .pe 559 36
+@.w48: PUT .pe 560 48
+
+-- mov qword [rsp+32], 0 (lpOverlapped = NULL)
+-- 0x48 0xC7 0x44 0x24 0x20 0x00 0x00 0x00 0x00
+@.w49: PUT .pe 561 72
+@.w50: PUT .pe 562 199
+@.w51: PUT .pe 563 68
+@.w52: PUT .pe 564 36
+@.w53: PUT .pe 565 32
+@.w54: PUT .pe 566 0
+@.w55: PUT .pe 567 0
+@.w56: PUT .pe 568 0
+@.w57: PUT .pe 569 0
+
+-- call [rip+offset] - WriteFile at IAT[8]
+-- Current position: 570, RIP after = 576
+-- IAT[1] at RVA 0x2008
+-- offset = 0x2008 - (0x1000 + 64) = 0x2008 - 0x1040 = 0x0FC8
+@.w58: PUT .pe 570 255
+@.w59: PUT .pe 571 21
+@.w60: PUT .pe 572 200
+@.w61: PUT .pe 573 15
+@.w62: PUT .pe 574 0
+@.w63: PUT .pe 575 0
+
+-- xor ecx, ecx (exit code 0)
+-- 0x31 0xC9
+@.w64: PUT .pe 576 49
+@.w65: PUT .pe 577 201
+
+-- call [rip+offset] - ExitProcess at IAT[16]
+-- Current position: 578, RIP after = 584
+-- IAT[2] at RVA 0x2010
+-- offset = 0x2010 - (0x1000 + 72) = 0x2010 - 0x1048 = 0x0FC8
+@.w66: PUT .pe 578 255
+@.w67: PUT .pe 579 21
+@.w68: PUT .pe 580 200
+@.w69: PUT .pe 581 15
+@.w70: PUT .pe 582 0
+@.w71: PUT .pe 583 0
+
+-- ============================================
+-- STEP 3: Write output executable
+-- ============================================
+.output_path: "generated.exe"
+.oh: FOP .output_path 1
+.olen: FWR .oh .pe 1536
+
+-- Print success message
+@.msg: 79
+@.len: ITS @.msg .out
+.done: PRT .out @.len
+
+!

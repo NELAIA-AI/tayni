@@ -1,0 +1,7 @@
+.out: ALC 32
+@.val: PUT .out 0 5
+@.v: GET .out 0
+@.cmp: IFZ @.v 1 0
+@.str: ITS @.cmp .out
+.prt: PRT .out @.str
+!

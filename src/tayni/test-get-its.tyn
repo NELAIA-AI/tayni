@@ -1,0 +1,21 @@
+-- TAYNI Test GET then ITS directly
+-- Read from buffer, convert to string directly
+
+.zero: 0
+
+.data: ALC 64
+.out: ALC 64
+
+-- Store 42 in data buffer
+@.store: PUT .data 0 42
+
+-- Read from data buffer
+@.val: GET .data 0
+
+-- Convert to string directly
+@.len: ITS @.val .out
+
+-- Print
+.done: PRT .out @.len
+
+!

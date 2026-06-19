@@ -1,0 +1,29 @@
+-- Test JSON encode: genera {"result":7} y muestra longitud
+-- Expected output: 12 (longitud del JSON)
+
+.out: ALC 32
+
+-- Construir {"result":7}
+@.j0: PUT .out 0 123
+@.j1: PUT .out 1 34
+@.j2: PUT .out 2 114
+@.j3: PUT .out 3 101
+@.j4: PUT .out 4 115
+@.j5: PUT .out 5 117
+@.j6: PUT .out 6 108
+@.j7: PUT .out 7 116
+@.j8: PUT .out 8 34
+@.j9: PUT .out 9 58
+@.j10: PUT .out 10 55
+@.j11: PUT .out 11 125
+@.j12: PUT .out 12 0
+
+-- Obtener longitud
+@.len: SLN .out
+
+-- Imprimir longitud
+.buf: ALC 16
+@.n: ITS @.len .buf
+.prt: PRT .buf @.n
+
+!

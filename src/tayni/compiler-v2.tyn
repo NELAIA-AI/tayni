@@ -1,0 +1,167 @@
+-- TAYNI Compiler v2 - Full working version
+-- Reads simple.tyn, generates simple.exe that prints the sum
+
+.ten: 10
+.digit_0: 48
+
+.src: ALC 64
+.buf: ALC 1536
+.out: ALC 32
+
+-- Read source file
+.src_path: "simple.tyn"
+@.src_h: FOP .src_path 0
+@.src_len: FRD @.src_h .src 64
+
+-- Read PE template
+.tpl_path: "pe-template.bin"
+@.tpl_h: FOP .tpl_path 0
+@.tpl_len: FRD @.tpl_h .buf 1536
+
+-- Parse Line 0: ".a: 10" - value at pos 4-5
+@.ch0_4: GET .src 4
+@.ch0_5: GET .src 5
+@.d0_0: SUB @.ch0_4 .digit_0
+@.d0_1: SUB @.ch0_5 .digit_0
+@.t0: MUL @.d0_0 .ten
+@.val_a: ADD @.t0 @.d0_1
+
+-- Parse Line 1: ".b: 20" - value at pos 11-12 (after \n)
+@.ch1_4: GET .src 11
+@.ch1_5: GET .src 12
+@.d1_0: SUB @.ch1_4 .digit_0
+@.d1_1: SUB @.ch1_5 .digit_0
+@.t1: MUL @.d1_0 .ten
+@.val_b: ADD @.t1 @.d1_1
+
+-- Compute result
+@.result: ADD @.val_a @.val_b
+
+-- Convert result to ASCII digits
+@.tens_digit: DIV @.result .ten
+@.ones_digit: MOD @.result .ten
+@.tens_ascii: ADD @.tens_digit .digit_0
+@.ones_ascii: ADD @.ones_digit .digit_0
+
+-- Inject x86-64 code at offset 512 (0x200 = .text section)
+-- Code prints the result and exits
+
+-- sub rsp, 56
+.c0: PUT .buf 512 72
+.c1: PUT .buf 513 131
+.c2: PUT .buf 514 236
+.c3: PUT .buf 515 56
+
+-- mov ecx, -11
+.c4: PUT .buf 516 185
+.c5: PUT .buf 517 245
+.c6: PUT .buf 518 255
+.c7: PUT .buf 519 255
+.c8: PUT .buf 520 255
+
+-- call [GetStdHandle] - FF 15 79 10 00 00
+.c9: PUT .buf 521 255
+.c10: PUT .buf 522 21
+.c11: PUT .buf 523 121
+.c12: PUT .buf 524 16
+.c13: PUT .buf 525 0
+.c14: PUT .buf 526 0
+
+-- mov [rsp+48], rax
+.c15: PUT .buf 527 72
+.c16: PUT .buf 528 137
+.c17: PUT .buf 529 68
+.c18: PUT .buf 530 36
+.c19: PUT .buf 531 48
+
+-- mov byte [rsp+40], tens_ascii (RUNTIME)
+.c20: PUT .buf 532 198
+.c21: PUT .buf 533 68
+.c22: PUT .buf 534 36
+.c23: PUT .buf 535 40
+@.c24: PUT .buf 536 @.tens_ascii
+
+-- mov byte [rsp+41], ones_ascii (RUNTIME)
+.c25: PUT .buf 537 198
+.c26: PUT .buf 538 68
+.c27: PUT .buf 539 36
+.c28: PUT .buf 540 41
+@.c29: PUT .buf 541 @.ones_ascii
+
+-- mov byte [rsp+42], 10 (newline)
+.c30: PUT .buf 542 198
+.c31: PUT .buf 543 68
+.c32: PUT .buf 544 36
+.c33: PUT .buf 545 42
+.c34: PUT .buf 546 10
+
+-- mov rcx, [rsp+48]
+.c35: PUT .buf 547 72
+.c36: PUT .buf 548 139
+.c37: PUT .buf 549 76
+.c38: PUT .buf 550 36
+.c39: PUT .buf 551 48
+
+-- lea rdx, [rsp+40]
+.c40: PUT .buf 552 72
+.c41: PUT .buf 553 141
+.c42: PUT .buf 554 84
+.c43: PUT .buf 555 36
+.c44: PUT .buf 556 40
+
+-- mov r8d, 3
+.c45: PUT .buf 557 65
+.c46: PUT .buf 558 184
+.c47: PUT .buf 559 3
+.c48: PUT .buf 560 0
+.c49: PUT .buf 561 0
+.c50: PUT .buf 562 0
+
+-- lea r9, [rsp+32]
+.c51: PUT .buf 563 76
+.c52: PUT .buf 564 141
+.c53: PUT .buf 565 76
+.c54: PUT .buf 566 36
+.c55: PUT .buf 567 32
+
+-- mov qword [rsp+32], 0
+.c56: PUT .buf 568 72
+.c57: PUT .buf 569 199
+.c58: PUT .buf 570 68
+.c59: PUT .buf 571 36
+.c60: PUT .buf 572 32
+.c61: PUT .buf 573 0
+.c62: PUT .buf 574 0
+.c63: PUT .buf 575 0
+.c64: PUT .buf 576 0
+
+-- call [WriteFile] - FF 15 49 10 00 00
+.c65: PUT .buf 577 255
+.c66: PUT .buf 578 21
+.c67: PUT .buf 579 73
+.c68: PUT .buf 580 16
+.c69: PUT .buf 581 0
+.c70: PUT .buf 582 0
+
+-- xor ecx, ecx
+.c71: PUT .buf 583 49
+.c72: PUT .buf 584 201
+
+-- call [ExitProcess] - FF 15 31 10 00 00
+.c73: PUT .buf 585 255
+.c74: PUT .buf 586 21
+.c75: PUT .buf 587 49
+.c76: PUT .buf 588 16
+.c77: PUT .buf 589 0
+.c78: PUT .buf 590 0
+
+-- Write output executable
+.out_path: "simple.exe"
+@.out_h: FOP .out_path 1
+@.out_len: FWR @.out_h .buf 1536
+
+-- Print result for verification
+@.msg_len: ITS @.result .out
+.done: PRT .out @.msg_len
+
+!

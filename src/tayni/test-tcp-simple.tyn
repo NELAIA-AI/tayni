@@ -1,0 +1,13 @@
+-- TCP test - just create socket and print
+.out: ALC 64
+
+-- Create TCP socket
+@.sock: TCP
+
+-- Convert to string
+@.its1: ITS @.sock .out
+
+-- Print
+.prt1: PRT .out @.its1
+
+!

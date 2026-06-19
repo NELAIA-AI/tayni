@@ -1,0 +1,4 @@
+.buf: ALC 32
+.num: 255
+@.len: FORMAT.HEX .buf .num
+@.out: PRT .buf .len

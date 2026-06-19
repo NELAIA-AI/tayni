@@ -1,0 +1,9 @@
+-- Test TIME.SLEEP operation
+-- Sleeps 100ms then prints a timestamp
+
+.buf: ALC 64
+@.sleep: TIME.SLEEP 100
+@.ts: TIME.NOW
+@.len: ITS .ts .buf
+.prt: PRT .buf @.len
+!

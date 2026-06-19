@@ -1,0 +1,134 @@
+// Example 24: Async/Await
+// Demonstrates asynchronous programming in TAYNI
+
+// Simulated async HTTP client
+async fn fetch(url: str) -> Result<str, str> {
+    // In real implementation, this would be non-blocking
+    print("Fetching: " + url);
+    
+    // Simulate network delay
+    await sleep(100);
+    
+    if url.contains("error") {
+        Result::Err("Network error")
+    } else {
+        Result::Ok("Response from " + url)
+    }
+}
+
+// Async function that processes multiple URLs
+async fn fetch_all(urls: [str]) -> [Result<str, str>] {
+    let results: [Result<str, str>] = [];
+    
+    for url in urls {
+        let result = await fetch(url);
+        results.push(result);
+    }
+    
+    results
+}
+
+// Parallel fetch using join
+async fn fetch_parallel(urls: [str]) -> [Result<str, str>] {
+    let futures = urls.map(|url| fetch(url));
+    await join_all(futures)
+}
+
+// Async with timeout
+async fn fetch_with_timeout(url: str, timeout_ms: i32) -> Result<str, str> {
+    let fetch_future = fetch(url);
+    let timeout_future = sleep(timeout_ms).then(|| Result::Err("Timeout"));
+    
+    await race(fetch_future, timeout_future)
+}
+
+// Async retry logic
+async fn fetch_with_retry(url: str, max_retries: i32) -> Result<str, str> {
+    let mut attempts = 0;
+    
+    while attempts < max_retries {
+        match await fetch(url) {
+            Result::Ok(response) => return Result::Ok(response),
+            Result::Err(e) => {
+                attempts += 1;
+                print("Retry " + attempts.to_string() + " for " + url);
+                await sleep(100 * attempts);  // Exponential backoff
+            }
+        }
+    }
+    
+    Result::Err("Max retries exceeded")
+}
+
+// Async stream processing
+async fn process_stream(items: [i32]) -> i32 {
+    let sum = 0;
+    
+    for item in items {
+        // Simulate async processing
+        await sleep(10);
+        sum += item;
+        print("Processed: " + item.to_string() + ", running sum: " + sum.to_string());
+    }
+    
+    sum
+}
+
+// Async generator (yields values over time)
+async fn* countdown(from: i32) -> i32 {
+    for i in (0..=from).rev() {
+        await sleep(100);
+        yield i;
+    }
+}
+
+async fn main() {
+    print("=== Async/Await Demo ===\n");
+    
+    // Sequential fetch
+    print("Sequential fetch:");
+    let urls = [
+        "https://api.example.com/users",
+        "https://api.example.com/posts",
+        "https://api.example.com/comments"
+    ];
+    
+    let results = await fetch_all(urls);
+    for result in results {
+        match result {
+            Result::Ok(r) => print("  Success: " + r),
+            Result::Err(e) => print("  Error: " + e)
+        }
+    }
+    
+    // Parallel fetch
+    print("\nParallel fetch:");
+    let parallel_results = await fetch_parallel(urls);
+    print("All " + parallel_results.len().to_string() + " requests completed");
+    
+    // Fetch with timeout
+    print("\nFetch with timeout:");
+    match await fetch_with_timeout("https://slow.example.com", 50) {
+        Result::Ok(r) => print("  Got: " + r),
+        Result::Err(e) => print("  " + e)
+    }
+    
+    // Fetch with retry
+    print("\nFetch with retry:");
+    match await fetch_with_retry("https://flaky.example.com/error", 3) {
+        Result::Ok(r) => print("  Success: " + r),
+        Result::Err(e) => print("  Failed: " + e)
+    }
+    
+    // Stream processing
+    print("\nStream processing:");
+    let total = await process_stream([1, 2, 3, 4, 5]);
+    print("Total: " + total.to_string());
+    
+    // Async generator
+    print("\nCountdown:");
+    for await n in countdown(5) {
+        print("  " + n.to_string());
+    }
+    print("  Liftoff!");
+}

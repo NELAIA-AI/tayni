@@ -1,0 +1,110 @@
+-- TAYNI Compiler v1.2 - Debug version
+-- Step by step with prints
+
+.zero: 0
+.one: 1
+.ten: 10
+.digit_0: 48
+
+.src: ALC 512
+.symbols: ALC 256
+.code: ALC 512
+.template: ALC 2048
+.out: ALC 64
+
+-- Step 1: Read source
+.src_path: "simple.tyn"
+@.src_h: FOP .src_path 0
+@.src_len: FRD @.src_h .src 512
+
+-- Print source length
+@.s1: ITS @.src_len .out
+.p1: PRT .out @.s1
+
+-- Step 2: Read template
+.tpl_path: "pe-template.bin"
+@.tpl_h: FOP .tpl_path 0
+@.tpl_len: FRD @.tpl_h .template 1536
+
+-- Print template length
+@.s2: ITS @.tpl_len .out
+.p2: PRT .out @.s2
+
+-- Step 3: Parse and compute
+@.ch0_4: GET .src 4
+@.ch0_5: GET .src 5
+@.d0_0: SUB @.ch0_4 .digit_0
+@.d0_1: SUB @.ch0_5 .digit_0
+@.t0: MUL @.d0_0 .ten
+@.val_a: ADD @.t0 @.d0_1
+
+@.ch1_4: GET .src 11
+@.ch1_5: GET .src 12
+@.d1_0: SUB @.ch1_4 .digit_0
+@.d1_1: SUB @.ch1_5 .digit_0
+@.t1: MUL @.d1_0 .ten
+@.val_b: ADD @.t1 @.d1_1
+
+@.result: ADD @.val_a @.val_b
+
+-- Print result
+@.s3: ITS @.result .out
+.p3: PRT .out @.s3
+
+-- Step 4: Generate code bytes
+@.tens_digit: DIV @.result .ten
+@.ones_digit: MOD @.result .ten
+@.tens_ascii: ADD @.tens_digit .digit_0
+@.ones_ascii: ADD @.ones_digit .digit_0
+
+-- Print tens_ascii
+@.s4: ITS @.tens_ascii .out
+.p4: PRT .out @.s4
+
+-- Print ones_ascii
+@.s5: ITS @.ones_ascii .out
+.p5: PRT .out @.s5
+
+-- Generate minimal code: just exit with code 0
+-- xor ecx, ecx; call [ExitProcess]
+-- 31 C9 FF 15 xx xx xx xx
+-- ExitProcess at IAT[0] = 0x2080
+-- Code at 0x1000, RIP after = 0x1000 + 2 + 6 = 0x1008
+-- offset = 0x2080 - 0x1008 = 0x1078
+@.c0: PUT .code 0 49
+@.c1: PUT .code 1 201
+@.c2: PUT .code 2 255
+@.c3: PUT .code 3 21
+@.c4: PUT .code 4 120
+@.c5: PUT .code 5 16
+@.c6: PUT .code 6 0
+@.c7: PUT .code 7 0
+
+-- Copy code to template at offset 512
+@.b0: GET .code 0
+@.w0: PUT .template 512 @.b0
+@.b1: GET .code 1
+@.w1: PUT .template 513 @.b1
+@.b2: GET .code 2
+@.w2: PUT .template 514 @.b2
+@.b3: GET .code 3
+@.w3: PUT .template 515 @.b3
+@.b4: GET .code 4
+@.w4: PUT .template 516 @.b4
+@.b5: GET .code 5
+@.w5: PUT .template 517 @.b5
+@.b6: GET .code 6
+@.w6: PUT .template 518 @.b6
+@.b7: GET .code 7
+@.w7: PUT .template 519 @.b7
+
+-- Write output
+.out_path: "simple.exe"
+@.out_h: FOP .out_path 1
+@.out_len: FWR @.out_h .template 1536
+
+-- Print bytes written
+@.s6: ITS @.out_len .out
+.p6: PRT .out @.s6
+
+!

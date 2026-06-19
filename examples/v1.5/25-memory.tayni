@@ -1,0 +1,162 @@
+// Example 25: Memory Management
+// Demonstrates TAYNI's memory model and ownership
+
+// Stack-allocated data (default)
+fn stack_example() {
+    let x = 42;           // i32 on stack
+    let y = x;            // Copy (i32 is Copy)
+    print("x = " + x.to_string() + ", y = " + y.to_string());
+    
+    let point = Point { x: 1, y: 2 };  // Struct on stack
+    let point2 = point;   // Copy if Point is Copy, else move
+    print("point2 = (" + point2.x.to_string() + ", " + point2.y.to_string() + ")");
+}
+
+// Heap-allocated data with Box
+fn heap_example() {
+    let boxed = Box::new(42);  // i32 on heap
+    print("boxed = " + boxed.to_string());
+    
+    // Large data on heap
+    let large_array = Box::new([0; 10000]);
+    print("Large array size: " + large_array.len().to_string());
+}
+
+// Reference counting for shared ownership
+fn rc_example() {
+    let shared = Rc::new("shared data");
+    let clone1 = shared.clone();
+    let clone2 = shared.clone();
+    
+    print("Reference count: " + Rc::strong_count(shared).to_string());
+    print("Data: " + shared.as_ref());
+    
+    // All clones share the same data
+    drop(clone1);
+    print("After drop: " + Rc::strong_count(shared).to_string());
+}
+
+// Arena allocation for batch allocations
+fn arena_example() {
+    let arena = Arena::new();
+    
+    // Allocate many small objects
+    let nodes: [&Node] = [];
+    for i in 0..100 {
+        let node = arena.alloc(Node { value: i, next: null });
+        nodes.push(node);
+    }
+    
+    print("Allocated " + nodes.len().to_string() + " nodes in arena");
+    
+    // All memory freed when arena is dropped
+}
+
+// Pool allocation for fixed-size objects
+fn pool_example() {
+    let pool = Pool::<Particle>::new(1000);
+    
+    let mut particles: [&mut Particle] = [];
+    
+    // Allocate from pool
+    for i in 0..100 {
+        match pool.alloc() {
+            Option::Some(p) => {
+                p.x = i as f32;
+                p.y = 0.0;
+                p.vx = 1.0;
+                p.vy = 0.0;
+                particles.push(p);
+            }
+            Option::None => print("Pool exhausted!")
+        }
+    }
+    
+    print("Allocated " + particles.len().to_string() + " particles from pool");
+    
+    // Return to pool
+    for p in particles {
+        pool.free(p);
+    }
+}
+
+// RAII pattern with defer
+fn raii_example() {
+    let file = File::open("data.txt").unwrap();
+    defer file.close();  // Guaranteed to run on scope exit
+    
+    let data = file.read_all();
+    print("Read " + data.len().to_string() + " bytes");
+    
+    // file.close() called automatically here
+}
+
+// Custom allocator
+struct BumpAllocator {
+    buffer: [u8],
+    offset: usize
+}
+
+impl BumpAllocator {
+    fn new(size: usize) -> Self {
+        BumpAllocator {
+            buffer: [0; size],
+            offset: 0
+        }
+    }
+    
+    fn alloc(mut self, size: usize, align: usize) -> Option<*mut u8> {
+        // Align offset
+        let aligned = (self.offset + align - 1) & !(align - 1);
+        
+        if aligned + size > self.buffer.len() {
+            return Option::None;
+        }
+        
+        let ptr = &mut self.buffer[aligned] as *mut u8;
+        self.offset = aligned + size;
+        Option::Some(ptr)
+    }
+    
+    fn reset(mut self) {
+        self.offset = 0;
+    }
+}
+
+// Data structures
+struct Point { x: i32, y: i32 }
+struct Node { value: i32, next: *Node }
+struct Particle { x: f32, y: f32, vx: f32, vy: f32 }
+
+fn main() {
+    print("=== Memory Management Demo ===\n");
+    
+    print("Stack allocation:");
+    stack_example();
+    
+    print("\nHeap allocation:");
+    heap_example();
+    
+    print("\nReference counting:");
+    rc_example();
+    
+    print("\nArena allocation:");
+    arena_example();
+    
+    print("\nPool allocation:");
+    pool_example();
+    
+    print("\nRAII with defer:");
+    raii_example();
+    
+    print("\nCustom bump allocator:");
+    let mut bump = BumpAllocator::new(1024);
+    for i in 0..10 {
+        match bump.alloc(64, 8) {
+            Option::Some(ptr) => print("  Allocated at offset " + (ptr as usize).to_string()),
+            Option::None => print("  Allocation failed")
+        }
+    }
+    bump.reset();
+    print("  Allocator reset");
+}

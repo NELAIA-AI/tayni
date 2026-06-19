@@ -1,0 +1,8 @@
+-- TAYNI v1.5 Channel Test
+-- Equivalent to test-channel.tyn
+
+ch = chan(4)
+s1 = chn_snd(ch, 42)
+val = chn_rcv(ch)
+c = chn_cls(ch)
+!

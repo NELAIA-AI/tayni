@@ -1,0 +1,4 @@
+.buf: ALC 32
+.num: 12345
+@.len: FORMAT.INT .buf .num
+@.out: PRT .buf .len

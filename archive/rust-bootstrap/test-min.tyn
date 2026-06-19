@@ -1,0 +1,5 @@
+-- Minimal runtime test: just print 5
+.buf: ALC 16
+@.p0: PUT .buf 0 53
+.prt: PRT .buf 1
+!

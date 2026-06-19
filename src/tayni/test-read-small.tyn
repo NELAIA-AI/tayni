@@ -1,0 +1,19 @@
+-- Test: Read small file and print its content
+.buf: ALC 64
+.out: ALC 32
+
+.path: "input.txt"
+@.h: FOP .path 0
+@.len: FRD @.h .buf 64
+
+-- Copy first 3 bytes to output
+@.b0: GET .buf 0
+@.b1: GET .buf 1
+@.b2: GET .buf 2
+@.p0: PUT .out 0 @.b0
+@.p1: PUT .out 1 @.b1
+@.p2: PUT .out 2 10
+
+.done: PRT .out 3
+
+!

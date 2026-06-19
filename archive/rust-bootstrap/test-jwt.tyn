@@ -1,0 +1,5 @@
+.payload: "test-payload-data"
+.secret: "mysecret"
+.out: ALC 512
+@.len: JWT.ENCODE .payload 17 .secret 8 .out
+@.prt: PRT .out .len

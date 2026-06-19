@@ -1,0 +1,12 @@
+-- Test: read PE template into 768 buffer
+.tpl_path: "pe-template.bin"
+.template: ALC 768
+.out: ALC 32
+
+@.tpl_h: FOP .tpl_path 0
+@.tpl_len: FRD @.tpl_h .template 768
+
+@.s1: ITS @.tpl_len .out
+.p1: PRT .out @.s1
+
+!

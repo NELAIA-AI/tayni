@@ -1,0 +1,317 @@
+-- TAYNI Compiler v2 - Simplified test
+-- Generates exe that prints "30" (hardcoded for now)
+
+.zero: 0
+.ten: 10
+.digit_0: 48
+
+.code: ALC 128
+.template: ALC 1536
+.out: ALC 32
+
+-- Read PE template
+.tpl_path: "pe-template.bin"
+@.tpl_h: FOP .tpl_path 0
+@.tpl_len: FRD @.tpl_h .template 1536
+
+-- Hardcoded result: 30 -> tens=3, ones=0
+.tens_ascii: 51
+.ones_ascii: 48
+
+-- Generate x86-64 code that prints "30\n"
+-- 
+-- sub rsp, 56           ; 48 83 EC 38
+-- mov ecx, -11          ; B9 F5 FF FF FF (STD_OUTPUT_HANDLE)
+-- call [GetStdHandle]   ; FF 15 79 10 00 00 (IAT[1] at 0x2088)
+-- mov [rsp+48], rax     ; 48 89 44 24 30
+-- mov byte [rsp+40], '3'; C6 44 24 28 33
+-- mov byte [rsp+41], '0'; C6 44 24 29 30
+-- mov byte [rsp+42], 10 ; C6 44 24 2A 0A
+-- mov rcx, [rsp+48]     ; 48 8B 4C 24 30
+-- lea rdx, [rsp+40]     ; 48 8D 54 24 28
+-- mov r8d, 3            ; 41 B8 03 00 00 00
+-- lea r9, [rsp+32]      ; 4C 8D 4C 24 20
+-- mov qword [rsp+32], 0 ; 48 C7 44 24 20 00 00 00 00
+-- call [WriteFile]      ; FF 15 49 10 00 00 (IAT[2] at 0x2090)
+-- xor ecx, ecx          ; 31 C9
+-- call [ExitProcess]    ; FF 15 31 10 00 00 (IAT[0] at 0x2080)
+
+-- Byte 0-3: sub rsp, 56
+.c0: PUT .code 0 72
+.c1: PUT .code 1 131
+.c2: PUT .code 2 236
+.c3: PUT .code 3 56
+
+-- Byte 4-8: mov ecx, -11
+.c4: PUT .code 4 185
+.c5: PUT .code 5 245
+.c6: PUT .code 6 255
+.c7: PUT .code 7 255
+.c8: PUT .code 8 255
+
+-- Byte 9-14: call [GetStdHandle]
+.c9: PUT .code 9 255
+.c10: PUT .code 10 21
+.c11: PUT .code 11 121
+.c12: PUT .code 12 16
+.c13: PUT .code 13 0
+.c14: PUT .code 14 0
+
+-- Byte 15-19: mov [rsp+48], rax
+.c15: PUT .code 15 72
+.c16: PUT .code 16 137
+.c17: PUT .code 17 68
+.c18: PUT .code 18 36
+.c19: PUT .code 19 48
+
+-- Byte 20-24: mov byte [rsp+40], '3' (51)
+.c20: PUT .code 20 198
+.c21: PUT .code 21 68
+.c22: PUT .code 22 36
+.c23: PUT .code 23 40
+.c24: PUT .code 24 .tens_ascii
+
+-- Byte 25-29: mov byte [rsp+41], '0' (48)
+.c25: PUT .code 25 198
+.c26: PUT .code 26 68
+.c27: PUT .code 27 36
+.c28: PUT .code 28 41
+.c29: PUT .code 29 .ones_ascii
+
+-- Byte 30-34: mov byte [rsp+42], 10 (newline)
+.c30: PUT .code 30 198
+.c31: PUT .code 31 68
+.c32: PUT .code 32 36
+.c33: PUT .code 33 42
+.c34: PUT .code 34 10
+
+-- Byte 35-39: mov rcx, [rsp+48]
+.c35: PUT .code 35 72
+.c36: PUT .code 36 139
+.c37: PUT .code 37 76
+.c38: PUT .code 38 36
+.c39: PUT .code 39 48
+
+-- Byte 40-44: lea rdx, [rsp+40]
+.c40: PUT .code 40 72
+.c41: PUT .code 41 141
+.c42: PUT .code 42 84
+.c43: PUT .code 43 36
+.c44: PUT .code 44 40
+
+-- Byte 45-50: mov r8d, 3
+.c45: PUT .code 45 65
+.c46: PUT .code 46 184
+.c47: PUT .code 47 3
+.c48: PUT .code 48 0
+.c49: PUT .code 49 0
+.c50: PUT .code 50 0
+
+-- Byte 51-55: lea r9, [rsp+32]
+.c51: PUT .code 51 76
+.c52: PUT .code 52 141
+.c53: PUT .code 53 76
+.c54: PUT .code 54 36
+.c55: PUT .code 55 32
+
+-- Byte 56-64: mov qword [rsp+32], 0
+.c56: PUT .code 56 72
+.c57: PUT .code 57 199
+.c58: PUT .code 58 68
+.c59: PUT .code 59 36
+.c60: PUT .code 60 32
+.c61: PUT .code 61 0
+.c62: PUT .code 62 0
+.c63: PUT .code 63 0
+.c64: PUT .code 64 0
+
+-- Byte 65-70: call [WriteFile]
+.c65: PUT .code 65 255
+.c66: PUT .code 66 21
+.c67: PUT .code 67 73
+.c68: PUT .code 68 16
+.c69: PUT .code 69 0
+.c70: PUT .code 70 0
+
+-- Byte 71-72: xor ecx, ecx
+.c71: PUT .code 71 49
+.c72: PUT .code 72 201
+
+-- Byte 73-78: call [ExitProcess]
+.c73: PUT .code 73 255
+.c74: PUT .code 74 21
+.c75: PUT .code 75 49
+.c76: PUT .code 76 16
+.c77: PUT .code 77 0
+.c78: PUT .code 78 0
+
+-- Copy code to template at offset 512 (0x200 = .text section)
+@.b0: GET .code 0
+@.w0: PUT .template 512 @.b0
+@.b1: GET .code 1
+@.w1: PUT .template 513 @.b1
+@.b2: GET .code 2
+@.w2: PUT .template 514 @.b2
+@.b3: GET .code 3
+@.w3: PUT .template 515 @.b3
+@.b4: GET .code 4
+@.w4: PUT .template 516 @.b4
+@.b5: GET .code 5
+@.w5: PUT .template 517 @.b5
+@.b6: GET .code 6
+@.w6: PUT .template 518 @.b6
+@.b7: GET .code 7
+@.w7: PUT .template 519 @.b7
+@.b8: GET .code 8
+@.w8: PUT .template 520 @.b8
+@.b9: GET .code 9
+@.w9: PUT .template 521 @.b9
+@.b10: GET .code 10
+@.w10: PUT .template 522 @.b10
+@.b11: GET .code 11
+@.w11: PUT .template 523 @.b11
+@.b12: GET .code 12
+@.w12: PUT .template 524 @.b12
+@.b13: GET .code 13
+@.w13: PUT .template 525 @.b13
+@.b14: GET .code 14
+@.w14: PUT .template 526 @.b14
+@.b15: GET .code 15
+@.w15: PUT .template 527 @.b15
+@.b16: GET .code 16
+@.w16: PUT .template 528 @.b16
+@.b17: GET .code 17
+@.w17: PUT .template 529 @.b17
+@.b18: GET .code 18
+@.w18: PUT .template 530 @.b18
+@.b19: GET .code 19
+@.w19: PUT .template 531 @.b19
+@.b20: GET .code 20
+@.w20: PUT .template 532 @.b20
+@.b21: GET .code 21
+@.w21: PUT .template 533 @.b21
+@.b22: GET .code 22
+@.w22: PUT .template 534 @.b22
+@.b23: GET .code 23
+@.w23: PUT .template 535 @.b23
+@.b24: GET .code 24
+@.w24: PUT .template 536 @.b24
+@.b25: GET .code 25
+@.w25: PUT .template 537 @.b25
+@.b26: GET .code 26
+@.w26: PUT .template 538 @.b26
+@.b27: GET .code 27
+@.w27: PUT .template 539 @.b27
+@.b28: GET .code 28
+@.w28: PUT .template 540 @.b28
+@.b29: GET .code 29
+@.w29: PUT .template 541 @.b29
+@.b30: GET .code 30
+@.w30: PUT .template 542 @.b30
+@.b31: GET .code 31
+@.w31: PUT .template 543 @.b31
+@.b32: GET .code 32
+@.w32: PUT .template 544 @.b32
+@.b33: GET .code 33
+@.w33: PUT .template 545 @.b33
+@.b34: GET .code 34
+@.w34: PUT .template 546 @.b34
+@.b35: GET .code 35
+@.w35: PUT .template 547 @.b35
+@.b36: GET .code 36
+@.w36: PUT .template 548 @.b36
+@.b37: GET .code 37
+@.w37: PUT .template 549 @.b37
+@.b38: GET .code 38
+@.w38: PUT .template 550 @.b38
+@.b39: GET .code 39
+@.w39: PUT .template 551 @.b39
+@.b40: GET .code 40
+@.w40: PUT .template 552 @.b40
+@.b41: GET .code 41
+@.w41: PUT .template 553 @.b41
+@.b42: GET .code 42
+@.w42: PUT .template 554 @.b42
+@.b43: GET .code 43
+@.w43: PUT .template 555 @.b43
+@.b44: GET .code 44
+@.w44: PUT .template 556 @.b44
+@.b45: GET .code 45
+@.w45: PUT .template 557 @.b45
+@.b46: GET .code 46
+@.w46: PUT .template 558 @.b46
+@.b47: GET .code 47
+@.w47: PUT .template 559 @.b47
+@.b48: GET .code 48
+@.w48: PUT .template 560 @.b48
+@.b49: GET .code 49
+@.w49: PUT .template 561 @.b49
+@.b50: GET .code 50
+@.w50: PUT .template 562 @.b50
+@.b51: GET .code 51
+@.w51: PUT .template 563 @.b51
+@.b52: GET .code 52
+@.w52: PUT .template 564 @.b52
+@.b53: GET .code 53
+@.w53: PUT .template 565 @.b53
+@.b54: GET .code 54
+@.w54: PUT .template 566 @.b54
+@.b55: GET .code 55
+@.w55: PUT .template 567 @.b55
+@.b56: GET .code 56
+@.w56: PUT .template 568 @.b56
+@.b57: GET .code 57
+@.w57: PUT .template 569 @.b57
+@.b58: GET .code 58
+@.w58: PUT .template 570 @.b58
+@.b59: GET .code 59
+@.w59: PUT .template 571 @.b59
+@.b60: GET .code 60
+@.w60: PUT .template 572 @.b60
+@.b61: GET .code 61
+@.w61: PUT .template 573 @.b61
+@.b62: GET .code 62
+@.w62: PUT .template 574 @.b62
+@.b63: GET .code 63
+@.w63: PUT .template 575 @.b63
+@.b64: GET .code 64
+@.w64: PUT .template 576 @.b64
+@.b65: GET .code 65
+@.w65: PUT .template 577 @.b65
+@.b66: GET .code 66
+@.w66: PUT .template 578 @.b66
+@.b67: GET .code 67
+@.w67: PUT .template 579 @.b67
+@.b68: GET .code 68
+@.w68: PUT .template 580 @.b68
+@.b69: GET .code 69
+@.w69: PUT .template 581 @.b69
+@.b70: GET .code 70
+@.w70: PUT .template 582 @.b70
+@.b71: GET .code 71
+@.w71: PUT .template 583 @.b71
+@.b72: GET .code 72
+@.w72: PUT .template 584 @.b72
+@.b73: GET .code 73
+@.w73: PUT .template 585 @.b73
+@.b74: GET .code 74
+@.w74: PUT .template 586 @.b74
+@.b75: GET .code 75
+@.w75: PUT .template 587 @.b75
+@.b76: GET .code 76
+@.w76: PUT .template 588 @.b76
+@.b77: GET .code 77
+@.w77: PUT .template 589 @.b77
+@.b78: GET .code 78
+@.w78: PUT .template 590 @.b78
+
+-- Write output executable
+.out_path: "simple.exe"
+@.out_h: FOP .out_path 1
+@.out_len: FWR @.out_h .template 1536
+
+-- Print confirmation
+.msg: "OK"
+.done: PRT .msg 2
+
+!

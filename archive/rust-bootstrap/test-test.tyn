@@ -1,0 +1,7 @@
+.msg1: "Test 1+1=2"
+.msg2: "Test true condition"
+.a: 2
+.b: 2
+@.t1: TEST.ASSERT_EQ .a .b .msg1 10
+.cond: 1
+@.t2: TEST.ASSERT .cond .msg2 19

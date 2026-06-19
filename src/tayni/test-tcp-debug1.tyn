@@ -1,0 +1,9 @@
+-- Minimal TCP test - just print before TCP call
+.out: ALC 64
+.msg: "Before TCP\n"
+.msglen: 11
+
+-- Print message first
+.prt1: PRT .msg .msglen
+
+!

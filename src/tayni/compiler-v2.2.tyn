@@ -1,0 +1,166 @@
+-- TAYNI Compiler v2.2 - Parse first, then read template
+-- Reads simple.tyn, generates simple.exe that prints the sum
+
+.ten: 10
+.digit_0: 48
+
+.src: ALC 64
+.tpl: ALC 1536
+.out: ALC 32
+
+-- STEP 1: Read and parse source file
+.src_path: "simple.tyn"
+@.src_h: FOP .src_path 0
+@.src_len: FRD @.src_h .src 64
+
+-- Parse Line 0: ".a: 10" - value at pos 4-5
+@.ch0_4: GET .src 4
+@.ch0_5: GET .src 5
+@.d0_0: SUB @.ch0_4 .digit_0
+@.d0_1: SUB @.ch0_5 .digit_0
+@.t0: MUL @.d0_0 .ten
+@.val_a: ADD @.t0 @.d0_1
+
+-- Parse Line 1: ".b: 20" - value at pos 12-13 (after CRLF)
+@.ch1_4: GET .src 12
+@.ch1_5: GET .src 13
+@.d1_0: SUB @.ch1_4 .digit_0
+@.d1_1: SUB @.ch1_5 .digit_0
+@.t1: MUL @.d1_0 .ten
+@.val_b: ADD @.t1 @.d1_1
+
+-- Compute result
+@.result: ADD @.val_a @.val_b
+
+-- Convert result to ASCII digits
+@.tens_digit: DIV @.result .ten
+@.ones_digit: MOD @.result .ten
+@.tens_ascii: ADD @.tens_digit .digit_0
+@.ones_ascii: ADD @.ones_digit .digit_0
+
+-- STEP 2: Read PE template (after parsing is done)
+.tpl_path: "pe-template.bin"
+@.tpl_h: FOP .tpl_path 0
+@.tpl_len: FRD @.tpl_h .tpl 1536
+
+-- STEP 3: Inject x86-64 code at offset 512 (0x200 = .text section)
+
+-- sub rsp, 56
+.c0: PUT .tpl 512 72
+.c1: PUT .tpl 513 131
+.c2: PUT .tpl 514 236
+.c3: PUT .tpl 515 56
+
+-- mov ecx, -11
+.c4: PUT .tpl 516 185
+.c5: PUT .tpl 517 245
+.c6: PUT .tpl 518 255
+.c7: PUT .tpl 519 255
+.c8: PUT .tpl 520 255
+
+-- call [GetStdHandle] - FF 15 79 10 00 00
+.c9: PUT .tpl 521 255
+.c10: PUT .tpl 522 21
+.c11: PUT .tpl 523 121
+.c12: PUT .tpl 524 16
+.c13: PUT .tpl 525 0
+.c14: PUT .tpl 526 0
+
+-- mov [rsp+48], rax
+.c15: PUT .tpl 527 72
+.c16: PUT .tpl 528 137
+.c17: PUT .tpl 529 68
+.c18: PUT .tpl 530 36
+.c19: PUT .tpl 531 48
+
+-- mov byte [rsp+40], tens_ascii (RUNTIME)
+.c20: PUT .tpl 532 198
+.c21: PUT .tpl 533 68
+.c22: PUT .tpl 534 36
+.c23: PUT .tpl 535 40
+@.c24: PUT .tpl 536 @.tens_ascii
+
+-- mov byte [rsp+41], ones_ascii (RUNTIME)
+.c25: PUT .tpl 537 198
+.c26: PUT .tpl 538 68
+.c27: PUT .tpl 539 36
+.c28: PUT .tpl 540 41
+@.c29: PUT .tpl 541 @.ones_ascii
+
+-- mov byte [rsp+42], 10 (newline)
+.c30: PUT .tpl 542 198
+.c31: PUT .tpl 543 68
+.c32: PUT .tpl 544 36
+.c33: PUT .tpl 545 42
+.c34: PUT .tpl 546 10
+
+-- mov rcx, [rsp+48]
+.c35: PUT .tpl 547 72
+.c36: PUT .tpl 548 139
+.c37: PUT .tpl 549 76
+.c38: PUT .tpl 550 36
+.c39: PUT .tpl 551 48
+
+-- lea rdx, [rsp+40]
+.c40: PUT .tpl 552 72
+.c41: PUT .tpl 553 141
+.c42: PUT .tpl 554 84
+.c43: PUT .tpl 555 36
+.c44: PUT .tpl 556 40
+
+-- mov r8d, 3
+.c45: PUT .tpl 557 65
+.c46: PUT .tpl 558 184
+.c47: PUT .tpl 559 3
+.c48: PUT .tpl 560 0
+.c49: PUT .tpl 561 0
+.c50: PUT .tpl 562 0
+
+-- lea r9, [rsp+32]
+.c51: PUT .tpl 563 76
+.c52: PUT .tpl 564 141
+.c53: PUT .tpl 565 76
+.c54: PUT .tpl 566 36
+.c55: PUT .tpl 567 32
+
+-- mov qword [rsp+32], 0
+.c56: PUT .tpl 568 72
+.c57: PUT .tpl 569 199
+.c58: PUT .tpl 570 68
+.c59: PUT .tpl 571 36
+.c60: PUT .tpl 572 32
+.c61: PUT .tpl 573 0
+.c62: PUT .tpl 574 0
+.c63: PUT .tpl 575 0
+.c64: PUT .tpl 576 0
+
+-- call [WriteFile] - FF 15 49 10 00 00
+.c65: PUT .tpl 577 255
+.c66: PUT .tpl 578 21
+.c67: PUT .tpl 579 73
+.c68: PUT .tpl 580 16
+.c69: PUT .tpl 581 0
+.c70: PUT .tpl 582 0
+
+-- xor ecx, ecx
+.c71: PUT .tpl 583 49
+.c72: PUT .tpl 584 201
+
+-- call [ExitProcess] - FF 15 31 10 00 00
+.c73: PUT .tpl 585 255
+.c74: PUT .tpl 586 21
+.c75: PUT .tpl 587 49
+.c76: PUT .tpl 588 16
+.c77: PUT .tpl 589 0
+.c78: PUT .tpl 590 0
+
+-- STEP 4: Write output executable
+.out_path: "simple.exe"
+@.out_h: FOP .out_path 1
+@.out_len: FWR @.out_h .tpl 1536
+
+-- Print result for verification
+@.msg_len: ITS @.result .out
+.done: PRT .out @.msg_len
+
+!

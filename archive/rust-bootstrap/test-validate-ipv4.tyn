@@ -1,0 +1,5 @@
+.ip: "192.168.1.1"
+.buf: ALC 32
+@.valid: VALIDATE.IPV4 .ip 11
+@.len: FORMAT.INT .buf .valid
+@.out: PRT .buf .len

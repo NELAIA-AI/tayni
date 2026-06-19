@@ -1,0 +1,5 @@
+.buf: ALC 32
+@.timeout: TIMEOUT.SET 1000
+@.check: TIMEOUT.CHECK
+@.len: FORMAT.INT .buf .check
+@.prt: PRT .buf .len

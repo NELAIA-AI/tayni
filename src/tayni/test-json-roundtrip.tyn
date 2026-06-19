@@ -1,0 +1,30 @@
+-- JSON round-trip: encode then parse back
+.key: ALC 32
+.val: ALC 16
+.json: ALC 128
+.parsed: ALC 16
+.out: ALC 16
+
+-- Key = "score"
+@.k0: PUT .key 0 115
+@.k1: PUT .key 1 99
+@.k2: PUT .key 2 111
+@.k3: PUT .key 3 114
+@.k4: PUT .key 4 101
+@.k5: PUT .key 5 0
+
+-- Value = "99"
+@.v0: PUT .val 0 57
+@.v1: PUT .val 1 57
+@.v2: PUT .val 2 0
+
+-- Encode -> {"score":99}
+@.enc_len: JSON.ENCODE .json .key .val
+
+-- Parse back: get "score" from the generated JSON
+@.get_len: JSON.GET .json .key .parsed
+
+-- Print parsed value (should be "99")
+.prt: PRT .parsed @.get_len
+
+!

@@ -1,0 +1,21 @@
+-- TAYNI Test ITS Runtime
+-- Force ITS to be runtime
+
+.zero: 0
+
+.data: ALC 64
+.out: ALC 64
+
+-- Store 42 at offset 0 of data buffer (runtime)
+@.store: PUT .data 0 42
+
+-- Read back from offset 0 of data buffer (runtime)
+@.read: GET .data 0
+
+-- Convert to string in out buffer (should be runtime because @.read is runtime)
+@.len: ITS @.read .out
+
+-- Print from out buffer
+.done: PRT .out @.len
+
+!

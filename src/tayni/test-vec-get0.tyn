@@ -1,0 +1,20 @@
+-- VEC test: push and get index 0
+.out: ALC 64
+
+-- Create vector
+@.v: VEC 16
+
+-- Push ASCII values for "ABCD"
+@.p1: VPH .v 65
+@.p2: VPH .v 66
+@.p3: VPH .v 67
+@.p4: VPH .v 68
+
+-- Get value at index 0 (should be 65 = 'A')
+@.val: VGT .v 0
+
+-- Print as number
+@.its: ITS @.val .out
+.prt: PRT .out @.its
+
+!

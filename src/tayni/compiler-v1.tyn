@@ -1,0 +1,106 @@
+-- TAYNI Compiler v1.3 - Minimal working version
+-- Reads simple.tyn, generates simple.exe that prints the sum
+
+.zero: 0
+.one: 1
+.ten: 10
+.digit_0: 48
+
+.src: ALC 64
+.code: ALC 128
+.template: ALC 1536
+.out: ALC 32
+
+-- Read source file
+.src_path: "simple.tyn"
+@.src_h: FOP .src_path 0
+@.src_len: FRD @.src_h .src 64
+
+-- Read PE template
+.tpl_path: "pe-template.bin"
+@.tpl_h: FOP .tpl_path 0
+@.tpl_len: FRD @.tpl_h .template 1536
+
+-- Parse Line 0: ".a: 10" - value at pos 4-5
+@.ch0_4: GET .src 4
+@.ch0_5: GET .src 5
+@.d0_0: SUB @.ch0_4 .digit_0
+@.d0_1: SUB @.ch0_5 .digit_0
+@.t0: MUL @.d0_0 .ten
+@.val_a: ADD @.t0 @.d0_1
+
+-- Parse Line 1: ".b: 20" - value at pos 11-12 (LF)
+@.ch1_4: GET .src 11
+@.ch1_5: GET .src 12
+@.d1_0: SUB @.ch1_4 .digit_0
+@.d1_1: SUB @.ch1_5 .digit_0
+@.t1: MUL @.d1_0 .ten
+@.val_b: ADD @.t1 @.d1_1
+
+-- Compute result
+@.result: ADD @.val_a @.val_b
+
+-- Convert to ASCII
+@.tens_digit: DIV @.result .ten
+@.ones_digit: MOD @.result .ten
+@.tens_ascii: ADD @.tens_digit .digit_0
+@.ones_ascii: ADD @.ones_digit .digit_0
+
+-- Generate minimal code: sub rsp, 40; xor ecx, ecx; call [ExitProcess]; add rsp, 40; ret
+-- sub rsp, 40 = 48 83 EC 28
+-- xor ecx, ecx = 31 C9
+-- call [rip+offset] = FF 15 xx xx xx xx
+-- add rsp, 40 = 48 83 C4 28
+-- ret = C3
+-- ExitProcess at IAT[0] = 0x2080
+-- Code at 0x1000, RIP after call = 0x1000 + 4 + 2 + 6 = 0x100C
+-- offset = 0x2080 - 0x100C = 0x1074
+@.c0: PUT .code 0 72
+@.c1: PUT .code 1 131
+@.c2: PUT .code 2 236
+@.c3: PUT .code 3 40
+@.c4: PUT .code 4 49
+@.c5: PUT .code 5 201
+@.c6: PUT .code 6 255
+@.c7: PUT .code 7 21
+@.c8: PUT .code 8 116
+@.c9: PUT .code 9 16
+@.c10: PUT .code 10 0
+@.c11: PUT .code 11 0
+
+-- Copy code to template at offset 512
+@.b0: GET .code 0
+@.w0: PUT .template 512 @.b0
+@.b1: GET .code 1
+@.w1: PUT .template 513 @.b1
+@.b2: GET .code 2
+@.w2: PUT .template 514 @.b2
+@.b3: GET .code 3
+@.w3: PUT .template 515 @.b3
+@.b4: GET .code 4
+@.w4: PUT .template 516 @.b4
+@.b5: GET .code 5
+@.w5: PUT .template 517 @.b5
+@.b6: GET .code 6
+@.w6: PUT .template 518 @.b6
+@.b7: GET .code 7
+@.w7: PUT .template 519 @.b7
+@.b8: GET .code 8
+@.w8: PUT .template 520 @.b8
+@.b9: GET .code 9
+@.w9: PUT .template 521 @.b9
+@.b10: GET .code 10
+@.w10: PUT .template 522 @.b10
+@.b11: GET .code 11
+@.w11: PUT .template 523 @.b11
+
+-- Write output
+.out_path: "simple.exe"
+@.out_h: FOP .out_path 1
+@.out_len: FWR @.out_h .template 1536
+
+-- Print result (should be 30)
+@.msg_len: ITS @.result .out
+.done: PRT .out @.msg_len
+
+!

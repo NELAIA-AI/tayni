@@ -1,0 +1,17 @@
+-- Test atomic operations
+-- Demonstrates ATM.ADD for atomic counter increment
+
+-- Allocate 8 bytes for atomic counter (initialized to 0)
+.counter: ALC 8
+
+-- Atomic add 5 to counter
+@.old1: ATM.ADD .counter 5
+
+-- Atomic add 3 more
+@.old2: ATM.ADD .counter 3
+
+-- Memory fence to ensure visibility
+@.f: FNC
+
+-- Exit (counter should be 8)
+!

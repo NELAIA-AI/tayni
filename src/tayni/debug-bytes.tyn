@@ -1,0 +1,31 @@
+-- Debug: Print bytes from simple.tyn
+.src: ALC 64
+.out: ALC 32
+
+.src_path: "simple.tyn"
+@.src_h: FOP .src_path 0
+@.src_len: FRD @.src_h .src 64
+
+-- Print positions 0-15
+@.b0: GET .src 0
+@.b1: GET .src 1
+@.b2: GET .src 2
+@.b3: GET .src 3
+@.b4: GET .src 4
+@.b5: GET .src 5
+@.b6: GET .src 6
+@.b7: GET .src 7
+@.b8: GET .src 8
+@.b9: GET .src 9
+@.b10: GET .src 10
+@.b11: GET .src 11
+@.b12: GET .src 12
+@.b13: GET .src 13
+@.b14: GET .src 14
+@.b15: GET .src 15
+
+-- Print byte 8 
+@.len: ITS @.b8 .out
+.done: PRT .out @.len
+
+!

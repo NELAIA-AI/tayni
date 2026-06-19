@@ -1,0 +1,18 @@
+-- TAYNI Test ITS with Runtime Var
+-- Read from input and convert to string
+
+.zero: 0
+
+.src: ALC 64
+.out: ALC 64
+
+-- Read first byte from input (should be 'd' = 100)
+@.ch: GET .src 0
+
+-- Convert to string
+@.len: ITS @.ch .out
+
+-- Print
+.done: PRT .out @.len
+
+!

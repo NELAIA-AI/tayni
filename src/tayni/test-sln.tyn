@@ -1,0 +1,20 @@
+-- SLN test - string length
+.str: ALC 64
+
+-- Write "Hello" (5 chars)
+@.s0: PUT .str 0 72
+@.s1: PUT .str 1 101
+@.s2: PUT .str 2 108
+@.s3: PUT .str 3 108
+@.s4: PUT .str 4 111
+@.s5: PUT .str 5 0
+
+-- Get length
+@.len: SLN .str
+
+-- Convert to string and print
+.buf: ALC 32
+@.n: ITS @.len .buf
+.prt: PRT .buf @.n
+
+!

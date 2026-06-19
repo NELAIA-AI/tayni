@@ -1,0 +1,98 @@
+// Example 21: Pattern Matching
+// Demonstrates TAYNI's pattern matching capabilities
+
+// Simple enum for demonstration
+enum Result<T, E> {
+    Ok(T),
+    Err(E)
+}
+
+enum Option<T> {
+    Some(T),
+    None
+}
+
+// Pattern matching on enums
+fn process_result(r: Result<i32, str>) -> str {
+    match r {
+        Result::Ok(value) => {
+            if value > 0 {
+                "positive"
+            } else if value < 0 {
+                "negative"
+            } else {
+                "zero"
+            }
+        }
+        Result::Err(msg) => msg
+    }
+}
+
+// Pattern matching with guards
+fn classify_number(n: i32) -> str {
+    match n {
+        0 => "zero",
+        x if x > 0 && x < 10 => "small positive",
+        x if x >= 10 && x < 100 => "medium positive",
+        x if x >= 100 => "large positive",
+        x if x > -10 => "small negative",
+        _ => "large negative"
+    }
+}
+
+// Destructuring in patterns
+struct Point { x: i32, y: i32 }
+
+fn describe_point(p: Point) -> str {
+    match p {
+        Point { x: 0, y: 0 } => "origin",
+        Point { x: 0, y } => "on y-axis",
+        Point { x, y: 0 } => "on x-axis",
+        Point { x, y } if x == y => "on diagonal",
+        _ => "somewhere else"
+    }
+}
+
+// Option handling
+fn safe_divide(a: i32, b: i32) -> Option<i32> {
+    if b == 0 {
+        Option::None
+    } else {
+        Option::Some(a / b)
+    }
+}
+
+fn main() {
+    // Test result matching
+    let ok_result = Result::Ok(42);
+    let err_result = Result::Err("error occurred");
+    
+    print("Ok(42): " + process_result(ok_result));
+    print("Err: " + process_result(err_result));
+    
+    // Test number classification
+    print("0: " + classify_number(0));
+    print("5: " + classify_number(5));
+    print("50: " + classify_number(50));
+    print("-5: " + classify_number(-5));
+    
+    // Test point matching
+    let origin = Point { x: 0, y: 0 };
+    let on_x = Point { x: 5, y: 0 };
+    let diagonal = Point { x: 3, y: 3 };
+    
+    print("Origin: " + describe_point(origin));
+    print("(5,0): " + describe_point(on_x));
+    print("(3,3): " + describe_point(diagonal));
+    
+    // Test safe division
+    match safe_divide(10, 2) {
+        Option::Some(v) => print("10/2 = " + v.to_string()),
+        Option::None => print("Division by zero!")
+    }
+    
+    match safe_divide(10, 0) {
+        Option::Some(v) => print("10/0 = " + v.to_string()),
+        Option::None => print("Division by zero!")
+    }
+}

@@ -1,0 +1,33 @@
+-- VEC test: push values and get them back
+.data: ALC 64
+.out: ALC 64
+
+-- Create vector
+@.v: VEC 16
+
+-- Push ASCII values for "ABCD"
+@.p1: VPH .v 65
+@.p2: VPH .v 66
+@.p3: VPH .v 67
+@.p4: VPH .v 68
+
+-- Get value at index 0 (should be 65 = 'A')
+@.val0: VGT .v 0
+
+-- Get value at index 2 (should be 67 = 'C')
+@.val2: VGT .v 2
+
+-- Print val0 as number
+@.its1: ITS @.val0 .out
+.prt1: PRT .out @.its1
+
+-- Print space
+@.sp: PUT .out 0 32
+.one: 1
+.prt_sp: PRT .out .one
+
+-- Print val2 as number
+@.its2: ITS @.val2 .out
+.prt2: PRT .out @.its2
+
+!

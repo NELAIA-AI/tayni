@@ -1,0 +1,68 @@
+-- TAYNI Parser v9 - Parse and evaluate ADD operations
+-- Input: .tyn file with ".name: ADD arg1 arg2"
+-- Output: Result of ADD
+
+.zero: 0
+.one: 1
+.ten: 10
+.colon: 58
+.dot: 46
+.space: 32
+.newline: 10
+.digit_0: 48
+.digit_9: 57
+.char_A: 65
+.char_D: 68
+
+-- Buffers
+.src: ALC 256
+.symbols: ALC 512
+.out: ALC 64
+
+-- Read input file
+.input_path: "input.txt"
+.fh: FOP .input_path 0
+.flen: FRD .fh .src 256
+
+-- Check if it's an ADD operation
+-- Format: ".x: ADD 10 20"
+-- Position 4-6 should be "ADD"
+@.ch4: GET .src 4
+@.ch5: GET .src 5
+@.ch6: GET .src 6
+
+@.is_A: EQ @.ch4 .char_A
+@.is_D1: EQ @.ch5 .char_D
+@.is_D2: EQ @.ch6 .char_D
+@.is_ADD1: MUL @.is_A @.is_D1
+@.is_ADD: MUL @.is_ADD1 @.is_D2
+
+-- If ADD, parse two numbers at positions 8-9 and 11-12
+-- Format: "ADD 10 20"
+--          01234567890123
+
+@.ch8: GET .src 8
+@.ch9: GET .src 9
+@.ch11: GET .src 11
+@.ch12: GET .src 12
+
+-- Parse first number (positions 8-9)
+@.d0: SUB @.ch8 .digit_0
+@.d1: SUB @.ch9 .digit_0
+@.tens1: MUL @.d0 .ten
+@.num1: ADD @.tens1 @.d1
+
+-- Parse second number (positions 11-12)
+@.d2: SUB @.ch11 .digit_0
+@.d3: SUB @.ch12 .digit_0
+@.tens2: MUL @.d2 .ten
+@.num2: ADD @.tens2 @.d3
+
+-- Perform ADD
+@.result: ADD @.num1 @.num2
+
+-- Print result
+@.len: ITS @.result .out
+.done: PRT .out @.len
+
+!

@@ -1,0 +1,18 @@
+-- Minimal VEC test: create, push ONE value, get length
+.data: ALC 64
+.out: ALC 64
+
+-- Create vector
+@.v: VEC 16
+
+-- Push ONE value (should make length = 1)
+@.push1: VPH .v 65
+
+-- Get length (should be 1)
+@.len: VLN .v
+
+-- Print length
+@.its: ITS @.len .out
+.prt: PRT .out @.its
+
+!

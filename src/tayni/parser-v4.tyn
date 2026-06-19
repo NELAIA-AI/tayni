@@ -1,0 +1,22 @@
+-- TAYNI Parser v4 - Ultra minimal
+-- Just read first byte and print its value
+
+.zero: 0
+.digit_0: 48
+
+.src: ALC 256
+.out: ALC 64
+
+.src_path: "test-parse-input.tyn"
+.sh: FOP .src_path .zero
+.slen: FRD .sh .src 256
+.sc: FCL .sh
+
+-- Read first byte (should be '.' = 46)
+@.ch0: GET .src 0
+
+-- Print the ASCII value
+@.len: ITS @.ch0 .out
+.done: PRT .out @.len
+
+!

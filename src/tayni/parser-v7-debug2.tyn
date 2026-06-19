@@ -1,0 +1,21 @@
+-- TAYNI Parser v7 Debug2 - Test PUT with immediate value
+-- Just store 42 directly and read it back
+
+.zero: 0
+
+.symbols: ALC 64
+.out: ALC 64
+
+-- Store 42 directly at offset 0 of symbols buffer
+@.store: PUT .symbols 0 42
+
+-- Read back from symbols buffer
+@.read: GET .symbols 0
+
+-- Store in out buffer to verify
+@.put_out: PUT .out 0 @.read
+
+-- Print 1 byte from out buffer (should be *)
+@.done: PRT .out 1
+
+!

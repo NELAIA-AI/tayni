@@ -1,0 +1,26 @@
+-- Test: Two FOP operations
+.src: ALC 64
+.tpl: ALC 1536
+.out: ALC 32
+
+-- Read source
+.src_path: "simple.tyn"
+@.src_h: FOP .src_path 0
+@.src_len: FRD @.src_h .src 64
+
+-- Read template
+.tpl_path: "pe-template.bin"
+@.tpl_h: FOP .tpl_path 0
+@.tpl_len: FRD @.tpl_h .tpl 1536
+
+-- Get first byte from each
+@.s0: GET .src 0
+@.t0: GET .tpl 0
+
+-- Print source first byte
+@.p0: PUT .out 0 @.s0
+.p1: PUT .out 1 10
+
+.done: PRT .out 2
+
+!

@@ -1,0 +1,2 @@
+.msg: "Hello from LOG"
+@.out: LOG .msg 14

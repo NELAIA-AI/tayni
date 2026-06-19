@@ -1,0 +1,25 @@
+-- Test: read two files
+.src_path: "simple.tyn"
+.tpl_path: "pe-template.bin"
+
+.src: ALC 64
+.template: ALC 1536
+.out: ALC 32
+
+-- Read source
+@.src_h: FOP .src_path 0
+@.src_len: FRD @.src_h .src 64
+
+-- Print source length
+@.s1: ITS @.src_len .out
+.p1: PRT .out @.s1
+
+-- Read template
+@.tpl_h: FOP .tpl_path 0
+@.tpl_len: FRD @.tpl_h .template 1536
+
+-- Print template length
+@.s2: ITS @.tpl_len .out
+.p2: PRT .out @.s2
+
+!

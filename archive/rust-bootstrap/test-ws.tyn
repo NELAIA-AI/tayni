@@ -1,0 +1,9 @@
+.data: ALC 512
+.msg: "Hello WebSocket!"
+.frame: ALC 128
+.recv: ALC 64
+
+@.ws: WS.CONNECT .msg 16
+@.frame_len: WS.SEND .frame .ws .msg 16
+@.recv_len: WS.RECV .recv .ws .frame .frame_len
+@.prt: PRT .recv .recv_len

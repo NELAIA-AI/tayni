@@ -1,0 +1,21 @@
+-- VEC test: create, push 4 values, get length
+.data: ALC 64
+.out: ALC 64
+
+-- Create vector
+@.v: VEC 16
+
+-- Push 4 values
+@.p1: VPH .v 65
+@.p2: VPH .v 66
+@.p3: VPH .v 67
+@.p4: VPH .v 68
+
+-- Get length (should be 4)
+@.len: VLN .v
+
+-- Print length
+@.its: ITS @.len .out
+.prt: PRT .out @.its
+
+!

@@ -1,0 +1,15 @@
+-- Test VEC create and length only
+-- No push, just create and check initial length (should be 0)
+
+-- Create vector with capacity 16
+@.v: VEC 16
+
+-- Get length (should be 0)
+@.len: VLN .v
+
+-- Convert to string and print
+.buf: ALC 16
+@.its: ITS .buf @.len
+.prt: PRT .buf @.its
+
+!

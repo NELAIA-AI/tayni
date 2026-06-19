@@ -1,0 +1,43 @@
+-- JSON.GET test
+-- Parse {"name":42,"age":25} and get value of "age"
+.json: ALC 128
+.key: ALC 32
+.val: ALC 32
+.out: ALC 16
+
+-- Write JSON: {"name":42,"age":25}
+@.j0: PUT .json 0 123
+@.j1: PUT .json 1 34
+@.j2: PUT .json 2 110
+@.j3: PUT .json 3 97
+@.j4: PUT .json 4 109
+@.j5: PUT .json 5 101
+@.j6: PUT .json 6 34
+@.j7: PUT .json 7 58
+@.j8: PUT .json 8 52
+@.j9: PUT .json 9 50
+@.j10: PUT .json 10 44
+@.j11: PUT .json 11 34
+@.j12: PUT .json 12 97
+@.j13: PUT .json 13 103
+@.j14: PUT .json 14 101
+@.j15: PUT .json 15 34
+@.j16: PUT .json 16 58
+@.j17: PUT .json 17 50
+@.j18: PUT .json 18 53
+@.j19: PUT .json 19 125
+@.j20: PUT .json 20 0
+
+-- Write key: "age"
+@.k0: PUT .key 0 97
+@.k1: PUT .key 1 103
+@.k2: PUT .key 2 101
+@.k3: PUT .key 3 0
+
+-- Get value for "age"
+@.len: JSON.GET .json .key .val
+
+-- Print the value (should be "25")
+.prt: PRT .val @.len
+
+!

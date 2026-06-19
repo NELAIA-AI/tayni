@@ -1,0 +1,4 @@
+-- TAYNI v1.5 Hello World Test
+msg = "Hello from v1.5!\n"
+print(msg)
+!

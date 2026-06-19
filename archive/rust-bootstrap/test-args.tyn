@@ -1,0 +1,4 @@
+.buf: ALC 64
+@.count: ARGC
+@.len: ITS .count .buf
+.out: PRT .buf .len

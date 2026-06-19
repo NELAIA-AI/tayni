@@ -1,0 +1,17 @@
+-- Test CSP-style channels
+-- Creates a channel, sends a value, receives it
+
+-- Create a bounded channel with capacity 4
+@.ch: CHN 4
+
+-- Send value 42 to channel
+@.s1: CHN.SND .ch 42
+
+-- Receive value from channel
+@.val: CHN.RCV .ch
+
+-- Close the channel
+@.c: CHN.CLS .ch
+
+-- Exit (val should be 42)
+!

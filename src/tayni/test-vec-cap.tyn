@@ -1,0 +1,14 @@
+-- VEC test: check capacity
+.out: ALC 64
+
+-- Create vector with capacity 32
+@.v: VEC 32
+
+-- Get capacity (should be 32)
+@.cap: VCP .v
+
+-- Print
+@.its: ITS @.cap .out
+.prt: PRT .out @.its
+
+!

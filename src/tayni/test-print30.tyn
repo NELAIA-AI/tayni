@@ -1,0 +1,12 @@
+-- Test: Just print "30" without file operations
+.out: ALC 32
+
+-- Put "30\n" in buffer
+.p0: PUT .out 0 51
+.p1: PUT .out 1 48
+.p2: PUT .out 2 10
+
+-- Print
+.done: PRT .out 3
+
+!

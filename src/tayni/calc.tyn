@@ -1,0 +1,36 @@
+-- TAYNI Calculator: Compute and display result
+-- Demonstrates: arithmetic, ITS (int to string), PRT
+
+-- Constants
+.a: 10
+.b: 5
+.c: 3
+.d: 7
+.zero: 0
+
+-- Buffers
+.data: ALC 64
+.out: ALC 64
+
+-- Store initial value (10) to force runtime
+@.store: PUT .data 0 10
+
+-- Read back
+@.read: GET .data 0
+
+-- Add 5: 10 + 5 = 15
+@.sum: ADD @.read .b
+
+-- Multiply by 3: 15 * 3 = 45
+@.prod: MUL @.sum .c
+
+-- Subtract 7: 45 - 7 = 38
+@.result: SUB @.prod .d
+
+-- Convert to string
+@.len: ITS @.result .out
+
+-- Print
+.done: PRT .out @.len
+
+!

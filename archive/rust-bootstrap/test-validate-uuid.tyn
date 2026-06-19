@@ -1,0 +1,5 @@
+.uuid: "550e8400-e29b-41d4-a716-446655440000"
+.buf: ALC 32
+@.valid: VALIDATE.UUID .uuid 36
+@.len: FORMAT.INT .buf .valid
+@.out: PRT .buf .len

@@ -1,0 +1,91 @@
+-- TAYNI Self-Hosting Parser v2 (Simplified)
+-- Parsea un archivo .tyn simple y extrae el primer símbolo
+-- Usa variables únicas para evitar ciclos
+--
+-- Date: 2026-06-17
+
+-- Constants
+.zero: 0
+.one: 1
+.ten: 10
+.space: 32
+.dot: 46
+.colon: 58
+.digit_0: 48
+.digit_9: 57
+
+-- Allocate buffers
+.src: ALC 4096
+.out: ALC 256
+
+-- Read source file
+.src_path: "test-parse-input.tyn"
+.sh: FOP .src_path .zero
+.slen: FRD .sh .src 4096
+.sc: FCL .sh
+
+-- ============================================
+-- Parse first line: .x: 42
+-- Expected: char 0 = '.', char 1 = 'x', char 2 = ':', char 3 = ' ', char 4-5 = '42'
+-- ============================================
+
+-- Read char 0 (should be '.')
+@.ch0: GET .src 0
+@.is_dot: EQ @.ch0 .dot
+
+-- Read char 1 (symbol name, e.g. 'x')
+@.ch1: GET .src 1
+
+-- Read char 2 (should be ':')
+@.ch2: GET .src 2
+@.is_colon: EQ @.ch2 .colon
+
+-- Read char 3 (should be ' ')
+@.ch3: GET .src 3
+
+-- Read char 4 (first digit)
+@.ch4: GET .src 4
+@.d0: SUB @.ch4 .digit_0
+
+-- Read char 5 (second digit or newline)
+@.ch5: GET .src 5
+@.is_digit5: GE @.ch5 .digit_0
+@.is_digit5b: LE @.ch5 .digit_9
+@.valid5: MUL @.is_digit5 @.is_digit5b
+
+-- Calculate value
+-- If ch5 is digit: value = d0 * 10 + (ch5 - 48)
+-- If ch5 is not digit: value = d0
+@.d1_raw: SUB @.ch5 .digit_0
+@.d1: IFZ @.valid5 .zero @.d1_raw
+@.tens: MUL @.d0 .ten
+@.value: ADD @.tens @.d1
+
+-- If only one digit, value = d0
+@.final_value: IFZ @.valid5 @.d0 @.value
+
+-- ============================================
+-- Output results
+-- ============================================
+
+-- Print "Symbol: "
+.msg1: "Symbol: "
+.pr1: PRT .msg1 8
+
+-- Print symbol name (ch1)
+@.name_out: PUT .out 0 @.ch1
+.pr2: PRT .out 1
+
+-- Print " = "
+.msg2: " = "
+.pr3: PRT .msg2 3
+
+-- Print value
+@.val_len: ITS @.final_value .out
+.pr4: PRT .out @.val_len
+
+-- Print newline
+.nl: "\n"
+.pr5: PRT .nl 1
+
+!

@@ -1,0 +1,6 @@
+.str: "hello world test"
+.pat: "world"
+.buf: ALC 32
+@.found: REGEX.MATCH .str 16 .pat 5
+@.len: FORMAT.INT .buf .found
+@.prt: PRT .buf .len

@@ -1,0 +1,57 @@
+-- TAYNI Parser v8 - Parse .tyn file and evaluate
+-- Input: .tyn file with format ".name: value" or ".name: OP args"
+-- Output: Result of last expression
+
+.zero: 0
+.one: 1
+.ten: 10
+.colon: 58
+.dot: 46
+.space: 32
+.newline: 10
+.digit_0: 48
+.digit_9: 57
+
+-- Buffers
+.src: ALC 256
+.symbols: ALC 512
+.out: ALC 64
+
+-- Read input file
+.input_path: "input.txt"
+.fh: FOP .input_path 0
+.flen: FRD .fh .src 256
+
+-- Parse position 4,5 as two-digit number (after ".x: ")
+-- Assumes input like ".x: 42"
+
+@.ch4: GET .src 4
+@.ch5: GET .src 5
+
+-- Check if ch4 is a digit
+@.is_digit4: GE @.ch4 .digit_0
+@.is_digit4b: LE @.ch4 .digit_9
+@.valid4: MUL @.is_digit4 @.is_digit4b
+
+-- Check if ch5 is a digit
+@.is_digit5: GE @.ch5 .digit_0
+@.is_digit5b: LE @.ch5 .digit_9
+@.valid5: MUL @.is_digit5 @.is_digit5b
+
+-- Parse digits
+@.d0: SUB @.ch4 .digit_0
+@.d1: SUB @.ch5 .digit_0
+
+-- Calculate value: d0 * 10 + d1
+@.tens: MUL @.d0 .ten
+@.value: ADD @.tens @.d1
+
+-- Store in symbols table at slot 0
+@.store_val: PUT .symbols 0 @.value
+
+-- Read back and print
+@.result: GET .symbols 0
+@.len: ITS @.result .out
+.done: PRT .out @.len
+
+!

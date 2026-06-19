@@ -1,0 +1,18 @@
+-- TAYNI Test Buffer Offsets Debug
+-- Verify buffer base offsets
+
+.zero: 0
+
+.symbols: ALC 64
+.out: ALC 64
+
+-- Store 65 (A) in symbols at offset 0 (should be at physical offset 0)
+@.store1: PUT .symbols 0 65
+
+-- Store 66 (B) in out at offset 0 (should be at physical offset 64)
+@.store2: PUT .out 0 66
+
+-- Print 1 byte from symbols (should print A from offset 0)
+.prt1: PRT .symbols 1
+
+!

@@ -1,0 +1,23 @@
+-- TAYNI Test ITS Simple
+-- Just convert a runtime value to string
+
+.zero: 0
+
+.out: ALC 64
+
+-- Read first byte from input (should be 'd' = 100)
+@.ch: GET .out 0
+
+-- First, store 42 in the buffer
+@.store: PUT .out 0 42
+
+-- Now read it back
+@.val: GET .out 0
+
+-- Convert to string
+@.len: ITS @.val .out
+
+-- Print
+.done: PRT .out @.len
+
+!

@@ -1,0 +1,26 @@
+-- SBS test - substring
+.src: ALC 64
+.dst: ALC 64
+
+-- Write "HelloWorld" to src
+@.a0: PUT .src 0 72
+@.a1: PUT .src 1 101
+@.a2: PUT .src 2 108
+@.a3: PUT .src 3 108
+@.a4: PUT .src 4 111
+@.a5: PUT .src 5 87
+@.a6: PUT .src 6 111
+@.a7: PUT .src 7 114
+@.a8: PUT .src 8 108
+@.a9: PUT .src 9 100
+@.a10: PUT .src 10 0
+
+-- Extract "World" (start=5, len=5)
+@.len: SBS .dst .src 5 5
+
+-- Print result
+.out: ALC 32
+@.n: ITS @.len .out
+.prt: PRT .out @.n
+
+!

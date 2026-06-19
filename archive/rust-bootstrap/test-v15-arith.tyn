@@ -1,0 +1,5 @@
+-- TAYNI v1.5 Arithmetic Test
+a = 5
+b = 3
+c = add(a, b)
+!

@@ -1,0 +1,62 @@
+-- TAYNI Test Loops - Conditional Jump Test
+-- Tests @JZ (jump if zero) for conditional branching
+-- 
+-- Expected behavior:
+--   1. Read a digit from input.txt
+--   2. If digit is 0, print "0"
+--   3. If digit is not 0, add 10 and print result
+--
+-- If input.txt contains "5", output should be "15"
+-- If input.txt contains "0", output should be "0"
+--
+-- Date: 2026-06-17
+
+-- Constants (compile-time)
+.zero: 0
+.ten: 10
+.ascii_offset: 48
+
+-- File path
+.input_path: "input.txt"
+
+-- Allocate buffers
+.buf: ALC 256
+.out: ALC 64
+
+-- Open and read input file
+.h: FOP .input_path .zero
+.len: FRD .h .buf 256
+.fc: FCL .h
+
+-- Runtime operations (marked with @)
+
+-- Read first byte from buffer
+@.byte0: GET .buf 0
+
+-- Convert ASCII to number: '5' (53) - 48 = 5
+@.val: SUB @.byte0 .ascii_offset
+
+-- Check if value is zero
+-- is_zero = 1 if val == 0, else 0
+@.is_zero: EQ @.val .zero
+
+-- If is_zero is NOT zero (meaning val IS zero), skip the addition
+-- JNZ jumps when condition != 0
+@.jnz1: JNZ @.is_zero :skip_add
+
+-- Add 10 to the value (val is not zero)
+@.result: ADD @.val .ten
+@.jmp1: JMP :print_result
+
+:skip_add
+-- Value is zero, use it directly
+@.result: ADD @.val .zero
+
+:print_result
+-- Convert result to string
+@.its_len: ITS @.result .out
+
+-- Print result
+.done: PRT .out @.its_len
+
+!

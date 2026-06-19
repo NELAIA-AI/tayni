@@ -1,0 +1,12 @@
+-- Test DIV and MOD
+.data: ALC 64
+.out: ALC 64
+
+-- DIV: 17 / 5 = 3
+@.store1: PUT .data 0 17
+@.a: GET .data 0
+@.div_result: DIV @.a 5
+@.its1: ITS @.div_result .out
+.prt1: PRT .out @.its1
+
+!
