@@ -1,0 +1,230 @@
+{
+  "timestamp": "2026-06-19T02:50:56.591Z",
+  "summary": {
+    "total": 6,
+    "passed": 6,
+    "failed": 0,
+    "skipped": 0,
+    "conformance": 100
+  },
+  "tests": [
+    {
+      "name": "wasm_minimal",
+      "description": "Minimal valid Wasm module",
+      "file": "wasm_minimal.wasm",
+      "checks": [
+        {
+          "name": "wasm-tools validate",
+          "pass": true
+        },
+        {
+          "name": "WebAssembly.validate",
+          "pass": true
+        },
+        {
+          "name": "WebAssembly.instantiate",
+          "pass": true
+        },
+        {
+          "name": "Exports present",
+          "pass": true,
+          "expected": [],
+          "got": [
+            "main"
+          ]
+        }
+      ],
+      "fileSize": 37,
+      "status": "passed"
+    },
+    {
+      "name": "wasm_const42",
+      "description": "Function returning constant 42",
+      "file": "wasm_const42.wasm",
+      "checks": [
+        {
+          "name": "wasm-tools validate",
+          "pass": true
+        },
+        {
+          "name": "WebAssembly.validate",
+          "pass": true
+        },
+        {
+          "name": "WebAssembly.instantiate",
+          "pass": true
+        },
+        {
+          "name": "Exports present",
+          "pass": true,
+          "expected": [
+            "getValue"
+          ],
+          "got": [
+            "getValue"
+          ]
+        },
+        {
+          "name": "getValue() == 42",
+          "pass": true,
+          "expected": 42,
+          "got": 42
+        }
+      ],
+      "fileSize": 41,
+      "status": "passed"
+    },
+    {
+      "name": "wasm_add",
+      "description": "Addition function",
+      "file": "wasm_add.wasm",
+      "checks": [
+        {
+          "name": "wasm-tools validate",
+          "pass": true
+        },
+        {
+          "name": "WebAssembly.validate",
+          "pass": true
+        },
+        {
+          "name": "WebAssembly.instantiate",
+          "pass": true
+        },
+        {
+          "name": "Exports present",
+          "pass": true,
+          "expected": [
+            "add"
+          ],
+          "got": [
+            "add"
+          ]
+        },
+        {
+          "name": "add(2, 3) == 5",
+          "pass": true,
+          "expected": 5,
+          "got": 5
+        },
+        {
+          "name": "add(0, 0) == 0",
+          "pass": true,
+          "expected": 0,
+          "got": 0
+        },
+        {
+          "name": "add(-1, 1) == 0",
+          "pass": true,
+          "expected": 0,
+          "got": 0
+        },
+        {
+          "name": "add(100, 200) == 300",
+          "pass": true,
+          "expected": 300,
+          "got": 300
+        }
+      ],
+      "fileSize": 41,
+      "status": "passed"
+    },
+    {
+      "name": "wasm_factorial",
+      "description": "Recursive factorial function",
+      "file": "wasm_factorial.wasm",
+      "checks": [
+        {
+          "name": "wasm-tools validate",
+          "pass": true
+        },
+        {
+          "name": "WebAssembly.validate",
+          "pass": true
+        },
+        {
+          "name": "WebAssembly.instantiate",
+          "pass": true
+        },
+        {
+          "name": "Exports present",
+          "pass": true,
+          "expected": [
+            "factorial"
+          ],
+          "got": [
+            "factorial"
+          ]
+        },
+        {
+          "name": "factorial(0) == 1",
+          "pass": true,
+          "expected": 1,
+          "got": 1
+        },
+        {
+          "name": "factorial(1) == 1",
+          "pass": true,
+          "expected": 1,
+          "got": 1
+        },
+        {
+          "name": "factorial(5) == 120",
+          "pass": true,
+          "expected": 120,
+          "got": 120
+        },
+        {
+          "name": "factorial(10) == 3628800",
+          "pass": true,
+          "expected": 3628800,
+          "got": 3628800
+        }
+      ],
+      "fileSize": 60,
+      "status": "passed"
+    },
+    {
+      "name": "wasm_memory",
+      "description": "Module with linear memory",
+      "file": "wasm_memory.wasm",
+      "checks": [
+        {
+          "name": "wasm-tools validate",
+          "pass": true
+        },
+        {
+          "name": "WebAssembly.validate",
+          "pass": true
+        },
+        {
+          "name": "WebAssembly.instantiate",
+          "pass": true
+        },
+        {
+          "name": "Has linear memory",
+          "pass": true
+        }
+      ],
+      "fileSize": 79,
+      "status": "passed"
+    },
+    {
+      "name": "wasi_hello",
+      "description": "WASI hello world",
+      "file": "wasi_hello.wasm",
+      "checks": [
+        {
+          "name": "wasm-tools validate",
+          "pass": true
+        },
+        {
+          "name": "WebAssembly.validate",
+          "pass": true
+        }
+      ],
+      "fileSize": 198,
+      "status": "passed"
+    }
+  ]
+}
