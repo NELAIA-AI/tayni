@@ -1,0 +1,15 @@
+{
+  "tasks": {
+    "build": "tayni compile src/handler.tayni -o build/handler.wasm --target wasm",
+    "dev": "deno run --allow-net --allow-read --watch main.ts",
+    "start": "deno run --allow-net --allow-read main.ts",
+    "test": "deno test --allow-net --allow-read"
+  },
+  "deploy": {
+    "project": "tayni-demo",
+    "entrypoint": "main.ts"
+  },
+  "compilerOptions": {
+    "strict": true
+  }
+}

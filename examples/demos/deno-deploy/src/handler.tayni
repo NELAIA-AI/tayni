@@ -1,0 +1,66 @@
+// TAYNI Deno Deploy Handler
+// Compile with: tayni compile handler.tayni -o ../build/handler.wasm --target wasm
+
+use http, json
+
+// Export functions for Deno to call
+@export
+fn handle_request(method: str, path: str, body: str) -> str {
+    if path == "/" {
+        JSON.encode({
+            "service": "TAYNI on Deno Deploy",
+            "version": "1.0.0",
+            "runtime": "Deno",
+            "status": "ok",
+            "endpoints": [
+                "/",
+                "/api/greet",
+                "/api/compute",
+                "/api/health"
+            ]
+        })
+    } else if path == "/api/greet" {
+        let data = JSON.parse(body)
+        let name = data.name ?? "World"
+        JSON.encode({
+            "message": "Hello, " + name + "!",
+            "timestamp": Time.now()
+        })
+    } else if path == "/api/compute" {
+        let data = JSON.parse(body)
+        let a = data.a ?? 0
+        let b = data.b ?? 0
+        let op = data.op ?? "add"
+        
+        let result = if op == "add" {
+            a + b
+        } else if op == "sub" {
+            a - b
+        } else if op == "mul" {
+            a * b
+        } else if op == "div" {
+            if b != 0 { a / b } else { 0 }
+        } else {
+            0
+        }
+        
+        JSON.encode({
+            "a": a,
+            "b": b,
+            "op": op,
+            "result": result
+        })
+    } else if path == "/api/health" {
+        JSON.encode({
+            "status": "healthy",
+            "uptime": Time.now(),
+            "memory": "ok"
+        })
+    } else {
+        JSON.encode({
+            "error": "Not Found",
+            "path": path,
+            "hint": "Try / for available endpoints"
+        })
+    }
+}

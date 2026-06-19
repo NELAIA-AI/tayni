@@ -703,3 +703,600 @@ mod tests {
         assert!(wasm.len() > 100); // Should have substantial content
     }
 }
+
+// ============================================================================
+// WASI Preview 2 Sockets (wasi:sockets/tcp, wasi:sockets/udp)
+// ============================================================================
+
+/// IP Address family
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum IpAddressFamily {
+    Ipv4 = 0,
+    Ipv6 = 1,
+}
+
+/// IPv4 address
+#[derive(Debug, Clone, Copy)]
+pub struct Ipv4Address(pub [u8; 4]);
+
+impl Ipv4Address {
+    pub fn new(a: u8, b: u8, c: u8, d: u8) -> Self {
+        Ipv4Address([a, b, c, d])
+    }
+    
+    pub fn localhost() -> Self {
+        Ipv4Address([127, 0, 0, 1])
+    }
+    
+    pub fn any() -> Self {
+        Ipv4Address([0, 0, 0, 0])
+    }
+}
+
+/// IPv6 address
+#[derive(Debug, Clone, Copy)]
+pub struct Ipv6Address(pub [u16; 8]);
+
+impl Ipv6Address {
+    pub fn localhost() -> Self {
+        Ipv6Address([0, 0, 0, 0, 0, 0, 0, 1])
+    }
+    
+    pub fn any() -> Self {
+        Ipv6Address([0; 8])
+    }
+}
+
+/// Socket address (IP + port)
+#[derive(Debug, Clone)]
+pub enum IpSocketAddress {
+    Ipv4 { address: Ipv4Address, port: u16 },
+    Ipv6 { address: Ipv6Address, port: u16, flow_info: u32, scope_id: u32 },
+}
+
+impl IpSocketAddress {
+    pub fn ipv4(addr: Ipv4Address, port: u16) -> Self {
+        IpSocketAddress::Ipv4 { address: addr, port }
+    }
+    
+    pub fn ipv6(addr: Ipv6Address, port: u16) -> Self {
+        IpSocketAddress::Ipv6 { 
+            address: addr, 
+            port, 
+            flow_info: 0, 
+            scope_id: 0 
+        }
+    }
+    
+    pub fn localhost(port: u16) -> Self {
+        IpSocketAddress::Ipv4 { 
+            address: Ipv4Address::localhost(), 
+            port 
+        }
+    }
+}
+
+/// TCP socket state
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TcpState {
+    Unbound,
+    Bound,
+    Listening,
+    Connecting,
+    Connected,
+    Closed,
+}
+
+/// TCP shutdown type
+#[derive(Debug, Clone, Copy)]
+pub enum ShutdownType {
+    Receive = 0,
+    Send = 1,
+    Both = 2,
+}
+
+/// Socket error codes
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SocketErrorCode {
+    Success = 0,
+    AccessDenied = 1,
+    NotSupported = 2,
+    InvalidArgument = 3,
+    OutOfMemory = 4,
+    Timeout = 5,
+    ConcurrencyConflict = 6,
+    NotInProgress = 7,
+    WouldBlock = 8,
+    InvalidState = 9,
+    NewSocketLimit = 10,
+    AddressNotBindable = 11,
+    AddressInUse = 12,
+    RemoteUnreachable = 13,
+    ConnectionRefused = 14,
+    ConnectionReset = 15,
+    ConnectionAborted = 16,
+    DatagramTooLarge = 17,
+    NameUnresolvable = 18,
+    TemporaryResolverFailure = 19,
+    PermanentResolverFailure = 20,
+}
+
+/// TCP socket operation
+#[derive(Debug, Clone)]
+pub enum TcpOperation {
+    /// Create a new TCP socket
+    CreateSocket { family: IpAddressFamily },
+    /// Bind socket to address
+    Bind { address: IpSocketAddress },
+    /// Start listening for connections
+    Listen { backlog: u32 },
+    /// Accept incoming connection
+    Accept,
+    /// Connect to remote address
+    Connect { address: IpSocketAddress },
+    /// Send data
+    Send { data: Vec<u8> },
+    /// Receive data
+    Receive { max_bytes: u32 },
+    /// Shutdown socket
+    Shutdown { how: ShutdownType },
+    /// Close socket
+    Close,
+}
+
+/// UDP socket operation
+#[derive(Debug, Clone)]
+pub enum UdpOperation {
+    /// Create a new UDP socket
+    CreateSocket { family: IpAddressFamily },
+    /// Bind socket to address
+    Bind { address: IpSocketAddress },
+    /// Send datagram
+    SendTo { address: IpSocketAddress, data: Vec<u8> },
+    /// Receive datagram
+    ReceiveFrom { max_bytes: u32 },
+    /// Close socket
+    Close,
+}
+
+// ============================================================================
+// Socket Type Definitions for WASI P2
+// ============================================================================
+
+/// Generate type section for TCP sockets
+fn generate_tcp_type_section() -> Vec<u8> {
+    let mut types = Vec::new();
+    
+    // Count of types
+    types.extend(encode_uleb128(10));
+    
+    // Type 0: create-tcp-socket (i32) -> i32 (family -> socket handle)
+    types.push(TYPE_FUNC);
+    types.extend(encode_uleb128(1));
+    types.push(TYPE_I32);
+    types.extend(encode_uleb128(1));
+    types.push(TYPE_I32);
+    
+    // Type 1: start-bind (i32, i32, i32, i32, i32, i32) -> i32
+    // (socket, addr_family, addr_ptr, addr_len, port_hi, port_lo) -> result
+    types.push(TYPE_FUNC);
+    types.extend(encode_uleb128(6));
+    for _ in 0..6 { types.push(TYPE_I32); }
+    types.extend(encode_uleb128(1));
+    types.push(TYPE_I32);
+    
+    // Type 2: finish-bind (i32) -> i32
+    types.push(TYPE_FUNC);
+    types.extend(encode_uleb128(1));
+    types.push(TYPE_I32);
+    types.extend(encode_uleb128(1));
+    types.push(TYPE_I32);
+    
+    // Type 3: start-listen (i32) -> i32
+    types.push(TYPE_FUNC);
+    types.extend(encode_uleb128(1));
+    types.push(TYPE_I32);
+    types.extend(encode_uleb128(1));
+    types.push(TYPE_I32);
+    
+    // Type 4: finish-listen (i32) -> i32
+    types.push(TYPE_FUNC);
+    types.extend(encode_uleb128(1));
+    types.push(TYPE_I32);
+    types.extend(encode_uleb128(1));
+    types.push(TYPE_I32);
+    
+    // Type 5: accept (i32) -> (i32, i32, i32) - socket, input_stream, output_stream
+    types.push(TYPE_FUNC);
+    types.extend(encode_uleb128(1));
+    types.push(TYPE_I32);
+    types.extend(encode_uleb128(3));
+    types.push(TYPE_I32);
+    types.push(TYPE_I32);
+    types.push(TYPE_I32);
+    
+    // Type 6: start-connect (i32, i32, i32, i32, i32, i32) -> i32
+    types.push(TYPE_FUNC);
+    types.extend(encode_uleb128(6));
+    for _ in 0..6 { types.push(TYPE_I32); }
+    types.extend(encode_uleb128(1));
+    types.push(TYPE_I32);
+    
+    // Type 7: finish-connect (i32) -> (i32, i32, i32)
+    types.push(TYPE_FUNC);
+    types.extend(encode_uleb128(1));
+    types.push(TYPE_I32);
+    types.extend(encode_uleb128(3));
+    types.push(TYPE_I32);
+    types.push(TYPE_I32);
+    types.push(TYPE_I32);
+    
+    // Type 8: shutdown (i32, i32) -> i32
+    types.push(TYPE_FUNC);
+    types.extend(encode_uleb128(2));
+    types.push(TYPE_I32);
+    types.push(TYPE_I32);
+    types.extend(encode_uleb128(1));
+    types.push(TYPE_I32);
+    
+    // Type 9: () -> () (_start)
+    types.push(TYPE_FUNC);
+    types.extend(encode_uleb128(0));
+    types.extend(encode_uleb128(0));
+    
+    types
+}
+
+/// Generate import section for TCP sockets
+fn generate_tcp_import_section() -> Vec<u8> {
+    let mut imports = Vec::new();
+    
+    // 9 imports
+    imports.extend(encode_uleb128(9));
+    
+    // Import 0: create-tcp-socket from network
+    imports.extend(encode_string(wit::SOCKETS_NETWORK));
+    imports.extend(encode_string("create-tcp-socket"));
+    imports.push(0x00);
+    imports.extend(encode_uleb128(0));
+    
+    // Import 1: start-bind
+    imports.extend(encode_string(wit::SOCKETS_TCP));
+    imports.extend(encode_string("start-bind"));
+    imports.push(0x00);
+    imports.extend(encode_uleb128(1));
+    
+    // Import 2: finish-bind
+    imports.extend(encode_string(wit::SOCKETS_TCP));
+    imports.extend(encode_string("finish-bind"));
+    imports.push(0x00);
+    imports.extend(encode_uleb128(2));
+    
+    // Import 3: start-listen
+    imports.extend(encode_string(wit::SOCKETS_TCP));
+    imports.extend(encode_string("start-listen"));
+    imports.push(0x00);
+    imports.extend(encode_uleb128(3));
+    
+    // Import 4: finish-listen
+    imports.extend(encode_string(wit::SOCKETS_TCP));
+    imports.extend(encode_string("finish-listen"));
+    imports.push(0x00);
+    imports.extend(encode_uleb128(4));
+    
+    // Import 5: accept
+    imports.extend(encode_string(wit::SOCKETS_TCP));
+    imports.extend(encode_string("accept"));
+    imports.push(0x00);
+    imports.extend(encode_uleb128(5));
+    
+    // Import 6: start-connect
+    imports.extend(encode_string(wit::SOCKETS_TCP));
+    imports.extend(encode_string("start-connect"));
+    imports.push(0x00);
+    imports.extend(encode_uleb128(6));
+    
+    // Import 7: finish-connect
+    imports.extend(encode_string(wit::SOCKETS_TCP));
+    imports.extend(encode_string("finish-connect"));
+    imports.push(0x00);
+    imports.extend(encode_uleb128(7));
+    
+    // Import 8: shutdown
+    imports.extend(encode_string(wit::SOCKETS_TCP));
+    imports.extend(encode_string("shutdown"));
+    imports.push(0x00);
+    imports.extend(encode_uleb128(8));
+    
+    imports
+}
+
+/// Generate a WASI P2 TCP server module
+pub fn generate_wasi_p2_tcp_server(port: u16, response: &[u8]) -> Vec<u8> {
+    let mut wasm = Vec::new();
+    
+    // Magic and version
+    wasm.extend(&WASM_MAGIC);
+    wasm.extend(&WASM_VERSION);
+    
+    // Type section
+    let types = generate_tcp_type_section();
+    wasm.extend(encode_section(SECTION_TYPE, &types));
+    
+    // Import section
+    let imports = generate_tcp_import_section();
+    wasm.extend(encode_section(SECTION_IMPORT, &imports));
+    
+    // Function section - declare _start
+    let mut funcs = Vec::new();
+    funcs.extend(encode_uleb128(1));
+    funcs.extend(encode_uleb128(9)); // type 9 (() -> ())
+    wasm.extend(encode_section(SECTION_FUNCTION, &funcs));
+    
+    // Memory section
+    let mut mem = Vec::new();
+    mem.extend(encode_uleb128(1));
+    mem.push(0x00);
+    mem.extend(encode_uleb128(1));
+    wasm.extend(encode_section(SECTION_MEMORY, &mem));
+    
+    // Export section
+    let mut exports = Vec::new();
+    exports.extend(encode_uleb128(2));
+    exports.extend(encode_string("_start"));
+    exports.push(0x00);
+    exports.extend(encode_uleb128(9)); // func index after 9 imports
+    exports.extend(encode_string("memory"));
+    exports.push(0x02);
+    exports.extend(encode_uleb128(0));
+    wasm.extend(encode_section(SECTION_EXPORT, &exports));
+    
+    // Code section - TCP server logic
+    let mut code = Vec::new();
+    code.extend(encode_uleb128(1));
+    
+    let mut body = Vec::new();
+    
+    // Locals: socket_handle, input_stream, output_stream
+    body.extend(encode_uleb128(1));
+    body.extend(encode_uleb128(3));
+    body.push(TYPE_I32);
+    
+    // Create TCP socket (IPv4)
+    body.push(OP_I32_CONST);
+    body.extend(encode_sleb128(0)); // IPv4
+    body.push(OP_CALL);
+    body.extend(encode_uleb128(0)); // create-tcp-socket
+    body.push(OP_LOCAL_SET);
+    body.extend(encode_uleb128(0)); // store socket handle
+    
+    // Start bind to 0.0.0.0:port
+    body.push(OP_LOCAL_GET);
+    body.extend(encode_uleb128(0)); // socket
+    body.push(OP_I32_CONST);
+    body.extend(encode_sleb128(0)); // IPv4 family
+    body.push(OP_I32_CONST);
+    body.extend(encode_sleb128(0)); // addr ptr (0.0.0.0 at offset 0)
+    body.push(OP_I32_CONST);
+    body.extend(encode_sleb128(4)); // addr len
+    body.push(OP_I32_CONST);
+    body.extend(encode_sleb128((port >> 8) as i64)); // port high byte
+    body.push(OP_I32_CONST);
+    body.extend(encode_sleb128((port & 0xFF) as i64)); // port low byte
+    body.push(OP_CALL);
+    body.extend(encode_uleb128(1)); // start-bind
+    body.push(0x1A); // drop result
+    
+    // Finish bind
+    body.push(OP_LOCAL_GET);
+    body.extend(encode_uleb128(0));
+    body.push(OP_CALL);
+    body.extend(encode_uleb128(2)); // finish-bind
+    body.push(0x1A); // drop
+    
+    // Start listen
+    body.push(OP_LOCAL_GET);
+    body.extend(encode_uleb128(0));
+    body.push(OP_CALL);
+    body.extend(encode_uleb128(3)); // start-listen
+    body.push(0x1A); // drop
+    
+    // Finish listen
+    body.push(OP_LOCAL_GET);
+    body.extend(encode_uleb128(0));
+    body.push(OP_CALL);
+    body.extend(encode_uleb128(4)); // finish-listen
+    body.push(0x1A); // drop
+    
+    // Accept connection (returns socket, input_stream, output_stream)
+    body.push(OP_LOCAL_GET);
+    body.extend(encode_uleb128(0));
+    body.push(OP_CALL);
+    body.extend(encode_uleb128(5)); // accept
+    body.push(OP_LOCAL_SET);
+    body.extend(encode_uleb128(2)); // output_stream
+    body.push(OP_LOCAL_SET);
+    body.extend(encode_uleb128(1)); // input_stream
+    body.push(0x1A); // drop client socket
+    
+    // Note: In a real implementation, we would write response to output_stream
+    // using wasi:io/streams write operations
+    
+    body.push(OP_END);
+    
+    code.extend(encode_uleb128(body.len() as u64));
+    code.extend(body);
+    wasm.extend(encode_section(SECTION_CODE, &code));
+    
+    // Data section - address (0.0.0.0) and response
+    let mut data = Vec::new();
+    data.extend(encode_uleb128(2)); // 2 data segments
+    
+    // Segment 0: IPv4 address 0.0.0.0 at offset 0
+    data.push(0x00);
+    data.push(OP_I32_CONST);
+    data.extend(encode_sleb128(0));
+    data.push(OP_END);
+    data.extend(encode_uleb128(4));
+    data.extend(&[0, 0, 0, 0]);
+    
+    // Segment 1: response at offset 4
+    data.push(0x00);
+    data.push(OP_I32_CONST);
+    data.extend(encode_sleb128(4));
+    data.push(OP_END);
+    data.extend(encode_uleb128(response.len() as u64));
+    data.extend(response);
+    
+    wasm.extend(encode_section(SECTION_DATA, &data));
+    
+    wasm
+}
+
+/// Generate a WASI P2 TCP client module
+pub fn generate_wasi_p2_tcp_client(host: Ipv4Address, port: u16) -> Vec<u8> {
+    let mut wasm = Vec::new();
+    
+    wasm.extend(&WASM_MAGIC);
+    wasm.extend(&WASM_VERSION);
+    
+    let types = generate_tcp_type_section();
+    wasm.extend(encode_section(SECTION_TYPE, &types));
+    
+    let imports = generate_tcp_import_section();
+    wasm.extend(encode_section(SECTION_IMPORT, &imports));
+    
+    let mut funcs = Vec::new();
+    funcs.extend(encode_uleb128(1));
+    funcs.extend(encode_uleb128(9));
+    wasm.extend(encode_section(SECTION_FUNCTION, &funcs));
+    
+    let mut mem = Vec::new();
+    mem.extend(encode_uleb128(1));
+    mem.push(0x00);
+    mem.extend(encode_uleb128(1));
+    wasm.extend(encode_section(SECTION_MEMORY, &mem));
+    
+    let mut exports = Vec::new();
+    exports.extend(encode_uleb128(2));
+    exports.extend(encode_string("_start"));
+    exports.push(0x00);
+    exports.extend(encode_uleb128(9));
+    exports.extend(encode_string("memory"));
+    exports.push(0x02);
+    exports.extend(encode_uleb128(0));
+    wasm.extend(encode_section(SECTION_EXPORT, &exports));
+    
+    // Code section - TCP client logic
+    let mut code = Vec::new();
+    code.extend(encode_uleb128(1));
+    
+    let mut body = Vec::new();
+    body.extend(encode_uleb128(1));
+    body.extend(encode_uleb128(3));
+    body.push(TYPE_I32);
+    
+    // Create socket
+    body.push(OP_I32_CONST);
+    body.extend(encode_sleb128(0)); // IPv4
+    body.push(OP_CALL);
+    body.extend(encode_uleb128(0));
+    body.push(OP_LOCAL_SET);
+    body.extend(encode_uleb128(0));
+    
+    // Start connect
+    body.push(OP_LOCAL_GET);
+    body.extend(encode_uleb128(0));
+    body.push(OP_I32_CONST);
+    body.extend(encode_sleb128(0)); // IPv4
+    body.push(OP_I32_CONST);
+    body.extend(encode_sleb128(0)); // addr ptr
+    body.push(OP_I32_CONST);
+    body.extend(encode_sleb128(4)); // addr len
+    body.push(OP_I32_CONST);
+    body.extend(encode_sleb128((port >> 8) as i64));
+    body.push(OP_I32_CONST);
+    body.extend(encode_sleb128((port & 0xFF) as i64));
+    body.push(OP_CALL);
+    body.extend(encode_uleb128(6)); // start-connect
+    body.push(0x1A);
+    
+    // Finish connect
+    body.push(OP_LOCAL_GET);
+    body.extend(encode_uleb128(0));
+    body.push(OP_CALL);
+    body.extend(encode_uleb128(7)); // finish-connect
+    body.push(OP_LOCAL_SET);
+    body.extend(encode_uleb128(2)); // output
+    body.push(OP_LOCAL_SET);
+    body.extend(encode_uleb128(1)); // input
+    body.push(0x1A); // drop result
+    
+    body.push(OP_END);
+    
+    code.extend(encode_uleb128(body.len() as u64));
+    code.extend(body);
+    wasm.extend(encode_section(SECTION_CODE, &code));
+    
+    // Data section - host address
+    let mut data = Vec::new();
+    data.extend(encode_uleb128(1));
+    data.push(0x00);
+    data.push(OP_I32_CONST);
+    data.extend(encode_sleb128(0));
+    data.push(OP_END);
+    data.extend(encode_uleb128(4));
+    data.extend(&host.0);
+    
+    wasm.extend(encode_section(SECTION_DATA, &data));
+    
+    wasm
+}
+
+// ============================================================================
+// Socket Tests
+// ============================================================================
+
+#[cfg(test)]
+mod socket_tests {
+    use super::*;
+    
+    #[test]
+    fn test_ipv4_address() {
+        let addr = Ipv4Address::new(192, 168, 1, 1);
+        assert_eq!(addr.0, [192, 168, 1, 1]);
+        
+        let localhost = Ipv4Address::localhost();
+        assert_eq!(localhost.0, [127, 0, 0, 1]);
+    }
+    
+    #[test]
+    fn test_socket_address() {
+        let addr = IpSocketAddress::localhost(8080);
+        match addr {
+            IpSocketAddress::Ipv4 { address, port } => {
+                assert_eq!(address.0, [127, 0, 0, 1]);
+                assert_eq!(port, 8080);
+            }
+            _ => panic!("Expected IPv4"),
+        }
+    }
+    
+    #[test]
+    fn test_generate_tcp_server() {
+        let response = b"HTTP/1.1 200 OK\r\n\r\nHello!";
+        let wasm = generate_wasi_p2_tcp_server(8080, response);
+        
+        assert!(wasm.len() > 0);
+        assert_eq!(&wasm[0..4], &WASM_MAGIC);
+        assert_eq!(&wasm[4..8], &WASM_VERSION);
+    }
+    
+    #[test]
+    fn test_generate_tcp_client() {
+        let wasm = generate_wasi_p2_tcp_client(Ipv4Address::localhost(), 80);
+        
+        assert!(wasm.len() > 0);
+        assert_eq!(&wasm[0..4], &WASM_MAGIC);
+    }
+}

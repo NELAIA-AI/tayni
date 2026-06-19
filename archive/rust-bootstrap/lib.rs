@@ -18,6 +18,7 @@ pub mod wasi;
 pub mod wasi_p2;
 pub mod json;
 pub mod pkg;
+pub mod http_client;
 pub mod riscv;
 pub mod interface;
 pub mod intent;

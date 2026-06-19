@@ -1,0 +1,39 @@
+// TAYNI Cloudflare Worker Handler
+// Compile with: tayni compile handler.tayni -o ../build/handler.wasm --target wasm
+
+use http
+
+fn handle(request: Request) -> Response {
+    let path = request.path()
+    
+    if path == "/" {
+        Response.json({
+            "service": "TAYNI on Cloudflare Workers",
+            "version": "1.0.0",
+            "status": "ok",
+            "endpoints": ["/", "/hello", "/echo", "/health"]
+        })
+    } else if path == "/hello" {
+        let name = request.query("name") ?? "World"
+        Response.text("Hello, " + name + "!")
+    } else if path == "/echo" {
+        let body = request.body()
+        Response.json({
+            "method": request.method(),
+            "path": path,
+            "headers": request.headers(),
+            "body": body
+        })
+    } else if path == "/health" {
+        Response.json({
+            "status": "healthy",
+            "timestamp": Time.now()
+        })
+    } else {
+        Response.status(404).json({
+            "error": "Not Found",
+            "path": path,
+            "available": ["/", "/hello", "/echo", "/health"]
+        })
+    }
+}

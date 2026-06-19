@@ -1,0 +1,13 @@
+name = "tayni-demo"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+
+[build]
+command = "tayni compile src/handler.tayni -o build/handler.wasm --target wasm"
+
+[[rules]]
+type = "CompiledWasm"
+globs = ["**/*.wasm"]
+
+[vars]
+ENVIRONMENT = "production"
